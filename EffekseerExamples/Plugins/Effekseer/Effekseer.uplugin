@@ -11,15 +11,19 @@
 	"MarketplaceURL" : "",
 	"SupportURL" : "",
 	"EnabledByDefault" : false,
-	"CanContainContent" : false,
+	"CanContainContent" : true,
 	"IsBetaVersion" : false,
 	"Installed" : false,
 	"Modules" :
 	[
 		{
 			"Name" : "Effekseer",
-			"Type" : "Developer",
+			"Type" : "Runtime",
 			"LoadingPhase" : "Default"
+		},
+		{
+			"Name" : "EffekseerEd",
+			"Type" : "Editor"
 		}
 	]
 }

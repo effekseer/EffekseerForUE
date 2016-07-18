@@ -2,9 +2,9 @@
 
 namespace UnrealBuildTool.Rules
 {
-	public class Effekseer : ModuleRules
+	public class EffekseerEd : ModuleRules
 	{
-		public Effekseer(TargetInfo Target)
+		public EffekseerEd(TargetInfo Target)
 		{
 			PublicIncludePaths.AddRange(
 				new string[] {
@@ -14,7 +14,6 @@ namespace UnrealBuildTool.Rules
 
 			PrivateIncludePaths.AddRange(
 				new string[] {
-					"Developer/Effekseer/Private",
 					// ... add other private include paths required here ...
 				}
 				);
@@ -22,7 +21,7 @@ namespace UnrealBuildTool.Rules
 			PublicDependencyModuleNames.AddRange(
 				new string[]
 				{
-					 "Core", "CoreUObject", "Engine",
+					"Core", "CoreUObject", "Engine", "UnrealEd", "Effekseer",
 					// ... add other public dependencies that you statically link with here ...
 				}
 				);
@@ -30,7 +29,7 @@ namespace UnrealBuildTool.Rules
 			PrivateDependencyModuleNames.AddRange(
 				new string[]
 				{
-					 "Core", "CoreUObject", "Engine",
+					"Core", "CoreUObject", "Engine", "UnrealEd", "Effekseer",
 					// ... add private dependencies that you statically link with here ...
 				}
 				);
