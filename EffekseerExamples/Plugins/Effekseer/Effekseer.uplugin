@@ -1,0 +1,25 @@
+{
+	"FileVersion" : 3,
+	"Version" : 1,
+	"VersionName" : "1.0",
+	"FriendlyName" : "Effekseer Plugin",
+	"Description" : "",
+	"Category" : "Rendering",
+	"CreatedBy" : "Effekseer, Inc.",
+	"CreatedByURL" : "https://effekseer.github.io/",
+	"DocsURL" : "",
+	"MarketplaceURL" : "",
+	"SupportURL" : "",
+	"EnabledByDefault" : false,
+	"CanContainContent" : false,
+	"IsBetaVersion" : false,
+	"Installed" : false,
+	"Modules" :
+	[
+		{
+			"Name" : "Effekseer",
+			"Type" : "Developer",
+			"LoadingPhase" : "Default"
+		}
+	]
+}
