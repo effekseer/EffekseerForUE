@@ -1,7 +1,6 @@
-#include "../Private/EffekseerPrivatePCH.h"
+#include "EffekseerPrivatePCH.h"
 #include "EffekseerEffect.h"
-
-#include "../Private/EffekseerNative.h"
+#include "EffekseerNative.h"
 
 static ::Effekseer::Setting* CreateSetting()
 {
@@ -37,4 +36,5 @@ void UEffekseerEffect::Load(const uint8_t* data, int32_t size)
 void UEffekseerEffect::BeginDestroy()
 {
 	ReleaseEffect();
+	Super::BeginDestroy();
 }

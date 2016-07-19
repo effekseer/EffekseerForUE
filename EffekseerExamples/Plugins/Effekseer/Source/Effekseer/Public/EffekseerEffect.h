@@ -5,7 +5,7 @@
 #include "EffekseerEffect.generated.h"
 
 UCLASS()
-class UEffekseerEffect : public UObject
+class EFFEKSEER_API UEffekseerEffect : public UObject
 {
 	GENERATED_BODY()
 
