@@ -258,6 +258,9 @@ namespace EffekseerRendererUE4
 
 		EffekseerRenderer::StandardRenderer<RendererImplemented, Shader, void*, Vertex, VertexDistortion>*	m_standardRenderer = nullptr;
 	public:
+		
+		static RendererImplemented* Create();
+
 		RendererImplemented();
 		virtual ~RendererImplemented();
 

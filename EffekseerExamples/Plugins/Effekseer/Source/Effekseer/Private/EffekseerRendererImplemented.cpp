@@ -44,6 +44,11 @@ namespace EffekseerRendererUE4
 		//EndRendering_<RendererImplemented, Shader, IDirect3DTexture9*, Vertex>(m_renderer, parameter);
 	}
 
+	RendererImplemented* RendererImplemented::Create()
+	{
+		return new RendererImplemented();
+	}
+
 	RendererImplemented::RendererImplemented()
 	{
 
@@ -84,7 +89,7 @@ namespace EffekseerRendererUE4
 
 	void RendererImplemented::SetRestorationOfStatesFlag(bool flag)
 	{
-
+		// TODO
 	}
 
 	bool RendererImplemented::BeginRendering()

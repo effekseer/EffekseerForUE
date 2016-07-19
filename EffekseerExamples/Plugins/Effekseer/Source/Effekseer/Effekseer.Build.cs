@@ -22,16 +22,24 @@ namespace UnrealBuildTool.Rules
 			PublicDependencyModuleNames.AddRange(
 				new string[]
 				{
-					 "Core", "CoreUObject", "Engine",
-					// ... add other public dependencies that you statically link with here ...
+					"Core",
+					"CoreUObject",
+					"Engine",
+					"RHI",
+					"RenderCore",
+					"ShaderCore",
 				}
 				);
 
 			PrivateDependencyModuleNames.AddRange(
 				new string[]
 				{
-					 "Core", "CoreUObject", "Engine",
-					// ... add private dependencies that you statically link with here ...
+					"Core",
+					"CoreUObject",
+					"Engine",
+					"RHI",
+					"RenderCore",
+					"ShaderCore",
 				}
 				);
 
