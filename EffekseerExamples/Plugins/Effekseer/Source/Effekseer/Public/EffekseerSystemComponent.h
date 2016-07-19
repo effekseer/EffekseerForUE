@@ -2,6 +2,9 @@
 #pragma once
 
 #include "Components/PrimitiveComponent.h"
+
+#include "EffekseerEffect.h"
+
 #include "EffekseerSystemComponent.generated.h"
 
 UCLASS(ClassGroup = (Effekseer), meta = (BlueprintSpawnableComponent))
@@ -27,4 +30,6 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Material)
 	UMaterialInterface* Material = nullptr;
+
+	void Play(UEffekseerEffect* effect, FVector position);
 };

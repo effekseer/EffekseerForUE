@@ -19,4 +19,6 @@ public:
 
 	UPROPERTY(EditAnywhere)
 	int32 Version = -1;
+
+	void* GetNativePtr() { return effectPtr; }
 };

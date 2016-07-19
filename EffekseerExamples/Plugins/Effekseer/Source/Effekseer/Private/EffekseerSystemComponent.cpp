@@ -47,7 +47,10 @@ public:
 
 	virtual void GetDynamicMeshElements(const TArray<const FSceneView*>& Views, const FSceneViewFamily& ViewFamily, uint32 VisibilityMap, FMeshElementCollector& Collector) const override
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, "Start : GetDynamicMeshElements");
+		// TODO いずれ高速に処理できる方法を考える。
+		//effekseerCS.Enter();
+
+		//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, "Start : GetDynamicMeshElements");
 
 		if (!Material)
 		{
@@ -59,14 +62,13 @@ public:
 		{
 			if (!(VisibilityMap & (1 << ViewIndex))) continue;
 
-			// TODO いずれ高速に処理できる方法を考える。
-			effekseerCS.Enter();
+			
 			{
 				effekseerRenderer->BeginRendering();
 				effekseerManager->Draw();
 				effekseerRenderer->EndRendering();
 			}
-			effekseerCS.Leave();
+
 
 			FDynamicMeshBuilder meshBuilder;
 			
@@ -81,7 +83,9 @@ public:
 			meshBuilder.GetMesh(GetLocalToWorld(), matProxy, SDPG_World, false, false, ViewIndex, Collector);
 		}
 
-		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, "End : GetDynamicMeshElements");
+		//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, "End : GetDynamicMeshElements");
+
+		//effekseerCS.Leave();
 	}
 
 	virtual FPrimitiveViewRelevance GetViewRelevance(const FSceneView* View) const override
@@ -99,20 +103,22 @@ public:
 
 	void UpdateData_RenderThread()
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, "Start : UpdateData");
+		//effekseerCS.Enter();
+
+		//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, "Start : UpdateData");
 
 		// TODO いずれ高速に処理できる方法を考える。
-		effekseerCS.Enter();
+		
 		{
 			if (effekseerManager != nullptr)
 			{
 				effekseerManager->Update();
 			}
 		}
-		effekseerCS.Leave();
+		
 
-		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, "End : UpdateData");
-
+		//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, "End : UpdateData");
+		//effekseerCS.Leave();
 	}
 
 	// This function can be called out of renderThread.
@@ -195,3 +201,13 @@ FBoxSphereBounds UEffekseerSystemComponent::CalcBounds(const FTransform& LocalTo
 	return FBoxSphereBounds(LocalToWorld.GetLocation(), FVector(10, 10, 10), 10);
 }
 
+void UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVector position)
+{
+	if (effect == nullptr) return;
+	if (effect->GetNativePtr() == nullptr) return;
+
+	auto p = (::Effekseer::Effect*)effect->GetNativePtr();
+
+	p->AddRef();
+	// TODO send Effect
+}
