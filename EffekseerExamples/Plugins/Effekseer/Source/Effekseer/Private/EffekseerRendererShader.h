@@ -1,29 +1,34 @@
 #pragma once
 
 #include "EffekseerRendererNative.h"
+#include <vector>
 
 namespace EffekseerRendererUE4
 {
+	/**
+		@brief	シェーダー
+		@note
+		現在：StandardRenderer向け固定実装
+	*/
 	class Shader
 	{
-	public:
-		Shader()
-		{
-		}
+	private:
+		std::vector<uint8_t>	vertexConstantBuffer;
+		std::vector<uint8_t>	pixelConstantBuffer;
 
-		virtual ~Shader()
-		{}
+	public:
+		Shader();
+
+		virtual ~Shader();
 
 		void* GetVertexConstantBuffer()
 		{
-			// TODO
-			return nullptr;
+			return vertexConstantBuffer.data();
 		}
 
 		void* GetPixelConstantBuffer()
 		{
-			// TODO
-			return nullptr;
+			return pixelConstantBuffer.data();
 		}
 
 		void SetConstantBuffer()

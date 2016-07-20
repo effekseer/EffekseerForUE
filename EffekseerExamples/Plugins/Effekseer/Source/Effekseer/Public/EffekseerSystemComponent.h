@@ -7,6 +7,16 @@
 
 #include "EffekseerSystemComponent.generated.h"
 
+class EffekseerUpdateData
+{
+public:
+	TArray<void*>		PlayingEffects;
+	TArray<FVector>		PlayingEffectPositions;
+
+	EffekseerUpdateData();
+	virtual ~EffekseerUpdateData();
+};
+
 UCLASS(ClassGroup = (Effekseer), meta = (BlueprintSpawnableComponent))
 class EFFEKSEER_API UEffekseerSystemComponent : public UPrimitiveComponent
 {
@@ -14,9 +24,12 @@ class EFFEKSEER_API UEffekseerSystemComponent : public UPrimitiveComponent
 
 private:
 	FPrimitiveSceneProxy*	sceneProxy = nullptr;
+	EffekseerUpdateData*	currentUpdateData = nullptr;
 
 public:
 	UEffekseerSystemComponent();
+	virtual ~UEffekseerSystemComponent();
+
 	virtual FPrimitiveSceneProxy* CreateSceneProxy() override;
 
 	virtual UMaterialInterface* GetMaterial(int32 ElementIndex) const override;
@@ -31,5 +44,6 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Material)
 	UMaterialInterface* Material = nullptr;
 
+	UFUNCTION(BlueprintCallable, Category = "Control")
 	void Play(UEffekseerEffect* effect, FVector position);
 };

@@ -254,6 +254,8 @@ namespace EffekseerRendererUE4
 		::Effekseer::Matrix44	m_camera;
 		::Effekseer::Matrix44	m_cameraProj;
 
+		VertexBuffer*			m_vertexBuffer = nullptr;
+		Shader*					m_stanShader = nullptr;
 		RenderState*			m_renderState = nullptr;
 
 		EffekseerRenderer::StandardRenderer<RendererImplemented, Shader, void*, Vertex, VertexDistortion>*	m_standardRenderer = nullptr;

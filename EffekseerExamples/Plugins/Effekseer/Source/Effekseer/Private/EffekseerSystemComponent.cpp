@@ -6,7 +6,19 @@
 #include "EffekseerNative.h"
 #include "EffekseerRendererImplemented.h"
 
-#include <mutex>
+EffekseerUpdateData::EffekseerUpdateData()
+{
+
+}
+
+EffekseerUpdateData::~EffekseerUpdateData()
+{
+	for (auto p : PlayingEffects)
+	{
+		auto p_ = (::Effekseer::Effect*)p;
+		p_->Release();
+	}
+}
 
 class FEffekseerSystemSceneProxy : public FPrimitiveSceneProxy
 {
@@ -14,22 +26,25 @@ private:
 	static const int32_t	particleMax = 10000;
 	::Effekseer::Manager*	effekseerManager = nullptr;
 	::EffekseerRendererUE4::RendererImplemented*	effekseerRenderer = nullptr;
-	::Effekseer::CriticalSection	effekseerCS;
 
 public:
 	FEffekseerSystemSceneProxy(const UEffekseerSystemComponent* InComponent)
 		: FPrimitiveSceneProxy(InComponent)
 		, Material(InComponent->Material)
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, "Start : Construct");
-		effekseerManager = ::Effekseer::Manager::Create(particleMax, false);
+		//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, "Start : Construct");
+		effekseerManager = ::Effekseer::Manager::Create(particleMax);
 		effekseerRenderer = ::EffekseerRendererUE4::RendererImplemented::Create();
-		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, "End : Construct");
+		effekseerRenderer->Initialize();
+
+		effekseerManager->SetSpriteRenderer(effekseerRenderer->CreateSpriteRenderer());
+
+		//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, "End : Construct");
 	}
 
 	virtual ~FEffekseerSystemSceneProxy()
 	{
-		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, "Start : Destructer");
+	//	GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, "Start : Destructer");
 		if (effekseerManager != nullptr)
 		{
 			effekseerManager->Destroy();
@@ -42,7 +57,7 @@ public:
 			effekseerRenderer = nullptr;
 		}
 
-		GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, "End : Destructer");
+	//	GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, "End : Destructer");
 	}
 
 	virtual void GetDynamicMeshElements(const TArray<const FSceneView*>& Views, const FSceneViewFamily& ViewFamily, uint32 VisibilityMap, FMeshElementCollector& Collector) const override
@@ -101,7 +116,7 @@ public:
 	virtual uint32 GetMemoryFootprint() const { return sizeof(*this) + GetAllocatedSize(); }
 	uint32 GetAllocatedSize() const { return FPrimitiveSceneProxy::GetAllocatedSize(); }
 
-	void UpdateData_RenderThread()
+	void UpdateData_RenderThread(EffekseerUpdateData* updateData)
 	{
 		//effekseerCS.Enter();
 
@@ -109,6 +124,15 @@ public:
 
 		// TODO ‚¢‚¸‚ê‚‘¬‚Éˆ—‚Å‚«‚é•û–@‚ğl‚¦‚éB
 		
+		for (auto i = 0; i < updateData->PlayingEffects.Num(); i++)
+		{
+			auto effect = (::Effekseer::Effect*)updateData->PlayingEffects[i];
+			auto position = updateData->PlayingEffectPositions[i];
+
+			effekseerManager->Play(effect, position.X, position.Y, position.Z);
+			//printf("%f,%f,%f\n", position.X, position.Y, position.Z);
+		}
+
 		{
 			if (effekseerManager != nullptr)
 			{
@@ -116,19 +140,20 @@ public:
 			}
 		}
 		
-
+		delete updateData;
 		//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, "End : UpdateData");
 		//effekseerCS.Leave();
 	}
 
 	// This function can be called out of renderThread.
-	void UpdateData()
+	void UpdateData(EffekseerUpdateData* updateData)
 	{
-		ENQUEUE_UNIQUE_RENDER_COMMAND_ONEPARAMETER(
+		ENQUEUE_UNIQUE_RENDER_COMMAND_TWOPARAMETER(
 			ParticleUpdateDataCommand,
 			FEffekseerSystemSceneProxy*, Proxy, this,
+			EffekseerUpdateData*, Data, updateData,
 			{
-				Proxy->UpdateData_RenderThread();
+				Proxy->UpdateData_RenderThread(Data);
 			}
 		);
 	}
@@ -141,6 +166,12 @@ UEffekseerSystemComponent::UEffekseerSystemComponent()
 {
 	bWantsBeginPlay = true;
 	PrimaryComponentTick.bCanEverTick = true;
+	currentUpdateData = new EffekseerUpdateData();
+}
+
+UEffekseerSystemComponent::~UEffekseerSystemComponent()
+{
+	ES_SAFE_DELETE(currentUpdateData);
 }
 
 void UEffekseerSystemComponent::BeginPlay()
@@ -151,7 +182,9 @@ void UEffekseerSystemComponent::BeginPlay()
 void UEffekseerSystemComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	auto sp = (FEffekseerSystemSceneProxy*)sceneProxy;
-	sp->UpdateData();
+
+	sp->UpdateData(currentUpdateData);
+	currentUpdateData = new EffekseerUpdateData();
 
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 }
@@ -209,5 +242,7 @@ void UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVector position)
 	auto p = (::Effekseer::Effect*)effect->GetNativePtr();
 
 	p->AddRef();
-	// TODO send Effect
+	
+	currentUpdateData->PlayingEffects.Add(p);
+	currentUpdateData->PlayingEffectPositions.Add(position);
 }

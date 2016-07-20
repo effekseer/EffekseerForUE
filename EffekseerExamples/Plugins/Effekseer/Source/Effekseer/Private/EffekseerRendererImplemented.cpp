@@ -5,6 +5,8 @@
 #include "EffekseerRendererIndexBuffer.h"
 #include "EffekseerRendererShader.h"
 
+#include "DynamicMeshBuilder.h"
+
 namespace EffekseerRendererUE4
 {
 	SpriteRenderer::SpriteRenderer(RendererImplemented* renderer)
@@ -57,11 +59,25 @@ namespace EffekseerRendererUE4
 	RendererImplemented::~RendererImplemented()
 	{
 		ES_SAFE_DELETE(m_renderState);
+		ES_SAFE_DELETE(m_stanShader);
+		ES_SAFE_DELETE(m_standardRenderer);
+		ES_SAFE_DELETE(m_vertexBuffer);
 	}
 
 	bool RendererImplemented::Initialize()
 	{
 		m_renderState = new RenderState();
+		m_vertexBuffer = new VertexBuffer(sizeof(Vertex) * m_squareMaxCount * 4, true);
+		m_stanShader = new Shader();
+
+		m_standardRenderer = new EffekseerRenderer::StandardRenderer<RendererImplemented, Shader, void*, Vertex, VertexDistortion>(
+			this,
+			m_stanShader,
+			m_stanShader,
+			m_stanShader,
+			m_stanShader);
+
+
 		return true;
 	}
 
@@ -94,12 +110,82 @@ namespace EffekseerRendererUE4
 
 	bool RendererImplemented::BeginRendering()
 	{
-		return false;
+		::Effekseer::Matrix44::Mul(m_cameraProj, m_camera, m_proj);
+
+//		// ステートを保存する
+//		if (m_restorationOfStates)
+//		{
+//			m_originalState.blend = glIsEnabled(GL_BLEND);
+//			m_originalState.cullFace = glIsEnabled(GL_CULL_FACE);
+//			m_originalState.depthTest = glIsEnabled(GL_DEPTH_TEST);
+//#if !defined(__EFFEKSEER_RENDERER_GL3__) && \
+//	!defined(__EFFEKSEER_RENDERER_GLES3__) && \
+//	!defined(__EFFEKSEER_RENDERER_GLES2__) && \
+//	!defined(EMSCRIPTEN)
+//			m_originalState.texture = glIsEnabled(GL_TEXTURE_2D);
+//#endif
+//			glGetBooleanv(GL_DEPTH_WRITEMASK, &m_originalState.depthWrite);
+//			glGetIntegerv(GL_DEPTH_FUNC, &m_originalState.depthFunc);
+//			glGetIntegerv(GL_CULL_FACE_MODE, &m_originalState.cullFaceMode);
+//			glGetIntegerv(GL_BLEND_SRC_RGB, &m_originalState.blendSrc);
+//			glGetIntegerv(GL_BLEND_DST_RGB, &m_originalState.blendDst);
+//			glGetIntegerv(GL_BLEND_EQUATION, &m_originalState.blendEquation);
+//		}
+//
+//		glDepthFunc(GL_LEQUAL);
+//		glEnable(GL_BLEND);
+//		glDisable(GL_CULL_FACE);
+//
+//		m_renderState->GetActiveState().Reset();
+//		m_renderState->Update(true);
+//		m_currentTextures.clear();
+
+		// レンダラーリセット
+		m_standardRenderer->ResetAndRenderingIfRequired();
+
+		//GLCheckError();
+
+		return true;
 	}
 
 	bool RendererImplemented::EndRendering()
 	{
-		return false;
+//		GLCheckError();
+
+		// レンダラーリセット
+		m_standardRenderer->ResetAndRenderingIfRequired();
+
+//		// ステートを復元する
+//		if (m_restorationOfStates)
+//		{
+//			if (m_originalState.blend) glEnable(GL_BLEND); else glDisable(GL_BLEND);
+//			if (m_originalState.cullFace) glEnable(GL_CULL_FACE); else glDisable(GL_CULL_FACE);
+//			if (m_originalState.depthTest) glEnable(GL_DEPTH_TEST); else glDisable(GL_DEPTH_TEST);
+//
+//#if !defined(__EFFEKSEER_RENDERER_GL3__) && \
+//	!defined(__EFFEKSEER_RENDERER_GLES3__) && \
+//	!defined(__EFFEKSEER_RENDERER_GLES2__) && \
+//	!defined(EMSCRIPTEN)
+//			if (m_originalState.texture) glEnable(GL_TEXTURE_2D); else glDisable(GL_TEXTURE_2D);
+//#endif
+//
+//			glDepthFunc(m_originalState.depthFunc);
+//			glDepthMask(m_originalState.depthWrite);
+//			glCullFace(m_originalState.cullFaceMode);
+//			glBlendFunc(m_originalState.blendSrc, m_originalState.blendDst);
+//			GLExt::glBlendEquation(m_originalState.blendEquation);
+//
+//#if defined(__EFFEKSEER_RENDERER_GL3__) || defined(__EFFEKSEER_RENDERER_GLES3__)
+//			for (int32_t i = 0; i < 4; i++)
+//			{
+//				GLExt::glBindSampler(i, 0);
+//			}
+//#endif
+//		}
+//
+//		GLCheckError();
+
+		return true;
 	}
 
 	const ::Effekseer::Vector3D& RendererImplemented::GetLightDirection() const
@@ -164,7 +250,7 @@ namespace EffekseerRendererUE4
 
 	::Effekseer::SpriteRenderer* RendererImplemented::CreateSpriteRenderer()
 	{
-		return nullptr;
+		return SpriteRenderer::Create(this);
 	}
 
 	::Effekseer::RibbonRenderer* RendererImplemented::CreateRibbonRenderer()
@@ -219,8 +305,8 @@ namespace EffekseerRendererUE4
 
 	VertexBuffer* RendererImplemented::GetVertexBuffer()
 	{
-		// TODO
-		return nullptr;
+		// Todo 様々な状態への対応
+		return m_vertexBuffer;
 	}
 
 	IndexBuffer* RendererImplemented::GetIndexBuffer()
@@ -257,11 +343,13 @@ namespace EffekseerRendererUE4
 	void RendererImplemented::DrawSprites(int32_t spriteCount, int32_t vertexOffset)
 	{
 		// TODO
+		//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, "DrawSprites");
 	}
 
 	void RendererImplemented::DrawPolygon(int32_t vertexCount, int32_t indexCount)
 	{
 		// TODO
+		//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, "DrawPolygon");
 	}
 
 	void RendererImplemented::BeginShader(Shader* shader)
