@@ -9,6 +9,7 @@ namespace EffekseerRendererUE4
 	{
 		m_resource = new uint8_t[m_size];
 		memset(m_resource, 0, (size_t)m_size);
+		m_vertexRingOffset = 0;
 	}
 
 	VertexBuffer::~VertexBuffer()
@@ -45,11 +46,13 @@ namespace EffekseerRendererUE4
 		else
 		{
 			offset = m_vertexRingOffset;
-			data = m_resource;
+			data = m_resource + offset;
 			m_vertexRingOffset += size;
 
 			m_vertexRingStart = offset;
 			m_offset = size;
+
+			
 		}
 
 		m_ringBufferLock = true;

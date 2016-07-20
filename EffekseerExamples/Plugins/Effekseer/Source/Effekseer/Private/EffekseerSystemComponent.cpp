@@ -77,25 +77,18 @@ public:
 		{
 			if (!(VisibilityMap & (1 << ViewIndex))) continue;
 
-			
+			FMaterialRenderProxy* matProxy = Material->GetRenderProxy(false);
+
+			effekseerRenderer->SetLocalToWorld(GetLocalToWorld());
+			effekseerRenderer->SetMaterialRenderProxy(matProxy);
+			effekseerRenderer->SetMeshElementCollector(&Collector);
+			effekseerRenderer->SetViewIndex(ViewIndex);
+
 			{
 				effekseerRenderer->BeginRendering();
 				effekseerManager->Draw();
 				effekseerRenderer->EndRendering();
 			}
-
-
-			FDynamicMeshBuilder meshBuilder;
-			
-			meshBuilder.AddVertex(FVector(0, 0, 0), FVector2D(0, 0), FVector(1, 0, 0), FVector(1, 1, 0), FVector(0, 0, 1), FColor::White);
-			meshBuilder.AddVertex(FVector(0, 100, 0), FVector2D(1, 0), FVector(1, 0, 0), FVector(1, 1, 0), FVector(0, 0, 1), FColor::White);
-			meshBuilder.AddVertex(FVector(100, 0, 0), FVector2D(0, 1), FVector(1, 0, 0), FVector(1, 1, 0), FVector(0, 0, 1), FColor::White);
-
-			meshBuilder.AddTriangle(0, 1, 2);
-
-			FMaterialRenderProxy *matProxy = Material->GetRenderProxy(false);
-
-			meshBuilder.GetMesh(GetLocalToWorld(), matProxy, SDPG_World, false, false, ViewIndex, Collector);
 		}
 
 		//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, "End : GetDynamicMeshElements");

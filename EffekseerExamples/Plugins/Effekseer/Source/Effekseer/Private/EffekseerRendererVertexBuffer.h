@@ -26,5 +26,10 @@ namespace EffekseerRendererUE4
 		bool RingBufferLock(int32_t size, int32_t& offset, void*& data) override;
 		bool TryRingBufferLock(int32_t size, int32_t& offset, void*& data) override;
 		void Unlock() override;
+
+		uint8_t* GetResource()
+		{
+			return m_resource;
+		}
 	};
 }

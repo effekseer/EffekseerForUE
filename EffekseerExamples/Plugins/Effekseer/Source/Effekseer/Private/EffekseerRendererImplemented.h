@@ -258,6 +258,11 @@ namespace EffekseerRendererUE4
 		Shader*					m_stanShader = nullptr;
 		RenderState*			m_renderState = nullptr;
 
+		FMatrix					m_localToWorld;
+		int32_t					m_viewIndex = 0;
+		FMaterialRenderProxy*	m_materialRenderProxy = nullptr;
+		FMeshElementCollector*	m_meshElementCollector = nullptr;
+
 		EffekseerRenderer::StandardRenderer<RendererImplemented, Shader, void*, Vertex, VertexDistortion>*	m_standardRenderer = nullptr;
 	public:
 		
@@ -437,6 +442,11 @@ namespace EffekseerRendererUE4
 		void EndShader(Shader* shader);
 
 		void SetTextures(Shader* shader, void** textures, int32_t count);
+
+		void SetLocalToWorld(FMatrix localToWorld);
+		void SetViewIndex(int32_t viewIndex);
+		void SetMaterialRenderProxy(FMaterialRenderProxy* materialRenderProxy);
+		void SetMeshElementCollector(FMeshElementCollector* meshElementCollector);
 	};
 
 }

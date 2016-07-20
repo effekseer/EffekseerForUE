@@ -342,8 +342,44 @@ namespace EffekseerRendererUE4
 
 	void RendererImplemented::DrawSprites(int32_t spriteCount, int32_t vertexOffset)
 	{
-		// TODO
-		//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, "DrawSprites");
+		//auto triangles = vertexOffset / 4 * 2;
+		//glDrawElements(GL_TRIANGLES, spriteCount * 6, GL_UNSIGNED_SHORT, (void*)(triangles * 3 * sizeof(GLushort)));
+
+		// TODO VertexŒˆ‚ß‚¤‚¿
+		Vertex* vs = (Vertex*)m_vertexBuffer->GetResource();
+
+		FDynamicMeshBuilder meshBuilder;
+
+		for (int32_t vi = vertexOffset; vi < vertexOffset + spriteCount * 4; vi++)
+		{
+			auto& v = vs[vi];
+
+			//char temp[200];
+			//sprintf_s<200>(temp, "%f,%f,%f,%f,%f,%d,%d,%d,%d", v.Pos.X, v.Pos.Y, v.Pos.Z, v.UV[0], v.UV[1], (int)v.Col.R, (int)v.Col.G, (int)v.Col.B, (int)v.Col.A);
+			//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, temp);
+
+			meshBuilder.AddVertex(FVector(v.Pos.X, v.Pos.Z, v.Pos.Y), FVector2D(v.UV[0], v.UV[1]), FVector(1, 0, 0), FVector(1, 1, 0), FVector(0, 0, 1), FColor(v.Col.R, v.Col.G, v.Col.B, v.Col.A));
+		}
+
+		for (int32_t si = 0; si < spriteCount; si++)
+		{
+			meshBuilder.AddTriangle(
+				si * 4 + 0,
+				si * 4 + 1,
+				si * 4 + 2);
+
+			meshBuilder.AddTriangle(
+				si * 4 + 3,
+				si * 4 + 1,
+				si * 4 + 2);
+		}
+		//meshBuilder.AddVertex(FVector(0, 0, 0), FVector2D(0, 0), FVector(1, 0, 0), FVector(1, 1, 0), FVector(0, 0, 1), FColor::White);
+		//meshBuilder.AddVertex(FVector(0, 100, 0), FVector2D(1, 0), FVector(1, 0, 0), FVector(1, 1, 0), FVector(0, 0, 1), FColor::White);
+		//meshBuilder.AddVertex(FVector(100, 0, 0), FVector2D(0, 1), FVector(1, 0, 0), FVector(1, 1, 0), FVector(0, 0, 1), FColor::White);
+		//
+		//meshBuilder.AddTriangle(0, 1, 2);
+
+		meshBuilder.GetMesh(m_localToWorld, m_materialRenderProxy, SDPG_World, false, false, m_viewIndex, *m_meshElementCollector);
 	}
 
 	void RendererImplemented::DrawPolygon(int32_t vertexCount, int32_t indexCount)
@@ -365,5 +401,25 @@ namespace EffekseerRendererUE4
 	void RendererImplemented::SetTextures(Shader* shader, void** textures, int32_t count)
 	{
 		// TODO
+	}
+
+	void RendererImplemented::SetLocalToWorld(FMatrix localToWorld)
+	{
+		m_localToWorld = localToWorld;
+	}
+
+	void RendererImplemented::SetViewIndex(int32_t viewIndex)
+	{
+		m_viewIndex = viewIndex;
+	}
+
+	void RendererImplemented::SetMaterialRenderProxy(FMaterialRenderProxy* materialRenderProxy)
+	{
+		m_materialRenderProxy = materialRenderProxy;
+	}
+
+	void RendererImplemented::SetMeshElementCollector(FMeshElementCollector* meshElementCollector)
+	{
+		m_meshElementCollector = meshElementCollector;
 	}
 }
