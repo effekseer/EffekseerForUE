@@ -46,6 +46,112 @@ namespace EffekseerRendererUE4
 		//EndRendering_<RendererImplemented, Shader, IDirect3DTexture9*, Vertex>(m_renderer, parameter);
 	}
 
+	RibbonRenderer::RibbonRenderer(RendererImplemented* renderer)
+		: m_renderer(renderer)
+	{
+	}
+
+	RibbonRenderer::~RibbonRenderer()
+	{
+	}
+
+	RibbonRenderer* RibbonRenderer::Create(RendererImplemented* renderer)
+	{
+		assert(renderer != NULL);
+
+		return new RibbonRenderer(renderer);
+	}
+
+	void RibbonRenderer::BeginRendering(const efkRibbonNodeParam& parameter, int32_t count, void* userData)
+	{
+		BeginRendering_<RendererImplemented, Vertex>(m_renderer, count, parameter);
+	}
+
+	void RibbonRenderer::Rendering(const efkRibbonNodeParam& parameter, const efkRibbonInstanceParam& instanceParameter, void* userData)
+	{
+		Rendering_<Vertex, VertexDistortion>(parameter, instanceParameter, userData, m_renderer->GetCameraMatrix());
+	}
+
+	void RibbonRenderer::EndRendering(const efkRibbonNodeParam& parameter, void* userData)
+	{
+		if (m_ringBufferData == NULL) return;
+
+		if (m_ribbonCount <= 1) return;
+
+		EndRendering_<RendererImplemented, void*, Vertex>(m_renderer, parameter);
+		//EndRendering_<RendererImplemented, GLuint, Vertex>(m_renderer, parameter);
+	}
+
+	RingRenderer::RingRenderer(RendererImplemented* renderer)
+		: m_renderer(renderer)
+
+	{
+	}
+
+	RingRenderer::~RingRenderer()
+	{
+	}
+
+	RingRenderer* RingRenderer::Create(RendererImplemented* renderer)
+	{
+		assert(renderer != NULL);
+
+		return new RingRenderer(renderer);
+	}
+
+	void RingRenderer::BeginRendering(const efkRingNodeParam& parameter, int32_t count, void* userData)
+	{
+		BeginRendering_<RendererImplemented, Vertex>(m_renderer, count, parameter);
+	}
+
+	void RingRenderer::Rendering(const efkRingNodeParam& parameter, const efkRingInstanceParam& instanceParameter, void* userData)
+	{
+		if (m_spriteCount == m_renderer->GetSquareMaxCount()) return;
+		Rendering_<Vertex, VertexDistortion>(parameter, instanceParameter, userData, m_renderer->GetCameraMatrix());
+	}
+
+	void RingRenderer::EndRendering(const efkRingNodeParam& parameter, void* userData)
+	{
+		if (m_spriteCount == 0) return;
+
+		EndRendering_<RendererImplemented, Shader, void*, Vertex>(m_renderer, parameter);
+	}
+
+	TrackRenderer::TrackRenderer(RendererImplemented* renderer)
+		: m_renderer(renderer)
+	{
+	}
+
+	TrackRenderer::~TrackRenderer()
+	{
+	}
+
+	TrackRenderer* TrackRenderer::Create(RendererImplemented* renderer)
+	{
+		assert(renderer != NULL);
+
+		return new TrackRenderer(renderer);
+	}
+
+	void TrackRenderer::BeginRendering(const efkTrackNodeParam& parameter, int32_t count, void* userData)
+	{
+		BeginRendering_<Vertex>(m_renderer, parameter, count, userData);
+	}
+
+	void TrackRenderer::Rendering(const efkTrackNodeParam& parameter, const efkTrackInstanceParam& instanceParameter, void* userData)
+	{
+		Rendering_<Vertex, VertexDistortion>(parameter, instanceParameter, userData, m_renderer->GetCameraMatrix());
+	}
+
+	void TrackRenderer::EndRendering(const efkTrackNodeParam& parameter, void* userData)
+	{
+		if (m_ringBufferData == NULL) return;
+
+		if (m_ribbonCount <= 1) return;
+
+		EndRendering_<RendererImplemented, void*, Vertex>(m_renderer, parameter);
+	}
+
 	RendererImplemented* RendererImplemented::Create()
 	{
 		return new RendererImplemented();
@@ -255,22 +361,23 @@ namespace EffekseerRendererUE4
 
 	::Effekseer::RibbonRenderer* RendererImplemented::CreateRibbonRenderer()
 	{
-		return nullptr;
+		return RibbonRenderer::Create(this);
 	}
 
 	::Effekseer::RingRenderer* RendererImplemented::CreateRingRenderer()
 	{
-		return nullptr;
+		return RingRenderer::Create(this);
 	}
 
 	::Effekseer::ModelRenderer* RendererImplemented::CreateModelRenderer()
 	{
+		// TODO
 		return nullptr;
 	}
 
 	::Effekseer::TrackRenderer* RendererImplemented::CreateTrackRenderer()
 	{
-		return nullptr;
+		return TrackRenderer::Create(this);
 	}
 
 	::Effekseer::TextureLoader* RendererImplemented::CreateTextureLoader(::Effekseer::FileInterface* fileInterface)

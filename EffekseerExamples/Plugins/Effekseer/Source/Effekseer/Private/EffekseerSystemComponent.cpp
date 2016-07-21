@@ -38,6 +38,9 @@ public:
 		effekseerRenderer->Initialize();
 
 		effekseerManager->SetSpriteRenderer(effekseerRenderer->CreateSpriteRenderer());
+		effekseerManager->SetRibbonRenderer(effekseerRenderer->CreateRibbonRenderer());
+		effekseerManager->SetRingRenderer(effekseerRenderer->CreateRingRenderer());
+		effekseerManager->SetTrackRenderer(effekseerRenderer->CreateTrackRenderer());
 
 		//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, "End : Construct");
 	}

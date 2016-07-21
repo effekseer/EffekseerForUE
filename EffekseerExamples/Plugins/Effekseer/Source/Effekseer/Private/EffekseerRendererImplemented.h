@@ -238,6 +238,84 @@ namespace EffekseerRendererUE4
 		void EndRendering(const efkSpriteNodeParam& parameter, void* userData);
 	};
 
+	typedef ::Effekseer::RibbonRenderer::NodeParameter efkRibbonNodeParam;
+	typedef ::Effekseer::RibbonRenderer::InstanceParameter efkRibbonInstanceParam;
+	typedef ::Effekseer::Vector3D efkVector3D;
+
+	class RibbonRenderer
+		: public ::EffekseerRenderer::RibbonRendererBase
+	{
+	private:
+		RendererImplemented*	m_renderer;
+
+		RibbonRenderer(RendererImplemented* renderer);
+
+	public:
+
+		virtual ~RibbonRenderer();
+
+		static RibbonRenderer* Create(RendererImplemented* renderer);
+
+	public:
+		void BeginRendering(const efkRibbonNodeParam& parameter, int32_t count, void* userData);
+
+		void Rendering(const efkRibbonNodeParam& parameter, const efkRibbonInstanceParam& instanceParameter, void* userData);
+
+		void EndRendering(const efkRibbonNodeParam& parameter, void* userData);
+	};
+
+	typedef ::Effekseer::RingRenderer::NodeParameter efkRingNodeParam;
+	typedef ::Effekseer::RingRenderer::InstanceParameter efkRingInstanceParam;
+	typedef ::Effekseer::Vector3D efkVector3D;
+
+	class RingRenderer
+		: public ::EffekseerRenderer::RingRendererBase
+	{
+	private:
+		RendererImplemented*	m_renderer;
+
+		RingRenderer(RendererImplemented* renderer);
+
+	public:
+
+		virtual ~RingRenderer();
+
+		static RingRenderer* Create(RendererImplemented* renderer);
+
+	public:
+		void BeginRendering(const efkRingNodeParam& parameter, int32_t count, void* userData);
+
+		void Rendering(const efkRingNodeParam& parameter, const efkRingInstanceParam& instanceParameter, void* userData);
+
+		void EndRendering(const efkRingNodeParam& parameter, void* userData);
+	};
+
+	typedef ::Effekseer::TrackRenderer::NodeParameter efkTrackNodeParam;
+	typedef ::Effekseer::TrackRenderer::InstanceParameter efkTrackInstanceParam;
+	typedef ::Effekseer::Vector3D efkVector3D;
+
+	class TrackRenderer
+		: public ::EffekseerRenderer::TrackRendererBase
+	{
+	private:
+		RendererImplemented*	m_renderer;
+
+		TrackRenderer(RendererImplemented* renderer);
+
+	public:
+
+		virtual ~TrackRenderer();
+
+		static TrackRenderer* Create(RendererImplemented* renderer);
+
+	public:
+		void BeginRendering(const efkTrackNodeParam& parameter, int32_t count, void* userData);
+
+		void Rendering(const efkTrackNodeParam& parameter, const efkTrackInstanceParam& instanceParameter, void* userData);
+
+		void EndRendering(const efkTrackNodeParam& parameter, void* userData);
+	};
+
 	class RendererImplemented
 		: public ::EffekseerRenderer::Renderer
 	{
