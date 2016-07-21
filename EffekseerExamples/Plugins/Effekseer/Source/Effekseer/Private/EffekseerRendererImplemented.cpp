@@ -369,9 +369,9 @@ namespace EffekseerRendererUE4
 				si * 4 + 2);
 
 			meshBuilder.AddTriangle(
-				si * 4 + 3,
+				si * 4 + 2,
 				si * 4 + 1,
-				si * 4 + 2);
+				si * 4 + 3);
 		}
 		//meshBuilder.AddVertex(FVector(0, 0, 0), FVector2D(0, 0), FVector(1, 0, 0), FVector(1, 1, 0), FVector(0, 0, 1), FColor::White);
 		//meshBuilder.AddVertex(FVector(0, 100, 0), FVector2D(1, 0), FVector(1, 0, 0), FVector(1, 1, 0), FVector(0, 0, 1), FColor::White);

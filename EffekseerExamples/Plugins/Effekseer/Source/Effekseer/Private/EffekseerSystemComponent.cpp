@@ -85,6 +85,14 @@ public:
 			effekseerRenderer->SetViewIndex(ViewIndex);
 
 			{
+				auto vmat = Views[ViewIndex]->ViewMatrices.ViewMatrix;
+				::Effekseer::Matrix44 evmat = *((::Effekseer::Matrix44*)(&vmat));
+
+				std::swap(evmat.Values[1][0], evmat.Values[2][0]);
+				std::swap(evmat.Values[1][1], evmat.Values[2][1]);
+				std::swap(evmat.Values[1][2], evmat.Values[2][2]);
+
+				effekseerRenderer->SetCameraMatrix(evmat);
 				effekseerRenderer->BeginRendering();
 				effekseerManager->Draw();
 				effekseerRenderer->EndRendering();
