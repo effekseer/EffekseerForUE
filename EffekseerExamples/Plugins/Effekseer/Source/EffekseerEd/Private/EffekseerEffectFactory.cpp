@@ -36,7 +36,8 @@ UObject* UEffekseerEffectFactory::FactoryCreateBinary(
 	
 	if (NewMyAsset)
 	{
-		NewMyAsset->Load(Buffer, (int32_t)(BufferEnd - Buffer));
+		auto path = NewMyAsset->GetPathName();
+		NewMyAsset->Load(Buffer, (int32_t)(BufferEnd - Buffer), *path);
 	}
 	
 	return NewMyAsset;
