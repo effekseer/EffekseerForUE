@@ -26,11 +26,10 @@ private:
 	static const int32_t	particleMax = 10000;
 	::Effekseer::Manager*	effekseerManager = nullptr;
 	::EffekseerRendererUE4::RendererImplemented*	effekseerRenderer = nullptr;
-
+	TMap<UTexture2D*, UMaterialInstanceDynamic*>	DynamicMaterials;
 public:
 	FEffekseerSystemSceneProxy(const UEffekseerSystemComponent* InComponent)
 		: FPrimitiveSceneProxy(InComponent)
-		, Material(InComponent->Material)
 	{
 		//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, "Start : Construct");
 		effekseerManager = ::Effekseer::Manager::Create(particleMax);
@@ -65,25 +64,12 @@ public:
 
 	virtual void GetDynamicMeshElements(const TArray<const FSceneView*>& Views, const FSceneViewFamily& ViewFamily, uint32 VisibilityMap, FMeshElementCollector& Collector) const override
 	{
-		// TODO いずれ高速に処理できる方法を考える。
-		//effekseerCS.Enter();
-
-		//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, "Start : GetDynamicMeshElements");
-
-		if (!Material)
-		{
-			return;
-		}
-
-		
 		for (int32 ViewIndex = 0; ViewIndex < Views.Num(); ViewIndex++)
 		{
 			if (!(VisibilityMap & (1 << ViewIndex))) continue;
 
-			FMaterialRenderProxy* matProxy = Material->GetRenderProxy(false);
-
 			effekseerRenderer->SetLocalToWorld(GetLocalToWorld());
-			effekseerRenderer->SetMaterialRenderProxy(matProxy);
+			effekseerRenderer->SetMaterials(&DynamicMaterials);
 			effekseerRenderer->SetMeshElementCollector(&Collector);
 			effekseerRenderer->SetViewIndex(ViewIndex);
 
@@ -101,10 +87,6 @@ public:
 				effekseerRenderer->EndRendering();
 			}
 		}
-
-		//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, "End : GetDynamicMeshElements");
-
-		//effekseerCS.Leave();
 	}
 
 	virtual FPrimitiveViewRelevance GetViewRelevance(const FSceneView* View) const override
@@ -114,6 +96,10 @@ public:
 		Result.bDrawRelevance = IsShown(View);
 		Result.bDynamicRelevance = true;
 		Result.bShadowRelevance = IsShadowCast(View);
+		Result.bOpaqueRelevance = false;
+		Result.bMaskedRelevance = false;
+		Result.bSeparateTranslucencyRelevance = true;
+		Result.bNormalTranslucencyRelevance = true;
 
 		return Result;
 	}
@@ -122,9 +108,9 @@ public:
 
 	void UpdateData_RenderThread(EffekseerUpdateData* updateData)
 	{
-		//effekseerCS.Enter();
-
 		//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, "Start : UpdateData");
+
+		DynamicMaterials = updateData->DynamicMaterials;
 
 		// TODO いずれ高速に処理できる方法を考える。
 		
@@ -133,7 +119,7 @@ public:
 			auto effect = (::Effekseer::Effect*)updateData->PlayingEffects[i];
 			auto position = updateData->PlayingEffectPositions[i];
 
-			effekseerManager->Play(effect, position.X, position.Y, position.Z);
+			effekseerManager->Play(effect, position.X, position.Z, position.Y);
 			//printf("%f,%f,%f\n", position.X, position.Y, position.Z);
 		}
 
@@ -146,7 +132,6 @@ public:
 		
 		delete updateData;
 		//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, "End : UpdateData");
-		//effekseerCS.Leave();
 	}
 
 	// This function can be called out of renderThread.
@@ -161,9 +146,6 @@ public:
 			}
 		);
 	}
-
-protected:
-	UMaterialInterface *Material;
 };
 
 UEffekseerSystemComponent::UEffekseerSystemComponent()
@@ -189,6 +171,7 @@ void UEffekseerSystemComponent::TickComponent(float DeltaTime, ELevelTick TickTy
 
 	sp->UpdateData(currentUpdateData);
 	currentUpdateData = new EffekseerUpdateData();
+	currentUpdateData->DynamicMaterials = DynamicMaterials;
 
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 }
@@ -242,6 +225,28 @@ void UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVector position)
 {
 	if (effect == nullptr) return;
 	if (effect->GetNativePtr() == nullptr) return;
+
+	if (!DynamicMaterials.Contains(nullptr))
+	{
+		if (Material != nullptr)
+		{
+			auto dynamicMaterial = UMaterialInstanceDynamic::Create(Material, this);
+			DynamicMaterials.Add(nullptr, dynamicMaterial);
+		}
+	}
+
+	for (auto& tex : effect->ColorTextures)
+	{
+		if (!DynamicMaterials.Contains(tex))
+		{
+			if (Material != nullptr)
+			{
+				auto dynamicMaterial = UMaterialInstanceDynamic::Create(Material, this);
+				dynamicMaterial->SetTextureParameterValue(TEXT("ColorTexture"), tex);
+				DynamicMaterials.Add(tex, dynamicMaterial);
+			}
+		}
+	}
 
 	auto p = (::Effekseer::Effect*)effect->GetNativePtr();
 

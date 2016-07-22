@@ -486,7 +486,17 @@ namespace EffekseerRendererUE4
 		//
 		//meshBuilder.AddTriangle(0, 1, 2);
 
-		meshBuilder.GetMesh(m_localToWorld, m_materialRenderProxy, SDPG_World, false, false, m_viewIndex, *m_meshElementCollector);
+		UMaterialInstanceDynamic* mat = nullptr;
+		if (m_materials->Contains((UTexture2D*)m_textures[0]))
+		{
+			mat = (*m_materials)[(UTexture2D*)m_textures[0]];
+		}
+
+		if (mat != nullptr)
+		{
+			auto proxy = mat->GetRenderProxy(false);
+			meshBuilder.GetMesh(m_localToWorld, proxy, SDPG_World, false, false, m_viewIndex, *m_meshElementCollector);
+		}
 	}
 
 	void RendererImplemented::DrawPolygon(int32_t vertexCount, int32_t indexCount)
@@ -507,7 +517,15 @@ namespace EffekseerRendererUE4
 
 	void RendererImplemented::SetTextures(Shader* shader, void** textures, int32_t count)
 	{
-		// TODO
+		// TODO •L‚¢‘Î‰ž
+		if (count > 0)
+		{
+			m_textures[0] = textures[0];
+		}
+		else
+		{
+			m_textures[0] = nullptr;
+		}
 	}
 
 	void RendererImplemented::SetLocalToWorld(FMatrix localToWorld)
@@ -520,9 +538,9 @@ namespace EffekseerRendererUE4
 		m_viewIndex = viewIndex;
 	}
 
-	void RendererImplemented::SetMaterialRenderProxy(FMaterialRenderProxy* materialRenderProxy)
+	void RendererImplemented::SetMaterials(const TMap<UTexture2D*, UMaterialInstanceDynamic*>* materials)
 	{
-		m_materialRenderProxy = materialRenderProxy;
+		m_materials = (TMap<UTexture2D*, UMaterialInstanceDynamic*>*)materials;
 	}
 
 	void RendererImplemented::SetMeshElementCollector(FMeshElementCollector* meshElementCollector)

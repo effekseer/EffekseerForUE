@@ -10,8 +10,9 @@
 class EffekseerUpdateData
 {
 public:
-	TArray<void*>		PlayingEffects;
-	TArray<FVector>		PlayingEffectPositions;
+	TArray<void*>				PlayingEffects;
+	TArray<FVector>				PlayingEffectPositions;
+	TMap<UTexture2D*, UMaterialInstanceDynamic*> DynamicMaterials;
 
 	EffekseerUpdateData();
 	virtual ~EffekseerUpdateData();
@@ -42,7 +43,10 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Material)
-	UMaterialInterface* Material = nullptr;
+	UMaterialInstanceConstant* Material = nullptr;
+
+	UPROPERTY(Transient)
+	TMap<UTexture2D*, UMaterialInstanceDynamic*> DynamicMaterials;
 
 	UFUNCTION(BlueprintCallable, Category = "Control")
 	void Play(UEffekseerEffect* effect, FVector position);

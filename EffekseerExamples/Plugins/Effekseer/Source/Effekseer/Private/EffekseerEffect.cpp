@@ -81,6 +81,7 @@ void* TextureLoader::Load(const EFK_CHAR* path, ::Effekseer::TextureType texture
 
 		auto texture = Cast<UTexture2D>(StaticLoadObject(UTexture2D::StaticClass(), NULL, path_));
 		m_uobject->ColorTextures.Add(texture);
+		return (void*)texture;
 	}
 
 	return NULL;

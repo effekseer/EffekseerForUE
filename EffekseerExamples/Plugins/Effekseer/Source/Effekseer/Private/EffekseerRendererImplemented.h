@@ -336,9 +336,11 @@ namespace EffekseerRendererUE4
 		Shader*					m_stanShader = nullptr;
 		RenderState*			m_renderState = nullptr;
 
+		void*					m_textures[16];
+
 		FMatrix					m_localToWorld;
 		int32_t					m_viewIndex = 0;
-		FMaterialRenderProxy*	m_materialRenderProxy = nullptr;
+		TMap<UTexture2D*, UMaterialInstanceDynamic*>*	m_materials = nullptr;
 		FMeshElementCollector*	m_meshElementCollector = nullptr;
 
 		EffekseerRenderer::StandardRenderer<RendererImplemented, Shader, void*, Vertex, VertexDistortion>*	m_standardRenderer = nullptr;
@@ -523,7 +525,7 @@ namespace EffekseerRendererUE4
 
 		void SetLocalToWorld(FMatrix localToWorld);
 		void SetViewIndex(int32_t viewIndex);
-		void SetMaterialRenderProxy(FMaterialRenderProxy* materialRenderProxy);
+		void SetMaterials(const TMap<UTexture2D*, UMaterialInstanceDynamic*>* materials);
 		void SetMeshElementCollector(FMeshElementCollector* meshElementCollector);
 	};
 
