@@ -13,9 +13,9 @@ EffekseerUpdateData::EffekseerUpdateData()
 
 EffekseerUpdateData::~EffekseerUpdateData()
 {
-	for (auto p : PlayingEffects)
+	for (auto c : Commands)
 	{
-		auto p_ = (::Effekseer::Effect*)p;
+		auto p_ = (::Effekseer::Effect*)c.Effect;
 		p_->Release();
 	}
 }
@@ -34,6 +34,8 @@ private:
 	TMap<UTexture2D*, UMaterialInstanceDynamic*> ModulateDynamicMaterials;
 
 	float	Time = 0;
+
+	TMap<int, int>	internalHandle2EfkHandle;
 
 public:
 	FEffekseerSystemSceneProxy(const UEffekseerSystemComponent* InComponent)
@@ -131,13 +133,24 @@ public:
 
 		// TODO いずれ高速に処理できる方法を考える。
 		
-		for (auto i = 0; i < updateData->PlayingEffects.Num(); i++)
+		for (auto i = 0; i < updateData->Commands.Num(); i++)
 		{
-			auto effect = (::Effekseer::Effect*)updateData->PlayingEffects[i];
-			auto position = updateData->PlayingEffectPositions[i];
+			auto& cmd = updateData->Commands[i];
+			if (cmd.Type == EffekseerUpdateData_CommandType::Play)
+			{
+				auto effect = (::Effekseer::Effect*)updateData->Commands[i].Effect;
+				auto position = updateData->Commands[i].Position;
 
-			effekseerManager->Play(effect, position.X, position.Z, position.Y);
-			//printf("%f,%f,%f\n", position.X, position.Y, position.Z);
+				auto eid = effekseerManager->Play(effect, position.X, position.Z, position.Y);
+				internalHandle2EfkHandle.Add(cmd.ID, eid);
+			}
+
+			if (cmd.Type == EffekseerUpdateData_CommandType::SetP)
+			{
+				auto eid = internalHandle2EfkHandle[cmd.ID];
+				auto position = updateData->Commands[i].Position;
+				effekseerManager->SetLocation(eid, position.X, position.Z, position.Y);
+			}
 		}
 
 		Time += updateData->DeltaTime;
@@ -254,10 +267,10 @@ FBoxSphereBounds UEffekseerSystemComponent::CalcBounds(const FTransform& LocalTo
 	return FBoxSphereBounds(LocalToWorld.GetLocation(), FVector(infinity, infinity, infinity), infinity);
 }
 
-void UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVector position)
+FEffekseerHandle UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVector position)
 {
-	if (effect == nullptr) return;
-	if (effect->GetNativePtr() == nullptr) return;
+	if (effect == nullptr) return FEffekseerHandle();
+	if (effect->GetNativePtr() == nullptr) return FEffekseerHandle();
 
 	// システムからの相対位置に変換する。
 	position -= this->RelativeLocation;
@@ -313,6 +326,37 @@ void UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVector position)
 
 	p->AddRef();
 	
-	currentUpdateData->PlayingEffects.Add(p);
-	currentUpdateData->PlayingEffectPositions.Add(position);
+	auto handle = nextInternalHandle;
+	
+	internalHandle2EfkHandle.Add(handle, -1);
+
+	EffekseerUpdateData_Command cmd;
+	cmd.Type = EffekseerUpdateData_CommandType::Play;
+	cmd.Effect = p;
+	cmd.ID = handle;
+	cmd.Position = position;
+	
+	currentUpdateData->Commands.Add(cmd);
+
+	nextInternalHandle++;
+
+	FEffekseerHandle ehandle;
+	ehandle.Effect = effect;
+	ehandle.ID = handle;
+	ehandle.System = this;
+
+	return ehandle;
+}
+
+void UEffekseerSystemComponent::SetEffectPosition(FEffekseerHandle handle, FVector position)
+{
+	if (handle.Effect == nullptr) return;
+
+	EffekseerUpdateData_Command cmd;
+	cmd.Type = EffekseerUpdateData_CommandType::SetP;
+	cmd.Effect = handle.Effect;
+	cmd.ID = handle.ID;
+	cmd.Position = position;
+
+	currentUpdateData->Commands.Add(cmd);
 }

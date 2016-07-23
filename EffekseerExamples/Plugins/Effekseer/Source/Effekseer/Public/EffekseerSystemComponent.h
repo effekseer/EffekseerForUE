@@ -4,14 +4,36 @@
 #include "Components/PrimitiveComponent.h"
 
 #include "EffekseerEffect.h"
+#include "EffekseerHandle.h"
 
 #include "EffekseerSystemComponent.generated.h"
+
+enum class EffekseerUpdateData_CommandType
+{
+	Play,
+	SetP,
+	SetR,
+	SetS,
+	Stop,
+	StopRoot,
+};
+
+class EffekseerUpdateData_Command
+{
+public:
+	int32_t	ID = -1;
+	void*	Effect = nullptr;
+	FVector	Position;
+	FVector	Rotation;
+	FVector	Scale;
+
+	EffekseerUpdateData_CommandType	Type;
+};
 
 class EffekseerUpdateData
 {
 public:
-	TArray<void*>				PlayingEffects;
-	TArray<FVector>				PlayingEffectPositions;
+	TArray<EffekseerUpdateData_Command>	Commands;
 
 	TMap<UTexture2D*, UMaterialInstanceDynamic*> OpaqueDynamicMaterials;
 	TMap<UTexture2D*, UMaterialInstanceDynamic*> TranslucentDynamicMaterials;
@@ -33,6 +55,8 @@ class EFFEKSEER_API UEffekseerSystemComponent : public UPrimitiveComponent
 private:
 	FPrimitiveSceneProxy*	sceneProxy = nullptr;
 	EffekseerUpdateData*	currentUpdateData = nullptr;
+	int32_t					nextInternalHandle = 0;
+	TMap<int32_t, int32_t>	internalHandle2EfkHandle;
 
 public:
 	UEffekseerSystemComponent();
@@ -80,5 +104,8 @@ public:
 	TMap<UTexture2D*, UMaterialInstanceDynamic*> ModulateDynamicMaterials;
 
 	UFUNCTION(BlueprintCallable, Category = "Control")
-	void Play(UEffekseerEffect* effect, FVector position);
+	FEffekseerHandle Play(UEffekseerEffect* effect, FVector position);
+
+	UFUNCTION(BlueprintCallable, Category = "Control")
+	void SetEffectPosition(FEffekseerHandle handle, FVector position);
 };
