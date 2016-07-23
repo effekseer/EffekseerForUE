@@ -24,4 +24,10 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Effect)
 	UEffekseerEffect* Effect = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Effect)
+	AActor* System = nullptr;
+
+	UFUNCTION(BlueprintCallable, Category = "Control")
+	void Play();
 };

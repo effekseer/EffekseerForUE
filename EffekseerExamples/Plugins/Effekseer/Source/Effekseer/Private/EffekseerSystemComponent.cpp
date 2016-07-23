@@ -113,7 +113,7 @@ public:
 		Result.bMaskedRelevance = false;
 		Result.bSeparateTranslucencyRelevance = true;
 		Result.bNormalTranslucencyRelevance = true;
-
+		
 		return Result;
 	}
 	virtual uint32 GetMemoryFootprint() const { return sizeof(*this) + GetAllocatedSize(); }
@@ -248,7 +248,10 @@ int32 UEffekseerSystemComponent::GetNumMaterials()const
 
 FBoxSphereBounds UEffekseerSystemComponent::CalcBounds(const FTransform& LocalToWorld) const
 {
-	return FBoxSphereBounds(LocalToWorld.GetLocation(), FVector(10, 10, 10), 10);
+	// TODO ç≈ìKÇ»êîílÇ…Ç∑ÇÈ
+	float infinity = FLT_MAX / 100.0f;
+
+	return FBoxSphereBounds(LocalToWorld.GetLocation(), FVector(infinity, infinity, infinity), infinity);
 }
 
 void UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVector position)
