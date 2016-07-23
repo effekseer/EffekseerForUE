@@ -19,6 +19,8 @@ public:
 	TMap<UTexture2D*, UMaterialInstanceDynamic*> SubtractiveDynamicMaterials;
 	TMap<UTexture2D*, UMaterialInstanceDynamic*> ModulateDynamicMaterials;
 
+	float	DeltaTime = 0;
+
 	EffekseerUpdateData();
 	virtual ~EffekseerUpdateData();
 };

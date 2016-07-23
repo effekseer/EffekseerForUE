@@ -33,6 +33,8 @@ private:
 	TMap<UTexture2D*, UMaterialInstanceDynamic*> SubtractiveDynamicMaterials;
 	TMap<UTexture2D*, UMaterialInstanceDynamic*> ModulateDynamicMaterials;
 
+	float	Time = 0;
+
 public:
 	FEffekseerSystemSceneProxy(const UEffekseerSystemComponent* InComponent)
 		: FPrimitiveSceneProxy(InComponent)
@@ -138,10 +140,15 @@ public:
 			//printf("%f,%f,%f\n", position.X, position.Y, position.Z);
 		}
 
+		Time += updateData->DeltaTime;
+
+		auto frame = (int32_t)(Time * 60);
+		Time -= frame * (1.0f / 60.0f);
+
 		{
 			if (effekseerManager != nullptr)
 			{
-				effekseerManager->Update();
+				effekseerManager->Update(frame);
 			}
 		}
 		
@@ -192,6 +199,8 @@ void UEffekseerSystemComponent::TickComponent(float DeltaTime, ELevelTick TickTy
 	currentUpdateData->AdditiveDynamicMaterials = AdditiveDynamicMaterials;
 	currentUpdateData->SubtractiveDynamicMaterials = SubtractiveDynamicMaterials;
 	currentUpdateData->ModulateDynamicMaterials = ModulateDynamicMaterials;
+
+	currentUpdateData->DeltaTime = DeltaTime;
 
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 }
