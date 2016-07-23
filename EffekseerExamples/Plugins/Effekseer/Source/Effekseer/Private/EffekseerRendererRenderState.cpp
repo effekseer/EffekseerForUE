@@ -16,6 +16,6 @@ namespace EffekseerRendererUE4
 
 	void RenderState::Update(bool forced)
 	{
-
+		m_active = m_next;
 	}
 }

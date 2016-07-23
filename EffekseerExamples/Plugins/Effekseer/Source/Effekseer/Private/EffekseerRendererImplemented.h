@@ -338,7 +338,7 @@ namespace EffekseerRendererUE4
 
 		FMatrix					m_localToWorld;
 		int32_t					m_viewIndex = 0;
-		TMap<UTexture2D*, UMaterialInstanceDynamic*>*	m_materials = nullptr;
+		TMap<UTexture2D*, UMaterialInstanceDynamic*>*	m_materials[5];
 		FMeshElementCollector*	m_meshElementCollector = nullptr;
 
 		EffekseerRenderer::StandardRenderer<RendererImplemented, Shader, void*, Vertex, VertexDistortion>*	m_standardRenderer = nullptr;
@@ -511,7 +511,7 @@ namespace EffekseerRendererUE4
 
 		void SetLocalToWorld(FMatrix localToWorld);
 		void SetViewIndex(int32_t viewIndex);
-		void SetMaterials(const TMap<UTexture2D*, UMaterialInstanceDynamic*>* materials);
+		void SetMaterials(const TMap<UTexture2D*, UMaterialInstanceDynamic*>* materials, int32_t index);
 		void SetMeshElementCollector(FMeshElementCollector* meshElementCollector);
 
 		virtual int GetRef() { return ::Effekseer::ReferenceObject::GetRef(); }

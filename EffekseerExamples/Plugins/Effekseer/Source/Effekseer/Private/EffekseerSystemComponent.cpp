@@ -26,7 +26,13 @@ private:
 	static const int32_t	particleMax = 10000;
 	::Effekseer::Manager*	effekseerManager = nullptr;
 	::EffekseerRendererUE4::RendererImplemented*	effekseerRenderer = nullptr;
-	TMap<UTexture2D*, UMaterialInstanceDynamic*>	DynamicMaterials;
+	
+	TMap<UTexture2D*, UMaterialInstanceDynamic*> OpaqueDynamicMaterials;
+	TMap<UTexture2D*, UMaterialInstanceDynamic*> TranslucentDynamicMaterials;
+	TMap<UTexture2D*, UMaterialInstanceDynamic*> AdditiveDynamicMaterials;
+	TMap<UTexture2D*, UMaterialInstanceDynamic*> SubtractiveDynamicMaterials;
+	TMap<UTexture2D*, UMaterialInstanceDynamic*> ModulateDynamicMaterials;
+
 public:
 	FEffekseerSystemSceneProxy(const UEffekseerSystemComponent* InComponent)
 		: FPrimitiveSceneProxy(InComponent)
@@ -69,7 +75,12 @@ public:
 			if (!(VisibilityMap & (1 << ViewIndex))) continue;
 
 			effekseerRenderer->SetLocalToWorld(GetLocalToWorld());
-			effekseerRenderer->SetMaterials(&DynamicMaterials);
+			effekseerRenderer->SetMaterials(&OpaqueDynamicMaterials, 0);
+			effekseerRenderer->SetMaterials(&TranslucentDynamicMaterials, 1);
+			effekseerRenderer->SetMaterials(&AdditiveDynamicMaterials, 2);
+			effekseerRenderer->SetMaterials(&SubtractiveDynamicMaterials, 3);
+			effekseerRenderer->SetMaterials(&ModulateDynamicMaterials, 4);
+
 			effekseerRenderer->SetMeshElementCollector(&Collector);
 			effekseerRenderer->SetViewIndex(ViewIndex);
 
@@ -110,7 +121,11 @@ public:
 	{
 		//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, "Start : UpdateData");
 
-		DynamicMaterials = updateData->DynamicMaterials;
+		OpaqueDynamicMaterials = updateData->OpaqueDynamicMaterials;
+		TranslucentDynamicMaterials = updateData->TranslucentDynamicMaterials;
+		AdditiveDynamicMaterials = updateData->AdditiveDynamicMaterials;
+		SubtractiveDynamicMaterials = updateData->SubtractiveDynamicMaterials;
+		ModulateDynamicMaterials = updateData->ModulateDynamicMaterials;
 
 		// TODO いずれ高速に処理できる方法を考える。
 		
@@ -171,7 +186,12 @@ void UEffekseerSystemComponent::TickComponent(float DeltaTime, ELevelTick TickTy
 
 	sp->UpdateData(currentUpdateData);
 	currentUpdateData = new EffekseerUpdateData();
-	currentUpdateData->DynamicMaterials = DynamicMaterials;
+
+	currentUpdateData->OpaqueDynamicMaterials = OpaqueDynamicMaterials;
+	currentUpdateData->TranslucentDynamicMaterials = TranslucentDynamicMaterials;
+	currentUpdateData->AdditiveDynamicMaterials = AdditiveDynamicMaterials;
+	currentUpdateData->SubtractiveDynamicMaterials = SubtractiveDynamicMaterials;
+	currentUpdateData->ModulateDynamicMaterials = ModulateDynamicMaterials;
 
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 }
@@ -185,34 +205,35 @@ FPrimitiveSceneProxy* UEffekseerSystemComponent::CreateSceneProxy()
 
 UMaterialInterface* UEffekseerSystemComponent::GetMaterial(int32 ElementIndex) const
 {
-	if (ElementIndex == 0)
-	{
-		return Material;
-	}
-	else
-	{
-		return nullptr;
-	}
+	if (ElementIndex == 0) 	return OpaqueMaterial;
+	if (ElementIndex == 1) 	return TranslucentMaterial;
+	if (ElementIndex == 2) 	return AdditiveMaterial;
+	if (ElementIndex == 3) 	return SubtractiveMaterial;
+	if (ElementIndex == 4) 	return ModulateMaterial;
+
+	
+	return nullptr;
 }
 
 void UEffekseerSystemComponent::GetUsedMaterials(TArray<UMaterialInterface*>& OutMaterials) const
 {
-	if (Material)
-	{
-		OutMaterials.Add(Material);
-	}
+	if (OpaqueMaterial) OutMaterials.Add(OpaqueMaterial);
+	if (TranslucentMaterial) OutMaterials.Add(TranslucentMaterial);
+	if (AdditiveMaterial) OutMaterials.Add(AdditiveMaterial);
+	if (SubtractiveMaterial) OutMaterials.Add(SubtractiveMaterial);
+	if (ModulateMaterial) OutMaterials.Add(ModulateMaterial);
 }
 
 int32 UEffekseerSystemComponent::GetNumMaterials()const
 {
-	if (Material)
-	{
-		return 1;
-	}
-	else
-	{
-		return 0;
-	}
+	auto ret = 0;
+	if (OpaqueMaterial) ret++;
+	if (TranslucentMaterial) ret++;
+	if (AdditiveMaterial) ret++;
+	if (SubtractiveMaterial) ret++;
+	if (ModulateMaterial) ret++;
+
+	return ret;
 }
 
 
@@ -229,27 +250,50 @@ void UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVector position)
 	// システムからの相対位置に変換する。
 	position -= this->RelativeLocation;
 
-	if (!DynamicMaterials.Contains(nullptr))
-	{
-		if (Material != nullptr)
-		{
-			auto dynamicMaterial = UMaterialInstanceDynamic::Create(Material, this);
-			DynamicMaterials.Add(nullptr, dynamicMaterial);
-		}
-	}
+	// 動的にマテリアルを生成する。
+	UMaterialInstanceConstant* _mats[5];
+	TMap<UTexture2D*, UMaterialInstanceDynamic*>* _matss[5];
 
-	for (auto& tex : effect->ColorTextures)
+	_mats[0] = OpaqueMaterial;
+	_mats[1] = TranslucentMaterial;
+	_mats[2] = AdditiveMaterial;
+	_mats[3] = SubtractiveMaterial;
+	_mats[4] = ModulateMaterial;
+	
+	_matss[0] = &OpaqueDynamicMaterials;
+	_matss[1] = &TranslucentDynamicMaterials;
+	_matss[2] = &AdditiveDynamicMaterials;
+	_matss[3] = &SubtractiveDynamicMaterials;
+	_matss[4] = &ModulateDynamicMaterials;
+
+	for(int i = 0; i < 5; i++)
 	{
-		if (!DynamicMaterials.Contains(tex))
+		auto& mat = _mats[i];
+		auto& mats = *_matss[i];
+
+		if (!mats.Contains(nullptr))
 		{
-			if (Material != nullptr)
+			if (mat != nullptr)
 			{
-				auto dynamicMaterial = UMaterialInstanceDynamic::Create(Material, this);
-				dynamicMaterial->SetTextureParameterValue(TEXT("ColorTexture"), tex);
-				DynamicMaterials.Add(tex, dynamicMaterial);
+				auto dynamicMaterial = UMaterialInstanceDynamic::Create(mat, this);
+				mats.Add(nullptr, dynamicMaterial);
+			}
+		}
+
+		for (auto& tex : effect->ColorTextures)
+		{
+			if (!mats.Contains(tex))
+			{
+				if (mat != nullptr)
+				{
+					auto dynamicMaterial = UMaterialInstanceDynamic::Create(mat, this);
+					dynamicMaterial->SetTextureParameterValue(TEXT("ColorTexture"), tex);
+					mats.Add(tex, dynamicMaterial);
+				}
 			}
 		}
 	}
+
 
 	effect->ReloadIfRequired();
 

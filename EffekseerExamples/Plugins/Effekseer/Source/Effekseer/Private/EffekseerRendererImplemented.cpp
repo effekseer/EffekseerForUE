@@ -159,7 +159,10 @@ namespace EffekseerRendererUE4
 
 	RendererImplemented::RendererImplemented()
 	{
-
+		for (int i = 0; i < 5; i++)
+		{
+			m_materials[i] = nullptr;
+		}
 	}
 	
 	RendererImplemented::~RendererImplemented()
@@ -469,10 +472,12 @@ namespace EffekseerRendererUE4
 		//
 		//meshBuilder.AddTriangle(0, 1, 2);
 
+		int32_t blendIndex = (int32_t)m_renderState->GetActiveState().AlphaBlend;
+
 		UMaterialInstanceDynamic* mat = nullptr;
-		if (m_materials->Contains((UTexture2D*)m_textures[0]))
+		if (m_materials[blendIndex]->Contains((UTexture2D*)m_textures[0]))
 		{
-			mat = (*m_materials)[(UTexture2D*)m_textures[0]];
+			mat = (*m_materials[blendIndex])[(UTexture2D*)m_textures[0]];
 		}
 
 		if (mat != nullptr)
@@ -521,9 +526,9 @@ namespace EffekseerRendererUE4
 		m_viewIndex = viewIndex;
 	}
 
-	void RendererImplemented::SetMaterials(const TMap<UTexture2D*, UMaterialInstanceDynamic*>* materials)
+	void RendererImplemented::SetMaterials(const TMap<UTexture2D*, UMaterialInstanceDynamic*>* materials, int32_t index)
 	{
-		m_materials = (TMap<UTexture2D*, UMaterialInstanceDynamic*>*)materials;
+		m_materials[index] = (TMap<UTexture2D*, UMaterialInstanceDynamic*>*)materials;
 	}
 
 	void RendererImplemented::SetMeshElementCollector(FMeshElementCollector* meshElementCollector)

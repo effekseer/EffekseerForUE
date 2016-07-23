@@ -12,7 +12,12 @@ class EffekseerUpdateData
 public:
 	TArray<void*>				PlayingEffects;
 	TArray<FVector>				PlayingEffectPositions;
-	TMap<UTexture2D*, UMaterialInstanceDynamic*> DynamicMaterials;
+
+	TMap<UTexture2D*, UMaterialInstanceDynamic*> OpaqueDynamicMaterials;
+	TMap<UTexture2D*, UMaterialInstanceDynamic*> TranslucentDynamicMaterials;
+	TMap<UTexture2D*, UMaterialInstanceDynamic*> AdditiveDynamicMaterials;
+	TMap<UTexture2D*, UMaterialInstanceDynamic*> SubtractiveDynamicMaterials;
+	TMap<UTexture2D*, UMaterialInstanceDynamic*> ModulateDynamicMaterials;
 
 	EffekseerUpdateData();
 	virtual ~EffekseerUpdateData();
@@ -43,10 +48,34 @@ public:
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Material)
-	UMaterialInstanceConstant* Material = nullptr;
+	UMaterialInstanceConstant* OpaqueMaterial = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Material)
+	UMaterialInstanceConstant* TranslucentMaterial = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Material)
+	UMaterialInstanceConstant* AdditiveMaterial = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Material)
+	UMaterialInstanceConstant* SubtractiveMaterial = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Material)
+	UMaterialInstanceConstant* ModulateMaterial = nullptr;
 
 	UPROPERTY(Transient)
-	TMap<UTexture2D*, UMaterialInstanceDynamic*> DynamicMaterials;
+	TMap<UTexture2D*, UMaterialInstanceDynamic*> OpaqueDynamicMaterials;
+
+	UPROPERTY(Transient)
+	TMap<UTexture2D*, UMaterialInstanceDynamic*> TranslucentDynamicMaterials;
+
+	UPROPERTY(Transient)
+	TMap<UTexture2D*, UMaterialInstanceDynamic*> AdditiveDynamicMaterials;
+
+	UPROPERTY(Transient)
+	TMap<UTexture2D*, UMaterialInstanceDynamic*> SubtractiveDynamicMaterials;
+
+	UPROPERTY(Transient)
+	TMap<UTexture2D*, UMaterialInstanceDynamic*> ModulateDynamicMaterials;
 
 	UFUNCTION(BlueprintCallable, Category = "Control")
 	void Play(UEffekseerEffect* effect, FVector position);
