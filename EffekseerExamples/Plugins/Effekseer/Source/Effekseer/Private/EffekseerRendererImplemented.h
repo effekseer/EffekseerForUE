@@ -318,11 +318,9 @@ namespace EffekseerRendererUE4
 
 	class RendererImplemented
 		: public ::EffekseerRenderer::Renderer
+		, public ::Effekseer::ReferenceObject
 	{
 	protected:
-		/* 参照カウンタ */
-		int32_t					m_reference = 1;
-
 		::Effekseer::Vector3D	m_lightDirection;
 		::Effekseer::Color		m_lightColor;
 		::Effekseer::Color		m_lightAmbient;
@@ -358,18 +356,6 @@ namespace EffekseerRendererUE4
 		@brief	初期化
 		*/
 		bool Initialize();
-
-		/**
-		@brief	参照カウンタを加算する。
-		@return	実行後の参照カウンタの値
-		*/
-		int AddRef();
-
-		/**
-		@brief	参照カウンタを減算する。
-		@return	実行後の参照カウンタの値
-		*/
-		int Release();
 
 		/**
 		@brief	このインスタンスを破棄する。
@@ -527,6 +513,10 @@ namespace EffekseerRendererUE4
 		void SetViewIndex(int32_t viewIndex);
 		void SetMaterials(const TMap<UTexture2D*, UMaterialInstanceDynamic*>* materials);
 		void SetMeshElementCollector(FMeshElementCollector* meshElementCollector);
+
+		virtual int GetRef() { return ::Effekseer::ReferenceObject::GetRef(); }
+		virtual int AddRef() { return ::Effekseer::ReferenceObject::AddRef(); }
+		virtual int Release() { return ::Effekseer::ReferenceObject::Release(); }
 	};
 
 }

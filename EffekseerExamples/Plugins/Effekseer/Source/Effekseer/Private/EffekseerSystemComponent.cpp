@@ -226,6 +226,9 @@ void UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVector position)
 	if (effect == nullptr) return;
 	if (effect->GetNativePtr() == nullptr) return;
 
+	// システムからの相対位置に変換する。
+	position -= this->RelativeLocation;
+
 	if (!DynamicMaterials.Contains(nullptr))
 	{
 		if (Material != nullptr)
@@ -247,6 +250,8 @@ void UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVector position)
 			}
 		}
 	}
+
+	effect->ReloadIfRequired();
 
 	auto p = (::Effekseer::Effect*)effect->GetNativePtr();
 

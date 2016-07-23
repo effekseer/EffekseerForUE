@@ -120,6 +120,8 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 		rootPath = parentPath;
 	}
 	
+	loadedScale = Scale;
+
 	auto effect = ::Effekseer::Effect::Create(setting, (void*)data, size, Scale, rootPath);
 	setting->Release();
 
@@ -153,10 +155,18 @@ void UEffekseerEffect::BeginDestroy()
 	Super::BeginDestroy();
 }
 
+void UEffekseerEffect::ReloadIfRequired()
+{
+	if (Scale != loadedScale)
+	{
+		auto path = GetPathName();
+		LoadEffect(buffer.GetData(), buffer.Num(), *path);
+	}
+}
+
 void UEffekseerEffect::AssignResources()
 {
 	auto path = GetPathName();
-
 	LoadEffect(buffer.GetData(), buffer.Num(), *path);
 }
 

@@ -13,6 +13,9 @@ private:
 	void*			effectPtr = nullptr;
 	TArray<uint8>	buffer;
 
+	// ロード時に設定されていたスケール
+	float			loadedScale = 1.0f;
+
 	void LoadEffect(const uint8_t* data, int32_t size, const TCHAR* path);
 	void ReleaseEffect();
 public:
@@ -35,6 +38,7 @@ public:
 	class UAssetImportData* AssetImportData;
 #endif
 
+	void ReloadIfRequired();
 	void AssignResources();
 
 	void* GetNativePtr() { return effectPtr; }

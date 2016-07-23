@@ -187,23 +187,6 @@ namespace EffekseerRendererUE4
 		return true;
 	}
 
-	int RendererImplemented::AddRef()
-	{
-		m_reference++;
-		return m_reference;
-	}
-
-	int RendererImplemented::Release()
-	{
-		m_reference--;
-		int count = m_reference;
-		if (count == 0)
-		{
-			delete this;
-		}
-		return count;
-	}
-
 	void RendererImplemented::Destory()
 	{
 		Release();
