@@ -4,6 +4,7 @@
 #include "Components/PrimitiveComponent.h"
 
 #include "EffekseerEffect.h"
+#include "EffekseerHandle.h"
 
 #include "EffekseerEmitterComponent.generated.h"
 
@@ -29,5 +30,5 @@ public:
 	AActor* System = nullptr;
 
 	UFUNCTION(BlueprintCallable, Category = "Control")
-	void Play();
+	FEffekseerHandle Play();
 };

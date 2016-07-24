@@ -21,7 +21,7 @@ void UEffekseerEmitterComponent::TickComponent(float DeltaTime, ELevelTick TickT
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 }
 
-void UEffekseerEmitterComponent::Play()
+FEffekseerHandle UEffekseerEmitterComponent::Play()
 {
 	UEffekseerSystemComponent* system_ = nullptr;
 
@@ -62,9 +62,9 @@ void UEffekseerEmitterComponent::Play()
 	}
 LoopExit:;
 
-	if (system_ == nullptr) return;
+	if (system_ == nullptr) return FEffekseerHandle();
 
 	auto loc = GetComponentLocation();
 	
-	system_->Play(Effect, loc);
+	return system_->Play(Effect, loc);
 }

@@ -7,7 +7,7 @@
 
 class UEffekseerSystemComponent;
 
-USTRUCT()
+USTRUCT(BlueprintType)
 struct EFFEKSEER_API FEffekseerHandle
 {
 	GENERATED_BODY()
@@ -15,7 +15,7 @@ struct EFFEKSEER_API FEffekseerHandle
 	UPROPERTY()
 	UEffekseerEffect* Effect = nullptr;
 
-	UPROPERTY()
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	UEffekseerSystemComponent* System = nullptr;
 
 	UPROPERTY()

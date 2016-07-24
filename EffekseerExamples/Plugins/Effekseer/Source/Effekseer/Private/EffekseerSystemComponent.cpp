@@ -15,6 +15,8 @@ EffekseerUpdateData::~EffekseerUpdateData()
 {
 	for (auto c : Commands)
 	{
+		if (c.Effect == nullptr) continue;
+
 		auto p_ = (::Effekseer::Effect*)c.Effect;
 		p_->Release();
 	}
@@ -354,7 +356,6 @@ void UEffekseerSystemComponent::SetEffectPosition(FEffekseerHandle handle, FVect
 
 	EffekseerUpdateData_Command cmd;
 	cmd.Type = EffekseerUpdateData_CommandType::SetP;
-	cmd.Effect = handle.Effect;
 	cmd.ID = handle.ID;
 	cmd.Position = position;
 
