@@ -2,10 +2,15 @@
 #pragma once
 
 #include "Factories/Factory.h"
+
+#if WITH_EDITOR
+#include "Editor/UnrealEd/Public/EditorReimportHandler.h"
+#endif
+
 #include "EffekseerEffectFactory.generated.h"
 
 UCLASS()
-class UEffekseerEffectFactory : public UFactory
+class UEffekseerEffectFactory : public UFactory, public FReimportHandler
 {
 	GENERATED_UCLASS_BODY()
 
@@ -23,5 +28,9 @@ class UEffekseerEffectFactory : public UFactory
 		const uint8*& Buffer,
 		const uint8* BufferEnd,
 		FFeedbackContext* Warn) override;
+
+	virtual bool CanReimport(UObject* Obj, TArray<FString>& OutFilenames) override;
+	virtual void SetReimportPaths(UObject* Obj, const TArray<FString>& NewReimportPaths) override;
+	virtual EReimportResult::Type Reimport(UObject* Obj) override;
 
 };
