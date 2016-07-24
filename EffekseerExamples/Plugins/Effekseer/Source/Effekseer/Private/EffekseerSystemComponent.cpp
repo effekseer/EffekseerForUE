@@ -39,11 +39,14 @@ private:
 
 	TMap<int, int>	internalHandle2EfkHandle;
 
+	// この実装でいいのだろうか？
+	::Effekseer::CriticalSection criticalSection;
+	TArray<int32_t> removedHandles;
+
 public:
 	FEffekseerSystemSceneProxy(const UEffekseerSystemComponent* InComponent)
 		: FPrimitiveSceneProxy(InComponent)
 	{
-		//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, "Start : Construct");
 		effekseerManager = ::Effekseer::Manager::Create(particleMax);
 		effekseerRenderer = ::EffekseerRendererUE4::RendererImplemented::Create();
 		effekseerRenderer->Initialize();
@@ -52,13 +55,10 @@ public:
 		effekseerManager->SetRibbonRenderer(effekseerRenderer->CreateRibbonRenderer());
 		effekseerManager->SetRingRenderer(effekseerRenderer->CreateRingRenderer());
 		effekseerManager->SetTrackRenderer(effekseerRenderer->CreateTrackRenderer());
-
-		//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, "End : Construct");
 	}
 
 	virtual ~FEffekseerSystemSceneProxy()
 	{
-	//	GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, "Start : Destructer");
 		if (effekseerManager != nullptr)
 		{
 			effekseerManager->Destroy();
@@ -70,8 +70,6 @@ public:
 			effekseerRenderer->Destory();
 			effekseerRenderer = nullptr;
 		}
-
-	//	GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, "End : Destructer");
 	}
 
 	virtual void GetDynamicMeshElements(const TArray<const FSceneView*>& Views, const FSceneViewFamily& ViewFamily, uint32 VisibilityMap, FMeshElementCollector& Collector) const override
@@ -125,8 +123,6 @@ public:
 
 	void UpdateData_RenderThread(EffekseerUpdateData* updateData)
 	{
-		//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, "Start : UpdateData");
-
 		OpaqueDynamicMaterials = updateData->OpaqueDynamicMaterials;
 		TranslucentDynamicMaterials = updateData->TranslucentDynamicMaterials;
 		AdditiveDynamicMaterials = updateData->AdditiveDynamicMaterials;
@@ -135,6 +131,7 @@ public:
 
 		// TODO いずれ高速に処理できる方法を考える。
 		
+		// Execute commands.
 		for (auto i = 0; i < updateData->Commands.Num(); i++)
 		{
 			auto& cmd = updateData->Commands[i];
@@ -149,12 +146,16 @@ public:
 
 			if (cmd.Type == EffekseerUpdateData_CommandType::SetP)
 			{
-				auto eid = internalHandle2EfkHandle[cmd.ID];
-				auto position = updateData->Commands[i].Position;
-				effekseerManager->SetLocation(eid, position.X, position.Z, position.Y);
+				if (internalHandle2EfkHandle.Contains(cmd.ID))
+				{
+					auto eid = internalHandle2EfkHandle[cmd.ID];
+					auto position = updateData->Commands[i].Position;
+					effekseerManager->SetLocation(eid, position.X, position.Z, position.Y);
+				}
 			}
 		}
 
+		// Update effects.
 		Time += updateData->DeltaTime;
 
 		auto frame = (int32_t)(Time * 60);
@@ -167,8 +168,29 @@ public:
 			}
 		}
 		
+		// Check existence.
+		{
+			criticalSection.Enter();
+
+			TArray<int32_t> removingHandle;
+			for (auto& kv : internalHandle2EfkHandle)
+			{
+				if (!effekseerManager->Exists(kv.Value))
+				{
+					removingHandle.Add(kv.Key);
+					removedHandles.Add(kv.Key);
+				}
+			}
+
+			for (auto& k : removingHandle)
+			{
+				internalHandle2EfkHandle.Remove(k);
+			}
+
+			criticalSection.Leave();
+		}
+
 		delete updateData;
-		//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, "End : UpdateData");
 	}
 
 	// This function can be called out of renderThread.
@@ -182,6 +204,15 @@ public:
 				Proxy->UpdateData_RenderThread(Data);
 			}
 		);
+	}
+
+	TArray<int32_t> PopRemovedHandles()
+	{
+		criticalSection.Enter();
+		auto ret = removedHandles;
+		removedHandles.Reset();
+		criticalSection.Leave();
+		return ret;
 	}
 };
 
@@ -216,6 +247,12 @@ void UEffekseerSystemComponent::TickComponent(float DeltaTime, ELevelTick TickTy
 	currentUpdateData->ModulateDynamicMaterials = ModulateDynamicMaterials;
 
 	currentUpdateData->DeltaTime = DeltaTime;
+
+	auto removedHandles = sp->PopRemovedHandles();
+	for (auto& h : removedHandles)
+	{
+		internalHandle2EfkHandle.Remove(h);
+	}
 
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
 }
@@ -360,4 +397,10 @@ void UEffekseerSystemComponent::SetEffectPosition(FEffekseerHandle handle, FVect
 	cmd.Position = position;
 
 	currentUpdateData->Commands.Add(cmd);
+}
+
+bool UEffekseerSystemComponent::Exists(FEffekseerHandle handle)
+{
+	if (handle.Effect == nullptr) return false;
+	return internalHandle2EfkHandle.Contains(handle.ID);
 }

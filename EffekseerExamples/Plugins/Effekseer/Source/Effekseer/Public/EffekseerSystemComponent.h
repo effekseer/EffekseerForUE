@@ -108,4 +108,7 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Control")
 	void SetEffectPosition(FEffekseerHandle handle, FVector position);
+
+	UFUNCTION(BlueprintCallable, Category = "Control")
+	bool Exists(FEffekseerHandle handle);
 };
