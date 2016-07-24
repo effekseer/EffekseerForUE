@@ -174,11 +174,20 @@ void UEffekseerEffect::Serialize(FArchive& Ar)
 {
 	Super::Serialize(Ar);
 
-	//const int32 myVersion = 1;
-	//const FGuid myGUID(123, 444, 563, 464);
-	//FCustomVersionRegistration registerMyAssetCustomVersion(myGUID, myVersion, TEXT("AssetVersion"));
-	//
-	//Ar.UsingCustomVersion(myGUID);
+	const int32_t Version = 1;
+	const FGuid GUID(0x11334A12, 0x2E554231, 0xA36791A3, 0xC5A1082C);
+	static FCustomVersionRegistration GRegisterPaperCustomVersion(GUID, Version, TEXT("EffekseerVer"));
+	Ar.UsingCustomVersion(GUID);
+
+	/*
+#if WITH_EDITORONLY_DATA
+	if (Ar.IsLoading() && (Ar.UE4Ver() < VER_UE4_ASSET_IMPORT_DATA_AS_JSON) && (AssetImportData == nullptr))
+	{
+		// AssetImportData should always be valid
+		AssetImportData = NewObject<UAssetImportData>(this, TEXT("AssetImportData"));
+	}
+#endif
+	*/
 
 	if (Ar.IsSaving() || Ar.IsLoading())
 	{

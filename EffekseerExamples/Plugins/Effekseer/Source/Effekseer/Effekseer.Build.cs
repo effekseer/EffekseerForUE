@@ -40,6 +40,7 @@ namespace UnrealBuildTool.Rules
 					"RHI",
 					"RenderCore",
 					"ShaderCore",
+					"Slate",
 				}
 				);
 

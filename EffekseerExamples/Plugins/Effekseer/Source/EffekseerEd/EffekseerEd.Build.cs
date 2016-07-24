@@ -29,7 +29,7 @@ namespace UnrealBuildTool.Rules
 			PrivateDependencyModuleNames.AddRange(
 				new string[]
 				{
-					"Core", "CoreUObject", "Engine", "UnrealEd", "Effekseer",
+					"Core", "CoreUObject", "Engine", "UnrealEd", "Effekseer", "AssetTools", "Slate",
 					// ... add private dependencies that you statically link with here ...
 				}
 				);

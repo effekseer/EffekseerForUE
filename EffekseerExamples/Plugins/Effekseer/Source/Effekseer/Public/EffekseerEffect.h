@@ -34,7 +34,7 @@ public:
 
 	// TODO Reimport
 #if WITH_EDITORONLY_DATA
-	UPROPERTY(EditAnywhere, Instanced, Category = Reimport)
+	UPROPERTY(Category = ImportSettings, VisibleAnywhere)
 	class UAssetImportData* AssetImportData;
 #endif
 

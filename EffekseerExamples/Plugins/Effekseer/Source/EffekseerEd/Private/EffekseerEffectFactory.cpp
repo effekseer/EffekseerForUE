@@ -41,7 +41,8 @@ UObject* UEffekseerEffectFactory::FactoryCreateBinary(
 
 		if (!asset->AssetImportData)
 		{
-			asset->AssetImportData = NewObject<UAssetImportData>(this, TEXT("AssetImportData"));
+			//asset->AssetImportData = NewObject<UAssetImportData>(this, TEXT("AssetImportData"));
+			asset->AssetImportData = ConstructObject<UAssetImportData>(UAssetImportData::StaticClass(), asset);
 		}
 
 		asset->AssetImportData->Update(CurrentFilename);
