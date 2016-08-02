@@ -173,8 +173,9 @@ namespace EffekseerRendererUE4
 		ES_SAFE_DELETE(m_vertexBuffer);
 	}
 
-	bool RendererImplemented::Initialize()
+	bool RendererImplemented::Initialize(int32_t squareMaxCount)
 	{
+		m_squareMaxCount = squareMaxCount;
 		m_renderState = new RenderState();
 		m_vertexBuffer = new VertexBuffer(sizeof(Vertex) * m_squareMaxCount * 4, true);
 		m_stanShader = new Shader();

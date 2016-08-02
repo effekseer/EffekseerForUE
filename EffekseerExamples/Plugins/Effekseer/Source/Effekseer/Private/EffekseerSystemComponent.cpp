@@ -49,7 +49,7 @@ public:
 	{
 		effekseerManager = ::Effekseer::Manager::Create(particleMax);
 		effekseerRenderer = ::EffekseerRendererUE4::RendererImplemented::Create();
-		effekseerRenderer->Initialize();
+		effekseerRenderer->Initialize(particleMax);
 
 		effekseerManager->SetSpriteRenderer(effekseerRenderer->CreateSpriteRenderer());
 		effekseerManager->SetRibbonRenderer(effekseerRenderer->CreateRibbonRenderer());

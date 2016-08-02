@@ -355,7 +355,7 @@ namespace EffekseerRendererUE4
 		/**
 		@brief	初期化
 		*/
-		bool Initialize();
+		bool Initialize(int32_t squareMaxCount);
 
 		/**
 		@brief	このインスタンスを破棄する。
