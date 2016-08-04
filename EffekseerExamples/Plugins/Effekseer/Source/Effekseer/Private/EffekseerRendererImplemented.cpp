@@ -436,6 +436,32 @@ namespace EffekseerRendererUE4
 
 	void RendererImplemented::DrawSprites(int32_t spriteCount, int32_t vertexOffset)
 	{
+		// 1‚Â‚ÌƒŠƒ“ƒO”»’è
+		auto stanMat = ((Effekseer::Matrix44*)m_stanShader->GetVertexConstantBuffer())[0];
+		auto cameraMat = m_camera;
+		Effekseer::Matrix44 ringMat;
+
+		bool isSingleRing = false;
+
+		for (int32_t r = 0; r < 4; r++)
+		{
+			for (int32_t c = 0; c < 4; c++)
+			{
+				if (stanMat.Values[r][c] != cameraMat.Values[r][c])
+				{
+					isSingleRing = true;
+					goto Exit;
+				}
+			}
+		}
+	Exit:;
+
+		if (isSingleRing)
+		{
+			Effekseer::Matrix44 inv;
+			Effekseer::Matrix44::Mul(ringMat, stanMat, Effekseer::Matrix44::Inverse(inv, cameraMat));
+		}
+
 		//auto triangles = vertexOffset / 4 * 2;
 		//glDrawElements(GL_TRIANGLES, spriteCount * 6, GL_UNSIGNED_SHORT, (void*)(triangles * 3 * sizeof(GLushort)));
 
@@ -447,6 +473,16 @@ namespace EffekseerRendererUE4
 		for (int32_t vi = vertexOffset; vi < vertexOffset + spriteCount * 4; vi++)
 		{
 			auto& v = vs[vi];
+
+			if (isSingleRing)
+			{
+				Effekseer::Matrix44 trans;
+				trans.Translation(v.Pos.X, v.Pos.Y, v.Pos.Z);
+				Effekseer::Matrix44::Mul(trans, trans, ringMat);
+				v.Pos.X = trans.Values[3][0];
+				v.Pos.Y = trans.Values[3][1];
+				v.Pos.Z = trans.Values[3][2];
+			}
 
 			//char temp[200];
 			//sprintf_s<200>(temp, "%f,%f,%f,%f,%f,%d,%d,%d,%d", v.Pos.X, v.Pos.Y, v.Pos.Z, v.UV[0], v.UV[1], (int)v.Col.R, (int)v.Col.G, (int)v.Col.B, (int)v.Col.A);
