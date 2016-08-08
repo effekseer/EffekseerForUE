@@ -14,6 +14,7 @@ enum class EffekseerUpdateData_CommandType
 	SetP,
 	SetR,
 	SetS,
+	SetPRS,
 	Stop,
 	StopRoot,
 };
@@ -24,7 +25,7 @@ public:
 	int32_t	ID = -1;
 	void*	Effect = nullptr;
 	FVector	Position;
-	FVector	Rotation;
+	FRotator	Rotation;
 	FVector	Scale;
 
 	EffekseerUpdateData_CommandType	Type;
@@ -110,5 +111,17 @@ public:
 	void SetEffectPosition(FEffekseerHandle handle, FVector position);
 
 	UFUNCTION(BlueprintCallable, Category = "Control")
+	void SetEffectRotation(FEffekseerHandle handle, FRotator rotation);
+
+	UFUNCTION(BlueprintCallable, Category = "Control")
+	void SetEffectScaling(FEffekseerHandle handle, FVector scaling);
+
+	UFUNCTION(BlueprintCallable, Category = "Control")
 	bool Exists(FEffekseerHandle handle);
+
+	UFUNCTION(BlueprintCallable, Category = "Control")
+	void Stop(FEffekseerHandle handle);
+
+	UFUNCTION(BlueprintCallable, Category = "Control")
+	void StopRoot(FEffekseerHandle handle);
 };

@@ -153,6 +153,48 @@ public:
 					effekseerManager->SetLocation(eid, position.X, position.Z, position.Y);
 				}
 			}
+
+			if (cmd.Type == EffekseerUpdateData_CommandType::SetR)
+			{
+				if (internalHandle2EfkHandle.Contains(cmd.ID))
+				{
+					auto eid = internalHandle2EfkHandle[cmd.ID];
+					auto rotation = updateData->Commands[i].Rotation;
+					effekseerManager->SetRotation(
+						eid, 
+						rotation.Roll/ 180.0f * 3.1415f, 
+						-rotation.Yaw / 180.0f * 3.1415f,
+						rotation.Pitch / 180.0f * 3.1415f);
+				}
+			}
+
+			if (cmd.Type == EffekseerUpdateData_CommandType::SetS)
+			{
+				if (internalHandle2EfkHandle.Contains(cmd.ID))
+				{
+					auto eid = internalHandle2EfkHandle[cmd.ID];
+					auto scale = updateData->Commands[i].Scale;
+					effekseerManager->SetScale(eid, scale.X, scale.Z, scale.Y);
+				}
+			}
+
+			if (cmd.Type == EffekseerUpdateData_CommandType::StopRoot)
+			{
+				if (internalHandle2EfkHandle.Contains(cmd.ID))
+				{
+					auto eid = internalHandle2EfkHandle[cmd.ID];
+					effekseerManager->StopRoot(eid);
+				}
+			}
+
+			if (cmd.Type == EffekseerUpdateData_CommandType::Stop)
+			{
+				if (internalHandle2EfkHandle.Contains(cmd.ID))
+				{
+					auto eid = internalHandle2EfkHandle[cmd.ID];
+					effekseerManager->StopEffect(eid);
+				}
+			}
 		}
 
 		// Update effects.
@@ -399,8 +441,52 @@ void UEffekseerSystemComponent::SetEffectPosition(FEffekseerHandle handle, FVect
 	currentUpdateData->Commands.Add(cmd);
 }
 
+void UEffekseerSystemComponent::SetEffectRotation(FEffekseerHandle handle, FRotator rotation)
+{
+	if (handle.Effect == nullptr) return;
+
+	EffekseerUpdateData_Command cmd;
+	cmd.Type = EffekseerUpdateData_CommandType::SetR;
+	cmd.ID = handle.ID;
+	cmd.Rotation = rotation;
+
+	currentUpdateData->Commands.Add(cmd);
+}
+
+void UEffekseerSystemComponent::SetEffectScaling(FEffekseerHandle handle, FVector scaling)
+{
+	if (handle.Effect == nullptr) return;
+
+	EffekseerUpdateData_Command cmd;
+	cmd.Type = EffekseerUpdateData_CommandType::SetS;
+	cmd.ID = handle.ID;
+	cmd.Scale = scaling;
+
+	currentUpdateData->Commands.Add(cmd);
+}
+
 bool UEffekseerSystemComponent::Exists(FEffekseerHandle handle)
 {
 	if (handle.Effect == nullptr) return false;
 	return internalHandle2EfkHandle.Contains(handle.ID);
+}
+
+void UEffekseerSystemComponent::Stop(FEffekseerHandle handle)
+{
+	if (handle.Effect == nullptr) return;
+
+	EffekseerUpdateData_Command cmd;
+	cmd.Type = EffekseerUpdateData_CommandType::Stop;
+	cmd.ID = handle.ID;
+	currentUpdateData->Commands.Add(cmd);
+}
+
+void UEffekseerSystemComponent::StopRoot(FEffekseerHandle handle)
+{
+	if (handle.Effect == nullptr) return;
+
+	EffekseerUpdateData_Command cmd;
+	cmd.Type = EffekseerUpdateData_CommandType::StopRoot;
+	cmd.ID = handle.ID;
+	currentUpdateData->Commands.Add(cmd);
 }
