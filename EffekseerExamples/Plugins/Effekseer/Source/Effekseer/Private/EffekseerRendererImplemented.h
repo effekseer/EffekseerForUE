@@ -3,6 +3,9 @@
 
 #include "EffekseerRendererNative.h"
 
+#include <EffekseerEffect.h>
+#include <map>
+
 namespace EffekseerRendererUE4
 {
 	class RendererImplemented;
@@ -340,6 +343,7 @@ namespace EffekseerRendererUE4
 		int32_t					m_viewIndex = 0;
 		TMap<UTexture2D*, UMaterialInstanceDynamic*>*	m_materials[5];
 		FMeshElementCollector*	m_meshElementCollector = nullptr;
+		std::map<EffekseerMaterial, UMaterialInstanceDynamic*>	m_nmaterials;
 
 		EffekseerRenderer::StandardRenderer<RendererImplemented, Shader, void*, Vertex, VertexDistortion>*	m_standardRenderer = nullptr;
 	public:
@@ -512,6 +516,7 @@ namespace EffekseerRendererUE4
 		void SetLocalToWorld(FMatrix localToWorld);
 		void SetViewIndex(int32_t viewIndex);
 		void SetMaterials(const TMap<UTexture2D*, UMaterialInstanceDynamic*>* materials, int32_t index);
+		void SetNMaterials(const std::map<EffekseerMaterial, UMaterialInstanceDynamic*>& nmaterials);
 		void SetMeshElementCollector(FMeshElementCollector* meshElementCollector);
 
 		virtual int GetRef() { return ::Effekseer::ReferenceObject::GetRef(); }

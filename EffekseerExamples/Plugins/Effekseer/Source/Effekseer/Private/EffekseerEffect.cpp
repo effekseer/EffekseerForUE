@@ -3,6 +3,7 @@
 #include "EffekseerNative.h"
 
 #include <string>
+#include <functional>
 
 static void GetParentDir(EFK_CHAR* dst, const EFK_CHAR* src)
 {
@@ -132,6 +133,45 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 	{
 		Version = effect->GetVersion();
 	}
+
+	// çƒãN
+	std::function<void(::Effekseer::EffectNode*,bool)> renode;
+
+	renode = [this, &renode](::Effekseer::EffectNode* node, bool isRoot) -> void
+	{
+		if (!isRoot)
+		{
+			auto param = node->GetBasicRenderParameter();
+
+			UTexture2D* texture = nullptr;
+
+			if (0 <= param.ColorTextureIndex &&
+				param.ColorTextureIndex < this->ColorTextures.Num())
+			{
+				texture = this->ColorTextures[param.ColorTextureIndex];
+			}
+
+			UEffekseerMaterial* mat = NewObject<UEffekseerMaterial>();
+			mat->Texture = texture;
+			mat->IsDepthTestDisabled = !param.ZTest;
+			mat->AlphaBlend = (EEffekseerAlphaBlendType)param.AlphaBlend;
+
+			this->Materials.Add(mat);
+
+		}
+
+		for (size_t i = 0; i < node->GetChildrenCount(); i++)
+		{
+			auto n = node->GetChild(i);
+			renode(n, false);
+		}
+	};
+	
+	if (effect != nullptr)
+	{
+		renode(effect->GetRoot(), true);
+	}
+
 }
 
 void UEffekseerEffect::ReleaseEffect()

@@ -6,6 +6,8 @@
 #include "EffekseerEffect.h"
 #include "EffekseerHandle.h"
 
+#include <map>
+
 #include "EffekseerSystemComponent.generated.h"
 
 enum class EffekseerUpdateData_CommandType
@@ -18,6 +20,7 @@ enum class EffekseerUpdateData_CommandType
 	Stop,
 	StopRoot,
 };
+
 
 class EffekseerUpdateData_Command
 {
@@ -35,6 +38,8 @@ class EffekseerUpdateData
 {
 public:
 	TArray<EffekseerUpdateData_Command>	Commands;
+	TMap<UEffekseerMaterial*, UMaterialInstanceDynamic*> Materials;
+	std::map<EffekseerMaterial, UMaterialInstanceDynamic*> NMaterials;
 
 	TMap<UTexture2D*, UMaterialInstanceDynamic*> OpaqueDynamicMaterials;
 	TMap<UTexture2D*, UMaterialInstanceDynamic*> TranslucentDynamicMaterials;
@@ -47,6 +52,31 @@ public:
 	EffekseerUpdateData();
 	virtual ~EffekseerUpdateData();
 };
+
+
+/*
+UCLASS()
+class UEffekseerMaterial : public UObject
+{
+public:
+	UPROPERTY()
+	UMaterialInstanceDynamic*	Material;
+
+	UPROPERTY()
+	UTexture2D*					Texture;
+
+	union
+	{
+		struct
+		{
+			EAlphaBlendType				AlphaBlend : 1;
+			bool						IsDepthTestDisabled : 1;
+		};
+
+		int32_t Key;
+	};
+};
+*/
 
 UCLASS(ClassGroup = (Effekseer), meta = (BlueprintSpawnableComponent))
 class EFFEKSEER_API UEffekseerSystemComponent : public UPrimitiveComponent
@@ -88,6 +118,26 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Material)
 	UMaterialInstanceConstant* ModulateMaterial = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Material)
+	UMaterialInstanceConstant* Opaque_DD_Material = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Material)
+	UMaterialInstanceConstant* Translucent_DD_Material = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Material)
+	UMaterialInstanceConstant* Additive_DD_Material = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Material)
+	UMaterialInstanceConstant* Subtractive_DD_Material = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Material)
+	UMaterialInstanceConstant* Modulate_DD_Material = nullptr;
+
+	std::map<EffekseerMaterial, UMaterialInstanceDynamic*> NMaterials;
+
+	UPROPERTY(Transient)
+	TMap<UEffekseerMaterial*, UMaterialInstanceDynamic*> Materials;
 
 	UPROPERTY(Transient)
 	TMap<UTexture2D*, UMaterialInstanceDynamic*> OpaqueDynamicMaterials;

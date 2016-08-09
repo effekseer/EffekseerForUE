@@ -4,6 +4,91 @@
 #include "Object.h"
 #include "EffekseerEffect.generated.h"
 
+UENUM()
+enum class EEffekseerAlphaBlendType : uint8
+{
+	/// <summary>
+	/// ïsìßñæ
+	/// </summary>
+	Opacity = 0,
+	/// <summary>
+	/// ìßñæ
+	/// </summary>
+	Blend = 1,
+	/// <summary>
+	/// â¡éZ
+	/// </summary>
+	Add = 2,
+	/// <summary>
+	/// å∏éZ
+	/// </summary>
+	Sub = 3,
+	/// <summary>
+	/// èÊéZ
+	/// </summary>
+	Mul = 4,
+};
+
+
+UCLASS()
+class EFFEKSEER_API UEffekseerMaterial
+	: public UObject
+{
+public:
+	GENERATED_BODY()
+
+	UPROPERTY()
+	UTexture2D*		Texture = nullptr;
+
+	UPROPERTY()
+	EEffekseerAlphaBlendType	AlphaBlend;
+
+	UPROPERTY()
+	bool			IsDepthTestDisabled;
+
+	bool operator == (const UEffekseerMaterial* Other)
+	{
+		return
+			Texture == Other->Texture &&
+			AlphaBlend == Other->AlphaBlend &&
+			IsDepthTestDisabled == Other->IsDepthTestDisabled;
+	}
+
+	friend uint32 GetTypeHash(const UEffekseerMaterial* Other)
+	{
+		return GetTypeHash(Other->Texture);
+	}
+};
+
+struct EffekseerMaterial
+{
+	UTexture2D*		Texture = nullptr;
+
+	EEffekseerAlphaBlendType	AlphaBlend;
+
+	bool			IsDepthTestDisabled;
+
+	bool operator < (const EffekseerMaterial& rhs) const
+	{
+		if (Texture != rhs.Texture)
+		{
+			return Texture < rhs.Texture;
+		}
+
+		if (AlphaBlend != rhs.AlphaBlend)
+		{
+			return AlphaBlend < rhs.AlphaBlend;
+		}
+
+		if (IsDepthTestDisabled != rhs.IsDepthTestDisabled)
+		{
+			return IsDepthTestDisabled < rhs.IsDepthTestDisabled;
+		}
+
+		return false;
+	}
+};
+
 UCLASS()
 class EFFEKSEER_API UEffekseerEffect : public UObject
 {
@@ -32,6 +117,9 @@ public:
 	UPROPERTY(VisibleAnywhere, Transient)
 	TArray<UTexture2D*>	ColorTextures;
 
+	UPROPERTY(Transient)
+	TArray<UEffekseerMaterial*>	Materials;
+	
 	// TODO Reimport
 #if WITH_EDITORONLY_DATA
 	UPROPERTY(Category = ImportSettings, VisibleAnywhere)

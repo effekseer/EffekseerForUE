@@ -1381,6 +1381,8 @@ public:
 		@brief	画像等リソースの破棄を行う。
 	*/
 	virtual void UnloadResources() = 0;
+
+	virtual EffectNode* GetRoot() const = 0;
 };
 
 /**
@@ -2899,6 +2901,7 @@ namespace Effekseer {
 		SoundLoader*	m_soundLoader;
 		ModelLoader*	m_modelLoader;
 
+	protected:
 		/**
 			@brief	コンストラクタ
 			*/

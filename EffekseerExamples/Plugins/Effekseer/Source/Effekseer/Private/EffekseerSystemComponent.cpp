@@ -35,6 +35,9 @@ private:
 	TMap<UTexture2D*, UMaterialInstanceDynamic*> SubtractiveDynamicMaterials;
 	TMap<UTexture2D*, UMaterialInstanceDynamic*> ModulateDynamicMaterials;
 
+	TMap<UEffekseerMaterial*, UMaterialInstanceDynamic*> Materials;
+	std::map<EffekseerMaterial, UMaterialInstanceDynamic*> NMaterials;
+
 	float	Time = 0;
 
 	TMap<int, int>	internalHandle2EfkHandle;
@@ -85,6 +88,8 @@ public:
 			effekseerRenderer->SetMaterials(&SubtractiveDynamicMaterials, 3);
 			effekseerRenderer->SetMaterials(&ModulateDynamicMaterials, 4);
 
+			effekseerRenderer->SetNMaterials(NMaterials);
+
 			effekseerRenderer->SetMeshElementCollector(&Collector);
 			effekseerRenderer->SetViewIndex(ViewIndex);
 
@@ -128,6 +133,9 @@ public:
 		AdditiveDynamicMaterials = updateData->AdditiveDynamicMaterials;
 		SubtractiveDynamicMaterials = updateData->SubtractiveDynamicMaterials;
 		ModulateDynamicMaterials = updateData->ModulateDynamicMaterials;
+
+		Materials = updateData->Materials;
+		NMaterials = updateData->NMaterials;
 
 		// TODO いずれ高速に処理できる方法を考える。
 		
@@ -287,6 +295,8 @@ void UEffekseerSystemComponent::TickComponent(float DeltaTime, ELevelTick TickTy
 	currentUpdateData->AdditiveDynamicMaterials = AdditiveDynamicMaterials;
 	currentUpdateData->SubtractiveDynamicMaterials = SubtractiveDynamicMaterials;
 	currentUpdateData->ModulateDynamicMaterials = ModulateDynamicMaterials;
+	currentUpdateData->Materials = Materials;
+	currentUpdateData->NMaterials = NMaterials;
 
 	currentUpdateData->DeltaTime = DeltaTime;
 
@@ -357,7 +367,7 @@ FEffekseerHandle UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVect
 	position -= this->RelativeLocation;
 
 	// 動的にマテリアルを生成する。
-	UMaterialInstanceConstant* _mats[5];
+	UMaterialInstanceConstant* _mats[10];
 	TMap<UTexture2D*, UMaterialInstanceDynamic*>* _matss[5];
 
 	_mats[0] = OpaqueMaterial;
@@ -365,7 +375,12 @@ FEffekseerHandle UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVect
 	_mats[2] = AdditiveMaterial;
 	_mats[3] = SubtractiveMaterial;
 	_mats[4] = ModulateMaterial;
-	
+	_mats[5] = Opaque_DD_Material;
+	_mats[6] = Translucent_DD_Material;
+	_mats[7] = Additive_DD_Material;
+	_mats[8] = Subtractive_DD_Material;
+	_mats[9] = Modulate_DD_Material;
+
 	_matss[0] = &OpaqueDynamicMaterials;
 	_matss[1] = &TranslucentDynamicMaterials;
 	_matss[2] = &AdditiveDynamicMaterials;
@@ -400,6 +415,27 @@ FEffekseerHandle UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVect
 		}
 	}
 
+	for (auto m : effect->Materials)
+	{
+		if (Materials.Contains(m)) continue;
+
+		auto blendInd = (int32_t)m->AlphaBlend;
+		if (m->IsDepthTestDisabled) blendInd += 5;
+		auto mat = _mats[blendInd];
+
+		if (mat != nullptr)
+		{
+			auto dynamicMaterial = UMaterialInstanceDynamic::Create(mat, this);
+			dynamicMaterial->SetTextureParameterValue(TEXT("ColorTexture"), m->Texture);
+			Materials.Add(m, dynamicMaterial);
+
+			EffekseerMaterial mkey;
+			mkey.Texture = m->Texture;
+			mkey.AlphaBlend = m->AlphaBlend;
+			mkey.IsDepthTestDisabled = m->IsDepthTestDisabled;
+			NMaterials[mkey] = dynamicMaterial;
+		}
+	}
 
 	effect->ReloadIfRequired();
 
