@@ -2,6 +2,7 @@
 #pragma once
 
 #include "Object.h"
+#include "EffekseerModel.h"
 #include "EffekseerEffect.generated.h"
 
 UENUM()
@@ -119,6 +120,9 @@ public:
 
 	UPROPERTY(Transient)
 	TArray<UEffekseerMaterial*>	Materials;
+
+	UPROPERTY(VisibleAnywhere, Transient)
+	TArray<UEffekseerModel*>	Models;
 	
 	// TODO Reimport
 #if WITH_EDITORONLY_DATA
