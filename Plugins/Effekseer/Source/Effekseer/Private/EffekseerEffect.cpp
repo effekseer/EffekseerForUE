@@ -78,8 +78,6 @@ void* TextureLoader::Load(const EFK_CHAR* path, ::Effekseer::TextureType texture
 		auto epath_ = (const char16_t*)path_we.c_str();
 		auto path_ = (const TCHAR*)epath_;
 
-		
-
 		auto texture = Cast<UTexture2D>(StaticLoadObject(UTexture2D::StaticClass(), NULL, path_));
 		m_uobject->ColorTextures.Add(texture);
 		return (void*)texture;
@@ -96,10 +94,71 @@ void TextureLoader::Unload(void* data)
 	}
 }
 
+class ModelLoader
+	: public ::Effekseer::ModelLoader
+{
+private:
+	UEffekseerEffect*			m_uobject;
+	::Effekseer::FileInterface* m_fileInterface;
+	::Effekseer::DefaultFileInterface m_defaultFileInterface;
+
+public:
+	ModelLoader(::Effekseer::FileInterface* fileInterface = NULL);
+	virtual ~ModelLoader();
+
+public:
+	void* Load(const EFK_CHAR* path) override;
+	void Unload(void* data) override;
+	void SetUObject(UEffekseerEffect* uobject)
+	{
+		m_uobject = uobject;
+	}
+};
+
+ModelLoader::ModelLoader(::Effekseer::FileInterface* fileInterface)
+	: m_fileInterface(fileInterface)
+{
+	if (m_fileInterface == NULL)
+	{
+		m_fileInterface = &m_defaultFileInterface;
+	}
+}
+
+ModelLoader::~ModelLoader()
+{
+
+}
+
+void* ModelLoader::Load(const EFK_CHAR* path)
+{
+	auto path_we = GetFileNameWithoutExtension(path);
+	auto epath_ = (const char16_t*)path_we.c_str();
+	auto path_ = (const TCHAR*)epath_;
+
+	auto model = Cast<UEffekseerModel>(StaticLoadObject(UEffekseerModel::StaticClass(), NULL, path_));
+	m_uobject->Models.Add(model);
+
+	if (model != nullptr)
+	{
+		return (void*)model->GetNativePtr();
+	}
+	
+	return model;
+}
+
+void ModelLoader::Unload(void* data)
+{
+	if (data != NULL)
+	{
+	
+	}
+}
+
 static ::Effekseer::Setting* CreateSetting()
 {
 	auto setting = ::Effekseer::Setting::Create();
 	setting->SetTextureLoader(new TextureLoader());
+	setting->SetModelLoader(new ModelLoader());
 	return setting;
 }
 
@@ -109,6 +168,9 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 	 
 	auto textureLoader = (TextureLoader*)setting->GetTextureLoader();
 	textureLoader->SetUObject(this);
+
+	auto modelLoader = (ModelLoader*)setting->GetModelLoader();
+	modelLoader->SetUObject(this);
 
 	this->ColorTextures.Reset();
 

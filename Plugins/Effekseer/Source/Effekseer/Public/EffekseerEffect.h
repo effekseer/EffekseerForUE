@@ -124,7 +124,6 @@ public:
 	UPROPERTY(VisibleAnywhere, Transient)
 	TArray<UEffekseerModel*>	Models;
 	
-	// TODO Reimport
 #if WITH_EDITORONLY_DATA
 	UPROPERTY(Category = ImportSettings, VisibleAnywhere)
 	class UAssetImportData* AssetImportData;
