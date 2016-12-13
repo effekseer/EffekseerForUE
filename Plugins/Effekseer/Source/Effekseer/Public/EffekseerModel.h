@@ -18,6 +18,9 @@ private:
 
 public:
 
+	UPROPERTY(VisibleAnywhere, Transient)
+	UStaticMesh*	Mesh = nullptr;
+
 #if WITH_EDITORONLY_DATA
 	UPROPERTY(Category = ImportSettings, VisibleAnywhere)
 	UAssetImportData* AssetImportData = nullptr;
