@@ -3,6 +3,9 @@
 #include "EffekseerModelFactory.h"
 #include "EffekseerModel.h"
 
+#include "Editor/UnrealEd/Public/Editor.h"
+#include "Developer/RawMesh/Public/RawMesh.h"
+
 UEffekseerModelFactory::UEffekseerModelFactory(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
@@ -32,26 +35,57 @@ UObject* UEffekseerModelFactory::FactoryCreateBinary(
 	const uint8* BufferEnd,
 	FFeedbackContext* Warn)
 {
-	//TArray<UObject*> retAssets;
+	TArray<UObject*> retAssets;
 
+	// Start impoprting
+	FEditorDelegates::OnAssetPreImport.Broadcast(this, InClass, InParent, InName, Type);
 
-	UEffekseerModel* asset = CastChecked<UEffekseerModel>(StaticConstructObject(InClass, InParent, InName, Flags));
-	
-	if (asset)
+	UEffekseerModel* assetEfkMdl = NewObject<UEffekseerModel>(InParent, InClass, FName(InName), Flags);
+
+	if (assetEfkMdl)
 	{
-		auto path = asset->GetPathName();
-		//asset->Load(Buffer, (int32_t)(BufferEnd - Buffer), *path);
+		auto path = assetEfkMdl->GetPathName();
+		assetEfkMdl->Load(Buffer, (int32_t)(BufferEnd - Buffer), *path);
 
-		if (!asset->AssetImportData)
+		if (!assetEfkMdl->AssetImportData)
 		{
-			//asset->AssetImportData = NewObject<UAssetImportData>(this, TEXT("AssetImportData"));
-			asset->AssetImportData = ConstructObject<UAssetImportData>(UAssetImportData::StaticClass(), asset);
+			assetEfkMdl->AssetImportData = ConstructObject<UAssetImportData>(UAssetImportData::StaticClass(), assetEfkMdl);
 		}
 
-		asset->AssetImportData->Update(CurrentFilename);
+		assetEfkMdl->AssetImportData->Update(CurrentFilename);
 	}
-	
-	return asset;
+
+	retAssets.Add(assetEfkMdl);
+
+	UStaticMesh* assetSM = NewObject<UStaticMesh>(InParent, UStaticMesh::StaticClass(), FName(*(InName.ToString() + _T("_SM"))), Flags);
+
+	if (assetSM)
+	{
+		FRawMesh rawMesh;
+
+		if (!assetSM->AssetImportData)
+		{
+			assetSM->AssetImportData = ConstructObject<UAssetImportData>(UAssetImportData::StaticClass(), assetSM);
+		}
+
+		assetSM->AssetImportData->Update(CurrentFilename);
+	}
+
+	assetEfkMdl->Mesh = assetSM;
+
+	retAssets.Add(assetSM);
+
+	for (UObject* Object : retAssets)
+	{
+		if (Object)
+		{
+			FEditorDelegates::OnAssetPostImport.Broadcast(this, Object);
+			Object->MarkPackageDirty();
+			Object->PostEditChange();
+		}
+	}
+
+	return assetEfkMdl;
 }
 
 bool UEffekseerModelFactory::CanReimport(UObject* Obj, TArray<FString>& OutFilenames)

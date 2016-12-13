@@ -173,6 +173,7 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 	modelLoader->SetUObject(this);
 
 	this->ColorTextures.Reset();
+	this->Models.Reset();
 
 	EFK_CHAR* rootPath = (EFK_CHAR*)path;
 	EFK_CHAR parentPath[300];

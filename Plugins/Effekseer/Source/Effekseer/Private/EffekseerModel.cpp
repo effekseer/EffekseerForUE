@@ -2,13 +2,6 @@
 #include "EffekseerModel.h"
 #include "EffekseerNative.h"
 
-void UEffekseerModel::Load(const uint8_t* data, int32_t size, const TCHAR* path)
-{
-	buffer.Reset(0);
-	buffer.Append(data, size);
-	LoadModel(data, size, path);
-}
-
 void UEffekseerModel::LoadModel(const uint8_t* data, int32_t size, const TCHAR* path)
 {
 	auto model = new ::Effekseer::Model((void*)data, size);
@@ -20,6 +13,13 @@ void UEffekseerModel::ReleaseModel()
 	auto p = (::Effekseer::Model*)modelPtr;
 	ES_SAFE_DELETE(p);
 	modelPtr = nullptr;
+}
+
+void UEffekseerModel::Load(const uint8_t* data, int32_t size, const TCHAR* path)
+{
+	buffer.Reset(0);
+	buffer.Append(data, size);
+	LoadModel(data, size, path);
 }
 
 void UEffekseerModel::Serialize(FArchive& Ar)
