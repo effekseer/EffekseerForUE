@@ -42,10 +42,10 @@ FEffekseerModelMesh UEffekseerModel::GetMesh()
 	{
 		auto v = p->GetVertexes()[i];
 
-		mesh.Positions.Add(FVector(v.Position.X, v.Position.Y, v.Position.Z));
-		mesh.Normal.Add(FVector(v.Normal.X, v.Normal.Y, v.Normal.Z));
-		mesh.Binormal.Add(FVector(v.Binormal.X, v.Binormal.Y, v.Binormal.Z));
-		mesh.Tangent.Add(FVector(v.Tangent.X, v.Tangent.Y, v.Tangent.Z));
+		mesh.Positions.Add(FVector(v.Position.X, v.Position.Z, v.Position.Y));
+		mesh.Normal.Add(FVector(v.Normal.X, v.Normal.Z, v.Normal.Y));
+		mesh.Binormal.Add(FVector(v.Binormal.X, v.Binormal.Z, v.Binormal.Y));
+		mesh.Tangent.Add(FVector(v.Tangent.X, v.Tangent.Z, v.Tangent.Y));
 		mesh.UV.Add(FVector2D(v.UV.X, v.UV.Y));
 	}
 

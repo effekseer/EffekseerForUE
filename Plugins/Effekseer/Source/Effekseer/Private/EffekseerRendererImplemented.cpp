@@ -593,7 +593,7 @@ namespace EffekseerRendererUE4
 				FVector(matOrigin.Values[0][0], matOrigin.Values[0][1], matOrigin.Values[0][2]),
 				FVector(matOrigin.Values[1][0], matOrigin.Values[1][1], matOrigin.Values[1][2]),
 				FVector(matOrigin.Values[2][0], matOrigin.Values[2][1], matOrigin.Values[2][2]),
-				FVector(matOrigin.Values[3][0], matOrigin.Values[3][1], matOrigin.Values[3][2])
+				FVector(matOrigin.Values[3][0], matOrigin.Values[3][2], matOrigin.Values[3][1])
 			);
 
 
