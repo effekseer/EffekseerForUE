@@ -6,6 +6,8 @@
 #include "EffekseerRendererShader.h"
 
 #include "DynamicMeshBuilder.h"
+#include "EffekseerInternalModel.h"
+#include "Runtime/Engine/Public/StaticMeshResources.h"
 
 namespace EffekseerRendererUE4
 {
@@ -150,6 +152,57 @@ namespace EffekseerRendererUE4
 		if (m_ribbonCount <= 1) return;
 
 		EndRendering_<RendererImplemented, void*, Vertex>(m_renderer, parameter);
+	}
+
+	ModelRenderer::ModelRenderer(RendererImplemented* renderer)
+		: m_renderer(renderer)
+	{
+
+	}
+
+
+	ModelRenderer::~ModelRenderer()
+	{
+	
+	}
+
+	ModelRenderer* ModelRenderer::Create(RendererImplemented* renderer)
+	{
+		assert(renderer != NULL);
+
+		return new ModelRenderer(renderer);
+	}
+
+	void ModelRenderer::BeginRendering(const efkModelNodeParam& parameter, int32_t count, void* userData)
+	{
+		BeginRendering_(m_renderer, parameter, count, userData);
+	}
+
+	/*
+	void ModelRenderer::Rendering(const efkModelNodeParam& parameter, const efkModelInstanceParam& instanceParameter, void* userData)
+	{
+	}
+	*/
+
+	void ModelRenderer::EndRendering(const efkModelNodeParam& parameter, void* userData)
+	{
+		if (m_matrixes.size() == 0) return;
+		if (parameter.ModelIndex < 0) return;
+
+		EffekseerInternalModel* model = (EffekseerInternalModel*)parameter.EffectPointer->GetModel(parameter.ModelIndex);
+		if (model == nullptr) return;
+
+		::EffekseerRenderer::RenderStateBase::State& state = m_renderer->GetRenderState()->Push();
+		state.DepthTest = parameter.ZTest;
+		state.DepthWrite = parameter.ZWrite;
+		state.AlphaBlend = parameter.AlphaBlend;
+		state.CullingType = parameter.Culling;
+
+		m_renderer->GetRenderState()->Update(false);
+
+		m_renderer->DrawModel(model, m_matrixes);
+
+		m_renderer->GetRenderState()->Pop();
 	}
 
 	RendererImplemented* RendererImplemented::Create()
@@ -358,8 +411,7 @@ namespace EffekseerRendererUE4
 
 	::Effekseer::ModelRenderer* RendererImplemented::CreateModelRenderer()
 	{
-		// TODO
-		return nullptr;
+		return ModelRenderer::Create(this);
 	}
 
 	::Effekseer::TrackRenderer* RendererImplemented::CreateTrackRenderer()
@@ -534,6 +586,72 @@ namespace EffekseerRendererUE4
 		{
 			auto proxy = mat->GetRenderProxy(false);
 			meshBuilder.GetMesh(m_localToWorld, proxy, SDPG_World, false, false, m_viewIndex, *m_meshElementCollector);
+		}
+	}
+
+	void RendererImplemented::DrawModel(void* model, std::vector<Effekseer::Matrix44>& matrixes)
+	{
+		// StaticMesh
+		if (model == nullptr) return;
+		auto mdl = (EffekseerInternalModel*)model;
+		UStaticMesh* sm = (UStaticMesh*)mdl->UserData;
+		if (sm == nullptr) return;
+
+		auto& renderData = sm->RenderData;
+
+		// Material
+		EffekseerMaterial m;
+		m.Texture = (UTexture2D*)m_textures[0];
+		m.AlphaBlend = (EEffekseerAlphaBlendType)m_renderState->GetActiveState().AlphaBlend;
+		m.IsDepthTestDisabled = !m_renderState->GetActiveState().DepthTest;
+
+		UMaterialInstanceDynamic* mat = nullptr;
+
+		auto it = m_nmaterials.find(m);
+
+		if (it != m_nmaterials.end())
+		{
+			mat = it->second;
+		}
+		if (mat == nullptr) return;
+
+		if (renderData->LODResources.Num() == 0) return;
+		const auto& lodResource = renderData->LODResources[0];
+
+		for (int32 sectionIndex = 0; sectionIndex < lodResource.Sections.Num(); sectionIndex++)
+		{
+			float infinity = FLT_MAX / 100.0f;
+			auto bounds = FBoxSphereBounds(FVector(0,0,0), FVector(infinity, infinity, infinity), infinity);
+
+			auto& section = lodResource.Sections[sectionIndex];
+			FMeshBatch& meshElement = m_meshElementCollector->AllocateMesh();
+			auto& element = meshElement.Elements[0];
+			element.PrimitiveUniformBuffer = CreatePrimitiveUniformBufferImmediate(FMatrix::Identity, bounds, bounds, false, false);
+			
+			meshElement.MaterialRenderProxy = mat->GetRenderProxy(false);
+			meshElement.VertexFactory = &lodResource.VertexFactory;
+			meshElement.Type = PT_TriangleList;
+		
+			
+			element.IndexBuffer = &(lodResource.IndexBuffer);
+			element.FirstIndex = section.FirstIndex;
+			element.NumPrimitives = section.NumTriangles;
+		
+			if (element.NumPrimitives <= 0) continue;
+			
+			meshElement.DynamicVertexData = NULL;
+			//meshElement.LCI = &ProxyLODInfo;
+			
+			element.MinVertexIndex = section.MinVertexIndex;
+			element.MaxVertexIndex = section.MaxVertexIndex;
+			meshElement.LODIndex = 0;
+			meshElement.UseDynamicData = false;
+		
+			element.MaxScreenSize = 0.0f;
+			element.MinScreenSize = -1.0f;
+			
+		
+			m_meshElementCollector->AddMesh(m_viewIndex, meshElement);
 		}
 	}
 

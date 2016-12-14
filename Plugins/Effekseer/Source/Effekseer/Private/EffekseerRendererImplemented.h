@@ -319,6 +319,32 @@ namespace EffekseerRendererUE4
 		void EndRendering(const efkTrackNodeParam& parameter, void* userData);
 	};
 
+	typedef ::Effekseer::ModelRenderer::NodeParameter efkModelNodeParam;
+	typedef ::Effekseer::ModelRenderer::InstanceParameter efkModelInstanceParam;
+	typedef ::Effekseer::Vector3D efkVector3D;
+
+
+	class ModelRenderer
+		: public ::EffekseerRenderer::ModelRendererBase
+	{
+	private:
+		RendererImplemented*	m_renderer;
+		ModelRenderer(RendererImplemented* renderer);
+
+	public:
+
+		virtual ~ModelRenderer();
+
+		static ModelRenderer* Create(RendererImplemented* renderer);
+
+	public:
+		void BeginRendering(const efkModelNodeParam& parameter, int32_t count, void* userData);
+
+		//void Rendering(const efkModelNodeParam& parameter, const efkModelInstanceParam& instanceParameter, void* userData);
+
+		void EndRendering(const efkModelNodeParam& parameter, void* userData);
+	};
+
 	class RendererImplemented
 		: public ::EffekseerRenderer::Renderer
 		, public ::Effekseer::ReferenceObject
@@ -506,6 +532,9 @@ namespace EffekseerRendererUE4
 
 		void SetLayout(Shader* shader);
 		void DrawSprites(int32_t spriteCount, int32_t vertexOffset);
+		
+		void DrawModel(void* model, std::vector<Effekseer::Matrix44>& matrixes);
+
 		void DrawPolygon(int32_t vertexCount, int32_t indexCount);
 
 		void BeginShader(Shader* shader);

@@ -1,16 +1,18 @@
 #include "EffekseerPrivatePCH.h"
 #include "EffekseerModel.h"
 #include "EffekseerNative.h"
+#include "EffekseerInternalModel.h"
 
 void UEffekseerModel::LoadModel(const uint8_t* data, int32_t size, const TCHAR* path)
 {
-	auto model = new ::Effekseer::Model((void*)data, size);
+	auto model = new EffekseerInternalModel((void*)data, size);
 	modelPtr = model;
+	model->UserData = Mesh;
 }
 
 void UEffekseerModel::ReleaseModel()
 {
-	auto p = (::Effekseer::Model*)modelPtr;
+	auto p = (EffekseerInternalModel*)modelPtr;
 	ES_SAFE_DELETE(p);
 	modelPtr = nullptr;
 }

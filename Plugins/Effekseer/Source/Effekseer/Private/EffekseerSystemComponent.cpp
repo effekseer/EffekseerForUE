@@ -58,6 +58,7 @@ public:
 		effekseerManager->SetRibbonRenderer(effekseerRenderer->CreateRibbonRenderer());
 		effekseerManager->SetRingRenderer(effekseerRenderer->CreateRingRenderer());
 		effekseerManager->SetTrackRenderer(effekseerRenderer->CreateTrackRenderer());
+		effekseerManager->SetModelRenderer(effekseerRenderer->CreateModelRenderer());
 	}
 
 	virtual ~FEffekseerSystemSceneProxy()
