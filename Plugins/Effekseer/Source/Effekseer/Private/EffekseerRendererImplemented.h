@@ -535,7 +535,7 @@ namespace EffekseerRendererUE4
 		
 		void DrawModel(void* model, std::vector<Effekseer::Matrix44>& matrixes);
 
-		void DrawPolygon(int32_t vertexCount, int32_t indexCount);
+		UMaterialInstanceDynamic* FindMaterial();
 
 		void BeginShader(Shader* shader);
 		void EndShader(Shader* shader);

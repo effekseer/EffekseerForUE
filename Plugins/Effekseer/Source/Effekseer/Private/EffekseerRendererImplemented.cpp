@@ -561,26 +561,8 @@ namespace EffekseerRendererUE4
 		//
 		//meshBuilder.AddTriangle(0, 1, 2);
 
-		EffekseerMaterial m;
-		m.Texture = (UTexture2D*)m_textures[0];
-		m.AlphaBlend = (EEffekseerAlphaBlendType)m_renderState->GetActiveState().AlphaBlend;
-		m.IsDepthTestDisabled = !m_renderState->GetActiveState().DepthTest;
-
-		UMaterialInstanceDynamic* mat = nullptr;
-
-		auto it = m_nmaterials.find(m);
-
-		if (it != m_nmaterials.end())
-		{
-			mat = it->second;
-		}
-		/*
-		int32_t blendIndex = (int32_t)m_renderState->GetActiveState().AlphaBlend;
-		if (m_materials[blendIndex]->Contains((UTexture2D*)m_textures[0]))
-		{
-			mat = (*m_materials[blendIndex])[(UTexture2D*)m_textures[0]];
-		}
-		*/
+		UMaterialInstanceDynamic* mat = FindMaterial();
+		if (mat == nullptr) return;
 
 		if (mat != nullptr)
 		{
@@ -600,6 +582,65 @@ namespace EffekseerRendererUE4
 		auto& renderData = sm->RenderData;
 
 		// Material
+		UMaterialInstanceDynamic* mat = FindMaterial();
+		if (mat == nullptr) return;
+
+		if (renderData->LODResources.Num() == 0) return;
+		const auto& lodResource = renderData->LODResources[0];
+
+		for (int32_t objectIndex = 0; objectIndex < matrixes.size(); objectIndex++)
+		{
+			auto& matOrigin = matrixes[objectIndex];
+
+			FMatrix matLocalToWorld = FMatrix(
+				FVector(matOrigin.Values[0][0], matOrigin.Values[0][1], matOrigin.Values[0][2]),
+				FVector(matOrigin.Values[1][0], matOrigin.Values[1][1], matOrigin.Values[1][2]),
+				FVector(matOrigin.Values[2][0], matOrigin.Values[2][1], matOrigin.Values[2][2]),
+				FVector(matOrigin.Values[3][0], matOrigin.Values[3][1], matOrigin.Values[3][2])
+			);
+
+
+			for (int32 sectionIndex = 0; sectionIndex < lodResource.Sections.Num(); sectionIndex++)
+			{
+				float infinity = FLT_MAX / 100.0f;
+				auto bounds = FBoxSphereBounds(FVector(0, 0, 0), FVector(infinity, infinity, infinity), infinity);
+
+				auto& section = lodResource.Sections[sectionIndex];
+				FMeshBatch& meshElement = m_meshElementCollector->AllocateMesh();
+				auto& element = meshElement.Elements[0];
+
+				element.PrimitiveUniformBuffer = CreatePrimitiveUniformBufferImmediate(matLocalToWorld, bounds, bounds, false, false);
+
+				meshElement.MaterialRenderProxy = mat->GetRenderProxy(false);
+				meshElement.VertexFactory = &lodResource.VertexFactory;
+				meshElement.Type = PT_TriangleList;
+
+
+				element.IndexBuffer = &(lodResource.IndexBuffer);
+				element.FirstIndex = section.FirstIndex;
+				element.NumPrimitives = section.NumTriangles;
+
+				if (element.NumPrimitives <= 0) continue;
+
+				meshElement.DynamicVertexData = NULL;
+				//meshElement.LCI = &ProxyLODInfo;
+
+				element.MinVertexIndex = section.MinVertexIndex;
+				element.MaxVertexIndex = section.MaxVertexIndex;
+				meshElement.LODIndex = 0;
+				meshElement.UseDynamicData = false;
+
+				element.MaxScreenSize = 0.0f;
+				element.MinScreenSize = -1.0f;
+
+
+				m_meshElementCollector->AddMesh(m_viewIndex, meshElement);
+			}
+		}
+	}
+
+	UMaterialInstanceDynamic* RendererImplemented::FindMaterial()
+	{
 		EffekseerMaterial m;
 		m.Texture = (UTexture2D*)m_textures[0];
 		m.AlphaBlend = (EEffekseerAlphaBlendType)m_renderState->GetActiveState().AlphaBlend;
@@ -613,52 +654,8 @@ namespace EffekseerRendererUE4
 		{
 			mat = it->second;
 		}
-		if (mat == nullptr) return;
 
-		if (renderData->LODResources.Num() == 0) return;
-		const auto& lodResource = renderData->LODResources[0];
-
-		for (int32 sectionIndex = 0; sectionIndex < lodResource.Sections.Num(); sectionIndex++)
-		{
-			float infinity = FLT_MAX / 100.0f;
-			auto bounds = FBoxSphereBounds(FVector(0,0,0), FVector(infinity, infinity, infinity), infinity);
-
-			auto& section = lodResource.Sections[sectionIndex];
-			FMeshBatch& meshElement = m_meshElementCollector->AllocateMesh();
-			auto& element = meshElement.Elements[0];
-			element.PrimitiveUniformBuffer = CreatePrimitiveUniformBufferImmediate(FMatrix::Identity, bounds, bounds, false, false);
-			
-			meshElement.MaterialRenderProxy = mat->GetRenderProxy(false);
-			meshElement.VertexFactory = &lodResource.VertexFactory;
-			meshElement.Type = PT_TriangleList;
-		
-			
-			element.IndexBuffer = &(lodResource.IndexBuffer);
-			element.FirstIndex = section.FirstIndex;
-			element.NumPrimitives = section.NumTriangles;
-		
-			if (element.NumPrimitives <= 0) continue;
-			
-			meshElement.DynamicVertexData = NULL;
-			//meshElement.LCI = &ProxyLODInfo;
-			
-			element.MinVertexIndex = section.MinVertexIndex;
-			element.MaxVertexIndex = section.MaxVertexIndex;
-			meshElement.LODIndex = 0;
-			meshElement.UseDynamicData = false;
-		
-			element.MaxScreenSize = 0.0f;
-			element.MinScreenSize = -1.0f;
-			
-		
-			m_meshElementCollector->AddMesh(m_viewIndex, meshElement);
-		}
-	}
-
-	void RendererImplemented::DrawPolygon(int32_t vertexCount, int32_t indexCount)
-	{
-		// TODO
-		//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, "DrawPolygon");
+		return mat;
 	}
 
 	void RendererImplemented::BeginShader(Shader* shader)
