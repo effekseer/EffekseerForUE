@@ -111,6 +111,7 @@ UObject* UEffekseerModelFactory::FactoryCreateBinary(
 	}
 
 	assetEfkMdl->Mesh = assetSM;
+	assetEfkMdl->AssignInternalPtr();
 
 	retAssets.Add(assetSM);
 

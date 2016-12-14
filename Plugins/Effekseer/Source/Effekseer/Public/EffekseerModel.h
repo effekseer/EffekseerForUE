@@ -36,6 +36,8 @@ public:
 	UAssetImportData* AssetImportData = nullptr;
 #endif
 
+	void AssignInternalPtr();
+
 	FEffekseerModelMesh GetMesh();
 
 	void* GetNativePtr() { return modelPtr; }

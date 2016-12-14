@@ -7,7 +7,6 @@ void UEffekseerModel::LoadModel(const uint8_t* data, int32_t size, const TCHAR* 
 {
 	auto model = new EffekseerInternalModel((void*)data, size);
 	modelPtr = model;
-	model->UserData = Mesh;
 }
 
 void UEffekseerModel::ReleaseModel()
@@ -22,6 +21,14 @@ void UEffekseerModel::Load(const uint8_t* data, int32_t size, const TCHAR* path)
 	buffer.Reset(0);
 	buffer.Append(data, size);
 	LoadModel(data, size, path);
+}
+
+void UEffekseerModel::AssignInternalPtr()
+{
+	auto p = (EffekseerInternalModel*)modelPtr;
+	if (p == nullptr) return;
+
+	p->UserData = Mesh;
 }
 
 FEffekseerModelMesh UEffekseerModel::GetMesh()
@@ -83,5 +90,7 @@ void UEffekseerModel::Serialize(FArchive& Ar)
 
 		auto path = GetPathName();
 		LoadModel(buffer.GetData(), buffer.Num(), *path);
+
+		AssignInternalPtr();
 	}
 }
