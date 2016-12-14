@@ -4,6 +4,17 @@
 #include "Object.h"
 #include "EffekseerModel.generated.h"
 
+struct FEffekseerModelMesh
+{
+	TArray<FVector>	Positions;
+	TArray<FVector>	Normal;
+	TArray<FVector>	Binormal;
+	TArray<FVector>	Tangent;
+	TArray<FVector2D>	UV;
+
+	TArray<int>		Indexes;
+};
+
 UCLASS()
 class EFFEKSEER_API UEffekseerModel : public UObject
 {
@@ -24,6 +35,8 @@ public:
 	UPROPERTY(Category = ImportSettings, VisibleAnywhere)
 	UAssetImportData* AssetImportData = nullptr;
 #endif
+
+	FEffekseerModelMesh GetMesh();
 
 	void* GetNativePtr() { return modelPtr; }
 

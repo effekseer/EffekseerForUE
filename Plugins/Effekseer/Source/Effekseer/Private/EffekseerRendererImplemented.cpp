@@ -564,11 +564,8 @@ namespace EffekseerRendererUE4
 		UMaterialInstanceDynamic* mat = FindMaterial();
 		if (mat == nullptr) return;
 
-		if (mat != nullptr)
-		{
-			auto proxy = mat->GetRenderProxy(false);
-			meshBuilder.GetMesh(m_localToWorld, proxy, SDPG_World, false, false, m_viewIndex, *m_meshElementCollector);
-		}
+		auto proxy = mat->GetRenderProxy(false);
+		meshBuilder.GetMesh(m_localToWorld, proxy, SDPG_World, false, false, m_viewIndex, *m_meshElementCollector);
 	}
 
 	void RendererImplemented::DrawModel(void* model, std::vector<Effekseer::Matrix44>& matrixes)
@@ -602,14 +599,18 @@ namespace EffekseerRendererUE4
 
 			for (int32 sectionIndex = 0; sectionIndex < lodResource.Sections.Num(); sectionIndex++)
 			{
-				float infinity = FLT_MAX / 100.0f;
-				auto bounds = FBoxSphereBounds(FVector(0, 0, 0), FVector(infinity, infinity, infinity), infinity);
-
 				auto& section = lodResource.Sections[sectionIndex];
+				if (section.NumTriangles <= 0) continue;
+
 				FMeshBatch& meshElement = m_meshElementCollector->AllocateMesh();
 				auto& element = meshElement.Elements[0];
 
-				element.PrimitiveUniformBuffer = CreatePrimitiveUniformBufferImmediate(matLocalToWorld, bounds, bounds, false, false);
+				element.PrimitiveUniformBuffer = CreatePrimitiveUniformBufferImmediate(
+					matLocalToWorld, 
+					FBoxSphereBounds(EForceInit::ForceInit), 
+					FBoxSphereBounds(EForceInit::ForceInit), 
+					false, 
+					false);
 
 				meshElement.MaterialRenderProxy = mat->GetRenderProxy(false);
 				meshElement.VertexFactory = &lodResource.VertexFactory;
@@ -619,9 +620,6 @@ namespace EffekseerRendererUE4
 				element.IndexBuffer = &(lodResource.IndexBuffer);
 				element.FirstIndex = section.FirstIndex;
 				element.NumPrimitives = section.NumTriangles;
-
-				if (element.NumPrimitives <= 0) continue;
-
 				meshElement.DynamicVertexData = NULL;
 				//meshElement.LCI = &ProxyLODInfo;
 
@@ -632,7 +630,6 @@ namespace EffekseerRendererUE4
 
 				element.MaxScreenSize = 0.0f;
 				element.MinScreenSize = -1.0f;
-
 
 				m_meshElementCollector->AddMesh(m_viewIndex, meshElement);
 			}
