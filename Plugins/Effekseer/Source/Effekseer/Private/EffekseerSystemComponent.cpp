@@ -34,6 +34,7 @@ private:
 	TMap<UTexture2D*, UMaterialInstanceDynamic*> AdditiveDynamicMaterials;
 	TMap<UTexture2D*, UMaterialInstanceDynamic*> SubtractiveDynamicMaterials;
 	TMap<UTexture2D*, UMaterialInstanceDynamic*> ModulateDynamicMaterials;
+	TMap<UTexture2D*, UMaterialInstanceDynamic*> LightingDynamicMaterials;
 
 	TMap<UEffekseerMaterial*, UMaterialInstanceDynamic*> Materials;
 	std::map<EffekseerMaterial, UMaterialInstanceDynamic*> NMaterials;
@@ -88,6 +89,7 @@ public:
 			effekseerRenderer->SetMaterials(&AdditiveDynamicMaterials, 2);
 			effekseerRenderer->SetMaterials(&SubtractiveDynamicMaterials, 3);
 			effekseerRenderer->SetMaterials(&ModulateDynamicMaterials, 4);
+			effekseerRenderer->SetMaterials(&LightingDynamicMaterials, 5);
 
 			effekseerRenderer->SetNMaterials(NMaterials);
 
@@ -134,6 +136,7 @@ public:
 		AdditiveDynamicMaterials = updateData->AdditiveDynamicMaterials;
 		SubtractiveDynamicMaterials = updateData->SubtractiveDynamicMaterials;
 		ModulateDynamicMaterials = updateData->ModulateDynamicMaterials;
+		LightingDynamicMaterials = updateData->LightingDynamicMaterials;
 
 		Materials = updateData->Materials;
 		NMaterials = updateData->NMaterials;
@@ -296,6 +299,8 @@ void UEffekseerSystemComponent::TickComponent(float DeltaTime, ELevelTick TickTy
 	currentUpdateData->AdditiveDynamicMaterials = AdditiveDynamicMaterials;
 	currentUpdateData->SubtractiveDynamicMaterials = SubtractiveDynamicMaterials;
 	currentUpdateData->ModulateDynamicMaterials = ModulateDynamicMaterials;
+	currentUpdateData->LightingDynamicMaterials = LightingDynamicMaterials;
+
 	currentUpdateData->Materials = Materials;
 	currentUpdateData->NMaterials = NMaterials;
 
@@ -324,6 +329,7 @@ UMaterialInterface* UEffekseerSystemComponent::GetMaterial(int32 ElementIndex) c
 	if (ElementIndex == 2) 	return AdditiveMaterial;
 	if (ElementIndex == 3) 	return SubtractiveMaterial;
 	if (ElementIndex == 4) 	return ModulateMaterial;
+	if (ElementIndex == 5) 	return LightingMaterial;
 
 	
 	return nullptr;
@@ -336,6 +342,8 @@ void UEffekseerSystemComponent::GetUsedMaterials(TArray<UMaterialInterface*>& Ou
 	if (AdditiveMaterial) OutMaterials.Add(AdditiveMaterial);
 	if (SubtractiveMaterial) OutMaterials.Add(SubtractiveMaterial);
 	if (ModulateMaterial) OutMaterials.Add(ModulateMaterial);
+	if (LightingMaterial) OutMaterials.Add(LightingMaterial);
+
 }
 
 int32 UEffekseerSystemComponent::GetNumMaterials()const
@@ -346,6 +354,7 @@ int32 UEffekseerSystemComponent::GetNumMaterials()const
 	if (AdditiveMaterial) ret++;
 	if (SubtractiveMaterial) ret++;
 	if (ModulateMaterial) ret++;
+	if (LightingMaterial) ret++;
 
 	return ret;
 }
@@ -368,27 +377,30 @@ FEffekseerHandle UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVect
 	position -= this->RelativeLocation;
 
 	// 動的にマテリアルを生成する。
-	UMaterialInstanceConstant* _mats[10];
-	TMap<UTexture2D*, UMaterialInstanceDynamic*>* _matss[5];
+	UMaterialInstanceConstant* _mats[12];
+	TMap<UTexture2D*, UMaterialInstanceDynamic*>* _matss[6];
 
 	_mats[0] = OpaqueMaterial;
 	_mats[1] = TranslucentMaterial;
 	_mats[2] = AdditiveMaterial;
 	_mats[3] = SubtractiveMaterial;
 	_mats[4] = ModulateMaterial;
-	_mats[5] = Opaque_DD_Material;
-	_mats[6] = Translucent_DD_Material;
-	_mats[7] = Additive_DD_Material;
-	_mats[8] = Subtractive_DD_Material;
-	_mats[9] = Modulate_DD_Material;
+	_mats[5] = LightingMaterial;
+	_mats[0 + 6] = Opaque_DD_Material;
+	_mats[1 + 6] = Translucent_DD_Material;
+	_mats[2 + 6] = Additive_DD_Material;
+	_mats[3 + 6] = Subtractive_DD_Material;
+	_mats[4 + 6] = Modulate_DD_Material;
+	_mats[4 + 6] = LightingMaterial;
 
 	_matss[0] = &OpaqueDynamicMaterials;
 	_matss[1] = &TranslucentDynamicMaterials;
 	_matss[2] = &AdditiveDynamicMaterials;
 	_matss[3] = &SubtractiveDynamicMaterials;
 	_matss[4] = &ModulateDynamicMaterials;
+	_matss[5] = &LightingDynamicMaterials;
 
-	for(int i = 0; i < 5; i++)
+	for(int i = 0; i < 6; i++)
 	{
 		auto& mat = _mats[i];
 		auto& mats = *_matss[i];
@@ -421,7 +433,7 @@ FEffekseerHandle UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVect
 		if (Materials.Contains(m)) continue;
 
 		auto blendInd = (int32_t)m->AlphaBlend;
-		if (m->IsDepthTestDisabled) blendInd += 5;
+		if (m->IsDepthTestDisabled) blendInd += 6;
 		auto mat = _mats[blendInd];
 
 		if (mat != nullptr)

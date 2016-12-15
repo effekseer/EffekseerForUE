@@ -46,37 +46,13 @@ public:
 	TMap<UTexture2D*, UMaterialInstanceDynamic*> AdditiveDynamicMaterials;
 	TMap<UTexture2D*, UMaterialInstanceDynamic*> SubtractiveDynamicMaterials;
 	TMap<UTexture2D*, UMaterialInstanceDynamic*> ModulateDynamicMaterials;
+	TMap<UTexture2D*, UMaterialInstanceDynamic*> LightingDynamicMaterials;
 
 	float	DeltaTime = 0;
 
 	EffekseerUpdateData();
 	virtual ~EffekseerUpdateData();
 };
-
-
-/*
-UCLASS()
-class UEffekseerMaterial : public UObject
-{
-public:
-	UPROPERTY()
-	UMaterialInstanceDynamic*	Material;
-
-	UPROPERTY()
-	UTexture2D*					Texture;
-
-	union
-	{
-		struct
-		{
-			EAlphaBlendType				AlphaBlend : 1;
-			bool						IsDepthTestDisabled : 1;
-		};
-
-		int32_t Key;
-	};
-};
-*/
 
 UCLASS(ClassGroup = (Effekseer), meta = (BlueprintSpawnableComponent))
 class EFFEKSEER_API UEffekseerSystemComponent : public UPrimitiveComponent
@@ -120,6 +96,9 @@ public:
 	UMaterialInstanceConstant* ModulateMaterial = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Material)
+	UMaterialInstanceConstant* LightingMaterial = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Material)
 	UMaterialInstanceConstant* Opaque_DD_Material = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Material)
@@ -153,6 +132,9 @@ public:
 
 	UPROPERTY(Transient)
 	TMap<UTexture2D*, UMaterialInstanceDynamic*> ModulateDynamicMaterials;
+
+	UPROPERTY(Transient)
+	TMap<UTexture2D*, UMaterialInstanceDynamic*> LightingDynamicMaterials;
 
 	UFUNCTION(BlueprintCallable, Category = "Control")
 	FEffekseerHandle Play(UEffekseerEffect* effect, FVector position);

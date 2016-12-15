@@ -367,7 +367,7 @@ namespace EffekseerRendererUE4
 
 		FMatrix					m_localToWorld;
 		int32_t					m_viewIndex = 0;
-		TMap<UTexture2D*, UMaterialInstanceDynamic*>*	m_materials[5];
+		TMap<UTexture2D*, UMaterialInstanceDynamic*>*	m_materials[6];
 		FMeshElementCollector*	m_meshElementCollector = nullptr;
 		std::map<EffekseerMaterial, UMaterialInstanceDynamic*>	m_nmaterials;
 
