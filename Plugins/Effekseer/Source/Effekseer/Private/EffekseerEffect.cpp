@@ -273,6 +273,14 @@ void UEffekseerEffect::AssignResources()
 	LoadEffect(buffer.GetData(), buffer.Num(), *path);
 }
 
+void UEffekseerEffect::PostLoad()
+{
+	Super::PostLoad();
+
+	// To load Model object
+	AssignResources();
+}
+
 void UEffekseerEffect::Serialize(FArchive& Ar)
 {
 	Super::Serialize(Ar);

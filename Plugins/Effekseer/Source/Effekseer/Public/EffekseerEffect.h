@@ -145,5 +145,7 @@ public:
 
 	void* GetNativePtr() { return effectPtr; }
 
+	virtual void PostLoad() override;
+
 	virtual void Serialize(FArchive& Ar) override;
 };
