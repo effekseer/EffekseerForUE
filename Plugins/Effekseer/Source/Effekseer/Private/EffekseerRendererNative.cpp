@@ -1,4 +1,4 @@
-#include "EffekseerPrivatePCH.h"  // UE4
+﻿#include "EffekseerPrivatePCH.h"  // UE4
 #include "EffekseerRendererNative.h"
 
 //-----------------------------------------------------------------------------------
@@ -462,7 +462,7 @@ void* VertexBufferBase::GetBufferDirect( int size )
 
 	void* pBuffer = NULL;
 
-	// �o�b�t�@�ɒǋL
+	// バッファに追記
 	pBuffer = m_resource + m_offset;
 	m_offset += size;
 	

@@ -1,4 +1,5 @@
 import re
+import codecs
 
 class CreateHeader:
 	def __init__(self):
@@ -15,7 +16,7 @@ class CreateHeader:
 		self.lines.append(line + '\n')
 
 	def readLines(self,path):
-		f = open(path)
+		f = open(path, 'r', encoding='utf-8_sig')
 		line = f.readline()
 		while line:
 			if re.search('include \"', line) == None:
@@ -24,7 +25,7 @@ class CreateHeader:
 		f.close()
 
 	def output(self,path):
-		f = open(path, 'w')
+		f = codecs.open(path, 'w','utf-8_sig')
 		for line in self.lines:
 			f.write(line)
 		f.close()
@@ -37,7 +38,7 @@ class CreateCPP:
 		self.lines.append(line + '\n')
 
 	def readLines(self,path):
-		f = open(path)
+		f = open(path, 'r', encoding='utf-8_sig')
 		line = f.readline()
 		while line:
 			if re.search('include \"', line) == None and re.search('include <', line) == None:
@@ -46,7 +47,7 @@ class CreateCPP:
 		f.close()
 
 	def output(self,path):
-		f = open(path, 'w')
+		f = codecs.open(path, 'w','utf-8_sig')
 		for line in self.lines:
 			f.write(line)
 		f.close()
@@ -87,14 +88,18 @@ effekseerHeader.readLines(rootEDir + 'Effekseer.SoundLoader.h')
 
 effekseerHeader.readLines(rootEDir + 'Effekseer.Setting.h')
 
+effekseerHeader.addLine('')
+effekseerHeader.addLine('#if PLATFORM_WINDOWS')
 effekseerHeader.readLines(rootEDir + 'Effekseer.Server.h')
 effekseerHeader.readLines(rootEDir + 'Effekseer.Client.h')
+effekseerHeader.addLine('#endif')
+effekseerHeader.addLine('')
 
 effekseerHeader.readLines(rootEDir + 'Effekseer.CriticalSection.h')
 effekseerHeader.readLines(rootEDir + 'Effekseer.Thread.h')
 
 #effekseerHeader.output('test/test/EffekseerNative.h')
-effekseerHeader.output('EffekseerExamples/Plugins/Effekseer/Source/Effekseer/Private/EffekseerNative.h')
+effekseerHeader.output('Plugins/Effekseer/Source/Effekseer/Private/EffekseerNative.h')
 
 effekseerCPP = CreateCPP()
 effekseerCPP.addLine('#include "EffekseerPrivatePCH.h"  // UE4')
@@ -196,6 +201,8 @@ effekseerCPP.readLines(rootEDir + 'Effekseer.InstanceGroup.cpp')
 
 effekseerCPP.readLines(rootEDir + 'Effekseer.Setting.cpp')
 
+effekseerCPP.addLine('')
+effekseerCPP.addLine('#if PLATFORM_WINDOWS')
 effekseerCPP.readLines(rootEDir + 'Effekseer.Socket.h')
 effekseerCPP.readLines(rootEDir + 'Effekseer.Socket.cpp')
 
@@ -204,26 +211,26 @@ effekseerCPP.readLines(rootEDir + 'Effekseer.Server.cpp')
 
 effekseerCPP.readLines(rootEDir + 'Effekseer.ClientImplemented.h')
 effekseerCPP.readLines(rootEDir + 'Effekseer.Client.cpp')
+effekseerCPP.addLine('#endif')
+effekseerCPP.addLine('')
 
-
-effekseerCPP.output('EffekseerExamples/Plugins/Effekseer/Source/Effekseer/Private/EffekseerNative.cpp')
+effekseerCPP.output('Plugins/Effekseer/Source/Effekseer/Private/EffekseerNative.cpp')
 
 rendererHeader = CreateHeader()
 rendererHeader.readLines(rootRDir + 'EffekseerRenderer.CommonUtils.h')
 rendererHeader.readLines(rootRDir + 'EffekseerRenderer.Renderer.h')
+rendererHeader.readLines(rootRDir + 'EffekseerRenderer.VertexBufferBase.h')
 rendererHeader.readLines(rootRDir + 'EffekseerRenderer.IndexBufferBase.h')
-rendererHeader.readLines(rootRDir + 'EffekseerRenderer.ModelRendererBase.h')
 rendererHeader.readLines(rootRDir + 'EffekseerRenderer.RenderStateBase.h')
+rendererHeader.readLines(rootRDir + 'EffekseerRenderer.StandardRenderer.h')
+rendererHeader.readLines(rootRDir + 'EffekseerRenderer.ModelRendererBase.h')
 rendererHeader.readLines(rootRDir + 'EffekseerRenderer.RibbonRendererBase.h')
 rendererHeader.readLines(rootRDir + 'EffekseerRenderer.RingRendererBase.h')
 rendererHeader.readLines(rootRDir + 'EffekseerRenderer.SpriteRendererBase.h')
-rendererHeader.readLines(rootRDir + 'EffekseerRenderer.StandardRenderer.h')
 rendererHeader.readLines(rootRDir + 'EffekseerRenderer.TrackRendererBase.h')
-rendererHeader.readLines(rootRDir + 'EffekseerRenderer.VertexBufferBase.h')
-rendererHeader.readLines(rootRDir + 'EffekseerRenderer.VertexBufferBase.h')
 rendererHeader.replace('#include <Effekseer.h>','#include "EffekseerNative.h"')
 
-rendererHeader.output('EffekseerExamples/Plugins/Effekseer/Source/Effekseer/Private/EffekseerRendererNative.h')
+rendererHeader.output('Plugins/Effekseer/Source/Effekseer/Private/EffekseerRendererNative.h')
 
 rendererCPP = CreateCPP()
 rendererCPP.addLine('#include "EffekseerPrivatePCH.h"  // UE4')
@@ -237,7 +244,7 @@ rendererCPP.readLines(rootRDir + 'EffekseerRenderer.RingRendererBase.cpp')
 rendererCPP.readLines(rootRDir + 'EffekseerRenderer.SpriteRendererBase.cpp')
 rendererCPP.readLines(rootRDir + 'EffekseerRenderer.TrackRendererBase.cpp')
 rendererCPP.readLines(rootRDir + 'EffekseerRenderer.VertexBufferBase.cpp')
-rendererCPP.output('EffekseerExamples/Plugins/Effekseer/Source/Effekseer/Private/EffekseerRendererNative.cpp')
+rendererCPP.output('Plugins/Effekseer/Source/Effekseer/Private/EffekseerRendererNative.cpp')
 
 
 
