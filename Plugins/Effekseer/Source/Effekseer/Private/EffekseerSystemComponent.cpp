@@ -97,7 +97,7 @@ public:
 			effekseerRenderer->SetViewIndex(ViewIndex);
 
 			{
-				auto vmat = Views[ViewIndex]->ViewMatrices.ViewMatrix;
+				auto vmat = Views[ViewIndex]->ViewMatrices.GetViewMatrix();
 				::Effekseer::Matrix44 evmat = *((::Effekseer::Matrix44*)(&vmat));
 
 				std::swap(evmat.Values[1][0], evmat.Values[2][0]);

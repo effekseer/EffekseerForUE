@@ -285,9 +285,9 @@ void UEffekseerEffect::Serialize(FArchive& Ar)
 {
 	Super::Serialize(Ar);
 
-	const int32_t Version = 1;
+	const int32_t version = 1;
 	const FGuid GUID(0x11334A12, 0x2E554231, 0xA36791A3, 0xC5A1082C);
-	static FCustomVersionRegistration GRegisterPaperCustomVersion(GUID, Version, TEXT("EffekseerVer"));
+	static FCustomVersionRegistration GRegisterPaperCustomVersion(GUID, version, TEXT("EffekseerVer"));
 	Ar.UsingCustomVersion(GUID);
 
 	/*
