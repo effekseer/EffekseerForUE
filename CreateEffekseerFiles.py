@@ -41,7 +41,7 @@ class CreateCPP:
 		f = open(path, 'r', encoding='utf-8_sig')
 		line = f.readline()
 		while line:
-			if re.search('include \"', line) == None and re.search('include <', line) == None:
+			if re.search('include \"', line) == None and re.search('include <', line) == None and re.search('#pragma once', line) == None:
  	 			self.lines.append(line)
 			line = f.readline()
 		f.close()

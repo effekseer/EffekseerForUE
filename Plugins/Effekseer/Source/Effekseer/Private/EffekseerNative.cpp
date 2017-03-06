@@ -514,7 +514,6 @@ namespace Culling3D
 }
 
 #endif
-#pragma once
 
 
 
@@ -540,7 +539,6 @@ namespace Culling3D
 }
 
 
-#pragma once
 
 
 
@@ -563,7 +561,6 @@ namespace Culling3D
 		bool IsScanned;
 	};
 }
-#pragma once
 
 
 
@@ -606,7 +603,6 @@ namespace Culling3D
 		std::vector<Grid>& GetGrids() { return grids; }
 	};
 }
-#pragma once
 
 
 namespace Culling3D
@@ -687,7 +683,6 @@ namespace Culling3D
 		virtual int32_t Release() { return ReferenceObject::Release(); }
 	};
 }
-#pragma once
 
 
 
