@@ -200,6 +200,12 @@ namespace EffekseerRendererUE4
 
 		m_renderer->GetRenderState()->Update(false);
 
+		
+		void* textures[1];
+		textures[0] = parameter.EffectPointer->GetColorImage(parameter.ColorTextureIndex);
+
+		m_renderer->SetTextures(nullptr, textures, 1);
+
 		m_renderer->DrawModel(model, m_matrixes);
 
 		m_renderer->GetRenderState()->Pop();
