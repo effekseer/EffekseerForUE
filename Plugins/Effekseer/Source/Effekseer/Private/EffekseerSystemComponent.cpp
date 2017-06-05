@@ -60,6 +60,9 @@ public:
 		effekseerManager->SetRingRenderer(effekseerRenderer->CreateRingRenderer());
 		effekseerManager->SetTrackRenderer(effekseerRenderer->CreateTrackRenderer());
 		effekseerManager->SetModelRenderer(effekseerRenderer->CreateModelRenderer());
+
+		// To avoid verify error (I don't know why caused error)
+		bVerifyUsedMaterials = false;
 	}
 
 	virtual ~FEffekseerSystemSceneProxy()
@@ -331,11 +334,29 @@ UMaterialInterface* UEffekseerSystemComponent::GetMaterial(int32 ElementIndex) c
 	if (ElementIndex == 4) 	return ModulateMaterial;
 	if (ElementIndex == 5) 	return LightingMaterial;
 
-	
+	int32_t offset = 6;
+
+	if (ElementIndex - offset < NMaterials.size())
+	{
+		for (auto& m : NMaterials)
+		{
+			if (ElementIndex == offset) return m.second;
+			offset++;
+		}
+	}
+	else
+	{
+		offset += NMaterials.size();
+	}
+
 	return nullptr;
 }
 
+#if ENGINE_MINOR_VERSION == 14
 void UEffekseerSystemComponent::GetUsedMaterials(TArray<UMaterialInterface*>& OutMaterials) const
+#else
+void UEffekseerSystemComponent::GetUsedMaterials(TArray<UMaterialInterface*>& OutMaterials, bool bGetDebugMaterials) const
+#endif
 {
 	if (OpaqueMaterial) OutMaterials.Add(OpaqueMaterial);
 	if (TranslucentMaterial) OutMaterials.Add(TranslucentMaterial);
@@ -344,6 +365,10 @@ void UEffekseerSystemComponent::GetUsedMaterials(TArray<UMaterialInterface*>& Ou
 	if (ModulateMaterial) OutMaterials.Add(ModulateMaterial);
 	if (LightingMaterial) OutMaterials.Add(LightingMaterial);
 
+	for (auto& m : NMaterials)
+	{
+		OutMaterials.Add(m.second);
+	}
 }
 
 int32 UEffekseerSystemComponent::GetNumMaterials()const
@@ -356,6 +381,7 @@ int32 UEffekseerSystemComponent::GetNumMaterials()const
 	if (ModulateMaterial) ret++;
 	if (LightingMaterial) ret++;
 
+	ret += NMaterials.size();
 	return ret;
 }
 

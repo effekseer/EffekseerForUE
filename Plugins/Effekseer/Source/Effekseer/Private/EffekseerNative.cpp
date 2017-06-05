@@ -1,4 +1,5 @@
 ﻿#include "EffekseerPrivatePCH.h"  // UE4
+
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
 #define _WINSOCKAPI_
 #include "EffekseerNative.h"
@@ -22,6 +23,8 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #endif
+
+
 
 #ifndef	__EFFEKSEER_BASE_H__
 #define	__EFFEKSEER_BASE_H__

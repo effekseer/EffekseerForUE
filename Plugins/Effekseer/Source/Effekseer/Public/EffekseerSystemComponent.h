@@ -72,7 +72,13 @@ public:
 	virtual FPrimitiveSceneProxy* CreateSceneProxy() override;
 
 	virtual UMaterialInterface* GetMaterial(int32 ElementIndex) const override;
+
+#if ENGINE_MINOR_VERSION == 14
 	virtual void GetUsedMaterials(TArray<UMaterialInterface*>& OutMaterials) const override;
+#else
+	virtual void GetUsedMaterials(TArray<UMaterialInterface*>& OutMaterials, bool bGetDebugMaterials = false) const override;
+#endif
+
 	virtual int32 GetNumMaterials() const override;
 	virtual FBoxSphereBounds CalcBounds(const FTransform& LocalToWorld) const override;
 

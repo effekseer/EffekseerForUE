@@ -1,5 +1,8 @@
 // Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
 
+// To avoid winsock error.
+#define _WINSOCKAPI_
+
 #include "Engine.h"
 #include "IEffekseer.h"
 
