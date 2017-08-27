@@ -80,6 +80,7 @@ EReimportResult::Type UEffekseerEffectFactory::Reimport(UObject* Obj)
 	}
 
 	const FString Filename = asset->AssetImportData->GetFirstFilename();
+	auto scale = asset->Scale;
 
 	if (!Filename.Len() || IFileManager::Get().FileSize(*Filename) == INDEX_NONE)
 	{
@@ -105,6 +106,9 @@ EReimportResult::Type UEffekseerEffectFactory::Reimport(UObject* Obj)
 		{
 			asset->MarkPackageDirty();
 		}
+
+		asset->Scale = scale;
+
 		return EReimportResult::Succeeded;
 	}
 

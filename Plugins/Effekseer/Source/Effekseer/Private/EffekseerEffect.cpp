@@ -5,6 +5,8 @@
 #include <string>
 #include <functional>
 
+#include "EffekseerCustomVersion.h"
+
 static void GetParentDir(EFK_CHAR* dst, const EFK_CHAR* src)
 {
 	int i, last = -1;
@@ -40,8 +42,8 @@ class TextureLoader
 {
 private:
 	UEffekseerEffect*			m_uobject;
-	::Effekseer::FileInterface* m_fileInterface;
-	::Effekseer::DefaultFileInterface m_defaultFileInterface;
+	bool						m_requiredToCreateResource = false;
+	int32_t						m_loadingIndex = 0;
 
 public:
 	TextureLoader(::Effekseer::FileInterface* fileInterface = NULL);
@@ -50,19 +52,20 @@ public:
 public:
 	void* Load(const EFK_CHAR* path, ::Effekseer::TextureType textureType) override;
 	void Unload(void* data) override;
-	void SetUObject(UEffekseerEffect* uobject)
+	void SetUObject(UEffekseerEffect* uobject, bool requiredToCreateResource)
 	{
 		m_uobject = uobject;
+
+		m_requiredToCreateResource = requiredToCreateResource;
+		if (!requiredToCreateResource)
+		{
+			m_loadingIndex = 0;
+		}
 	}
 };
 
 TextureLoader::TextureLoader(::Effekseer::FileInterface* fileInterface)
-	: m_fileInterface(fileInterface)
 {
-	if (m_fileInterface == NULL)
-	{
-		m_fileInterface = &m_defaultFileInterface;
-	}
 }
 
 TextureLoader::~TextureLoader()
@@ -78,9 +81,20 @@ void* TextureLoader::Load(const EFK_CHAR* path, ::Effekseer::TextureType texture
 		auto epath_ = (const char16_t*)path_we.c_str();
 		auto path_ = (const TCHAR*)epath_;
 
-		auto texture = Cast<UTexture2D>(StaticLoadObject(UTexture2D::StaticClass(), NULL, path_));
-		m_uobject->ColorTextures.Add(texture);
-		return (void*)texture;
+		if (m_requiredToCreateResource)
+		{
+			auto texture = Cast<UTexture2D>(StaticLoadObject(UTexture2D::StaticClass(), NULL, path_));
+			m_uobject->ColorTextures.Add(texture);
+			return (void*)texture;
+		}
+		else
+		{
+			if (m_uobject->ColorTextures.Num() <= m_loadingIndex) return nullptr;
+
+			auto o = m_uobject->ColorTextures[m_loadingIndex];
+			m_loadingIndex++;
+			return (void*)o;
+		}
 	}
 
 	return NULL;
@@ -99,8 +113,8 @@ class ModelLoader
 {
 private:
 	UEffekseerEffect*			m_uobject;
-	::Effekseer::FileInterface* m_fileInterface;
-	::Effekseer::DefaultFileInterface m_defaultFileInterface;
+	bool						m_requiredToCreateResource = false;
+	int32_t						m_loadingIndex = 0;
 
 public:
 	ModelLoader(::Effekseer::FileInterface* fileInterface = NULL);
@@ -109,19 +123,20 @@ public:
 public:
 	void* Load(const EFK_CHAR* path) override;
 	void Unload(void* data) override;
-	void SetUObject(UEffekseerEffect* uobject)
+	void SetUObject(UEffekseerEffect* uobject, bool requiredToCreateResource)
 	{
 		m_uobject = uobject;
+
+		m_requiredToCreateResource = requiredToCreateResource;
+		if (!requiredToCreateResource)
+		{
+			m_loadingIndex = 0;
+		}
 	}
 };
 
 ModelLoader::ModelLoader(::Effekseer::FileInterface* fileInterface)
-	: m_fileInterface(fileInterface)
 {
-	if (m_fileInterface == NULL)
-	{
-		m_fileInterface = &m_defaultFileInterface;
-	}
 }
 
 ModelLoader::~ModelLoader()
@@ -135,15 +150,32 @@ void* ModelLoader::Load(const EFK_CHAR* path)
 	auto epath_ = (const char16_t*)path_we.c_str();
 	auto path_ = (const TCHAR*)epath_;
 
-	auto model = Cast<UEffekseerModel>(StaticLoadObject(UEffekseerModel::StaticClass(), NULL, path_));
-	m_uobject->Models.Add(model);
-
-	if (model != nullptr)
+	if (m_requiredToCreateResource)
 	{
-		return (void*)model->GetNativePtr();
+		auto model = Cast<UEffekseerModel>(StaticLoadObject(UEffekseerModel::StaticClass(), NULL, path_));
+		m_uobject->Models.Add(model);
+
+		if (model != nullptr)
+		{
+			return (void*)model->GetNativePtr();
+		}
+
+		return model;
 	}
-	
-	return model;
+	else
+	{
+		if (m_uobject->Models.Num() <= m_loadingIndex) return nullptr;
+
+		auto o = m_uobject->Models[m_loadingIndex];
+		m_loadingIndex++;
+		
+		if (o != nullptr)
+		{
+			return (void*)o->GetNativePtr();
+		}
+
+		return o;
+	}
 }
 
 void ModelLoader::Unload(void* data)
@@ -162,18 +194,21 @@ static ::Effekseer::Setting* CreateSetting()
 	return setting;
 }
 
-void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR* path)
+void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR* path, bool isResourceReset)
 {
 	::Effekseer::Setting* setting = CreateSetting();
 	 
+	if (isResourceReset)
+	{
+		this->ColorTextures.Reset();
+		this->Models.Reset();
+	}
+
 	auto textureLoader = (TextureLoader*)setting->GetTextureLoader();
-	textureLoader->SetUObject(this);
+	textureLoader->SetUObject(this, isResourceReset);
 
 	auto modelLoader = (ModelLoader*)setting->GetModelLoader();
-	modelLoader->SetUObject(this);
-
-	this->ColorTextures.Reset();
-	this->Models.Reset();
+	modelLoader->SetUObject(this, isResourceReset);
 
 	EFK_CHAR* rootPath = (EFK_CHAR*)path;
 	EFK_CHAR parentPath[300];
@@ -191,13 +226,12 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 
 	effectPtr = effect;
 
-	// èÓïÒéÊìæ
+	// Get information
 	if (effect != nullptr)
 	{
 		Version = effect->GetVersion();
 	}
 
-	// çƒãN
 	std::function<void(::Effekseer::EffectNode*,bool)> renode;
 
 	renode = [this, &renode](::Effekseer::EffectNode* node, bool isRoot) -> void
@@ -249,7 +283,7 @@ void UEffekseerEffect::Load(const uint8_t* data, int32_t size, const TCHAR* path
 	ReleaseEffect();
 	buffer.Reset(0);
 	buffer.Append(data, size);
-	LoadEffect(data, size, path);
+	LoadEffect(data, size, path, true);
 }
 
 void UEffekseerEffect::BeginDestroy()
@@ -263,32 +297,33 @@ void UEffekseerEffect::ReloadIfRequired()
 	if (Scale != loadedScale)
 	{
 		auto path = GetPathName();
-		LoadEffect(buffer.GetData(), buffer.Num(), *path);
+		LoadEffect(buffer.GetData(), buffer.Num(), *path, true);
 	}
 }
 
 void UEffekseerEffect::AssignResources()
 {
 	auto path = GetPathName();
-	LoadEffect(buffer.GetData(), buffer.Num(), *path);
+	LoadEffect(buffer.GetData(), buffer.Num(), *path, true);
 }
 
 void UEffekseerEffect::PostLoad()
 {
 	Super::PostLoad();
 
-	// To load Model object
-	AssignResources();
+	if (isDirty)
+	{
+		ReleaseEffect();
+		auto path = GetPathName();
+		LoadEffect(buffer.GetData(), buffer.Num(), *path, false);
+		isDirty = false;
+	}
 }
 
 void UEffekseerEffect::Serialize(FArchive& Ar)
 {
 	Super::Serialize(Ar);
-
-	const int32_t version = 1;
-	const FGuid GUID(0x11334A12, 0x2E554231, 0xA36791A3, 0xC5A1082C);
-	static FCustomVersionRegistration GRegisterPaperCustomVersion(GUID, version, TEXT("EffekseerVer"));
-	Ar.UsingCustomVersion(GUID);
+	Ar.UsingCustomVersion(FEffekseerCustomVersion::GUID);
 
 	/*
 #if WITH_EDITORONLY_DATA
@@ -307,9 +342,6 @@ void UEffekseerEffect::Serialize(FArchive& Ar)
 
 	if (Ar.IsLoading())
 	{
-		ReleaseEffect();
-
-		auto path = GetPathName();
-		LoadEffect(buffer.GetData(), buffer.Num(), *path);
+		isDirty = true;
 	}
 }

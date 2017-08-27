@@ -110,22 +110,34 @@ private:
 	void*			effectPtr = nullptr;
 	TArray<uint8>	buffer;
 
-	// ロード時に設定されていたスケール
+	// scale when loaded
 	float			loadedScale = 1.0f;
 
-	void LoadEffect(const uint8_t* data, int32_t size, const TCHAR* path);
+	bool			isDirty = true;
+
+	void LoadEffect(const uint8_t* data, int32_t size, const TCHAR* path, bool isResourceReset);
 	void ReleaseEffect();
 public:
 	void Load(const uint8_t* data, int32_t size, const TCHAR* path);
 
 	void BeginDestroy() override;
 
-	UPROPERTY(VisibleAnywhere, Transient)
+	UPROPERTY(Transient)
 	int32 Version = -1;
 
 	UPROPERTY(EditAnywhere)
 	float Scale = 1.0f;
 
+	UPROPERTY(VisibleAnywhere)
+	TArray<UTexture2D*>	ColorTextures;
+
+	UPROPERTY(VisibleAnywhere)
+	TArray<UEffekseerModel*>	Models;
+
+	UPROPERTY(Transient)
+	TArray<UEffekseerMaterial*>	Materials;
+	
+	/*
 	UPROPERTY(VisibleAnywhere, Transient)
 	TArray<UTexture2D*>	ColorTextures;
 
@@ -134,7 +146,8 @@ public:
 
 	UPROPERTY(VisibleAnywhere, Transient)
 	TArray<UEffekseerModel*>	Models;
-	
+	*/
+
 #if WITH_EDITORONLY_DATA
 	UPROPERTY(Category = ImportSettings, VisibleAnywhere)
 	class UAssetImportData* AssetImportData;

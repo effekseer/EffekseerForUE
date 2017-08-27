@@ -3,6 +3,8 @@
 #include "EffekseerNative.h"
 #include "EffekseerInternalModel.h"
 
+#include "EffekseerCustomVersion.h"
+
 void UEffekseerModel::LoadModel(const uint8_t* data, int32_t size, const TCHAR* path)
 {
 	auto model = new EffekseerInternalModel((void*)data, size);
@@ -64,10 +66,7 @@ void UEffekseerModel::Serialize(FArchive& Ar)
 {
 	Super::Serialize(Ar);
 
-	const int32_t Version = 1;
-	const FGuid GUID(0x11334A13, 0x22554231, 0xA36291A3, 0xC5A1022C);
-	static FCustomVersionRegistration GRegisterPaperCustomVersion(GUID, Version, TEXT("EffekseerModelVer"));
-	Ar.UsingCustomVersion(GUID);
+	Ar.UsingCustomVersion(FEffekseerCustomVersion::GUID);
 
 	/*
 	#if WITH_EDITORONLY_DATA

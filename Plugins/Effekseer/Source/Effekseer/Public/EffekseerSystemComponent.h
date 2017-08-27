@@ -2,6 +2,7 @@
 #pragma once
 
 #include "Components/PrimitiveComponent.h"
+#include "Runtime/Launch/Resources/Version.h"
 
 #include "EffekseerEffect.h"
 #include "EffekseerHandle.h"
