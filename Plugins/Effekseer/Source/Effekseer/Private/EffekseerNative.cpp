@@ -1,5 +1,4 @@
 ﻿#include "EffekseerPrivatePCH.h"  // UE4
-
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
 #define _WINSOCKAPI_
 #include "EffekseerNative.h"
@@ -24,8 +23,6 @@
 #include <sys/socket.h>
 #endif
 
-
-
 #ifndef	__EFFEKSEER_BASE_H__
 #define	__EFFEKSEER_BASE_H__
 
@@ -43,10 +40,6 @@
 #else
 #define	EFK_STDCALL
 #endif
-
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
 
 //----------------------------------------------------------------------------------
 //
@@ -1847,10 +1840,17 @@ namespace Culling3D
 	{
 		objs.clear();
 	
-		if (!std::isinf(cameraProjMat.Values[2][2]) &&
+#if _MSC_VER == 1700
+		if (_finite(cameraProjMat.Values[2][2]) &&
 			cameraProjMat.Values[0][0] != 0.0f &&
 			cameraProjMat.Values[1][1] != 0.0f)
 		{
+#else
+				if (!std::isinf(cameraProjMat.Values[2][2]) &&
+			cameraProjMat.Values[0][0] != 0.0f &&
+			cameraProjMat.Values[1][1] != 0.0f)
+		{
+#endif
 			Matrix44 cameraProjMatInv = cameraProjMat;
 			cameraProjMatInv.SetInverted();
 
@@ -4169,6 +4169,45 @@ void CriticalSection::Leave() const
 {
 	::LeaveCriticalSection( &m_criticalSection );
 }
+//-----------------------------------------------------------------------------------
+/**
+*/
+//-----------------------------------------------------------------------------------
+#elif defined(_PSVITA) || defined(_PS4) || defined(_SWITCH) || defined(_XBOXONE)
+//----------------------------------------------------------------------------------
+//
+//----------------------------------------------------------------------------------
+CriticalSection::CriticalSection()
+{
+	::ConsoleGameInitializeCriticalSection(&m_mutex);
+}
+
+//-----------------------------------------------------------------------------------
+/**
+*/
+//-----------------------------------------------------------------------------------
+CriticalSection::~CriticalSection()
+{
+	::ConsoleGameDeleteCriticalSection(&m_mutex);
+}
+
+//-----------------------------------------------------------------------------------
+/**
+*/
+//-----------------------------------------------------------------------------------
+void CriticalSection::Enter() const
+{
+	::ConsoleGameEnterCriticalSection(&m_mutex);
+}
+
+//-----------------------------------------------------------------------------------
+/**
+*/
+//-----------------------------------------------------------------------------------
+void CriticalSection::Leave() const
+{
+	::ConsoleGameLeaveCriticalSection(&m_mutex);
+}
 #else
 //----------------------------------------------------------------------------------
 //
@@ -4311,6 +4350,44 @@ bool Thread::Wait() const
 	return true;
 }
 
+#elif defined(_PSVITA) || defined(_PS4) || defined(_SWITCH) || defined(_XBOXONE)
+	//-----------------------------------------------------------------------------------
+	//
+	//-----------------------------------------------------------------------------------
+	Thread::Thread()
+	{
+	}
+
+	//-----------------------------------------------------------------------------------
+	//
+	//-----------------------------------------------------------------------------------
+	Thread::~Thread()
+	{
+	}
+
+	//-----------------------------------------------------------------------------------
+	//
+	//-----------------------------------------------------------------------------------
+	bool Thread::Create(void(*threadFunc)(void*), void* data)
+	{
+		return false;
+	}
+
+	//-----------------------------------------------------------------------------------
+	//
+	//-----------------------------------------------------------------------------------
+	bool Thread::IsExitThread() const
+	{
+		return false;
+	}
+
+	//-----------------------------------------------------------------------------------
+	//
+	//-----------------------------------------------------------------------------------
+	bool Thread::Wait() const
+	{
+		return false;
+	}
 #else
 
 //-----------------------------------------------------------------------------------
@@ -4874,14 +4951,12 @@ namespace Effekseer
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-enum BindType
+enum class BindType : int32_t
 {
-	BindType_NotBind = 0,
-	BindType_NotBind_Root = 3,
-	BindType_WhenCreating = 1,
-	BindType_Always = 2,
-
-	BindType_DWORD = 0x7fffffff,
+	NotBind = 0,
+	NotBind_Root = 3,
+	WhenCreating = 1,
+	Always = 2,
 };
 
 //----------------------------------------------------------------------------------
@@ -5166,12 +5241,20 @@ struct ParameterGenerationLocation
 {
 	int	EffectsRotation;
 
+	enum class AxisType : int32_t
+	{
+		X,
+		Y,
+		Z,
+	};
+
 	enum
 	{
 		TYPE_POINT = 0,
 		TYPE_SPHERE = 1,
 		TYPE_MODEL = 2,
 		TYPE_CIRCLE = 3,
+		TYPE_LINE = 4,
 
 		TYPE_DWORD = 0x7fffffff,
 	} type;
@@ -5192,6 +5275,12 @@ struct ParameterGenerationLocation
 		CIRCLE_TYPE_RANDOM = 0,
 		CIRCLE_TYPE_ORDER = 1,
 		CIRCLE_TYPE_REVERSE_ORDER = 2,
+	};
+
+	enum class LineType : int32_t
+	{
+		Random = 0,
+		Order = 1,
 	};
 
 	union
@@ -5221,10 +5310,21 @@ struct ParameterGenerationLocation
 			random_float	angle_start;
 			random_float	angle_end;
 			eCircleType		type;
+			AxisType		axisDirection;
+			random_float	angle_noize;
 		} circle;
+
+		struct
+		{
+			int32_t			division;
+			random_vector3d	position_start;
+			random_vector3d	position_end;
+			random_float	position_noize;
+			LineType		type;
+		} line;
 	};
 
-	void load( uint8_t*& pos )
+	void load( uint8_t*& pos, int32_t version)
 	{
 		memcpy( &EffectsRotation, pos, sizeof(int) );
 		pos += sizeof(int);
@@ -5249,23 +5349,36 @@ struct ParameterGenerationLocation
 		}
 		else if( type == TYPE_CIRCLE )
 		{
-			memcpy( &circle, pos, sizeof(circle) );
-			pos += sizeof(circle);
+			if (version < 10)
+			{
+				memcpy(&circle, pos, sizeof(circle) - sizeof(circle.axisDirection) - sizeof(circle.angle_noize));
+				pos += sizeof(circle) - sizeof(circle.axisDirection) - sizeof(circle.angle_noize);
+				circle.axisDirection = AxisType::Z;
+				circle.angle_noize.max = 0;
+				circle.angle_noize.min = 0;
+			}
+			else
+			{
+				memcpy(&circle, pos, sizeof(circle));
+				pos += sizeof(circle);
+			}
+		}
+		else if (type == TYPE_LINE)
+		{
+			memcpy(&line, pos, sizeof(line));
+			pos += sizeof(line);
 		}
 	}
 };
 
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
-struct ParameterTexture
+struct ParameterRendererCommon
 {
 	int32_t				ColorTextureIndex;
-	AlphaBlendType	AlphaBlend;
+	AlphaBlendType		AlphaBlend;
 
 	TextureFilterType	FilterType;
 
-	TextureWrapType	WrapType;
+	TextureWrapType		WrapType;
 
 	bool				ZWrite;
 
@@ -5274,6 +5387,8 @@ struct ParameterTexture
 	bool				Distortion;
 
 	float				DistortionIntensity;
+	
+	BindType			ColorBindType;
 
 	enum
 	{
@@ -5313,6 +5428,18 @@ struct ParameterTexture
 		UV_DWORD = 0x7fffffff,
 	} UVType;
 
+
+	/**
+		@brief	UV Parameter
+		@note
+		for Compatibility
+	*/
+	struct UVScroll_09
+	{
+		rectf		Position;
+		vector2d	Speed;
+	};
+
 	union
 	{
 		struct
@@ -5340,24 +5467,27 @@ struct ParameterTexture
 				LOOPTYPE_DWORD = 0x7fffffff,
 			} LoopType;
 
+			random_int	StartFrame;
+
 		} Animation;
 
 		struct
 		{
-			rectf		Position;
-			vector2d	Speed;
+			random_vector2d	Position;
+			random_vector2d	Size;
+			random_vector2d	Speed;
 		} Scroll;
 
 	} UV;
 
 	void reset()
 	{
-		memset( this, 0, sizeof(ParameterTexture) );
+		memset( this, 0, sizeof(ParameterRendererCommon) );
 	}
 
 	void load( uint8_t*& pos, int32_t version )
 	{
-		memset( this, 0, sizeof(ParameterTexture) );
+		memset( this, 0, sizeof(ParameterRendererCommon) );
 
 		memcpy( &ColorTextureIndex, pos, sizeof(int) );
 		pos += sizeof(int);
@@ -5421,13 +5551,56 @@ struct ParameterTexture
 		}
 		else if( UVType == UV_ANIMATION )
 		{
-			memcpy( &UV.Animation, pos, sizeof(UV.Animation) );
-			pos += sizeof(UV.Animation);
+			if (version < 10)
+			{
+				// without start frame
+				memcpy(&UV.Animation, pos, sizeof(UV.Animation) - sizeof(UV.Animation.StartFrame));
+				pos += sizeof(UV.Animation) - sizeof(UV.Animation.StartFrame);
+				UV.Animation.StartFrame.max = 0;
+				UV.Animation.StartFrame.min = 0;
+			}
+			else
+			{
+				memcpy(&UV.Animation, pos, sizeof(UV.Animation));
+				pos += sizeof(UV.Animation);
+			}
 		}
 		else if( UVType == UV_SCROLL )
 		{
-			memcpy( &UV.Scroll, pos, sizeof(UV.Scroll) );
-			pos += sizeof(UV.Scroll);
+			if (version < 10)
+			{
+				// compatibility
+				UVScroll_09 values;
+				memcpy(&values, pos, sizeof(values));
+				pos += sizeof(values);
+				UV.Scroll.Position.max.x = values.Position.x;
+				UV.Scroll.Position.max.y = values.Position.y;
+				UV.Scroll.Position.min = UV.Scroll.Position.max;
+
+				UV.Scroll.Size.max.x = values.Position.w;
+				UV.Scroll.Size.max.y = values.Position.h;
+				UV.Scroll.Size.min = UV.Scroll.Size.max;
+
+				UV.Scroll.Speed.max.x = values.Speed.x;
+				UV.Scroll.Speed.max.y = values.Speed.y;
+				UV.Scroll.Speed.min = UV.Scroll.Speed.max;
+
+			}
+			else
+			{
+				memcpy(&UV.Scroll, pos, sizeof(UV.Scroll));
+				pos += sizeof(UV.Scroll);
+			}
+		}
+
+		if (version >= 10)
+		{
+			memcpy(&ColorBindType, pos, sizeof(int32_t));
+			pos += sizeof(int32_t);
+		}
+		else
+		{
+			ColorBindType = BindType::NotBind;
 		}
 
 		if (version >= 9)
@@ -5534,7 +5707,12 @@ protected:
 public:
 
 	/**
-		@brief	描画するか?
+		@brief	\~english Whether to draw the node.
+				\~japanese このノードを描画するか?
+
+		@note
+		\~english 普通は描画されないノードは、描画の種類が変更されて、描画しないノードになる。ただし、色の継承をする場合、描画のみを行わないノードになる。
+		\~japanese For nodes that are not normally rendered, the rendering type is changed to become a node that does not render. However, when color inheritance is done, it becomes a node which does not perform drawing only.
 	*/
 	bool IsRendered;
 
@@ -5567,17 +5745,12 @@ public:
 
 	ParameterGenerationLocation	GenerationLocation;
 
-	ParameterTexture			Texture;
+	ParameterRendererCommon		RendererCommon;
 
 	ParameterSoundType			SoundType;
 	ParameterSound				Sound;
 
 	eRenderingOrder				RenderingOrder;
-
-	/**
-		@biref	オプション読み込み
-	*/
-	void LoadOption( uint8_t*& pos );
 
 	Effect* GetEffect() const override;
 
@@ -5690,17 +5863,18 @@ public:
 	{
 		// 色
 		color _color;
+		color _original;
 
 		union 
 		{
 			struct
 			{
-			
+				color _color;
 			} fixed;
 
 			struct
 			{
-
+				color _color;
 			} random;
 
 			struct
@@ -5867,17 +6041,18 @@ public:
 	{
 		// 色
 		color _color;
+		color _original;
 
 		union 
 		{
 			struct
 			{
-			
+				color _color;
 			} fixed;
 
 			struct
 			{
-
+				color _color;
 			} random;
 
 			struct
@@ -6098,16 +6273,18 @@ struct RingLocationValues
 struct RingColorValues
 {
 	color	current;
+	color	original;
+
 	union
 	{
 		struct
 		{
-	
+			color _color;
 		} fixed;
 
 		struct
 		{
-
+			color _color;
 		} random;
 
 		struct
@@ -6346,16 +6523,18 @@ public:
 		// 色
 		color _color;
 
+		color _originalColor;
+		
 		union 
 		{
 			struct
 			{
-			
+				color _color;
 			} fixed;
 
 			struct
 			{
-
+				color _color;
 			} random;
 
 			struct
@@ -6530,6 +6709,14 @@ public:
 		color	colorCenterMiddle;
 		color	colorRightMiddle;
 
+		color	_colorLeft;
+		color	_colorCenter;
+		color	_colorRight;
+
+		color	_colorLeftMiddle;
+		color	_colorCenterMiddle;
+		color	_colorRightMiddle;
+
 		float	SizeFor;
 		float	SizeMiddle;
 		float	SizeBack;
@@ -6588,7 +6775,7 @@ public:
 
 	void InitializeValues(InstanceGroupValues::Color& value, StandardColorParameter& param, Manager* manager);
 	void InitializeValues(InstanceGroupValues::Size& value, TrackSizeParameter& param, Manager* manager);
-	void SetValues( Color& c, InstanceGroupValues::Color& value, StandardColorParameter& param, int32_t time, int32_t livedTime );
+	void SetValues(Color& c, const Instance& instance, InstanceGroupValues::Color& value, StandardColorParameter& param, int32_t time, int32_t livedTime);
 	void SetValues( float& s, InstanceGroupValues::Size& value, TrackSizeParameter& param, float time );
 	void LoadValues( TrackSizeParameter& param, unsigned char*& pos );
 };
@@ -6640,15 +6827,15 @@ private:
 
 	int	m_ImageCount;
 	EFK_CHAR**		m_ImagePaths;
-	void**			m_pImages;
+	TextureData**	m_pImages;
 
 	int	m_normalImageCount;
 	EFK_CHAR**		m_normalImagePaths;
-	void**			m_normalImages;
+	TextureData**	m_normalImages;
 	
 	int	m_distortionImageCount;
 	EFK_CHAR**		m_distortionImagePaths;
-	void**			m_distortionImages;
+	TextureData**	m_distortionImages;
 
 	int	m_WaveCount;
 	EFK_CHAR**		m_WavePaths;
@@ -6712,8 +6899,7 @@ public:
 	// Rootの取得
 	EffectNode* GetRoot() const;
 
-	/* 拡大率の取得 */
-	float GetMaginification() const;
+	float GetMaginification() const override;
 
 	/**
 		@brief	読み込む。
@@ -6724,6 +6910,11 @@ public:
 		@breif	何も読み込まれていない状態に戻す
 	*/
 	void Reset();
+
+	/**
+		@brief	Compatibility for magnification.
+	*/
+	bool IsDyanamicMagnificationValid() const;
 
 private:
 	/**
@@ -6745,7 +6936,7 @@ public:
 	/**
 		@brief	格納されている画像のポインタを取得する。
 	*/
-	void* GetColorImage(int n) const;
+	TextureData* GetColorImage(int n) const override;
 
 	/**
 		@brief	格納されている画像のポインタの個数を取得する。
@@ -6755,11 +6946,11 @@ public:
 	/**
 	@brief	格納されている画像のポインタを取得する。
 	*/
-	void* GetNormalImage(int n) const;
+	TextureData* GetNormalImage(int n) const override;
 
 	int32_t GetNormalImageCount() const;
 
-	void* GetDistortionImage(int n) const;
+	TextureData* GetDistortionImage(int n) const override;
 
 	int32_t GetDistortionImageCount() const;
 
@@ -7572,6 +7763,12 @@ public:
 	Vector3D	m_GlobalRevisionLocation;
 	Vector3D	m_GlobalRevisionVelocity;
 	
+	// Color for binding
+	color		ColorInheritance;
+
+	// Parent color
+	color		ColorParent;
+
 	union 
 	{
 		struct
@@ -7713,13 +7910,34 @@ public:
 	// 生成されてからの時間
 	float		m_LivingTime;
 
-	/* 生成された子の個数 */
-	int32_t		m_generatedChildrenCount[ChildrenMax];
+	// The time offset for UV
+	int32_t		uvTimeOffset;
 
-	/* 次に子を生成する時間 */
-	float		m_nextGenerationTime[ChildrenMax];
+	// Scroll area for UV
+	RectF		uvScrollArea;
 
-	// 生成位置
+	// Scroll speed for UV
+	Vector2D	uvScrollSpeed;
+
+	// The number of generated chiledren. (fixed size)
+	int32_t		m_fixedGeneratedChildrenCount[ChildrenMax];
+
+	// The time to generate next child.  (fixed size)
+	float		m_fixedNextGenerationTime[ChildrenMax];
+
+	// The number of generated chiledren. (flexible size)
+	int32_t*		m_flexibleGeneratedChildrenCount;
+
+	// The time to generate next child.  (flexible size)
+	float*		m_flexibleNextGenerationTime;
+
+	// The number of generated chiledren. (actually used)
+	int32_t*		m_generatedChildrenCount;
+
+	// The time to generate next child.  (actually used)
+	float*			m_nextGenerationTime;
+
+	// Spawning Method matrix
 	Matrix43		m_GenerationLocation;
 
 	// 変換用行列
@@ -8229,6 +8447,7 @@ int32_t FCurveVectorColor::Load( void* data, int32_t version )
 
 
 
+
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
@@ -8256,6 +8475,8 @@ void EffectNodeImplemented::LoadParameter(unsigned char*& pos, EffectNode* paren
 {
 	int size = 0;
 	int node_type = 0;
+	auto ef = (EffectImplemented*) m_effect;
+
 	memcpy( &node_type, pos, sizeof(int) );
 	pos += sizeof(int);
 
@@ -8273,6 +8494,15 @@ void EffectNodeImplemented::LoadParameter(unsigned char*& pos, EffectNode* paren
 	}
 	else
 	{
+		if (m_effect->GetVersion() >= 10)
+		{
+			int32_t rendered = 0;
+			memcpy(&rendered, pos, sizeof(int32_t));
+			pos += sizeof(int32_t);
+
+			IsRendered = rendered != 0;
+		}
+
 		memcpy( &size, pos, sizeof(int) );
 		pos += sizeof(int);
 
@@ -8349,7 +8579,7 @@ void EffectNodeImplemented::LoadParameter(unsigned char*& pos, EffectNode* paren
 		}
 
 		/* 位置拡大処理 */
-		if( m_effect->GetVersion() >= 8 )
+		if (ef->IsDyanamicMagnificationValid())
 		{
 			if( TranslationType == ParameterTranslationType_Fixed )
 			{
@@ -8409,7 +8639,7 @@ void EffectNodeImplemented::LoadParameter(unsigned char*& pos, EffectNode* paren
 		}
 
 		// Magnify attraction forces
-		if( m_effect->GetVersion() >= 8 )
+		if (ef->IsDyanamicMagnificationValid())
 		{
 			if( LocationAbs.type == LocationAbsParameter::None )
 			{
@@ -8545,12 +8775,12 @@ void EffectNodeImplemented::LoadParameter(unsigned char*& pos, EffectNode* paren
 			ScalingFCurve->Z.SetDefaultValue( 1.0f );
 		}
 
-		/* 生成位置 */
-		GenerationLocation.load( pos );
+		/* Spawning Method */
+		GenerationLocation.load( pos, m_effect->GetVersion());
 
-		/* 生成位置拡大処理*/
-		if( m_effect->GetVersion() >= 8  
-			/* && (this->CommonValues.ScalingBindType == BindType_NotBind || parent->GetType() == EFFECT_NODE_TYPE_ROOT)*/ )
+		/* Spawning Method 拡大処理*/
+		if (ef->IsDyanamicMagnificationValid()
+			/* && (this->CommonValues.ScalingBindType == BindType::NotBind || parent->GetType() == EFFECT_NODE_TYPE_ROOT)*/ )
 		{
 			if( GenerationLocation.type == ParameterGenerationLocation::TYPE_POINT )
 			{
@@ -8658,14 +8888,11 @@ void EffectNodeImplemented::LoadParameter(unsigned char*& pos, EffectNode* paren
 
 		if( m_effect->GetVersion() >= 3)
 		{
-			Texture.load( pos, m_effect->GetVersion() );
-
-			// 拡大処理
-			Texture.DistortionIntensity *= m_effect->GetMaginification();
+			RendererCommon.load( pos, m_effect->GetVersion() );
 		}
 		else
 		{
-			Texture.reset();
+			RendererCommon.reset();
 		}
 
 		LoadRendererParameter( pos, m_effect->GetSetting() );
@@ -8725,27 +8952,6 @@ EffectNodeImplemented::~EffectNodeImplemented()
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void EffectNodeImplemented::LoadOption(uint8_t*& pos)
-{
-	int is_rendered = 0;
-	memcpy( &is_rendered, pos, sizeof(int) );
-	pos += sizeof(int);
-
-	IsRendered = is_rendered != 0;
-
-	int count = 0;
-	memcpy( &count, pos, sizeof(int) );
-	pos += sizeof(int);
-
-	for( int i = 0; i < count; i++ )
-	{
-		m_Nodes[i]->LoadOption( pos );
-	}
-}
-
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
 Effect* EffectNodeImplemented::GetEffect() const
 {
 	return m_effect;
@@ -8772,27 +8978,27 @@ EffectNode* EffectNodeImplemented::GetChild(int index) const
 EffectBasicRenderParameter EffectNodeImplemented::GetBasicRenderParameter()
 {
 	EffectBasicRenderParameter param;
-	param.ColorTextureIndex = Texture.ColorTextureIndex;
-	param.AlphaBlend = Texture.AlphaBlend;
-	param.Distortion = Texture.Distortion;
-	param.DistortionIntensity = Texture.DistortionIntensity;
-	param.FilterType = Texture.FilterType;
-	param.WrapType = Texture.WrapType;
-	param.ZTest = Texture.ZTest;
-	param.ZWrite = Texture.ZWrite;
+	param.ColorTextureIndex = RendererCommon.ColorTextureIndex;
+	param.AlphaBlend = RendererCommon.AlphaBlend;
+	param.Distortion = RendererCommon.Distortion;
+	param.DistortionIntensity = RendererCommon.DistortionIntensity;
+	param.FilterType = RendererCommon.FilterType;
+	param.WrapType = RendererCommon.WrapType;
+	param.ZTest = RendererCommon.ZTest;
+	param.ZWrite = RendererCommon.ZWrite;
 	return param;
 }
 
 void EffectNodeImplemented::SetBasicRenderParameter(EffectBasicRenderParameter param)
 {
-	Texture.ColorTextureIndex = param.ColorTextureIndex;
-	Texture.AlphaBlend = param.AlphaBlend;
-	Texture.Distortion = param.Distortion;
-	Texture.DistortionIntensity = param.DistortionIntensity;
-	Texture.FilterType = param.FilterType;
-	Texture.WrapType = param.WrapType;
-	Texture.ZTest = param.ZTest;
-	Texture.ZWrite = param.ZWrite;
+	RendererCommon.ColorTextureIndex = param.ColorTextureIndex;
+	RendererCommon.AlphaBlend = param.AlphaBlend;
+	RendererCommon.Distortion = param.Distortion;
+	RendererCommon.DistortionIntensity = param.DistortionIntensity;
+	RendererCommon.FilterType = param.FilterType;
+	RendererCommon.WrapType = param.WrapType;
+	RendererCommon.ZTest = param.ZTest;
+	RendererCommon.ZWrite = param.ZWrite;
 }
 
 //----------------------------------------------------------------------------------
@@ -8863,26 +9069,26 @@ float EffectNodeImplemented::GetFadeAlpha(const Instance& instance)
 {
 	float alpha = 1.0f;
 
-	if( Texture.FadeInType == ParameterTexture::FADEIN_ON && instance.m_LivingTime < Texture.FadeIn.Frame )
+	if( RendererCommon.FadeInType == ParameterRendererCommon::FADEIN_ON && instance.m_LivingTime < RendererCommon.FadeIn.Frame )
 	{
 		float v = 1.0f;
-		Texture.FadeIn.Value.setValueToArg( 
+		RendererCommon.FadeIn.Value.setValueToArg( 
 			v,
 			0.0f,
 			1.0f,
-			(float)instance.m_LivingTime / (float)Texture.FadeIn.Frame );
+			(float)instance.m_LivingTime / (float)RendererCommon.FadeIn.Frame );
 
 		alpha *= v;
 	}
 
-	if( Texture.FadeOutType == ParameterTexture::FADEOUT_ON && instance.m_LivingTime + Texture.FadeOut.Frame > instance.m_LivedTime )
+	if( RendererCommon.FadeOutType == ParameterRendererCommon::FADEOUT_ON && instance.m_LivingTime + RendererCommon.FadeOut.Frame > instance.m_LivedTime )
 	{
 		float v = 1.0f;
-		Texture.FadeOut.Value.setValueToArg( 
+		RendererCommon.FadeOut.Value.setValueToArg( 
 			v,
 			1.0f,
 			0.0f,
-			(float)( instance.m_LivingTime + Texture.FadeOut.Frame - instance.m_LivedTime ) / (float)Texture.FadeOut.Frame );
+			(float)( instance.m_LivingTime + RendererCommon.FadeOut.Frame - instance.m_LivedTime ) / (float)RendererCommon.FadeOut.Frame );
 
 		alpha *= v;
 	}
@@ -9007,7 +9213,7 @@ namespace Effekseer
 
 	int32_t size = 0;
 
-	AlphaBlend = Texture.AlphaBlend;
+	AlphaBlend = RendererCommon.AlphaBlend;
 
 	if( m_effect->GetVersion() >= 7 )
 	{
@@ -9044,13 +9250,13 @@ void EffectNodeModel::BeginRendering(int32_t count, Manager* manager)
 	{
 		ModelRenderer::NodeParameter nodeParameter;
 		nodeParameter.AlphaBlend = AlphaBlend;
-		nodeParameter.TextureFilter = Texture.FilterType;
-		nodeParameter.TextureWrap = Texture.WrapType;
-		nodeParameter.ZTest = Texture.ZTest;
-		nodeParameter.ZWrite = Texture.ZWrite;
+		nodeParameter.TextureFilter = RendererCommon.FilterType;
+		nodeParameter.TextureWrap = RendererCommon.WrapType;
+		nodeParameter.ZTest = RendererCommon.ZTest;
+		nodeParameter.ZWrite = RendererCommon.ZWrite;
 		nodeParameter.EffectPointer = GetEffect();
 		nodeParameter.ModelIndex = ModelIndex;
-		nodeParameter.ColorTextureIndex = Texture.ColorTextureIndex;
+		nodeParameter.ColorTextureIndex = RendererCommon.ColorTextureIndex;
 		nodeParameter.Culling = Culling;
 		nodeParameter.Lighting = Lighting;
 		nodeParameter.NormalTextureIndex = NormalTextureIndex;
@@ -9058,8 +9264,8 @@ void EffectNodeModel::BeginRendering(int32_t count, Manager* manager)
 		nodeParameter.IsRightHand = manager->GetCoordinateSystem() ==
 			CoordinateSystem::RH;
 
-		nodeParameter.Distortion = Texture.Distortion;
-		nodeParameter.DistortionIntensity = Texture.DistortionIntensity;
+		nodeParameter.Distortion = RendererCommon.Distortion;
+		nodeParameter.DistortionIntensity = RendererCommon.DistortionIntensity;
 
 		renderer->BeginRendering(nodeParameter, count, m_userData);
 	}
@@ -9076,13 +9282,13 @@ void EffectNodeModel::Rendering(const Instance& instance, Manager* manager)
 	{
 		ModelRenderer::NodeParameter nodeParameter;
 		nodeParameter.AlphaBlend = AlphaBlend;
-		nodeParameter.TextureFilter = Texture.FilterType;
-		nodeParameter.TextureWrap = Texture.WrapType;
-		nodeParameter.ZTest = Texture.ZTest;
-		nodeParameter.ZWrite = Texture.ZWrite;
+		nodeParameter.TextureFilter = RendererCommon.FilterType;
+		nodeParameter.TextureWrap = RendererCommon.WrapType;
+		nodeParameter.ZTest = RendererCommon.ZTest;
+		nodeParameter.ZWrite = RendererCommon.ZWrite;
 		nodeParameter.EffectPointer = GetEffect();
 		nodeParameter.ModelIndex = ModelIndex;
-		nodeParameter.ColorTextureIndex = Texture.ColorTextureIndex;
+		nodeParameter.ColorTextureIndex = RendererCommon.ColorTextureIndex;
 		nodeParameter.Culling = Culling;
 		nodeParameter.Lighting = Lighting;
 		nodeParameter.NormalTextureIndex = NormalTextureIndex;
@@ -9090,8 +9296,8 @@ void EffectNodeModel::Rendering(const Instance& instance, Manager* manager)
 		nodeParameter.IsRightHand = manager->GetCoordinateSystem() ==
 			CoordinateSystem::RH;
 
-		nodeParameter.Distortion = Texture.Distortion;
-		nodeParameter.DistortionIntensity = Texture.DistortionIntensity;
+		nodeParameter.Distortion = RendererCommon.Distortion;
+		nodeParameter.DistortionIntensity = RendererCommon.DistortionIntensity;
 
 
 		ModelRenderer::InstanceParameter instanceParameter;
@@ -9099,12 +9305,17 @@ void EffectNodeModel::Rendering(const Instance& instance, Manager* manager)
 
 		instanceParameter.UV = instance.GetUV();
 		
-		instValues._color.setValueToArg( instanceParameter.AllColor );
-		float fadeAlpha = GetFadeAlpha( instance );
-		if( fadeAlpha != 1.0f )
+		color _color;
+		if (RendererCommon.ColorBindType == BindType::Always || RendererCommon.ColorBindType == BindType::WhenCreating)
 		{
-			instanceParameter.AllColor.A = (uint8_t)(instanceParameter.AllColor.A * fadeAlpha);
+			_color = color::mul(instValues._original, instance.ColorParent);
 		}
+		else
+		{
+			_color = instValues._original;
+		}
+
+		_color.setValueToArg( instanceParameter.AllColor );
 
 		renderer->Rendering( nodeParameter, instanceParameter, m_userData );
 	}
@@ -9120,13 +9331,13 @@ void EffectNodeModel::EndRendering(Manager* manager)
 	{
 		ModelRenderer::NodeParameter nodeParameter;
 		nodeParameter.AlphaBlend = AlphaBlend;
-		nodeParameter.TextureFilter = Texture.FilterType;
-		nodeParameter.TextureWrap = Texture.WrapType;
-		nodeParameter.ZTest = Texture.ZTest;
-		nodeParameter.ZWrite = Texture.ZWrite;
+		nodeParameter.TextureFilter = RendererCommon.FilterType;
+		nodeParameter.TextureWrap = RendererCommon.WrapType;
+		nodeParameter.ZTest = RendererCommon.ZTest;
+		nodeParameter.ZWrite = RendererCommon.ZWrite;
 		nodeParameter.EffectPointer = GetEffect();
 		nodeParameter.ModelIndex = ModelIndex;
-		nodeParameter.ColorTextureIndex = Texture.ColorTextureIndex;
+		nodeParameter.ColorTextureIndex = RendererCommon.ColorTextureIndex;
 		nodeParameter.Culling = Culling;
 		nodeParameter.Lighting = Lighting;
 		nodeParameter.NormalTextureIndex = NormalTextureIndex;
@@ -9134,8 +9345,8 @@ void EffectNodeModel::EndRendering(Manager* manager)
 		nodeParameter.IsRightHand = manager->GetSetting()->GetCoordinateSystem() ==
 			CoordinateSystem::RH;
 
-		nodeParameter.Distortion = Texture.Distortion;
-		nodeParameter.DistortionIntensity = Texture.DistortionIntensity;
+		nodeParameter.Distortion = RendererCommon.Distortion;
+		nodeParameter.DistortionIntensity = RendererCommon.DistortionIntensity;
 
 		renderer->EndRendering( nodeParameter, m_userData );
 	}
@@ -9150,11 +9361,13 @@ void EffectNodeModel::InitializeRenderedInstance(Instance& instance, Manager* ma
 
 	if( AllColor.type == StandardColorParameter::Fixed )
 	{
-		instValues._color = AllColor.fixed.all;
+		instValues._original = AllColor.fixed.all;
+		instValues.allColorValues.fixed._color = instValues._original;
 	}
 	else if( AllColor.type == StandardColorParameter::Random )
 	{
-		instValues._color = AllColor.random.all.getValue(*(manager));
+		instValues._original = AllColor.random.all.getValue(*(manager));
+		instValues.allColorValues.random._color = instValues._original;
 	}
 	else if( AllColor.type == StandardColorParameter::Easing )
 	{
@@ -9164,7 +9377,7 @@ void EffectNodeModel::InitializeRenderedInstance(Instance& instance, Manager* ma
 		float t = instance.m_LivingTime / instance.m_LivedTime;
 
 		AllColor.easing.all.setValueToArg(
-			instValues._color, 
+			instValues._original,
 			instValues.allColorValues.easing.start,
 			instValues.allColorValues.easing.end,
 			t );
@@ -9176,11 +9389,22 @@ void EffectNodeModel::InitializeRenderedInstance(Instance& instance, Manager* ma
 		instValues.allColorValues.fcurve_rgba.offset[2] = AllColor.fcurve_rgba.FCurve->B.GetOffset(*(manager));
 		instValues.allColorValues.fcurve_rgba.offset[3] = AllColor.fcurve_rgba.FCurve->A.GetOffset(*(manager));
 		
-		instValues._color.r = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[0] + AllColor.fcurve_rgba.FCurve->R.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
-		instValues._color.g = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[1] + AllColor.fcurve_rgba.FCurve->G.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
-		instValues._color.b = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[2] + AllColor.fcurve_rgba.FCurve->B.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
-		instValues._color.a = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[3] + AllColor.fcurve_rgba.FCurve->A.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
+		instValues._original.r = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[0] + AllColor.fcurve_rgba.FCurve->R.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
+		instValues._original.g = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[1] + AllColor.fcurve_rgba.FCurve->G.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
+		instValues._original.b = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[2] + AllColor.fcurve_rgba.FCurve->B.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
+		instValues._original.a = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[3] + AllColor.fcurve_rgba.FCurve->A.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
 	}
+
+	if (RendererCommon.ColorBindType == BindType::Always || RendererCommon.ColorBindType == BindType::WhenCreating)
+	{
+		instValues._color = color::mul(instValues._original, instance.ColorParent);
+	}
+	else
+	{
+		instValues._color = instValues._original;
+	}
+
+	instance.ColorInheritance = instValues._color;
 }
 
 //----------------------------------------------------------------------------------
@@ -9190,23 +9414,48 @@ void EffectNodeModel::UpdateRenderedInstance(Instance& instance, Manager* manage
 {
 	InstanceValues& instValues = instance.rendererValues.model;
 
-	if( AllColor.type == StandardColorParameter::Easing )
+	if (AllColor.type == StandardColorParameter::Fixed)
+	{
+		instValues._original = instValues.allColorValues.fixed._color;
+	}
+	else if (AllColor.type == StandardColorParameter::Random)
+	{
+		instValues._original = instValues.allColorValues.random._color;
+	}
+	else if( AllColor.type == StandardColorParameter::Easing )
 	{
 		float t = instance.m_LivingTime / instance.m_LivedTime;
 
 		AllColor.easing.all.setValueToArg(
-			instValues._color, 
+			instValues._original,
 			instValues.allColorValues.easing.start,
 			instValues.allColorValues.easing.end,
 			t );
 	}
 	else if( AllColor.type == StandardColorParameter::FCurve_RGBA )
 	{
-		instValues._color.r = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[0] + AllColor.fcurve_rgba.FCurve->R.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
-		instValues._color.g = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[1] + AllColor.fcurve_rgba.FCurve->G.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
-		instValues._color.b = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[2] + AllColor.fcurve_rgba.FCurve->B.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
-		instValues._color.a = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[3] + AllColor.fcurve_rgba.FCurve->A.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
+		instValues._original.r = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[0] + AllColor.fcurve_rgba.FCurve->R.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
+		instValues._original.g = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[1] + AllColor.fcurve_rgba.FCurve->G.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
+		instValues._original.b = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[2] + AllColor.fcurve_rgba.FCurve->B.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
+		instValues._original.a = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[3] + AllColor.fcurve_rgba.FCurve->A.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
 	}
+
+	float fadeAlpha = GetFadeAlpha(instance);
+	if (fadeAlpha != 1.0f)
+	{
+		instValues._original.a = (uint8_t)(instValues._original.a * fadeAlpha);
+	}
+
+	if (RendererCommon.ColorBindType == BindType::Always || RendererCommon.ColorBindType == BindType::WhenCreating)
+	{
+		instValues._color = color::mul(instValues._original, instance.ColorParent);
+	}
+	else
+	{
+		instValues._color = instValues._original;
+	}
+
+	instance.ColorInheritance = instValues._color;
 }
 
 //----------------------------------------------------------------------------------
@@ -9244,7 +9493,7 @@ void EffectNodeRibbon::LoadRendererParameter(unsigned char*& pos, Setting* setti
 
 	if( m_effect->GetVersion() >= 3)
 	{
-		AlphaBlend = Texture.AlphaBlend;
+		AlphaBlend = RendererCommon.AlphaBlend;
 	}
 	else
 	{
@@ -9307,7 +9556,7 @@ void EffectNodeRibbon::LoadRendererParameter(unsigned char*& pos, Setting* setti
 
 	if( m_effect->GetVersion() >= 3)
 	{
-		RibbonTexture = Texture.ColorTextureIndex;
+		RibbonTexture = RendererCommon.ColorTextureIndex;
 	}
 	else
 	{
@@ -9343,16 +9592,16 @@ void EffectNodeRibbon::BeginRendering(int32_t count, Manager* manager)
 	if( renderer != NULL )
 	{
 		m_nodeParameter.AlphaBlend = AlphaBlend;
-		m_nodeParameter.TextureFilter = Texture.FilterType;
-		m_nodeParameter.TextureWrap = Texture.WrapType;
-		m_nodeParameter.ZTest = Texture.ZTest;
-		m_nodeParameter.ZWrite = Texture.ZWrite;
+		m_nodeParameter.TextureFilter = RendererCommon.FilterType;
+		m_nodeParameter.TextureWrap = RendererCommon.WrapType;
+		m_nodeParameter.ZTest = RendererCommon.ZTest;
+		m_nodeParameter.ZWrite = RendererCommon.ZWrite;
 		m_nodeParameter.ViewpointDependent = ViewpointDependent != 0;
 		m_nodeParameter.ColorTextureIndex = RibbonTexture;
 		m_nodeParameter.EffectPointer = GetEffect();
 
-		m_nodeParameter.Distortion = Texture.Distortion;
-		m_nodeParameter.DistortionIntensity = Texture.DistortionIntensity;
+		m_nodeParameter.Distortion = RendererCommon.Distortion;
+		m_nodeParameter.DistortionIntensity = RendererCommon.DistortionIntensity;
 
 
 		renderer->BeginRendering( m_nodeParameter, count, m_userData );
@@ -9386,11 +9635,21 @@ void EffectNodeRibbon::Rendering(const Instance& instance, Manager* manager)
 	RibbonRenderer* renderer = manager->GetRibbonRenderer();
 	if( renderer != NULL )
 	{
-		instValues._color.setValueToArg( m_instanceParameter.AllColor );
+		color _color;
+		if (RendererCommon.ColorBindType == BindType::Always || RendererCommon.ColorBindType == BindType::WhenCreating)
+		{
+			_color = color::mul(instValues._original, instance.ColorParent);
+		}
+		else
+		{
+			_color = instValues._original;
+		}
+
+		_color.setValueToArg( m_instanceParameter.AllColor );
 		m_instanceParameter.SRTMatrix43 = instance.GetGlobalMatrix43();
 
-		color color_l = instValues._color;
-		color color_r = instValues._color;
+		color color_l = _color;
+		color color_r = _color;
 
 		if( RibbonColor.type == RibbonColorParameter::Default )
 		{
@@ -9402,18 +9661,9 @@ void EffectNodeRibbon::Rendering(const Instance& instance, Manager* manager)
 			color_r = color::mul( color_r, RibbonColor.fixed.r );
 		}
 
-		float fadeAlpha = GetFadeAlpha( instance );
-		if( fadeAlpha != 1.0f )
-		{
-			color_l.a = (uint8_t)(color_l.a * fadeAlpha);
-			color_r.a = (uint8_t)(color_r.a * fadeAlpha);
-		}
-
 		color_l.setValueToArg( m_instanceParameter.Colors[0] );
 		color_r.setValueToArg( m_instanceParameter.Colors[1] );
 
-
-		
 		if( RibbonPosition.type == RibbonPositionParameter::Default )
 		{
 			m_instanceParameter.Positions[0] = -0.5f;
@@ -9452,17 +9702,30 @@ void EffectNodeRibbon::InitializeRenderedInstance(Instance& instance, Manager* m
 
 	if( RibbonAllColor.type == RibbonAllColorParameter::Fixed )
 	{
-		instValues._color = RibbonAllColor.fixed.all;
+		instValues._original = RibbonAllColor.fixed.all;
+		instValues.allColorValues.fixed._color = instValues._original;
 	}
 	else if( RibbonAllColor.type == RibbonAllColorParameter::Random )
 	{
-		instValues._color = RibbonAllColor.random.all.getValue(*(manager));
+		instValues._original = RibbonAllColor.random.all.getValue(*(manager));
+		instValues.allColorValues.random._color = instValues._original;
 	}
 	else if( RibbonAllColor.type == RibbonAllColorParameter::Easing )
 	{
 		instValues.allColorValues.easing.start = RibbonAllColor.easing.all.getStartValue(*(manager));
 		instValues.allColorValues.easing.end = RibbonAllColor.easing.all.getEndValue(*(manager));
 	}
+
+	if (RendererCommon.ColorBindType == BindType::Always || RendererCommon.ColorBindType == BindType::WhenCreating)
+	{
+		instValues._color = color::mul(instValues._original, instance.ColorParent);
+	}
+	else
+	{
+		instValues._color = instValues._original;
+	}
+
+	instance.ColorInheritance = instValues._color;
 }
 
 //----------------------------------------------------------------------------------
@@ -9472,16 +9735,41 @@ void EffectNodeRibbon::UpdateRenderedInstance(Instance& instance, Manager* manag
 {
 	InstanceValues& instValues = instance.rendererValues.ribbon;
 
-	if( RibbonAllColor.type == RibbonAllColorParameter::Easing )
+	if (RibbonAllColor.type == RibbonAllColorParameter::Fixed)
+	{
+		instValues._original = instValues.allColorValues.fixed._color;
+	}
+	else if (RibbonAllColor.type == RibbonAllColorParameter::Random)
+	{
+		instValues._original = instValues.allColorValues.random._color;
+	}
+	else if( RibbonAllColor.type == RibbonAllColorParameter::Easing )
 	{
 		float t = instance.m_LivingTime / instance.m_LivedTime;
 
 		RibbonAllColor.easing.all.setValueToArg(
-			instValues._color, 
+			instValues._original,
 			instValues.allColorValues.easing.start,
 			instValues.allColorValues.easing.end,
 			t );
 	}
+
+	float fadeAlpha = GetFadeAlpha(instance);
+	if (fadeAlpha != 1.0f)
+	{
+		instValues._original.a = (uint8_t)(instValues._original.a * fadeAlpha);
+	}
+
+	if (RendererCommon.ColorBindType == BindType::Always || RendererCommon.ColorBindType == BindType::WhenCreating)
+	{
+		instValues._color = color::mul(instValues._original, instance.ColorParent);
+	}
+	else
+	{
+		instValues._color = instValues._original;
+	}
+
+	instance.ColorInheritance = instValues._color;
 }
 
 //----------------------------------------------------------------------------------
@@ -9524,7 +9812,7 @@ void EffectNodeRing::LoadRendererParameter(unsigned char*& pos, Setting* setting
 
 	if( m_effect->GetVersion() >= 3)
 	{
-		AlphaBlend = Texture.AlphaBlend;
+		AlphaBlend = RendererCommon.AlphaBlend;
 	}
 	else
 	{
@@ -9554,7 +9842,7 @@ void EffectNodeRing::LoadRendererParameter(unsigned char*& pos, Setting* setting
 
 	if( m_effect->GetVersion() >= 3)
 	{
-		RingTexture = Texture.ColorTextureIndex;
+		RingTexture = RendererCommon.ColorTextureIndex;
 	}
 	else
 	{
@@ -9665,17 +9953,17 @@ void EffectNodeRing::BeginRendering(int32_t count, Manager* manager)
 	{
 		RingRenderer::NodeParameter nodeParameter;
 		nodeParameter.AlphaBlend = AlphaBlend;
-		nodeParameter.TextureFilter = Texture.FilterType;
-		nodeParameter.TextureWrap = Texture.WrapType;
-		nodeParameter.ZTest = Texture.ZTest;
-		nodeParameter.ZWrite = Texture.ZWrite;
+		nodeParameter.TextureFilter = RendererCommon.FilterType;
+		nodeParameter.TextureWrap = RendererCommon.WrapType;
+		nodeParameter.ZTest = RendererCommon.ZTest;
+		nodeParameter.ZWrite = RendererCommon.ZWrite;
 		nodeParameter.Billboard = Billboard;
 		nodeParameter.ColorTextureIndex = RingTexture;
 		nodeParameter.VertexCount = VertexCount;
 		nodeParameter.EffectPointer = GetEffect();
 
-		nodeParameter.Distortion = Texture.Distortion;
-		nodeParameter.DistortionIntensity = Texture.DistortionIntensity;
+		nodeParameter.Distortion = RendererCommon.Distortion;
+		nodeParameter.DistortionIntensity = RendererCommon.DistortionIntensity;
 
 		renderer->BeginRendering( nodeParameter, count, m_userData );
 	}
@@ -9693,16 +9981,33 @@ void EffectNodeRing::Rendering(const Instance& instance, Manager* manager)
 		RingRenderer::NodeParameter nodeParameter;
 		nodeParameter.EffectPointer = GetEffect();
 		nodeParameter.AlphaBlend = AlphaBlend;
-		nodeParameter.TextureFilter = Texture.FilterType;
-		nodeParameter.TextureWrap = Texture.WrapType;
-		nodeParameter.ZTest = Texture.ZTest;
-		nodeParameter.ZWrite = Texture.ZWrite;
+		nodeParameter.TextureFilter = RendererCommon.FilterType;
+		nodeParameter.TextureWrap = RendererCommon.WrapType;
+		nodeParameter.ZTest = RendererCommon.ZTest;
+		nodeParameter.ZWrite = RendererCommon.ZWrite;
 		nodeParameter.Billboard = Billboard;
 		nodeParameter.VertexCount = VertexCount;
 		nodeParameter.ColorTextureIndex = RingTexture;
 
-		nodeParameter.Distortion = Texture.Distortion;
-		nodeParameter.DistortionIntensity = Texture.DistortionIntensity;
+		nodeParameter.Distortion = RendererCommon.Distortion;
+		nodeParameter.DistortionIntensity = RendererCommon.DistortionIntensity;
+
+		color _outerColor;
+		color _centerColor;
+		color _innerColor;
+
+		if (RendererCommon.ColorBindType == BindType::Always || RendererCommon.ColorBindType == BindType::WhenCreating)
+		{
+			_outerColor = color::mul(instValues.outerColor.original, instance.ColorParent);
+			_centerColor = color::mul(instValues.centerColor.original, instance.ColorParent);
+			_innerColor = color::mul(instValues.innerColor.original, instance.ColorParent);
+		}
+		else
+		{
+			_outerColor = instValues.outerColor.original;
+			_centerColor = instValues.centerColor.original;
+			_innerColor = instValues.innerColor.original;
+		}
 
 		RingRenderer::InstanceParameter instanceParameter;
 		instanceParameter.SRTMatrix43 = instance.GetGlobalMatrix43();
@@ -9714,18 +10019,10 @@ void EffectNodeRing::Rendering(const Instance& instance, Manager* manager)
 
 		instanceParameter.CenterRatio = instValues.centerRatio.current;
 
-		instValues.outerColor.current.setValueToArg( instanceParameter.OuterColor );
-		instValues.centerColor.current.setValueToArg( instanceParameter.CenterColor );
-		instValues.innerColor.current.setValueToArg( instanceParameter.InnerColor );
+		_outerColor.setValueToArg( instanceParameter.OuterColor );
+		_centerColor.setValueToArg( instanceParameter.CenterColor );
+		_innerColor.setValueToArg( instanceParameter.InnerColor );
 		
-		float fadeAlpha = GetFadeAlpha( instance );
-		if( fadeAlpha != 1.0f )
-		{
-			instanceParameter.OuterColor.A = (uint8_t)(instanceParameter.OuterColor.A * fadeAlpha);
-			instanceParameter.CenterColor.A = (uint8_t)(instanceParameter.CenterColor.A * fadeAlpha);
-			instanceParameter.InnerColor.A = (uint8_t)(instanceParameter.InnerColor.A * fadeAlpha);
-		}
-
 		instanceParameter.UV = instance.GetUV();
 		renderer->Rendering( nodeParameter, instanceParameter, m_userData );
 	}
@@ -9741,16 +10038,16 @@ void EffectNodeRing::EndRendering(Manager* manager)
 	{
 		RingRenderer::NodeParameter nodeParameter;
 		nodeParameter.AlphaBlend = AlphaBlend;
-		nodeParameter.TextureFilter = Texture.FilterType;
-		nodeParameter.TextureWrap = Texture.WrapType;
-		nodeParameter.ZTest = Texture.ZTest;
-		nodeParameter.ZWrite = Texture.ZWrite;
+		nodeParameter.TextureFilter = RendererCommon.FilterType;
+		nodeParameter.TextureWrap = RendererCommon.WrapType;
+		nodeParameter.ZTest = RendererCommon.ZTest;
+		nodeParameter.ZWrite = RendererCommon.ZWrite;
 		nodeParameter.Billboard = Billboard;
 		nodeParameter.ColorTextureIndex = RingTexture;
 		nodeParameter.EffectPointer = GetEffect();
 
-		nodeParameter.Distortion = Texture.Distortion;
-		nodeParameter.DistortionIntensity = Texture.DistortionIntensity;
+		nodeParameter.Distortion = RendererCommon.Distortion;
+		nodeParameter.DistortionIntensity = RendererCommon.DistortionIntensity;
 
 		renderer->EndRendering( nodeParameter, m_userData );
 	}
@@ -9773,6 +10070,21 @@ void EffectNodeRing::InitializeRenderedInstance(Instance& instance, Manager* man
 	InitializeColorValues(OuterColor, instValues.outerColor, manager);
 	InitializeColorValues(CenterColor, instValues.centerColor, manager);
 	InitializeColorValues(InnerColor, instValues.innerColor, manager);
+
+	if (RendererCommon.ColorBindType == BindType::Always || RendererCommon.ColorBindType == BindType::WhenCreating)
+	{
+		instValues.outerColor.current = color::mul(instValues.outerColor.original, instance.ColorParent);
+		instValues.centerColor.current = color::mul(instValues.centerColor.original, instance.ColorParent);
+		instValues.innerColor.current = color::mul(instValues.innerColor.original, instance.ColorParent);
+	}
+	else
+	{
+		instValues.outerColor.current = instValues.outerColor.original;
+		instValues.centerColor.current = instValues.centerColor.original;
+		instValues.innerColor.current = instValues.innerColor.original;
+	}
+
+	instance.ColorInheritance = instValues.centerColor.current;
 }
 
 //----------------------------------------------------------------------------------
@@ -9792,6 +10104,21 @@ void EffectNodeRing::UpdateRenderedInstance(Instance& instance, Manager* manager
 	UpdateColorValues( instance, OuterColor, instValues.outerColor );
 	UpdateColorValues( instance, CenterColor, instValues.centerColor );
 	UpdateColorValues( instance, InnerColor, instValues.innerColor );
+
+	if (RendererCommon.ColorBindType == BindType::Always || RendererCommon.ColorBindType == BindType::WhenCreating)
+	{
+		instValues.outerColor.current = color::mul(instValues.outerColor.original, instance.ColorParent);
+		instValues.centerColor.current = color::mul(instValues.centerColor.original, instance.ColorParent);
+		instValues.innerColor.current = color::mul(instValues.innerColor.original, instance.ColorParent);
+	}
+	else
+	{
+		instValues.outerColor.current = instValues.outerColor.original;
+		instValues.centerColor.current = instValues.centerColor.original;
+		instValues.innerColor.current = instValues.innerColor.original;
+	}
+
+	instance.ColorInheritance = instValues.centerColor.current;
 }
 
 //----------------------------------------------------------------------------------
@@ -9924,15 +10251,17 @@ void EffectNodeRing::InitializeColorValues(const RingColorParameter& param, Ring
 	switch( param.type )
 	{
 		case RingColorParameter::Fixed:
-			values.current = param.fixed;
+			values.original = param.fixed;
+			values.fixed._color = values.original;
 			break;
 		case RingColorParameter::Random:
-			values.current = param.random.getValue( *manager );
+			values.original = param.random.getValue(*manager);
+			values.random._color = values.original;
 			break;
 		case RingColorParameter::Easing:
 			values.easing.start = param.easing.getStartValue( *manager );
 			values.easing.end = param.easing.getEndValue( *manager );
-			values.current = values.easing.start;
+			values.original = values.easing.start;
 			break;
 		default:
 			break;
@@ -9980,13 +10309,27 @@ void EffectNodeRing::UpdateLocationValues( Instance& instance, const RingLocatio
 //----------------------------------------------------------------------------------
 void EffectNodeRing::UpdateColorValues( Instance& instance, const RingColorParameter& param, RingColorValues& values )
 {
-	if( param.type == RingColorParameter::Easing )
+	if (param.type == RingColorParameter::Fixed)
+	{
+		values.original = values.fixed._color;
+	}
+	else if (param.type == RingColorParameter::Random)
+	{
+		values.original = values.random._color;
+	}
+	else if( param.type == RingColorParameter::Easing )
 	{
 		param.easing.setValueToArg(
-			values.current, 
+			values.original, 
 			values.easing.start,
 			values.easing.end,
 			instance.m_LivingTime / instance.m_LivedTime );
+	}
+
+	float fadeAlpha = GetFadeAlpha(instance);
+	if (fadeAlpha != 1.0f)
+	{
+		values.original.a = (uint8_t)(values.original.a * fadeAlpha);
 	}
 }
 
@@ -10027,6 +10370,8 @@ namespace Effekseer
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
+
+
 
 
 
@@ -10046,6 +10391,7 @@ namespace Effekseer
 	assert(type == GetType());
 	EffekseerPrintDebug("Renderer : Sprite\n");
 
+	auto ef = (EffectImplemented*) m_effect;
 	int32_t size = 0;
 
 	memcpy(&RenderingOrder, pos, sizeof(int));
@@ -10053,12 +10399,13 @@ namespace Effekseer
 
 	if (m_effect->GetVersion() >= 3)
 	{
-		AlphaBlend = Texture.AlphaBlend;
+		AlphaBlend = RendererCommon.AlphaBlend;
 	}
 	else
 	{
 		memcpy(&AlphaBlend, pos, sizeof(int));
 		pos += sizeof(int);
+		RendererCommon.AlphaBlend = AlphaBlend;
 	}
 
 	memcpy(&Billboard, pos, sizeof(int));
@@ -10092,6 +10439,18 @@ namespace Effekseer
 			pos += sizeof(SpritePosition.fixed);
 			SpritePosition.type = SpritePosition.Fixed;
 		}
+		else
+		{
+			SpritePosition.fixed.ll.x = -0.5f;
+			SpritePosition.fixed.ll.y = -0.5f;
+			SpritePosition.fixed.lr.x = 0.5f;
+			SpritePosition.fixed.lr.y = -0.5f;
+			SpritePosition.fixed.ul.x = -0.5f;
+			SpritePosition.fixed.ul.y = 0.5f;
+			SpritePosition.fixed.ur.x = 0.5f;
+			SpritePosition.fixed.ur.y = 0.5f;
+			SpritePosition.type = SpritePosition.Fixed;
+		}
 	}
 	else if (SpritePosition.type == SpritePosition.Fixed)
 	{
@@ -10101,12 +10460,13 @@ namespace Effekseer
 
 	if (m_effect->GetVersion() >= 3)
 	{
-		SpriteTexture = Texture.ColorTextureIndex;
+		SpriteTexture = RendererCommon.ColorTextureIndex;
 	}
 	else
 	{
 		memcpy(&SpriteTexture, pos, sizeof(int));
 		pos += sizeof(int);
+		RendererCommon.ColorTextureIndex = SpriteTexture;
 	}
 
 	// 右手系左手系変換
@@ -10115,7 +10475,7 @@ namespace Effekseer
 	}
 
 	/* 位置拡大処理 */
-	if (m_effect->GetVersion() >= 8)
+	if (ef->IsDyanamicMagnificationValid())
 	{
 		if (SpritePosition.type == SpritePosition.Default)
 		{
@@ -10140,16 +10500,16 @@ void EffectNodeSprite::BeginRendering(int32_t count, Manager* manager)
 	{
 		SpriteRenderer::NodeParameter nodeParameter;
 		nodeParameter.AlphaBlend = AlphaBlend;
-		nodeParameter.TextureFilter = Texture.FilterType;
-		nodeParameter.TextureWrap = Texture.WrapType;
-		nodeParameter.ZTest = Texture.ZTest;
-		nodeParameter.ZWrite = Texture.ZWrite;
+		nodeParameter.TextureFilter = RendererCommon.FilterType;
+		nodeParameter.TextureWrap = RendererCommon.WrapType;
+		nodeParameter.ZTest = RendererCommon.ZTest;
+		nodeParameter.ZWrite = RendererCommon.ZWrite;
 		nodeParameter.Billboard = Billboard;
 		nodeParameter.ColorTextureIndex = SpriteTexture;
 		nodeParameter.EffectPointer = GetEffect();
 		
-		nodeParameter.Distortion = Texture.Distortion;
-		nodeParameter.DistortionIntensity = Texture.DistortionIntensity;
+		nodeParameter.Distortion = RendererCommon.Distortion;
+		nodeParameter.DistortionIntensity = RendererCommon.DistortionIntensity;
 
 		renderer->BeginRendering( nodeParameter, count, m_userData );
 	}
@@ -10166,25 +10526,36 @@ void EffectNodeSprite::Rendering(const Instance& instance, Manager* manager)
 	{
 		SpriteRenderer::NodeParameter nodeParameter;
 		nodeParameter.AlphaBlend = AlphaBlend;
-		nodeParameter.TextureFilter = Texture.FilterType;
-		nodeParameter.TextureWrap = Texture.WrapType;
-		nodeParameter.ZTest = Texture.ZTest;
-		nodeParameter.ZWrite = Texture.ZWrite;
+		nodeParameter.TextureFilter = RendererCommon.FilterType;
+		nodeParameter.TextureWrap = RendererCommon.WrapType;
+		nodeParameter.ZTest = RendererCommon.ZTest;
+		nodeParameter.ZWrite = RendererCommon.ZWrite;
 		nodeParameter.Billboard = Billboard;
 		nodeParameter.ColorTextureIndex = SpriteTexture;
 		nodeParameter.EffectPointer = GetEffect();
 
-		nodeParameter.Distortion = Texture.Distortion;
-		nodeParameter.DistortionIntensity = Texture.DistortionIntensity;
+		nodeParameter.Distortion = RendererCommon.Distortion;
+		nodeParameter.DistortionIntensity = RendererCommon.DistortionIntensity;
 
 		SpriteRenderer::InstanceParameter instanceParameter;
 		instValues._color.setValueToArg( instanceParameter.AllColor );
 		instanceParameter.SRTMatrix43 = instance.GetGlobalMatrix43();
 
-		color color_ll = instValues._color;
-		color color_lr = instValues._color;
-		color color_ul = instValues._color;
-		color color_ur = instValues._color;
+		// Inherit color
+		color _color;
+		if (RendererCommon.ColorBindType == BindType::Always || RendererCommon.ColorBindType == BindType::WhenCreating)
+		{
+			_color = color::mul(instValues._originalColor, instance.ColorParent);
+		}
+		else
+		{
+			_color = instValues._originalColor;
+		}
+
+		color color_ll = _color;
+		color color_lr = _color;
+		color color_ul = _color;
+		color color_ur = _color;
 
 		if( SpriteColor.type == SpriteColorParameter::Default )
 		{
@@ -10195,15 +10566,6 @@ void EffectNodeSprite::Rendering(const Instance& instance, Manager* manager)
 			color_lr = color::mul( color_lr, SpriteColor.fixed.lr );
 			color_ul = color::mul( color_ul, SpriteColor.fixed.ul );
 			color_ur = color::mul( color_ur, SpriteColor.fixed.ur );
-		}
-
-		float fadeAlpha = GetFadeAlpha( instance );
-		if( fadeAlpha != 1.0f )
-		{
-			color_ll.a = (uint8_t)(color_ll.a * fadeAlpha);
-			color_lr.a = (uint8_t)(color_lr.a * fadeAlpha);
-			color_ul.a = (uint8_t)(color_ul.a * fadeAlpha);
-			color_ur.a = (uint8_t)(color_ur.a * fadeAlpha);
 		}
 
 		color_ll.setValueToArg( instanceParameter.Colors[0] );
@@ -10246,16 +10608,16 @@ void EffectNodeSprite::EndRendering(Manager* manager)
 	{
 		SpriteRenderer::NodeParameter nodeParameter;
 		nodeParameter.AlphaBlend = AlphaBlend;
-		nodeParameter.TextureFilter = Texture.FilterType;
-		nodeParameter.TextureWrap = Texture.WrapType;
-		nodeParameter.ZTest = Texture.ZTest;
-		nodeParameter.ZWrite = Texture.ZWrite;
+		nodeParameter.TextureFilter = RendererCommon.FilterType;
+		nodeParameter.TextureWrap = RendererCommon.WrapType;
+		nodeParameter.ZTest = RendererCommon.ZTest;
+		nodeParameter.ZWrite = RendererCommon.ZWrite;
 		nodeParameter.Billboard = Billboard;
 		nodeParameter.ColorTextureIndex = SpriteTexture;
 		nodeParameter.EffectPointer = GetEffect();
 
-		nodeParameter.Distortion = Texture.Distortion;
-		nodeParameter.DistortionIntensity = Texture.DistortionIntensity;
+		nodeParameter.Distortion = RendererCommon.Distortion;
+		nodeParameter.DistortionIntensity = RendererCommon.DistortionIntensity;
 
 		renderer->EndRendering( nodeParameter, m_userData );
 	}
@@ -10270,11 +10632,13 @@ void EffectNodeSprite::InitializeRenderedInstance(Instance& instance, Manager* m
 
 	if( SpriteAllColor.type == StandardColorParameter::Fixed )
 	{
-		instValues._color = SpriteAllColor.fixed.all;
+		instValues.allColorValues.fixed._color = SpriteAllColor.fixed.all;
+		instValues._originalColor = instValues.allColorValues.fixed._color;
 	}
 	else if( SpriteAllColor.type == StandardColorParameter::Random )
 	{
-		instValues._color = SpriteAllColor.random.all.getValue(*(manager));
+		instValues.allColorValues.random._color = SpriteAllColor.random.all.getValue(*(manager));
+		instValues._originalColor = instValues.allColorValues.random._color;
 	}
 	else if( SpriteAllColor.type == StandardColorParameter::Easing )
 	{
@@ -10284,7 +10648,7 @@ void EffectNodeSprite::InitializeRenderedInstance(Instance& instance, Manager* m
 		float t = instance.m_LivingTime / instance.m_LivedTime;
 
 		SpriteAllColor.easing.all.setValueToArg(
-			instValues._color, 
+			instValues._originalColor,
 			instValues.allColorValues.easing.start,
 			instValues.allColorValues.easing.end,
 			t );
@@ -10296,11 +10660,22 @@ void EffectNodeSprite::InitializeRenderedInstance(Instance& instance, Manager* m
 		instValues.allColorValues.fcurve_rgba.offset[2] = SpriteAllColor.fcurve_rgba.FCurve->B.GetOffset(*(manager));
 		instValues.allColorValues.fcurve_rgba.offset[3] = SpriteAllColor.fcurve_rgba.FCurve->A.GetOffset(*(manager));
 		
-		instValues._color.r = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[0] + SpriteAllColor.fcurve_rgba.FCurve->R.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
-		instValues._color.g = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[1] + SpriteAllColor.fcurve_rgba.FCurve->G.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
-		instValues._color.b = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[2] + SpriteAllColor.fcurve_rgba.FCurve->B.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
-		instValues._color.a = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[3] + SpriteAllColor.fcurve_rgba.FCurve->A.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
+		instValues._originalColor.r = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[0] + SpriteAllColor.fcurve_rgba.FCurve->R.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
+		instValues._originalColor.g = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[1] + SpriteAllColor.fcurve_rgba.FCurve->G.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
+		instValues._originalColor.b = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[2] + SpriteAllColor.fcurve_rgba.FCurve->B.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
+		instValues._originalColor.a = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[3] + SpriteAllColor.fcurve_rgba.FCurve->A.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
 	}
+
+	if (RendererCommon.ColorBindType == BindType::Always || RendererCommon.ColorBindType == BindType::WhenCreating)
+	{
+		instValues._color = color::mul(instValues._originalColor, instance.ColorParent);
+	}
+	else
+	{
+		instValues._color = instValues._originalColor;
+	}
+	
+	instance.ColorInheritance = instValues._color;
 }
 
 //----------------------------------------------------------------------------------
@@ -10310,23 +10685,48 @@ void EffectNodeSprite::UpdateRenderedInstance(Instance& instance, Manager* manag
 {
 	InstanceValues& instValues = instance.rendererValues.sprite;
 
+	if (SpriteAllColor.type == StandardColorParameter::Fixed)
+	{
+		instValues._originalColor = instValues.allColorValues.fixed._color;
+	}
+	else if (SpriteAllColor.type == StandardColorParameter::Random)
+	{
+		instValues._originalColor = instValues.allColorValues.random._color;
+	}
 	if( SpriteAllColor.type == StandardColorParameter::Easing )
 	{
 		float t = instance.m_LivingTime / instance.m_LivedTime;
 
 		SpriteAllColor.easing.all.setValueToArg(
-			instValues._color, 
+			instValues._originalColor, 
 			instValues.allColorValues.easing.start,
 			instValues.allColorValues.easing.end,
 			t );
 	}
 	else if( SpriteAllColor.type == StandardColorParameter::FCurve_RGBA )
 	{
-		instValues._color.r = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[0] + SpriteAllColor.fcurve_rgba.FCurve->R.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
-		instValues._color.g = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[1] + SpriteAllColor.fcurve_rgba.FCurve->G.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
-		instValues._color.b = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[2] + SpriteAllColor.fcurve_rgba.FCurve->B.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
-		instValues._color.a = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[3] + SpriteAllColor.fcurve_rgba.FCurve->A.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
+		instValues._originalColor.r = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[0] + SpriteAllColor.fcurve_rgba.FCurve->R.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
+		instValues._originalColor.g = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[1] + SpriteAllColor.fcurve_rgba.FCurve->G.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
+		instValues._originalColor.b = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[2] + SpriteAllColor.fcurve_rgba.FCurve->B.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
+		instValues._originalColor.a = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[3] + SpriteAllColor.fcurve_rgba.FCurve->A.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
 	}
+
+	float fadeAlpha = GetFadeAlpha(instance);
+	if (fadeAlpha != 1.0f)
+	{
+		instValues._originalColor.a = (uint8_t)(instValues._originalColor.a * fadeAlpha);
+	}
+
+	if (RendererCommon.ColorBindType == BindType::Always || RendererCommon.ColorBindType == BindType::WhenCreating)
+	{
+		instValues._color = color::mul(instValues._originalColor, instance.ColorParent);
+	}
+	else
+	{
+		instValues._color = instValues._originalColor;
+	}
+
+	instance.ColorInheritance = instValues._color;
 }
 
 //----------------------------------------------------------------------------------
@@ -10376,8 +10776,8 @@ void EffectNodeTrack::LoadRendererParameter(unsigned char*& pos, Setting* settin
 	TrackColorRight.load( pos, m_effect->GetVersion() );
 	TrackColorRightMiddle.load( pos, m_effect->GetVersion() );
 
-	AlphaBlend = Texture.AlphaBlend;
-	TrackTexture = Texture.ColorTextureIndex;
+	AlphaBlend = RendererCommon.AlphaBlend;
+	TrackTexture = RendererCommon.ColorTextureIndex;
 
 	EffekseerPrintDebug("TrackColorLeft : %d\n", TrackColorLeft.type );
 	EffekseerPrintDebug("TrackColorLeftMiddle : %d\n", TrackColorLeftMiddle.type );
@@ -10409,15 +10809,15 @@ void EffectNodeTrack::BeginRendering(int32_t count, Manager* manager)
 	if( renderer != NULL )
 	{
 		m_nodeParameter.AlphaBlend = AlphaBlend;
-		m_nodeParameter.TextureFilter = Texture.FilterType;
-		m_nodeParameter.TextureWrap = Texture.WrapType;
-		m_nodeParameter.ZTest = Texture.ZTest;
-		m_nodeParameter.ZWrite = Texture.ZWrite;
+		m_nodeParameter.TextureFilter = RendererCommon.FilterType;
+		m_nodeParameter.TextureWrap = RendererCommon.WrapType;
+		m_nodeParameter.ZTest = RendererCommon.ZTest;
+		m_nodeParameter.ZWrite = RendererCommon.ZWrite;
 		m_nodeParameter.ColorTextureIndex = TrackTexture;
 		m_nodeParameter.EffectPointer = GetEffect();
 
-		m_nodeParameter.Distortion = Texture.Distortion;
-		m_nodeParameter.DistortionIntensity = Texture.DistortionIntensity;
+		m_nodeParameter.Distortion = RendererCommon.Distortion;
+		m_nodeParameter.DistortionIntensity = RendererCommon.DistortionIntensity;
 
 		renderer->BeginRendering( m_nodeParameter, count, m_userData );
 	}
@@ -10472,13 +10872,13 @@ void EffectNodeTrack::Rendering(const Instance& instance, Manager* manager)
 		int32_t time = instance.m_LivingTime;
 		int32_t livedTime = instance.m_LivedTime;
 
-		SetValues( m_instanceParameter.ColorLeft, m_currentGroupValues.ColorLeft, TrackColorLeft, time, livedTime );
-		SetValues( m_instanceParameter.ColorCenter, m_currentGroupValues.ColorCenter, TrackColorCenter, time, livedTime );
-		SetValues( m_instanceParameter.ColorRight, m_currentGroupValues.ColorRight, TrackColorRight, time, livedTime );
+		SetValues(m_instanceParameter.ColorLeft, instance, m_currentGroupValues.ColorLeft, TrackColorLeft, time, livedTime);
+		SetValues(m_instanceParameter.ColorCenter, instance, m_currentGroupValues.ColorCenter, TrackColorCenter, time, livedTime);
+		SetValues(m_instanceParameter.ColorRight, instance, m_currentGroupValues.ColorRight, TrackColorRight, time, livedTime);
 
-		SetValues( m_instanceParameter.ColorLeftMiddle, m_currentGroupValues.ColorLeftMiddle, TrackColorLeftMiddle, time, livedTime );
-		SetValues( m_instanceParameter.ColorCenterMiddle, m_currentGroupValues.ColorCenterMiddle, TrackColorCenterMiddle, time, livedTime );
-		SetValues( m_instanceParameter.ColorRightMiddle, m_currentGroupValues.ColorRightMiddle, TrackColorRightMiddle, time, livedTime );
+		SetValues(m_instanceParameter.ColorLeftMiddle, instance, m_currentGroupValues.ColorLeftMiddle, TrackColorLeftMiddle, time, livedTime);
+		SetValues(m_instanceParameter.ColorCenterMiddle, instance, m_currentGroupValues.ColorCenterMiddle, TrackColorCenterMiddle, time, livedTime);
+		SetValues(m_instanceParameter.ColorRightMiddle, instance, m_currentGroupValues.ColorRightMiddle, TrackColorRightMiddle, time, livedTime);
 	
 		SetValues( m_instanceParameter.SizeFor, m_currentGroupValues.SizeFor, TrackSizeFor, t );
 		SetValues( m_instanceParameter.SizeMiddle, m_currentGroupValues.SizeMiddle, TrackSizeMiddle, t );
@@ -10529,6 +10929,27 @@ void EffectNodeTrack::InitializeRenderedInstanceGroup(InstanceGroup& instanceGro
 void EffectNodeTrack::InitializeRenderedInstance(Instance& instance, Manager* manager)
 {
 	InstanceValues& instValues = instance.rendererValues.track;
+
+	// Calculate only center
+	float t = (float) instance.m_LivingTime / (float) instance.m_LivedTime;
+	int32_t time = instance.m_LivingTime;
+	int32_t livedTime = instance.m_LivedTime;
+
+	Color c;
+	SetValues(c, instance, m_currentGroupValues.ColorCenterMiddle, TrackColorCenterMiddle, time, livedTime);
+
+	color _c;
+	_c.r = c.R;
+	_c.g = c.G;
+	_c.b = c.B;
+	_c.a = c.A;
+
+	if (RendererCommon.ColorBindType == BindType::Always || RendererCommon.ColorBindType == BindType::WhenCreating)
+	{
+		_c = color::mul(_c, instance.ColorParent);
+	}
+
+	instance.ColorInheritance = _c;
 }
 
 //----------------------------------------------------------------------------------
@@ -10537,6 +10958,22 @@ void EffectNodeTrack::InitializeRenderedInstance(Instance& instance, Manager* ma
 void EffectNodeTrack::UpdateRenderedInstance(Instance& instance, Manager* manager)
 {
 	InstanceValues& instValues = instance.rendererValues.track;
+
+	// Calculate only center
+	float t = (float) instance.m_LivingTime / (float) instance.m_LivedTime;
+	int32_t time = instance.m_LivingTime;
+	int32_t livedTime = instance.m_LivedTime;
+
+	Color c;
+	SetValues(c, instance, m_currentGroupValues.ColorCenterMiddle, TrackColorCenterMiddle, time, livedTime);
+
+	color _c;
+	_c.r = c.R;
+	_c.g = c.G;
+	_c.b = c.B;
+	_c.a = c.A;
+
+	instance.ColorInheritance = _c;
 }
 
 //----------------------------------------------------------------------------------
@@ -10580,32 +11017,47 @@ void EffectNodeTrack::InitializeValues(InstanceGroupValues::Size& value, TrackSi
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void EffectNodeTrack::SetValues( Color& c, InstanceGroupValues::Color& value, StandardColorParameter& param, int32_t time, int32_t livedTime )
+void EffectNodeTrack::SetValues(Color& c, const Instance& instance, InstanceGroupValues::Color& value, StandardColorParameter& param, int32_t time, int32_t livedTime)
 {
+	color _c;
+
 	if( param.type == StandardColorParameter::Fixed )
 	{
-		value.color.fixed.color_.setValueToArg( c );
+		_c = value.color.fixed.color_;
 	}
 	else if(param.type == StandardColorParameter::Random )
 	{
-		value.color.random.color_.setValueToArg( c );
+		_c = value.color.random.color_;
 	}
 	else if( param.type == StandardColorParameter::Easing )
 	{
 		float t = (float)time / (float)livedTime;
 		param.easing.all.setValueToArg(
-			c, 
+			_c, 
 			value.color.easing.start,
 			value.color.easing.end,
 			t );
 	}
 	else if( param.type == StandardColorParameter::FCurve_RGBA )
 	{
-		c.R = (uint8_t)Clamp( (value.color.fcurve_rgba.offset[0] + param.fcurve_rgba.FCurve->R.GetValue( (int32_t)time )), 255, 0);
-		c.G = (uint8_t)Clamp( (value.color.fcurve_rgba.offset[1] + param.fcurve_rgba.FCurve->G.GetValue( (int32_t)time )), 255, 0);
-		c.B = (uint8_t)Clamp( (value.color.fcurve_rgba.offset[2] + param.fcurve_rgba.FCurve->B.GetValue( (int32_t)time )), 255, 0);
-		c.A = (uint8_t)Clamp( (value.color.fcurve_rgba.offset[3] + param.fcurve_rgba.FCurve->A.GetValue( (int32_t)time )), 255, 0);
+		_c.r = (uint8_t)Clamp( (value.color.fcurve_rgba.offset[0] + param.fcurve_rgba.FCurve->R.GetValue( (int32_t)time )), 255, 0);
+		_c.g = (uint8_t)Clamp( (value.color.fcurve_rgba.offset[1] + param.fcurve_rgba.FCurve->G.GetValue( (int32_t)time )), 255, 0);
+		_c.b = (uint8_t)Clamp( (value.color.fcurve_rgba.offset[2] + param.fcurve_rgba.FCurve->B.GetValue( (int32_t)time )), 255, 0);
+		_c.a = (uint8_t)Clamp( (value.color.fcurve_rgba.offset[3] + param.fcurve_rgba.FCurve->A.GetValue( (int32_t)time )), 255, 0);
 	}
+
+	if (RendererCommon.ColorBindType == BindType::Always || RendererCommon.ColorBindType == BindType::WhenCreating)
+	{
+		_c = color::mul(_c, instance.ColorParent);
+	}
+
+	float fadeAlpha = GetFadeAlpha(instance);
+	if (fadeAlpha != 1.0f)
+	{
+		_c.a = (uint8_t)(_c.a * fadeAlpha);
+	}
+
+	_c.setValueToArg(c);
 }
 
 //----------------------------------------------------------------------------------
@@ -10930,7 +11382,7 @@ bool EffectImplemented::Load( void* pData, int size, float mag, const EFK_CHAR* 
 	if( m_ImageCount > 0 )
 	{
 		m_ImagePaths = new EFK_CHAR*[ m_ImageCount ];
-		m_pImages = new void*[ m_ImageCount ];
+		m_pImages = new TextureData*[ m_ImageCount ];
 
 		for( int i = 0; i < m_ImageCount; i++ )
 		{
@@ -10955,7 +11407,7 @@ bool EffectImplemented::Load( void* pData, int size, float mag, const EFK_CHAR* 
 		if (m_normalImageCount > 0)
 		{
 			m_normalImagePaths = new EFK_CHAR*[m_normalImageCount];
-			m_normalImages = new void*[m_normalImageCount];
+			m_normalImages = new TextureData*[m_normalImageCount];
 
 			for (int i = 0; i < m_normalImageCount; i++)
 			{
@@ -10978,7 +11430,7 @@ bool EffectImplemented::Load( void* pData, int size, float mag, const EFK_CHAR* 
 		if (m_distortionImageCount > 0)
 		{
 			m_distortionImagePaths = new EFK_CHAR*[m_distortionImageCount];
-			m_distortionImages = new void*[m_distortionImageCount];
+			m_distortionImages = new TextureData*[m_distortionImageCount];
 
 			for (int i = 0; i < m_distortionImageCount; i++)
 			{
@@ -11052,9 +11504,10 @@ bool EffectImplemented::Load( void* pData, int size, float mag, const EFK_CHAR* 
 	{
 		memcpy( &m_maginification, pos, sizeof(float) );
 		pos += sizeof(float);
-		m_maginification *= mag;
-		m_maginificationExternal = mag;
 	}
+
+	m_maginification *= mag;
+	m_maginificationExternal = mag;
 
 	// カリング
 	if( m_version >= 9 )
@@ -11151,6 +11604,11 @@ void EffectImplemented::Reset()
 	ES_SAFE_DELETE( m_pRoot );
 }
 
+bool EffectImplemented::IsDyanamicMagnificationValid() const
+{
+	return GetVersion() >= 8 || GetVersion() < 2;
+}
+
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
@@ -11179,7 +11637,7 @@ int EffectImplemented::GetVersion() const
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void* EffectImplemented::GetColorImage( int n ) const
+TextureData* EffectImplemented::GetColorImage( int n ) const
 {
 	return m_pImages[ n ];
 }
@@ -11189,7 +11647,7 @@ int32_t EffectImplemented::GetColorImageCount() const
 	return m_ImageCount;
 }
 
-void* EffectImplemented::GetNormalImage(int n) const
+TextureData* EffectImplemented::GetNormalImage(int n) const
 {
 	/* 強制的に互換をとる */
 	if (this->m_version <= 8)
@@ -11205,7 +11663,7 @@ int32_t EffectImplemented::GetNormalImageCount() const
 	return m_normalImageCount;
 }
 
-void* EffectImplemented::GetDistortionImage(int n) const
+TextureData* EffectImplemented::GetDistortionImage(int n) const
 {
 	/* 強制的に互換をとる */
 	if (this->m_version <= 8)
@@ -11485,10 +11943,6 @@ void EffectImplemented::UnloadResources()
 
 
 
-#ifdef _WIN32
-#else
-#endif
-
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
@@ -11510,6 +11964,14 @@ static int64_t GetTime(void)
 		}
 	}
 	return 0;
+#elif defined(_PSVITA)
+	return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
+#elif defined(_PS4)
+	return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
+#elif defined(_SWITCH)
+	return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
+#elif defined(_XBOXONE)
+	return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
 #else
 	struct timeval tv;
     gettimeofday(&tv, NULL);
@@ -13356,19 +13818,34 @@ namespace Effekseer
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-Instance::Instance( Manager* pManager, EffectNode* pEffectNode, InstanceContainer* pContainer )
-	: m_pManager			( pManager )
-	, m_pEffectNode((EffectNodeImplemented*) pEffectNode)
-	, m_pContainer			( pContainer )
-	, m_headGroups		( NULL )
-	, m_pParent			( NULL )
-	, m_State			( INSTANCE_STATE_ACTIVE )
-	, m_LivedTime		( 0 )
-	, m_LivingTime		( 0 )
-	, m_stepTime		( false )
-	, m_sequenceNumber	( 0 )
-
+Instance::Instance(Manager* pManager, EffectNode* pEffectNode, InstanceContainer* pContainer)
+	: m_pManager(pManager)
+	, m_pEffectNode((EffectNodeImplemented*)pEffectNode)
+	, m_pContainer(pContainer)
+	, m_headGroups(NULL)
+	, m_pParent(NULL)
+	, m_State(INSTANCE_STATE_ACTIVE)
+	, m_LivedTime(0)
+	, m_LivingTime(0)
+	, uvTimeOffset(0)
+	, m_stepTime(false)
+	, m_sequenceNumber(0)
+	, m_flexibleGeneratedChildrenCount(nullptr)
+	, m_flexibleNextGenerationTime(nullptr)
 {
+	m_generatedChildrenCount = m_fixedGeneratedChildrenCount;
+	m_nextGenerationTime = m_fixedNextGenerationTime;
+	
+	ColorInheritance.r = 255;
+	ColorInheritance.g = 255;
+	ColorInheritance.b = 255;
+	ColorInheritance.a = 255;
+
+	ColorParent.r = 255;
+	ColorParent.g = 255;
+	ColorParent.b = 255;
+	ColorParent.a = 255;
+
 	InstanceGroup* group = NULL;
 
 	for( int i = 0; i < m_pEffectNode->GetChildrenCount(); i++ )
@@ -13394,6 +13871,18 @@ Instance::Instance( Manager* pManager, EffectNode* pEffectNode, InstanceContaine
 Instance::~Instance()
 {
 	assert( m_State != INSTANCE_STATE_ACTIVE );
+
+	auto parameter = (EffectNodeImplemented*)m_pEffectNode;
+
+	if (m_flexibleGeneratedChildrenCount != nullptr)
+	{
+		m_pManager->GetFreeFunc()(m_flexibleGeneratedChildrenCount, sizeof(int32_t) * parameter->GetChildrenCount());
+	}
+
+	if (m_flexibleNextGenerationTime != nullptr)
+	{
+		m_pManager->GetFreeFunc()(m_flexibleNextGenerationTime, sizeof(float) * parameter->GetChildrenCount());
+	}
 }
 
 //----------------------------------------------------------------------------------
@@ -13419,11 +13908,21 @@ void Instance::Initialize( Instance* parent, int32_t instanceNumber )
 {
 	auto parameter = (EffectNodeImplemented*) m_pEffectNode;
 
+	// Extend array
+	if (parameter->GetChildrenCount() >= ChildrenMax)
+	{
+		m_flexibleGeneratedChildrenCount = (int32_t*)(m_pManager->GetMallocFunc()(sizeof(int32_t) * parameter->GetChildrenCount()));
+		m_flexibleNextGenerationTime = (float*)(m_pManager->GetMallocFunc()(sizeof(float) * parameter->GetChildrenCount()));
+
+		m_generatedChildrenCount = m_flexibleGeneratedChildrenCount;
+		m_nextGenerationTime = m_flexibleNextGenerationTime;
+	}
+
 	// 親の設定
 	m_pParent = parent;
 
 	// 子の初期化
-	for (int32_t i = 0; i < Min(ChildrenMax, parameter->GetChildrenCount()); i++)
+	for (int32_t i = 0; i < parameter->GetChildrenCount(); i++)
 	{
 		auto pNode = (EffectNodeImplemented*) parameter->GetChild(i);
 
@@ -13470,15 +13969,15 @@ void Instance::Initialize( Instance* parent, int32_t instanceNumber )
 	m_ParentMatrix43.Indentity();
 
 	// 親の初期化
-	if( parameter->CommonValues.TranslationBindType == BindType_WhenCreating )
+	if( parameter->CommonValues.TranslationBindType == BindType::WhenCreating )
 	{
 		m_ParentMatrix43.Value[3][0] = m_pParent->m_GlobalMatrix43.Value[3][0];
 		m_ParentMatrix43.Value[3][1] = m_pParent->m_GlobalMatrix43.Value[3][1];
 		m_ParentMatrix43.Value[3][2] = m_pParent->m_GlobalMatrix43.Value[3][2];
 	}
 
-	if( parameter->CommonValues.RotationBindType == BindType_WhenCreating &&
-		parameter->CommonValues.ScalingBindType == BindType_WhenCreating )
+	if( parameter->CommonValues.RotationBindType == BindType::WhenCreating &&
+		parameter->CommonValues.ScalingBindType == BindType::WhenCreating )
 	{
 		for( int m = 0; m < 3; m++ )
 		{
@@ -13488,7 +13987,7 @@ void Instance::Initialize( Instance* parent, int32_t instanceNumber )
 			}
 		}
 	}
-	else if ( parameter->CommonValues.RotationBindType == BindType_WhenCreating )
+	else if ( parameter->CommonValues.RotationBindType == BindType::WhenCreating )
 	{
 		for( int m = 0; m < 3; m++ )
 		{
@@ -13517,7 +14016,7 @@ void Instance::Initialize( Instance* parent, int32_t instanceNumber )
 			}
 		}
 	}
-	else if ( parameter->CommonValues.ScalingBindType == BindType_WhenCreating )
+	else if ( parameter->CommonValues.ScalingBindType == BindType::WhenCreating )
 	{
 		float s[3];
 		for( int m = 0; m < 3; m++ )
@@ -13534,6 +14033,16 @@ void Instance::Initialize( Instance* parent, int32_t instanceNumber )
 		m_ParentMatrix43.Value[2][2] = s[2];
 	}
 	
+	// Initialize parent color
+	if (parameter->RendererCommon.ColorBindType == BindType::Always)
+	{
+		ColorParent = m_pParent->ColorInheritance;
+	}
+	else if (parameter->RendererCommon.ColorBindType == BindType::WhenCreating)
+	{
+		ColorParent = m_pParent->ColorInheritance;
+	}
+
 	/* 位置 */
 	if( m_pEffectNode->TranslationType == ParameterTranslationType_Fixed )
 	{
@@ -13632,11 +14141,101 @@ void Instance::Initialize( Instance* parent, int32_t instanceNumber )
 		scaling_values.fcruve.offset.z = m_pEffectNode->ScalingFCurve->Z.GetOffset( *m_pManager );
 	}
 
-	/* 生成位置 */
+	// Spawning Method
 	if( m_pEffectNode->GenerationLocation.type == ParameterGenerationLocation::TYPE_POINT )
 	{
 		vector3d p = m_pEffectNode->GenerationLocation.point.location.getValue( *m_pManager );
 		m_GenerationLocation.Translation( p.x, p.y, p.z );
+	}
+	else if (m_pEffectNode->GenerationLocation.type == ParameterGenerationLocation::TYPE_LINE)
+	{
+		vector3d s = m_pEffectNode->GenerationLocation.line.position_start.getValue(*m_pManager);
+		vector3d e = m_pEffectNode->GenerationLocation.line.position_end.getValue(*m_pManager);
+		auto noize =  m_pEffectNode->GenerationLocation.line.position_noize.getValue(*m_pManager);
+		auto division = Max(1, m_pEffectNode->GenerationLocation.line.division);
+
+		Vector3D dir;
+		(e - s).setValueToArg(dir);
+
+		if (Vector3D::LengthSq(dir) < 0.001)
+		{
+			m_GenerationLocation.Translation(0 ,0, 0);
+		}
+		else
+		{
+			auto len = Vector3D::Length(dir);
+			dir /= len;
+		
+			int32_t target = 0;
+			if (m_pEffectNode->GenerationLocation.line.type == ParameterGenerationLocation::LineType::Order)
+			{
+				target = instanceNumber % division;
+			}
+			else if (m_pEffectNode->GenerationLocation.line.type == ParameterGenerationLocation::LineType::Random)
+			{
+				RandFunc randFunc = m_pManager->GetRandFunc();
+				int32_t randMax = m_pManager->GetRandMax();
+
+				target = (int32_t)((division) * ((float)randFunc() / (float)randMax));
+				if (target == division) target -= 1;
+			}
+
+			auto d = 0.0f;
+			if (division > 1)
+			{
+				d = (len / (float)(division-1)) * target;
+			}
+
+			d += noize;
+		
+			s.x += dir.X * d;
+			s.y += dir.Y * d;
+			s.z += dir.Z * d;
+
+			Vector3D xdir;
+			Vector3D ydir;
+			Vector3D zdir;
+
+			if (fabs(dir.Y) > 0.999f)
+			{
+				xdir = dir;
+				Vector3D::Cross(zdir, xdir, Vector3D(-1, 0, 0));
+				Vector3D::Normal(zdir, zdir);
+				Vector3D::Cross(ydir, zdir, xdir);
+				Vector3D::Normal(ydir, ydir);
+			}
+			else
+			{
+				xdir = dir;
+				Vector3D::Cross(ydir, Vector3D(0, 0, 1), xdir);
+				Vector3D::Normal(ydir, ydir);
+				Vector3D::Cross(zdir, xdir, ydir);
+				Vector3D::Normal(zdir, zdir);
+			}
+
+			if (m_pEffectNode->GenerationLocation.EffectsRotation)
+			{
+				m_GenerationLocation.Value[0][0] = xdir.X;
+				m_GenerationLocation.Value[0][1] = xdir.Y;
+				m_GenerationLocation.Value[0][2] = xdir.Z;
+
+				m_GenerationLocation.Value[1][0] = ydir.X;
+				m_GenerationLocation.Value[1][1] = ydir.Y;
+				m_GenerationLocation.Value[1][2] = ydir.Z;
+
+				m_GenerationLocation.Value[2][0] = zdir.X;
+				m_GenerationLocation.Value[2][1] = zdir.Y;
+				m_GenerationLocation.Value[2][2] = zdir.Z;
+			}
+			else
+			{
+				m_GenerationLocation.Indentity();
+			}
+
+			m_GenerationLocation.Value[3][0] = s.x;
+			m_GenerationLocation.Value[3][1] = s.y;
+			m_GenerationLocation.Value[3][2] = s.z;
+		}
 	}
 	else if( m_pEffectNode->GenerationLocation.type == ParameterGenerationLocation::TYPE_SPHERE )
 	{
@@ -13741,14 +14340,31 @@ void Instance::Initialize( Instance* parent, int32_t instanceNumber )
 			int32_t randMax = m_pManager->GetRandMax();
 
 			target = (int32_t)( (div) * ( (float)randFunc() / (float)randMax ) );
-			if (target == div) div -= 1;
+			if (target == div) target -= 1;
 		}
 
 		float angle = (end - start) * ((float)target / (float)div) + start;
-		Matrix43 mat;
-		mat.RotationZ( angle );
 
-		m_GenerationLocation.Translation( 0, radius, 0 );
+		angle += m_pEffectNode->GenerationLocation.circle.angle_noize.getValue(*m_pManager);
+
+		Matrix43 mat;
+		if (m_pEffectNode->GenerationLocation.circle.axisDirection == ParameterGenerationLocation::AxisType::X)
+		{
+			mat.RotationX(angle);
+			m_GenerationLocation.Translation(0, 0, radius);
+		}
+		if (m_pEffectNode->GenerationLocation.circle.axisDirection == ParameterGenerationLocation::AxisType::Y)
+		{
+			mat.RotationY(angle);
+			m_GenerationLocation.Translation(radius, 0, 0);
+		}
+		if (m_pEffectNode->GenerationLocation.circle.axisDirection == ParameterGenerationLocation::AxisType::Z)
+		{
+			mat.RotationZ(angle);
+			m_GenerationLocation.Translation(0, radius, 0);
+		}
+
+		
 		Matrix43::Multiple( m_GenerationLocation, m_GenerationLocation, mat );
 	}
 
@@ -13757,7 +14373,70 @@ void Instance::Initialize( Instance* parent, int32_t instanceNumber )
 		soundValues.delay = m_pEffectNode->Sound.Delay.getValue( *m_pManager );
 	}
 
-	m_pEffectNode->InitializeRenderedInstance( *this, m_pManager );
+	// UV
+	if (m_pEffectNode->RendererCommon.UVType == ParameterRendererCommon::UV_ANIMATION)
+	{
+		uvTimeOffset = m_pEffectNode->RendererCommon.UV.Animation.StartFrame.getValue(*m_pManager);
+		uvTimeOffset *= m_pEffectNode->RendererCommon.UV.Animation.FrameLength;
+	}
+	
+	if (m_pEffectNode->RendererCommon.UVType == ParameterRendererCommon::UV_SCROLL)
+	{
+		auto xy = m_pEffectNode->RendererCommon.UV.Scroll.Position.getValue(*m_pManager);
+		auto zw = m_pEffectNode->RendererCommon.UV.Scroll.Size.getValue(*m_pManager);
+
+		uvScrollArea.X = xy.x;
+		uvScrollArea.Y = xy.y;
+		uvScrollArea.Width = zw.x;
+		uvScrollArea.Height = zw.y;
+
+		m_pEffectNode->RendererCommon.UV.Scroll.Speed.getValue(*m_pManager).setValueToArg(uvScrollSpeed);
+	}
+
+	m_pEffectNode->InitializeRenderedInstance(*this, m_pManager);
+
+	// Generate zero frame effect
+	{
+		InstanceGroup* group = m_headGroups;
+		bool calculateMatrix = false;
+
+		for (int32_t i = 0; i < parameter->GetChildrenCount(); i++, group = group->NextUsedByInstance)
+		{
+			auto node = (EffectNodeImplemented*) parameter->GetChild(i);
+			auto container = m_pContainer->GetChild(i);
+			assert(group != NULL);
+
+
+			while (true)
+			{
+				// GenerationTimeOffset can be minus value.
+				// Minus frame particles is generated simultaniously at frame 0.
+				if (node->CommonValues.MaxGeneration > m_generatedChildrenCount[i] &&
+					m_nextGenerationTime[i] <= 0.0f)
+				{
+					// Create a particle
+					auto newInstance = group->CreateInstance();
+					if (newInstance != nullptr)
+					{
+						if (!calculateMatrix)
+						{
+							CalculateMatrix(0);
+							calculateMatrix = true;
+						}
+
+						newInstance->Initialize(this, m_generatedChildrenCount[i]);
+					}
+
+					m_generatedChildrenCount[i]++;
+					m_nextGenerationTime[i] += Max(0.0f, node->CommonValues.GenerationTime.getValue(*m_pManager));
+				}
+				else
+				{
+					break;
+				}
+			}
+		}
+	}
 }
 
 //----------------------------------------------------------------------------------
@@ -13801,13 +14480,13 @@ void Instance::Update( float deltaFrame, bool shown )
 			*/
 		if (m_stepTime && (originalTime <= m_LivedTime || !m_pEffectNode->CommonValues.RemoveWhenLifeIsExtinct))
 		{
-			for (int i = 0; i < Min(ChildrenMax, m_pEffectNode->GetChildrenCount()); i++)
+			for (int i = 0; i < m_pEffectNode->GetChildrenCount(); i++)
 			{
 				auto pNode = (EffectNodeImplemented*) m_pEffectNode->GetChild(i);
 
-				// インスタンス生成
+				// When this instance creates a particle
 				if (pNode->CommonValues.MaxGeneration > m_generatedChildrenCount[i] &&
-					originalTime + deltaFrame > m_nextGenerationTime[i])
+					originalTime + deltaFrame >= m_nextGenerationTime[i])
 				{
 					calculateMatrix = true;
 					break;
@@ -13828,6 +14507,15 @@ void Instance::Update( float deltaFrame, bool shown )
 		CalculateMatrix( deltaFrame );
 	}
 
+	// Get parent color.
+	if (m_pParent != NULL)
+	{
+		if (m_pEffectNode->RendererCommon.ColorBindType == BindType::Always)
+		{
+			ColorParent = m_pParent->ColorInheritance;
+		}
+	}
+
 	/* 親の削除処理 */
 	if (m_pParent != NULL && m_pParent->GetState() != INSTANCE_STATE_ACTIVE)
 	{
@@ -13845,17 +14533,17 @@ void Instance::Update( float deltaFrame, bool shown )
 	{
 		InstanceGroup* group = m_headGroups;
 
-		for (int i = 0; i < Min(ChildrenMax, m_pEffectNode->GetChildrenCount()); i++, group = group->NextUsedByInstance)
+		for (int i = 0; i < m_pEffectNode->GetChildrenCount(); i++, group = group->NextUsedByInstance)
 		{
 			auto pNode = (EffectNodeImplemented*) m_pEffectNode->GetChild(i);
 			auto pContainer = m_pContainer->GetChild( i );
 			assert( group != NULL );
 
-			// インスタンス生成
+			// Create a particle
 			while (true)
 			{
 				if (pNode->CommonValues.MaxGeneration > m_generatedChildrenCount[i] &&
-					originalTime + deltaFrame > m_nextGenerationTime[i])
+					originalTime + deltaFrame >= m_nextGenerationTime[i])
 				{
 					// 生成処理
 					Instance* pNewInstance = group->CreateInstance();
@@ -13908,7 +14596,7 @@ void Instance::Update( float deltaFrame, bool shown )
 			int maxcreate_count = 0;
 			InstanceGroup* group = m_headGroups;
 
-			for (int i = 0; i < Min(ChildrenMax, m_pEffectNode->GetChildrenCount()); i++, group = group->NextUsedByInstance)
+			for (int i = 0; i < m_pEffectNode->GetChildrenCount(); i++, group = group->NextUsedByInstance)
 			{
 				auto child = (EffectNodeImplemented*) m_pEffectNode->GetChild(i);
 
@@ -13943,9 +14631,18 @@ void Instance::Update( float deltaFrame, bool shown )
 		{
 			calculateMatrix = true;
 			CalculateMatrix( deltaFrame );
+
+			// Get parent color.
+			if (m_pParent != NULL)
+			{
+				if (m_pEffectNode->RendererCommon.ColorBindType == BindType::Always)
+				{
+					ColorParent = m_pParent->ColorInheritance;
+				}
+			}
 		}
 
-		/* 破棄 */
+		// Delete this particle with myself.
 		Kill();
 		return;
 	}
@@ -14239,11 +14936,11 @@ void Instance::CalculateParentMatrix()
 			rootInstance = NULL;
 		}
 		
-		if( (lType == BindType_Always && rType == BindType_Always && sType == BindType_Always) )
+		if( (lType == BindType::Always && rType == BindType::Always && sType == BindType::Always) )
 		{
 			m_ParentMatrix43 = m_pParent->GetGlobalMatrix43();
 		}
-		else if ( lType == BindType_NotBind_Root && rType == BindType_NotBind_Root && sType == BindType_NotBind_Root )
+		else if ( lType == BindType::NotBind_Root && rType == BindType::NotBind_Root && sType == BindType::NotBind_Root )
 		{
 			m_ParentMatrix43 = rootInstance->GetGlobalMatrix43();
 		}
@@ -14254,30 +14951,30 @@ void Instance::CalculateParentMatrix()
 
 			m_ParentMatrix43.GetSRT( s, r, t );
 			
-			if( lType == BindType_Always )
+			if( lType == BindType::Always )
 			{
 				m_pParent->GetGlobalMatrix43().GetTranslation( t );
 			}
-			else if( lType == BindType_NotBind_Root && rootInstance != NULL )
+			else if( lType == BindType::NotBind_Root && rootInstance != NULL )
 			{
 				rootInstance->GetGlobalMatrix43().GetTranslation( t );
 			}
 			
-			if( rType == BindType_Always )
+			if( rType == BindType::Always )
 			{
 				m_pParent->GetGlobalMatrix43().GetRotation( r );
 			}
-			else if( rType == BindType_NotBind_Root && rootInstance != NULL )
+			else if( rType == BindType::NotBind_Root && rootInstance != NULL )
 			{
 				rootInstance->GetGlobalMatrix43().GetRotation( r );
 			}
 			
 
-			if( sType == BindType_Always )
+			if( sType == BindType::Always )
 			{
 				m_pParent->GetGlobalMatrix43().GetScale( s );
 			}
-			else if( sType == BindType_NotBind_Root && rootInstance != NULL )
+			else if( sType == BindType::NotBind_Root && rootInstance != NULL )
 			{
 				rootInstance->GetGlobalMatrix43().GetScale( s );
 			}
@@ -14341,12 +15038,15 @@ void Instance::ModifyMatrixFromLocationAbs( float deltaFrame )
 				}
 			}
 
-			m_GlobalRevisionVelocity += targetDirection * force * deltaFrame;
-			float currentVelocity = Vector3D::Length( m_GlobalRevisionVelocity );
-			Vector3D currentDirection = m_GlobalRevisionVelocity / currentVelocity;
-		
-			m_GlobalRevisionVelocity = (targetDirection * control + currentDirection * (1.0f - control)) * currentVelocity;
-			m_GlobalRevisionLocation += m_GlobalRevisionVelocity * deltaFrame;
+			if (deltaFrame > 0)
+			{
+				m_GlobalRevisionVelocity += targetDirection * force * deltaFrame;
+				float currentVelocity = Vector3D::Length(m_GlobalRevisionVelocity);
+				Vector3D currentDirection = m_GlobalRevisionVelocity / currentVelocity;
+
+				m_GlobalRevisionVelocity = (targetDirection * control + currentDirection * (1.0f - control)) * currentVelocity;
+				m_GlobalRevisionLocation += m_GlobalRevisionVelocity * deltaFrame;
+			}
 		}
 	}
 
@@ -14393,35 +15093,37 @@ void Instance::Kill()
 //----------------------------------------------------------------------------------
 RectF Instance::GetUV() const
 {
-	if( m_pEffectNode->Texture.UVType == ParameterTexture::UV_DEFAULT )
+	if( m_pEffectNode->RendererCommon.UVType == ParameterRendererCommon::UV_DEFAULT )
 	{
 		return RectF( 0.0f, 0.0f, 1.0f, 1.0f );
 	}
-	else if( m_pEffectNode->Texture.UVType == ParameterTexture::UV_FIXED )
+	else if( m_pEffectNode->RendererCommon.UVType == ParameterRendererCommon::UV_FIXED )
 	{
 		return RectF(
-			m_pEffectNode->Texture.UV.Fixed.Position.x,
-			m_pEffectNode->Texture.UV.Fixed.Position.y,
-			m_pEffectNode->Texture.UV.Fixed.Position.w,
-			m_pEffectNode->Texture.UV.Fixed.Position.h );
+			m_pEffectNode->RendererCommon.UV.Fixed.Position.x,
+			m_pEffectNode->RendererCommon.UV.Fixed.Position.y,
+			m_pEffectNode->RendererCommon.UV.Fixed.Position.w,
+			m_pEffectNode->RendererCommon.UV.Fixed.Position.h );
 	}
-	else if( m_pEffectNode->Texture.UVType == ParameterTexture::UV_ANIMATION )
+	else if( m_pEffectNode->RendererCommon.UVType == ParameterRendererCommon::UV_ANIMATION )
 	{
-		int32_t frameNum = (int32_t)(m_LivingTime / m_pEffectNode->Texture.UV.Animation.FrameLength);
-		int32_t frameCount = m_pEffectNode->Texture.UV.Animation.FrameCountX * m_pEffectNode->Texture.UV.Animation.FrameCountY;
+		auto time = m_LivingTime + uvTimeOffset;
 
-		if( m_pEffectNode->Texture.UV.Animation.LoopType == m_pEffectNode->Texture.UV.Animation.LOOPTYPE_ONCE )
+		int32_t frameNum = (int32_t)(time / m_pEffectNode->RendererCommon.UV.Animation.FrameLength);
+		int32_t frameCount = m_pEffectNode->RendererCommon.UV.Animation.FrameCountX * m_pEffectNode->RendererCommon.UV.Animation.FrameCountY;
+
+		if( m_pEffectNode->RendererCommon.UV.Animation.LoopType == m_pEffectNode->RendererCommon.UV.Animation.LOOPTYPE_ONCE )
 		{
 			if( frameNum >= frameCount )
 			{
 				frameNum = frameCount - 1;
 			}
 		}
-		else if ( m_pEffectNode->Texture.UV.Animation.LoopType == m_pEffectNode->Texture.UV.Animation.LOOPTYPE_LOOP )
+		else if ( m_pEffectNode->RendererCommon.UV.Animation.LoopType == m_pEffectNode->RendererCommon.UV.Animation.LOOPTYPE_LOOP )
 		{
 			frameNum %= frameCount;
 		}
-		else if ( m_pEffectNode->Texture.UV.Animation.LoopType == m_pEffectNode->Texture.UV.Animation.LOOPTYPE_REVERSELOOP )
+		else if ( m_pEffectNode->RendererCommon.UV.Animation.LoopType == m_pEffectNode->RendererCommon.UV.Animation.LOOPTYPE_REVERSELOOP )
 		{
 			bool rev = (frameNum / frameCount) % 2 == 1;
 			frameNum %= frameCount;
@@ -14431,22 +15133,24 @@ RectF Instance::GetUV() const
 			}
 		}
 
-		int32_t frameX = frameNum % m_pEffectNode->Texture.UV.Animation.FrameCountX;
-		int32_t frameY = frameNum / m_pEffectNode->Texture.UV.Animation.FrameCountX;
+		int32_t frameX = frameNum % m_pEffectNode->RendererCommon.UV.Animation.FrameCountX;
+		int32_t frameY = frameNum / m_pEffectNode->RendererCommon.UV.Animation.FrameCountX;
 
 		return RectF(
-			m_pEffectNode->Texture.UV.Animation.Position.x + m_pEffectNode->Texture.UV.Animation.Position.w * frameX,
-			m_pEffectNode->Texture.UV.Animation.Position.y + m_pEffectNode->Texture.UV.Animation.Position.h * frameY,
-			m_pEffectNode->Texture.UV.Animation.Position.w,
-			m_pEffectNode->Texture.UV.Animation.Position.h );
+			m_pEffectNode->RendererCommon.UV.Animation.Position.x + m_pEffectNode->RendererCommon.UV.Animation.Position.w * frameX,
+			m_pEffectNode->RendererCommon.UV.Animation.Position.y + m_pEffectNode->RendererCommon.UV.Animation.Position.h * frameY,
+			m_pEffectNode->RendererCommon.UV.Animation.Position.w,
+			m_pEffectNode->RendererCommon.UV.Animation.Position.h );
 	}
-	else if( m_pEffectNode->Texture.UVType == ParameterTexture::UV_SCROLL )
+	else if( m_pEffectNode->RendererCommon.UVType == ParameterRendererCommon::UV_SCROLL )
 	{
+		auto time = m_LivingTime + uvTimeOffset;
+
 		return RectF(
-			m_pEffectNode->Texture.UV.Scroll.Position.x + m_pEffectNode->Texture.UV.Scroll.Speed.x * m_LivingTime,
-			m_pEffectNode->Texture.UV.Scroll.Position.y + m_pEffectNode->Texture.UV.Scroll.Speed.y * m_LivingTime,
-			m_pEffectNode->Texture.UV.Scroll.Position.w,
-			m_pEffectNode->Texture.UV.Scroll.Position.h );
+			uvScrollArea.X + uvScrollSpeed.X * time,
+			uvScrollArea.Y + uvScrollSpeed.Y * time,
+			uvScrollArea.Width,
+			uvScrollArea.Height);
 	}
 
 	return RectF( 0.0f, 0.0f, 1.0f, 1.0f );
@@ -14914,6 +15618,8 @@ void Setting::SetSoundLoader(SoundLoader* loader)
 #ifndef	__EFFEKSEER_SOCKET_H__
 #define	__EFFEKSEER_SOCKET_H__
 
+#if !( defined(_PSVITA) || defined(_PS4) || defined(_SWITCH) || defined(_XBOXONE) )
+
 //----------------------------------------------------------------------------------
 // Include
 //----------------------------------------------------------------------------------
@@ -14922,20 +15628,6 @@ void Setting::SetSoundLoader(SoundLoader* loader)
 #else
 #endif
 
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
-#ifdef _WIN32
-typedef signed char			int8_t;
-typedef unsigned char		uint8_t;
-typedef short				int16_t;
-typedef unsigned short		uint16_t;
-typedef int					int32_t;
-typedef unsigned int		uint32_t;
-typedef __int64				int64_t;
-typedef unsigned __int64	uint64_t;
-#else
-#endif
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
@@ -15003,7 +15695,12 @@ public:
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
+
+#endif	// #if !( defined(_PSVITA) || defined(_PS4) || defined(_SWITCH) || defined(_XBOXONE) )
+
 #endif	// __EFFEKSEER_SOCKET_H__
+
+#if !( defined(_PSVITA) || defined(_PS4) || defined(_SWITCH) || defined(_XBOXONE) )
 
 //----------------------------------------------------------------------------------
 // Include
@@ -15093,9 +15790,13 @@ bool Socket::Listen( EfkSocket s, int32_t backlog )
 //
 //----------------------------------------------------------------------------------
 
+#endif	// #if !( defined(_PSVITA) || defined(_PS4) || defined(_SWITCH) || defined(_XBOXONE) )
+
 
 #ifndef	__EFFEKSEER_SERVER_IMPLEMENTED_H__
 #define	__EFFEKSEER_SERVER_IMPLEMENTED_H__
+
+#if !( defined(_PSVITA) || defined(_PS4) || defined(_SWITCH) || defined(_XBOXONE) )
 
 //----------------------------------------------------------------------------------
 // Include
@@ -15185,7 +15886,12 @@ public:
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
+
+#endif	// #if !( defined(_PSVITA) || defined(_PS4) || defined(_SWITCH) || defined(_XBOXONE) )
+
 #endif	// __EFFEKSEER_SERVER_IMPLEMENTED_H__
+
+#if !( defined(_PSVITA) || defined(_PS4) || defined(_SWITCH) || defined(_XBOXONE) )
 
 //----------------------------------------------------------------------------------
 // Include
@@ -15624,8 +16330,11 @@ void ServerImplemented::SetMaterialPath( const EFK_CHAR* materialPath )
 //
 //----------------------------------------------------------------------------------
 
+#endif	// #if !( defined(_PSVITA) || defined(_PS4) || defined(_SWITCH) || defined(_XBOXONE) )
 #ifndef	__EFFEKSEER_CLIENT_IMPLEMENTED_H__
 #define	__EFFEKSEER_CLIENT_IMPLEMENTED_H__
+
+#if !( defined(_PSVITA) || defined(_PS4) || defined(_SWITCH) || defined(_XBOXONE) )
 
 //----------------------------------------------------------------------------------
 // Include
@@ -15676,7 +16385,12 @@ public:
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
+
+#endif	// #if !( defined(_PSVITA) || defined(_PS4) || defined(_SWITCH) || defined(_XBOXONE) )
+
 #endif	// __EFFEKSEER_CLIENT_IMPLEMENTED_H__
+
+#if !( defined(_PSVITA) || defined(_PS4) || defined(_SWITCH) || defined(_XBOXONE) )
 
 //----------------------------------------------------------------------------------
 // Include
@@ -15935,5 +16649,7 @@ bool ClientImplemented::IsConnected()
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
+
+#endif	// #if !( defined(_PSVITA) || defined(_PS4) || defined(_SWITCH) || defined(_XBOXONE) )
 #endif
 

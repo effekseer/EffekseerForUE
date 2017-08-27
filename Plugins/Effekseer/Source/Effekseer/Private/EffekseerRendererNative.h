@@ -18,18 +18,6 @@ namespace EffekseerRenderer
 //
 //-----------------------------------------------------------------------------------
 
-template<typename TEXTURE>
-inline TEXTURE TexturePointerToTexture(void* texture)
-{
-	return (TEXTURE)texture;
-}
-
-template <>
-inline uint32_t TexturePointerToTexture<uint32_t>(void* texture)
-{
-	uint64_t texture_ = reinterpret_cast<uint64_t>(texture);
-	return static_cast<uint32_t>(texture_);
-}
 
 //-----------------------------------------------------------------------------------
 //
@@ -62,7 +50,7 @@ public:
 	DistortingCallback() {}
 	virtual ~DistortingCallback() {}
 
-	virtual void OnDistorting() {}
+	virtual bool OnDistorting() { return false; }
 };
 //-----------------------------------------------------------------------------------
 //
@@ -88,7 +76,7 @@ public:
 	/**
 		@brief	このインスタンスを破棄する。
 	*/
-	virtual void Destory() = 0;
+	virtual void Destroy() = 0;
 
 	/**
 		@brief	ステートを復帰するかどうかのフラグを設定する。
@@ -417,7 +405,7 @@ struct StandardRendererState
 	::Effekseer::CullingType			CullingType;
 	::Effekseer::TextureFilterType		TextureFilterType;
 	::Effekseer::TextureWrapType		TextureWrapType;
-	void*								TexturePtr;
+	::Effekseer::TextureData*			TexturePtr;
 
 	StandardRendererState()
 	{
@@ -430,7 +418,7 @@ struct StandardRendererState
 		CullingType = ::Effekseer::CullingType::Front;
 		TextureFilterType = ::Effekseer::TextureFilterType::Nearest;
 		TextureWrapType = ::Effekseer::TextureWrapType::Repeat;
-		TexturePtr = NULL;
+		TexturePtr = nullptr;
 	}
 
 	bool operator != (const StandardRendererState state)
@@ -448,7 +436,7 @@ struct StandardRendererState
 	}
 };
 
-template<typename RENDERER, typename SHADER, typename TEXTURE, typename VERTEX, typename VERTEX_DISTORTION>
+template<typename RENDERER, typename SHADER, typename VERTEX, typename VERTEX_DISTORTION>
 class StandardRenderer
 {
 
@@ -460,7 +448,7 @@ private:
 	SHADER*		m_shader_distortion;
 	SHADER*		m_shader_no_texture_distortion;
 
-	TEXTURE*	m_texture;
+	Effekseer::TextureData*		m_texture;
 
 	StandardRendererState		m_state;
 
@@ -528,8 +516,8 @@ public:
 	{
 		Rendering();
 
-		// 必ず次の描画で初期化される。
-		m_state.TexturePtr = (void*)0x1;
+		// It is always initialized with the next drawing.
+		m_state.TexturePtr = (Effekseer::TextureData*)0x1;
 	}
 
 	void Rendering(const Effekseer::Matrix44& mCamera, const Effekseer::Matrix44& mProj)
@@ -541,7 +529,11 @@ public:
 			auto callback = m_renderer->GetDistortingCallback();
 			if (callback != nullptr)
 			{
-				callback->OnDistorting();
+				if (!callback->OnDistorting())
+				{
+					vertexCaches.clear();
+					return;
+				}
 			}
 		}
 
@@ -560,7 +552,7 @@ public:
 
 			if (m_state.Distortion)
 			{
-				// OpenGL ES対策(OpenGL ES3.2以降でしか、頂点レイアウト可変のリングバッファを実現できないため)
+				// For OpenGL ES(Because OpenGL ES 3.2 and later can only realize a vertex layout variable ring buffer)
 				vb->Lock();
 				data = vb->GetBufferDirect(vertexCaches.size());
 				if (data == nullptr)
@@ -592,6 +584,7 @@ public:
 		state.DepthTest = m_state.DepthTest;
 		state.DepthWrite = m_state.DepthWrite;
 		state.CullingType = m_state.CullingType;
+		state.AlphaBlend = m_state.AlphaBlend;
 
 		SHADER* shader_ = nullptr;
 
@@ -622,11 +615,11 @@ public:
 
 		m_renderer->BeginShader(shader_);
 
-		TEXTURE textures[2];
+		Effekseer::TextureData* textures[2];
 
 		if (m_state.TexturePtr != nullptr)
 		{
-			textures[0] = TexturePointerToTexture<TEXTURE>(m_state.TexturePtr);
+			textures[0] = m_state.TexturePtr;
 		}
 		else
 		{
@@ -653,7 +646,6 @@ public:
 
 		shader_->SetConstantBuffer();
 
-		state.AlphaBlend = m_state.AlphaBlend;
 		state.TextureFilterTypes[0] = m_state.TextureFilterType;
 		state.TextureWrapTypes[0] = m_state.TextureWrapType;
 
@@ -779,7 +771,7 @@ public:
 
 	void Rendering( const efkModelNodeParam& parameter, const efkModelInstanceParam& instanceParameter, void* userData );
 
-	template<typename RENDERER, typename SHADER, typename TEXTURE, typename MODEL, bool Instancing, int InstanceCount>
+	template<typename RENDERER, typename SHADER, typename MODEL, bool Instancing, int InstanceCount>
 	void EndRendering_(
 		RENDERER* renderer, 
 		SHADER* shader_lighting_texture_normal,
@@ -806,7 +798,10 @@ public:
 			auto callback = renderer->GetDistortingCallback();
 			if (callback != nullptr)
 			{
-				callback->OnDistorting();
+				if (!callback->OnDistorting())
+				{
+					return;
+				}
 			}
 		}
 
@@ -868,16 +863,16 @@ public:
 
 		renderer->BeginShader(shader_);
 
-		/*テクスチャ選択*/
-		TEXTURE textures[2];
-		textures[0] = (TEXTURE)NULL;
-		textures[1] = (TEXTURE)NULL;
+		// Select texture
+		Effekseer::TextureData* textures[2];
+		textures[0] = nullptr;
+		textures[1] = nullptr;
 
 		if (distortion)
 		{
 			if (param.ColorTextureIndex >= 0)
 			{
-				textures[0] = TexturePointerToTexture<TEXTURE>(param.EffectPointer->GetDistortionImage(param.ColorTextureIndex));
+				textures[0] = param.EffectPointer->GetDistortionImage(param.ColorTextureIndex);
 			}
 
 			textures[1] = renderer->GetBackground();
@@ -886,12 +881,12 @@ public:
 		{
 			if (param.ColorTextureIndex >= 0)
 			{
-				textures[0] = TexturePointerToTexture<TEXTURE>(param.EffectPointer->GetColorImage(param.ColorTextureIndex));
+				textures[0] = param.EffectPointer->GetColorImage(param.ColorTextureIndex);
 			}
 
 			if (param.NormalTextureIndex >= 0)
 			{
-				textures[1] = TexturePointerToTexture<TEXTURE>(param.EffectPointer->GetNormalImage(param.NormalTextureIndex));
+				textures[1] = param.EffectPointer->GetNormalImage(param.NormalTextureIndex);
 			}
 		}
 		
@@ -1029,24 +1024,34 @@ typedef ::Effekseer::RibbonRenderer::NodeParameter efkRibbonNodeParam;
 typedef ::Effekseer::RibbonRenderer::InstanceParameter efkRibbonInstanceParam;
 typedef ::Effekseer::Vector3D efkVector3D;
 
+template<typename RENDERER, typename VERTEX_NORMAL, typename VERTEX_DISTORTION>
 class RibbonRendererBase
 	: public ::Effekseer::RibbonRenderer
 {
 protected:
+	RENDERER*						m_renderer;
 	int32_t							m_ribbonCount;
 
 	int32_t							m_ringBufferOffset;
 	uint8_t*						m_ringBufferData;
 
-	RibbonRendererBase();
 public:
 
-	virtual ~RibbonRendererBase();
+	RibbonRendererBase(RENDERER* renderer)
+		: m_renderer(renderer)
+		, m_ribbonCount(0)
+		, m_ringBufferOffset(0)
+		, m_ringBufferData(NULL)
+	{
+	}
+
+	virtual ~RibbonRendererBase()
+	{
+	}
 
 
 protected:
 
-	template<typename RENDERER, typename VERTEX>
 	void BeginRendering_(RENDERER* renderer, int32_t count, const efkRibbonNodeParam& param)
 	{
 		m_ribbonCount = 0;
@@ -1085,20 +1090,19 @@ protected:
 		renderer->GetStandardRenderer()->BeginRenderingAndRenderingIfRequired(vertexCount, m_ringBufferOffset, (void*&) m_ringBufferData);
 	}
 
-	template<typename VERTEX, typename VERTEX_DISTORTION>
 	void Rendering_(const efkRibbonNodeParam& parameter, const efkRibbonInstanceParam& instanceParameter, void* userData, const ::Effekseer::Matrix44& camera)
 	{
 		if (parameter.Distortion)
 		{
-			Rendering_Internal<VERTEX_DISTORTION, VERTEX_DISTORTION>(parameter, instanceParameter, userData, camera);
+			Rendering_Internal<VERTEX_DISTORTION>(parameter, instanceParameter, userData, camera);
 		}
 		else
 		{
-			Rendering_Internal<VERTEX, VERTEX_DISTORTION>(parameter, instanceParameter, userData, camera);
+			Rendering_Internal<VERTEX_NORMAL>(parameter, instanceParameter, userData, camera);
 		}
 	}
 
-	template<typename VERTEX, typename VERTEX_DISTORTION>
+	template<typename VERTEX>
 	void Rendering_Internal( const efkRibbonNodeParam& parameter, const efkRibbonInstanceParam& instanceParameter, void* userData, const ::Effekseer::Matrix44& camera )
 	{
 		if( m_ringBufferData == NULL ) return;
@@ -1228,11 +1232,12 @@ protected:
 				else
 				{
 					Effekseer::Vector3D axisOld = axisBefore;
-					axis = (vs_[3].Pos - vs_[1].Pos);
+					axis = (vs_[5].Pos - vs_[3].Pos);
 					Effekseer::Vector3D::Normal(axis, axis);
 					axisBefore = axis;
 
 					axis = (axisBefore + axisOld) / 2.0f;
+					Effekseer::Vector3D::Normal(axis, axis);
 				}
 
 				auto tangent = vs_[1].Pos - vs_[0].Pos;
@@ -1277,7 +1282,6 @@ protected:
 		}
 	}
 
-	template<typename RENDERER, typename TEXTURE, typename VERTEX>
 	void EndRendering_(RENDERER* renderer, const efkRibbonNodeParam& param)
 	{
 		/*
@@ -1329,6 +1333,28 @@ protected:
 		renderer->GetRenderState()->Pop();
 		*/
 	}
+
+public:
+
+	void BeginRendering(const efkRibbonNodeParam& parameter, int32_t count, void* userData) override
+	{
+		BeginRendering_(m_renderer, count, parameter);
+	}
+
+	void Rendering(const efkRibbonNodeParam& parameter, const efkRibbonInstanceParam& instanceParameter, void* userData) override
+	{
+		Rendering_(parameter, instanceParameter, userData, m_renderer->GetCameraMatrix());
+	}
+
+	void EndRendering(const efkRibbonNodeParam& parameter, void* userData) override
+	{
+		if (m_ringBufferData == NULL) return;
+
+		if (m_ribbonCount <= 1) return;
+
+		EndRendering_(m_renderer, parameter);
+	}
+
 };
 //----------------------------------------------------------------------------------
 //
@@ -1363,10 +1389,12 @@ typedef ::Effekseer::RingRenderer::NodeParameter efkRingNodeParam;
 typedef ::Effekseer::RingRenderer::InstanceParameter efkRingInstanceParam;
 typedef ::Effekseer::Vector3D efkVector3D;
 
+template<typename RENDERER, typename VERTEX_NORMAL, typename VERTEX_DISTORTION>
 class RingRendererBase
 	: public ::Effekseer::RingRenderer
 {
 protected:
+	RENDERER*						m_renderer;
 	int32_t							m_ringBufferOffset;
 	uint8_t*						m_ringBufferData;
 
@@ -1374,15 +1402,23 @@ protected:
 	int32_t							m_instanceCount;
 	::Effekseer::Matrix44			m_singleRenderingMatrix;
 
-	RingRendererBase();
 public:
 
-	virtual ~RingRendererBase();
+	RingRendererBase(RENDERER* renderer)
+		: m_renderer(renderer)
+		, m_ringBufferOffset(0)
+		, m_ringBufferData(NULL)
+		, m_spriteCount(0)
+		, m_instanceCount(0)
+	{
+	}
 
+	virtual ~RingRendererBase()
+	{
+	}
 
 protected:
 
-	template<typename RENDERER, typename VERTEX>
 	void BeginRendering_(RENDERER* renderer, int32_t count, const efkRingNodeParam& param)
 	{
 		m_spriteCount = 0;
@@ -1425,20 +1461,19 @@ protected:
 		renderer->GetStandardRenderer()->BeginRenderingAndRenderingIfRequired(count * vertexCount, m_ringBufferOffset, (void*&) m_ringBufferData);
 	}
 
-	template<typename VERTEX, typename VERTEX_DISTORTION>
 	void Rendering_(const efkRingNodeParam& parameter, const efkRingInstanceParam& instanceParameter, void* userData, const ::Effekseer::Matrix44& camera)
 	{
 		if (parameter.Distortion)
 		{
-			Rendering_Internal<VERTEX_DISTORTION, VERTEX_DISTORTION>(parameter, instanceParameter, userData, camera);
+			Rendering_Internal<VERTEX_DISTORTION>(parameter, instanceParameter, userData, camera);
 		}
 		else
 		{
-			Rendering_Internal<VERTEX, VERTEX_DISTORTION>(parameter, instanceParameter, userData, camera);
+			Rendering_Internal<VERTEX_NORMAL>(parameter, instanceParameter, userData, camera);
 		}
 	}
 
-	template<typename VERTEX, typename VERTEX_DISTORTION>
+	template<typename VERTEX>
 	void Rendering_Internal( const efkRingNodeParam& parameter, const efkRingInstanceParam& instanceParameter, void* userData, const ::Effekseer::Matrix44& camera )
 	{
 		int32_t vertexCount = parameter.VertexCount * 8;
@@ -1725,7 +1760,6 @@ protected:
 		m_spriteCount += 2 * parameter.VertexCount;
 	}
 
-	template<typename RENDERER, typename SHADER, typename TEXTURE, typename VERTEX>
 	void EndRendering_(RENDERER* renderer, const efkRingNodeParam& param)
 	{
 		if (m_instanceCount == 1)
@@ -1735,6 +1769,27 @@ protected:
 
 			renderer->GetStandardRenderer()->Rendering(mat, renderer->GetProjectionMatrix());
 		}
+	}
+
+public:
+	void BeginRendering(const efkRingNodeParam& parameter, int32_t count, void* userData)
+	{
+		BeginRendering_(m_renderer, count, parameter);
+	}
+
+	void Rendering(const efkRingNodeParam& parameter, const efkRingInstanceParam& instanceParameter, void* userData)
+	{
+		if (m_spriteCount == m_renderer->GetSquareMaxCount()) return;
+		Rendering_(parameter, instanceParameter, userData, m_renderer->GetCameraMatrix());
+	}
+
+	void EndRendering(const efkRingNodeParam& parameter, void* userData)
+	{
+		if (m_ringBufferData == NULL) return;
+
+		if (m_spriteCount == 0) return;
+
+		EndRendering_(m_renderer, parameter);
 	}
 };
 //----------------------------------------------------------------------------------
@@ -1769,23 +1824,32 @@ typedef ::Effekseer::SpriteRenderer::NodeParameter efkSpriteNodeParam;
 typedef ::Effekseer::SpriteRenderer::InstanceParameter efkSpriteInstanceParam;
 typedef ::Effekseer::Vector3D efkVector3D;
 
+template<typename RENDERER, typename VERTEX_NORMAL, typename VERTEX_DISTORTION>
 class SpriteRendererBase
 	: public ::Effekseer::SpriteRenderer
 {
 protected:
+	RENDERER*						m_renderer;
 	int32_t							m_spriteCount;
 	int32_t							m_ringBufferOffset;
 	uint8_t*						m_ringBufferData;
 
-	SpriteRendererBase();
 public:
 
-	virtual ~SpriteRendererBase();
+	SpriteRendererBase(RENDERER* renderer)
+		: m_renderer(renderer)
+		, m_spriteCount(0)
+		, m_ringBufferOffset(0)
+		, m_ringBufferData(NULL)
+	{
+	}
 
+	virtual ~SpriteRendererBase()
+	{
+	}
 
 protected:
 
-	template<typename RENDERER>
 	void BeginRendering_(RENDERER* renderer, int32_t count, const efkSpriteNodeParam& param)
 	{
 		EffekseerRenderer::StandardRendererState state;
@@ -1821,20 +1885,19 @@ protected:
 		m_spriteCount = 0;
 	}
 
-	template<typename VERTEX, typename VERTEX_DISTORTION>
 	void Rendering_(const efkSpriteNodeParam& parameter, const efkSpriteInstanceParam& instanceParameter, void* userData, const ::Effekseer::Matrix44& camera)
 	{
 		if (parameter.Distortion)
 		{
-			Rendering_Internal<VERTEX_DISTORTION, VERTEX_DISTORTION>(parameter, instanceParameter, userData, camera);
+			Rendering_Internal<VERTEX_DISTORTION>(parameter, instanceParameter, userData, camera);
 		}
 		else
 		{
-			Rendering_Internal<VERTEX, VERTEX_DISTORTION>(parameter, instanceParameter, userData, camera);
+			Rendering_Internal<VERTEX_NORMAL>(parameter, instanceParameter, userData, camera);
 		}
 	}
 
-	template<typename VERTEX, typename VERTEX_DISTORTION>
+	template<typename VERTEX>
 	void Rendering_Internal( const efkSpriteNodeParam& parameter, const efkSpriteInstanceParam& instanceParameter, void* userData, const ::Effekseer::Matrix44& camera )
 	{
 		if( m_ringBufferData == NULL ) return;
@@ -2011,7 +2074,6 @@ protected:
 		m_spriteCount++;
 	}
 
-	template<typename RENDERER,typename SHADER, typename TEXTURE, typename VERTEX>
 	void EndRendering_(RENDERER* renderer, const efkSpriteNodeParam& param)
 	{
 		/*
@@ -2062,6 +2124,27 @@ protected:
 		renderer->GetRenderState()->Pop();
 		*/
 	}
+
+public:
+	void BeginRendering(const efkSpriteNodeParam& parameter, int32_t count, void* userData) override
+	{
+		BeginRendering_(m_renderer, count, parameter);
+	}
+
+	void Rendering(const efkSpriteNodeParam& parameter, const efkSpriteInstanceParam& instanceParameter, void* userData) override
+	{
+		if (m_spriteCount == m_renderer->GetSquareMaxCount()) return;
+		Rendering_(parameter, instanceParameter, userData, m_renderer->GetCameraMatrix());
+	}
+
+	void EndRendering(const efkSpriteNodeParam& parameter, void* userData) override
+	{
+		//if( m_ringBufferData == NULL ) return;
+		//
+		//if( m_spriteCount == 0 ) return;
+		//
+		//EndRendering_<RendererImplemented, Shader, GLuint, Vertex>(m_renderer, parameter);
+	}
 };
 //----------------------------------------------------------------------------------
 //
@@ -2094,23 +2177,34 @@ typedef ::Effekseer::TrackRenderer::NodeParameter efkTrackNodeParam;
 typedef ::Effekseer::TrackRenderer::InstanceParameter efkTrackInstanceParam;
 typedef ::Effekseer::Vector3D efkVector3D;
 
+template<typename RENDERER, typename VERTEX_NORMAL, typename VERTEX_DISTORTION>
 class TrackRendererBase
 	: public ::Effekseer::TrackRenderer
 {
 protected:
+	RENDERER*						m_renderer;
 	int32_t							m_ribbonCount;
 
 	int32_t							m_ringBufferOffset;
 	uint8_t*						m_ringBufferData;
 
-	TrackRendererBase();
 public:
 
-	virtual ~TrackRendererBase();
+	TrackRendererBase(RENDERER* renderer)
+		: m_renderer(renderer)
+		, m_ribbonCount(0)
+		, m_ringBufferOffset(0)
+		, m_ringBufferData(NULL)
+	{
+	}
+
+	virtual ~TrackRendererBase()
+	{
+	}
+
 
 protected:
 
-	template<typename VERTEX, typename RENDERER>
 	void BeginRendering_( RENDERER* renderer, const efkTrackNodeParam& param, int32_t count, void* userData )
 	{
 		/*
@@ -2161,20 +2255,19 @@ protected:
 		renderer->GetStandardRenderer()->BeginRenderingAndRenderingIfRequired(vertexCount, m_ringBufferOffset, (void*&) m_ringBufferData);
 	}
 
-	template<typename VERTEX, typename VERTEX_DISTORTION>
 	void Rendering_(const efkTrackNodeParam& parameter, const efkTrackInstanceParam& instanceParameter, void* userData, const ::Effekseer::Matrix44& camera)
 	{
 		if (parameter.Distortion)
 		{
-			Rendering_Internal<VERTEX_DISTORTION, VERTEX_DISTORTION>(parameter, instanceParameter, userData, camera);
+			Rendering_Internal<VERTEX_DISTORTION>(parameter, instanceParameter, userData, camera);
 		}
 		else
 		{
-			Rendering_Internal<VERTEX, VERTEX_DISTORTION>(parameter, instanceParameter, userData, camera);
+			Rendering_Internal<VERTEX_NORMAL>(parameter, instanceParameter, userData, camera);
 		}
 	}
 
-	template<typename VERTEX, typename VERTEX_DISTORTION>
+	template<typename VERTEX>
 	void Rendering_Internal( const efkTrackNodeParam& parameter, const efkTrackInstanceParam& instanceParameter, void* userData, const ::Effekseer::Matrix44& camera )
 	{
 		if( m_ringBufferData == NULL ) return;
@@ -2237,9 +2330,15 @@ protected:
 			rightColor.A = (uint8_t)Effekseer::Clamp( param.ColorRight.A + (param.ColorRightMiddle.A-param.ColorRight.A) * l, 255, 0 );
 		}
 
+		const ::Effekseer::Matrix43& mat = instanceParameter.SRTMatrix43;
+		::Effekseer::Vector3D s;
+		::Effekseer::Matrix43 r;
+		::Effekseer::Vector3D t;
+		mat.GetSRT(s, r, t);
+
 		VERTEX v[3];
 
-		v[0].Pos.X = - size / 2.0f;
+		v[0].Pos.X = (- size / 2.0f) * s.X;
 		v[0].Pos.Y = 0.0f;
 		v[0].Pos.Z = 0.0f;
 		v[0].SetColor( leftColor );
@@ -2249,7 +2348,7 @@ protected:
 		v[1].Pos.Z = 0.0f;
 		v[1].SetColor( centerColor );
 
-		v[2].Pos.X = size / 2.0f;
+		v[2].Pos.X = (size / 2.0f) * s.X;
 		v[2].Pos.Y = 0.0f;
 		v[2].Pos.Z = 0.0f;
 		v[2].SetColor( rightColor );
@@ -2440,7 +2539,6 @@ protected:
 		}
 	}
 
-	template<typename RENDERER, typename TEXTURE, typename VERTEX>
 	void EndRendering_(RENDERER* renderer, const efkTrackNodeParam& param)
 	{
 		/*
@@ -2492,7 +2590,29 @@ protected:
 		renderer->GetRenderState()->Pop();
 		*/
 	}
+
+public:
+
+	void BeginRendering(const efkTrackNodeParam& parameter, int32_t count, void* userData) override
+	{
+		BeginRendering_(m_renderer, parameter, count, userData);
+	}
+
+	void Rendering(const efkTrackNodeParam& parameter, const efkTrackInstanceParam& instanceParameter, void* userData) override
+	{
+		Rendering_(parameter, instanceParameter, userData, m_renderer->GetCameraMatrix());
+	}
+
+	void EndRendering(const efkTrackNodeParam& parameter, void* userData) override
+	{
+		if (m_ringBufferData == NULL) return;
+
+		if (m_ribbonCount <= 1) return;
+
+		EndRendering_(m_renderer, parameter);
+	}
 };
+
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------

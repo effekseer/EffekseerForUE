@@ -75,7 +75,7 @@ public:
 
 		if (effekseerRenderer != nullptr)
 		{
-			effekseerRenderer->Destory();
+			effekseerRenderer->Destroy();
 			effekseerRenderer = nullptr;
 		}
 	}

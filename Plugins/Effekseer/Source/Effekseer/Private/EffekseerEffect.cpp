@@ -50,8 +50,8 @@ public:
 	virtual ~TextureLoader();
 
 public:
-	void* Load(const EFK_CHAR* path, ::Effekseer::TextureType textureType) override;
-	void Unload(void* data) override;
+	Effekseer::TextureData* Load(const EFK_CHAR* path, ::Effekseer::TextureType textureType) override;
+	void Unload(Effekseer::TextureData* data) override;
 	void SetUObject(UEffekseerEffect* uobject, bool requiredToCreateResource)
 	{
 		m_uobject = uobject;
@@ -73,7 +73,7 @@ TextureLoader::~TextureLoader()
 
 }
 
-void* TextureLoader::Load(const EFK_CHAR* path, ::Effekseer::TextureType textureType)
+Effekseer::TextureData* TextureLoader::Load(const EFK_CHAR* path, ::Effekseer::TextureType textureType)
 {
 	if (textureType == ::Effekseer::TextureType::Color)
 	{
@@ -85,7 +85,10 @@ void* TextureLoader::Load(const EFK_CHAR* path, ::Effekseer::TextureType texture
 		{
 			auto texture = Cast<UTexture2D>(StaticLoadObject(UTexture2D::StaticClass(), NULL, path_));
 			m_uobject->ColorTextures.Add(texture);
-			return (void*)texture;
+
+			Effekseer::TextureData* data = new Effekseer::TextureData();
+			data->UserPtr = texture;
+			return data;
 		}
 		else
 		{
@@ -93,18 +96,22 @@ void* TextureLoader::Load(const EFK_CHAR* path, ::Effekseer::TextureType texture
 
 			auto o = m_uobject->ColorTextures[m_loadingIndex];
 			m_loadingIndex++;
-			return (void*)o;
+
+			Effekseer::TextureData* data = new Effekseer::TextureData();
+			data->UserPtr = o;
+			return data;
 		}
 	}
 
 	return NULL;
 }
 
-void TextureLoader::Unload(void* data)
+void TextureLoader::Unload(Effekseer::TextureData* data)
 {
 	if (data != NULL)
 	{
-
+		auto p = (Effekseer::TextureData*)data;
+		delete p;
 	}
 }
 

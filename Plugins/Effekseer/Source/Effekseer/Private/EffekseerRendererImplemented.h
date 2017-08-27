@@ -216,113 +216,9 @@ namespace EffekseerRendererUE4
 		}
 	}
 
-	typedef ::Effekseer::SpriteRenderer::NodeParameter efkSpriteNodeParam;
-	typedef ::Effekseer::SpriteRenderer::InstanceParameter efkSpriteInstanceParam;
-	typedef ::Effekseer::Vector3D efkVector3D;
-
-	class SpriteRenderer
-		: public ::EffekseerRenderer::SpriteRendererBase
-	{
-	private:
-		RendererImplemented*			m_renderer = nullptr;
-
-		SpriteRenderer(RendererImplemented* renderer);
-	public:
-
-		virtual ~SpriteRenderer();
-
-		static SpriteRenderer* Create(RendererImplemented* renderer);
-
-	public:
-		void BeginRendering(const efkSpriteNodeParam& parameter, int32_t count, void* userData);
-
-		void Rendering(const efkSpriteNodeParam& parameter, const efkSpriteInstanceParam& instanceParameter, void* userData);
-
-		void EndRendering(const efkSpriteNodeParam& parameter, void* userData);
-	};
-
-	typedef ::Effekseer::RibbonRenderer::NodeParameter efkRibbonNodeParam;
-	typedef ::Effekseer::RibbonRenderer::InstanceParameter efkRibbonInstanceParam;
-	typedef ::Effekseer::Vector3D efkVector3D;
-
-	class RibbonRenderer
-		: public ::EffekseerRenderer::RibbonRendererBase
-	{
-	private:
-		RendererImplemented*	m_renderer;
-
-		RibbonRenderer(RendererImplemented* renderer);
-
-	public:
-
-		virtual ~RibbonRenderer();
-
-		static RibbonRenderer* Create(RendererImplemented* renderer);
-
-	public:
-		void BeginRendering(const efkRibbonNodeParam& parameter, int32_t count, void* userData);
-
-		void Rendering(const efkRibbonNodeParam& parameter, const efkRibbonInstanceParam& instanceParameter, void* userData);
-
-		void EndRendering(const efkRibbonNodeParam& parameter, void* userData);
-	};
-
-	typedef ::Effekseer::RingRenderer::NodeParameter efkRingNodeParam;
-	typedef ::Effekseer::RingRenderer::InstanceParameter efkRingInstanceParam;
-	typedef ::Effekseer::Vector3D efkVector3D;
-
-	class RingRenderer
-		: public ::EffekseerRenderer::RingRendererBase
-	{
-	private:
-		RendererImplemented*	m_renderer;
-
-		RingRenderer(RendererImplemented* renderer);
-
-	public:
-
-		virtual ~RingRenderer();
-
-		static RingRenderer* Create(RendererImplemented* renderer);
-
-	public:
-		void BeginRendering(const efkRingNodeParam& parameter, int32_t count, void* userData);
-
-		void Rendering(const efkRingNodeParam& parameter, const efkRingInstanceParam& instanceParameter, void* userData);
-
-		void EndRendering(const efkRingNodeParam& parameter, void* userData);
-	};
-
-	typedef ::Effekseer::TrackRenderer::NodeParameter efkTrackNodeParam;
-	typedef ::Effekseer::TrackRenderer::InstanceParameter efkTrackInstanceParam;
-	typedef ::Effekseer::Vector3D efkVector3D;
-
-	class TrackRenderer
-		: public ::EffekseerRenderer::TrackRendererBase
-	{
-	private:
-		RendererImplemented*	m_renderer;
-
-		TrackRenderer(RendererImplemented* renderer);
-
-	public:
-
-		virtual ~TrackRenderer();
-
-		static TrackRenderer* Create(RendererImplemented* renderer);
-
-	public:
-		void BeginRendering(const efkTrackNodeParam& parameter, int32_t count, void* userData);
-
-		void Rendering(const efkTrackNodeParam& parameter, const efkTrackInstanceParam& instanceParameter, void* userData);
-
-		void EndRendering(const efkTrackNodeParam& parameter, void* userData);
-	};
-
 	typedef ::Effekseer::ModelRenderer::NodeParameter efkModelNodeParam;
 	typedef ::Effekseer::ModelRenderer::InstanceParameter efkModelInstanceParam;
 	typedef ::Effekseer::Vector3D efkVector3D;
-
 
 	class ModelRenderer
 		: public ::EffekseerRenderer::ModelRendererBase
@@ -371,7 +267,7 @@ namespace EffekseerRendererUE4
 		FMeshElementCollector*	m_meshElementCollector = nullptr;
 		std::map<EffekseerMaterial, UMaterialInstanceDynamic*>	m_nmaterials;
 
-		EffekseerRenderer::StandardRenderer<RendererImplemented, Shader, void*, Vertex, VertexDistortion>*	m_standardRenderer = nullptr;
+		EffekseerRenderer::StandardRenderer<RendererImplemented, Shader, Vertex, VertexDistortion>*	m_standardRenderer = nullptr;
 	public:
 		
 		static RendererImplemented* Create();
@@ -390,7 +286,7 @@ namespace EffekseerRendererUE4
 		/**
 		@brief	このインスタンスを破棄する。
 		*/
-		void Destory() override;
+		void Destroy() override;
 
 		/**
 		@brief	ステートを復帰するかどうかのフラグを設定する。
@@ -517,13 +413,13 @@ namespace EffekseerRendererUE4
 		*/
 		void SetDistortingCallback(::EffekseerRenderer::DistortingCallback* callback) override;
 
-		void* GetBackground();
+		Effekseer::TextureData* GetBackground();
 
 		VertexBuffer* GetVertexBuffer();
 
 		IndexBuffer* GetIndexBuffer();
 
-		EffekseerRenderer::StandardRenderer<RendererImplemented, Shader, void*, Vertex, VertexDistortion>* GetStandardRenderer();
+		EffekseerRenderer::StandardRenderer<RendererImplemented, Shader, Vertex, VertexDistortion>* GetStandardRenderer();
 
 		::EffekseerRenderer::RenderStateBase* GetRenderState();
 
@@ -540,7 +436,7 @@ namespace EffekseerRendererUE4
 		void BeginShader(Shader* shader);
 		void EndShader(Shader* shader);
 
-		void SetTextures(Shader* shader, void** textures, int32_t count);
+		void SetTextures(Shader* shader, Effekseer::TextureData** textures, int32_t count);
 
 		void SetLocalToWorld(FMatrix localToWorld);
 		void SetViewIndex(int32_t viewIndex);
