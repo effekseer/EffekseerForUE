@@ -3805,6 +3805,23 @@ struct vector3d
 		memset( this, 0, sizeof(vector3d) );
 	};
 
+	void normalize()
+	{
+		float len = std::sqrtf(x * x + y * y + z * z);
+		if (len > 0.0001f)
+		{
+			x /= len;
+			y /= len;
+			z /= len;
+		}
+		else
+		{
+			x = 1.0;
+			y = 0.0;
+			z = 0.0;
+		}
+	}
+
 	void setValueToArg( Vector3D& v ) const
 	{
 		v.X = x;
@@ -4900,6 +4917,17 @@ public:
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
+
+class FCurveVector2D
+{
+public:
+	FCurve X;
+	FCurve Y;
+	
+	FCurveVector2D();
+	int32_t Load(void* data, int32_t version);
+};
+
 class FCurveVector3D
 {
 public:
@@ -5424,6 +5452,7 @@ struct ParameterRendererCommon
 		UV_FIXED = 1,
 		UV_ANIMATION = 2,
 		UV_SCROLL = 3,
+		UV_FCURVE = 4,
 
 		UV_DWORD = 0x7fffffff,
 	} UVType;
@@ -5477,6 +5506,12 @@ struct ParameterRendererCommon
 			random_vector2d	Size;
 			random_vector2d	Speed;
 		} Scroll;
+
+		struct
+		{
+			FCurveVector2D* Position;
+			FCurveVector2D* Size;
+		} FCurve;
 
 	} UV;
 
@@ -5592,6 +5627,13 @@ struct ParameterRendererCommon
 				pos += sizeof(UV.Scroll);
 			}
 		}
+		else if (UVType == UV_FCURVE)
+		{
+			UV.FCurve.Position = new FCurveVector2D();
+			UV.FCurve.Size = new FCurveVector2D();
+			pos += UV.FCurve.Position->Load(pos, version);
+			pos += UV.FCurve.Size->Load(pos, version);
+		}
 
 		if (version >= 10)
 		{
@@ -5615,6 +5657,15 @@ struct ParameterRendererCommon
 			memcpy(&DistortionIntensity, pos, sizeof(float));
 			pos += sizeof(float);
 			
+		}
+	}
+
+	void destroy()
+	{
+		if (UVType == UV_FCURVE)
+		{
+			ES_SAFE_DELETE(UV.FCurve.Position);
+			ES_SAFE_DELETE(UV.FCurve.Size);
 		}
 	}
 };
@@ -6852,6 +6903,9 @@ private:
 
 	float	m_maginificationExternal;
 
+	// default random seed
+	int32_t	m_defaultRandomSeed;
+
 	// 子ノード
 	EffectNode* m_pRoot;
 
@@ -7492,8 +7546,16 @@ public:
 	*/
 	void SetRemovingCallback( Handle handle, EffectInstanceRemovingCallback callback );
 
+	bool GetShown(Handle handle);
+
 	void SetShown( Handle handle, bool shown );
+	
+	bool GetPaused(Handle handle);
+
 	void SetPaused( Handle handle, bool paused );
+
+	void SetPausedToAllEffects(bool paused);
+
 	void SetSpeed( Handle handle, float speed );
 	void SetAutoDrawing( Handle handle, bool autoDraw );
 	void Flip();
@@ -7913,8 +7975,8 @@ public:
 	// The time offset for UV
 	int32_t		uvTimeOffset;
 
-	// Scroll area for UV
-	RectF		uvScrollArea;
+	// Scroll, FCurve area for UV
+	RectF		uvAreaOffset;
 
 	// Scroll speed for UV
 	Vector2D	uvScrollSpeed;
@@ -8357,6 +8419,36 @@ void FCurve::Maginify(float value )
 		m_keys[i] *= value;
 	}
 }
+
+//----------------------------------------------------------------------------------
+//
+//----------------------------------------------------------------------------------
+FCurveVector2D::FCurveVector2D()
+	: X(0)
+	, Y(0)
+{
+
+}
+
+//----------------------------------------------------------------------------------
+//
+//----------------------------------------------------------------------------------
+int32_t FCurveVector2D::Load(void* data, int32_t version)
+{
+	int32_t size = 0;
+	uint8_t* p = (uint8_t*) data;
+
+	int32_t x_size = X.Load(p, version);
+	size += x_size;
+	p += x_size;
+
+	int32_t y_size = Y.Load(p, version);
+	size += y_size;
+	p += y_size;
+
+	return size;
+}
+
 
 //----------------------------------------------------------------------------------
 //
@@ -11280,6 +11372,7 @@ EffectImplemented::EffectImplemented( Manager* pManager, void* pData, int size )
 	, m_pModels			( NULL )
 	, m_maginification	( 1.0f )
 	, m_maginificationExternal	( 1.0f )
+	, m_defaultRandomSeed	(-1)
 	, m_pRoot			( NULL )
 
 	, m_normalImageCount(0)
@@ -11508,6 +11601,16 @@ bool EffectImplemented::Load( void* pData, int size, float mag, const EFK_CHAR* 
 
 	m_maginification *= mag;
 	m_maginificationExternal = mag;
+
+	if (m_version >= 11)
+	{
+		memcpy(&m_defaultRandomSeed, pos, sizeof(int32_t));
+		pos += sizeof(int32_t);
+	}
+	else
+	{
+		m_defaultRandomSeed = -1;
+	}
 
 	// カリング
 	if( m_version >= 9 )
@@ -12987,9 +13090,16 @@ void ManagerImplemented::SetRemovingCallback( Handle handle, EffectInstanceRemov
 	}
 }
 
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
+bool ManagerImplemented::GetShown(Handle handle)
+{
+	if (m_DrawSets.count(handle) > 0)
+	{
+		return m_DrawSets[handle].IsShown;
+	}
+
+	return false;
+}
+
 void ManagerImplemented::SetShown( Handle handle, bool shown )
 {
 	if( m_DrawSets.count( handle ) > 0 )
@@ -12998,14 +13108,31 @@ void ManagerImplemented::SetShown( Handle handle, bool shown )
 	}
 }
 
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
+bool ManagerImplemented::GetPaused(Handle handle)
+{
+	if (m_DrawSets.count(handle) > 0)
+	{
+		return m_DrawSets[handle].IsPaused;
+	}
+
+	return false;
+}
+
 void ManagerImplemented::SetPaused( Handle handle, bool paused )
 {
 	if( m_DrawSets.count( handle ) > 0 )
 	{
 		m_DrawSets[handle].IsPaused = paused;
+	}
+}
+
+void ManagerImplemented::SetPausedToAllEffects(bool paused)
+{
+	std::map<Handle, DrawSet>::iterator it = m_DrawSets.begin();
+	while (it != m_DrawSets.end())
+	{
+		(*it).second.IsPaused = paused;
+		++it;
 	}
 }
 
@@ -14089,6 +14216,7 @@ void Instance::Initialize( Instance* parent, int32_t instanceNumber )
 		rotation_values.axis.random.acceleration = m_pEffectNode->RotationAxisPVA.acceleration.getValue( *m_pManager );
 		rotation_values.axis.rotation = rotation_values.axis.random.rotation;
 		rotation_values.axis.axis = m_pEffectNode->RotationAxisPVA.axis.getValue(*m_pManager);
+		rotation_values.axis.axis.normalize();
 	}
 	else if( m_pEffectNode->RotationType == ParameterRotationType_AxisEasing )
 	{
@@ -14096,6 +14224,7 @@ void Instance::Initialize( Instance* parent, int32_t instanceNumber )
 		rotation_values.axis.easing.end = m_pEffectNode->RotationAxisEasing.easing.end.getValue( *m_pManager );
 		rotation_values.axis.rotation = rotation_values.axis.easing.start;
 		rotation_values.axis.axis = m_pEffectNode->RotationAxisEasing.axis.getValue(*m_pManager);
+		rotation_values.axis.axis.normalize();
 	}
 	else if( m_pEffectNode->RotationType == ParameterRotationType_FCurve )
 	{
@@ -14385,12 +14514,20 @@ void Instance::Initialize( Instance* parent, int32_t instanceNumber )
 		auto xy = m_pEffectNode->RendererCommon.UV.Scroll.Position.getValue(*m_pManager);
 		auto zw = m_pEffectNode->RendererCommon.UV.Scroll.Size.getValue(*m_pManager);
 
-		uvScrollArea.X = xy.x;
-		uvScrollArea.Y = xy.y;
-		uvScrollArea.Width = zw.x;
-		uvScrollArea.Height = zw.y;
+		uvAreaOffset.X = xy.x;
+		uvAreaOffset.Y = xy.y;
+		uvAreaOffset.Width = zw.x;
+		uvAreaOffset.Height = zw.y;
 
 		m_pEffectNode->RendererCommon.UV.Scroll.Speed.getValue(*m_pManager).setValueToArg(uvScrollSpeed);
+	}
+
+	if (m_pEffectNode->RendererCommon.UVType == ParameterRendererCommon::UV_FCURVE)
+	{
+		uvAreaOffset.X = m_pEffectNode->RendererCommon.UV.FCurve.Position->X.GetOffset(*m_pManager);
+		uvAreaOffset.Y = m_pEffectNode->RendererCommon.UV.FCurve.Position->Y.GetOffset(*m_pManager);
+		uvAreaOffset.Width = m_pEffectNode->RendererCommon.UV.FCurve.Size->X.GetOffset(*m_pManager);
+		uvAreaOffset.Height = m_pEffectNode->RendererCommon.UV.FCurve.Size->Y.GetOffset(*m_pManager);
 	}
 
 	m_pEffectNode->InitializeRenderedInstance(*this, m_pManager);
@@ -15147,11 +15284,22 @@ RectF Instance::GetUV() const
 		auto time = m_LivingTime + uvTimeOffset;
 
 		return RectF(
-			uvScrollArea.X + uvScrollSpeed.X * time,
-			uvScrollArea.Y + uvScrollSpeed.Y * time,
-			uvScrollArea.Width,
-			uvScrollArea.Height);
+			uvAreaOffset.X + uvScrollSpeed.X * time,
+			uvAreaOffset.Y + uvScrollSpeed.Y * time,
+			uvAreaOffset.Width,
+			uvAreaOffset.Height);
 	}
+	else if (m_pEffectNode->RendererCommon.UVType == ParameterRendererCommon::UV_FCURVE)
+	{
+		auto time = m_LivingTime + uvTimeOffset;
+
+		return RectF(
+			uvAreaOffset.X + m_pEffectNode->RendererCommon.UV.FCurve.Position->X.GetValue(time),
+			uvAreaOffset.Y + m_pEffectNode->RendererCommon.UV.FCurve.Position->Y.GetValue(time),
+			uvAreaOffset.Width + m_pEffectNode->RendererCommon.UV.FCurve.Size->X.GetValue(time),
+			uvAreaOffset.Height + m_pEffectNode->RendererCommon.UV.FCurve.Size->Y.GetValue(time));
+	}
+
 
 	return RectF( 0.0f, 0.0f, 1.0f, 1.0f );
 }
