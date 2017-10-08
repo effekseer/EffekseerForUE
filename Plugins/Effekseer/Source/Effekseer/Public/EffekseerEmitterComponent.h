@@ -14,14 +14,24 @@ class EFFEKSEER_API UEffekseerEmitterComponent : public UPrimitiveComponent
 	GENERATED_BODY()
 
 private:
-
+	bool		shouldActivate = false;
+	bool		isPlaying = false;
+	FEffekseerHandle		handle;
 public:
 	UEffekseerEmitterComponent();
 	virtual ~UEffekseerEmitterComponent();
 
 	virtual void BeginPlay() override;
 
+	virtual void BeginDestroy() override;
+
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+
+	virtual void Activate(bool bReset = false) override;
+
+	virtual void Deactivate() override;
+
+	virtual void OnUnregister() override;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Effect)
 	UEffekseerEffect* Effect = nullptr;
@@ -29,6 +39,18 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Effect)
 	AActor* System = nullptr;
 
-	UFUNCTION(BlueprintCallable, Category = "Control")
+	UPROPERTY(Transient)
+	UEffekseerSystemComponent* system_ = nullptr;
+
+	UFUNCTION(BlueprintCallable, Category = Effect)
+	void Stop();
+
+	UFUNCTION(BlueprintCallable, Category = Effect)
+	void StopRoot();
+
+	UFUNCTION(BlueprintCallable, Category = Effect)
+	bool Exists() const;
+
+	UFUNCTION(BlueprintCallable, Category = Deprecated)
 	FEffekseerHandle Play();
 };

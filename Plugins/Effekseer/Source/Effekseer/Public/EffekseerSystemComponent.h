@@ -20,6 +20,7 @@ enum class EffekseerUpdateData_CommandType
 	SetPRS,
 	Stop,
 	StopRoot,
+	StopAll,
 };
 
 
@@ -84,6 +85,8 @@ public:
 	virtual FBoxSphereBounds CalcBounds(const FTransform& LocalToWorld) const override;
 
 	virtual void BeginPlay() override;
+
+	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
@@ -156,7 +159,7 @@ public:
 	void SetEffectScaling(FEffekseerHandle handle, FVector scaling);
 
 	UFUNCTION(BlueprintCallable, Category = "Control")
-	bool Exists(FEffekseerHandle handle);
+	bool Exists(FEffekseerHandle handle) const;
 
 	UFUNCTION(BlueprintCallable, Category = "Control")
 	void Stop(FEffekseerHandle handle);

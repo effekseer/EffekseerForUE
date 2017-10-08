@@ -8,9 +8,63 @@
 #include "DynamicMeshBuilder.h"
 #include "EffekseerInternalModel.h"
 #include "Runtime/Engine/Public/StaticMeshResources.h"
+#include "Runtime/Core/Public/Math/Color.h"
+#include "Runtime/Engine/Public/MaterialShared.h"
 
 namespace EffekseerRendererUE4
 {
+	class FModelMaterialRenderProxy : public FMaterialRenderProxy
+	{
+	public:
+
+		const FMaterialRenderProxy* const Parent;
+		FLinearColor	uv;
+		FLinearColor	color;
+
+		/** Initialization constructor. */
+		FModelMaterialRenderProxy(const FMaterialRenderProxy* InParent, FLinearColor uv, FLinearColor color) :
+			Parent(InParent),
+			uv(uv),
+			color(color)
+		{}
+
+		// FMaterialRenderProxy interface.
+		virtual const class FMaterial* GetMaterial(ERHIFeatureLevel::Type InFeatureLevel) const;
+		virtual bool GetVectorValue(const FName ParameterName, FLinearColor* OutValue, const FMaterialRenderContext& Context) const;
+		virtual bool GetScalarValue(const FName ParameterName, float* OutValue, const FMaterialRenderContext& Context) const;
+		virtual bool GetTextureValue(const FName ParameterName, const UTexture** OutValue, const FMaterialRenderContext& Context) const;
+	};
+
+	const FMaterial* FModelMaterialRenderProxy::GetMaterial(ERHIFeatureLevel::Type InFeatureLevel) const
+	{
+		return Parent->GetMaterial(InFeatureLevel);
+	}
+
+	bool FModelMaterialRenderProxy::GetVectorValue(const FName ParameterName, FLinearColor* OutValue, const FMaterialRenderContext& Context) const
+	{
+		if (ParameterName == FName(_T("UserUV")))
+		{
+			*OutValue = uv;
+		}
+		
+		if (ParameterName == FName(_T("UserColor")))
+		{
+			*OutValue = color;
+		}
+
+		return Parent->GetVectorValue(ParameterName, OutValue, Context);
+	}
+
+	bool FModelMaterialRenderProxy::GetScalarValue(const FName ParameterName, float* OutValue, const FMaterialRenderContext& Context) const
+	{
+		return Parent->GetScalarValue(ParameterName, OutValue, Context);
+	}
+
+	bool FModelMaterialRenderProxy::GetTextureValue(const FName ParameterName, const UTexture** OutValue, const FMaterialRenderContext& Context) const
+	{
+		return Parent->GetTextureValue(ParameterName, OutValue, Context);
+	}
+
 	ModelRenderer::ModelRenderer(RendererImplemented* renderer)
 		: m_renderer(renderer)
 	{
@@ -63,7 +117,7 @@ namespace EffekseerRendererUE4
 
 		m_renderer->SetTextures(nullptr, textures, 1);
 
-		m_renderer->DrawModel(model, m_matrixes);
+		m_renderer->DrawModel(model, m_matrixes, m_uv, m_colors);
 
 		m_renderer->GetRenderState()->Pop();
 	}
@@ -79,6 +133,11 @@ namespace EffekseerRendererUE4
 		{
 			m_materials[i] = nullptr;
 		}
+
+		m_textures[0] = nullptr;
+		m_textures[1] = nullptr;
+		m_textures[2] = nullptr;
+		m_textures[3] = nullptr;
 	}
 	
 	RendererImplemented::~RendererImplemented()
@@ -431,7 +490,7 @@ namespace EffekseerRendererUE4
 		meshBuilder.GetMesh(m_localToWorld, proxy, SDPG_World, false, false, m_viewIndex, *m_meshElementCollector);
 	}
 
-	void RendererImplemented::DrawModel(void* model, std::vector<Effekseer::Matrix44>& matrixes)
+	void RendererImplemented::DrawModel(void* model, std::vector<Effekseer::Matrix44>& matrixes, std::vector<Effekseer::RectF>& uvs, std::vector<Effekseer::Color>& colors)
 	{
 		// StaticMesh
 		if (model == nullptr) return;
@@ -451,6 +510,8 @@ namespace EffekseerRendererUE4
 		for (int32_t objectIndex = 0; objectIndex < matrixes.size(); objectIndex++)
 		{
 			auto& matOrigin = matrixes[objectIndex];
+			auto& uvOrigin = uvs[objectIndex];
+			auto& colorOrigin = colors[objectIndex];
 
 			FMatrix matLocalToWorld = FMatrix(
 				FVector(matOrigin.Values[0][0], matOrigin.Values[0][2], matOrigin.Values[0][1]),
@@ -459,6 +520,8 @@ namespace EffekseerRendererUE4
 				FVector(matOrigin.Values[3][0], matOrigin.Values[3][2], matOrigin.Values[3][1])
 			);
 
+			FLinearColor uv = FLinearColor(uvOrigin.X, uvOrigin.Y, uvOrigin.Width, uvOrigin.Height);
+			FLinearColor color = FLinearColor(colorOrigin.R / 255.0f, colorOrigin.G / 255.0f, colorOrigin.B / 255.0f, colorOrigin.A / 255.0f);
 
 			for (int32 sectionIndex = 0; sectionIndex < lodResource.Sections.Num(); sectionIndex++)
 			{
@@ -475,7 +538,11 @@ namespace EffekseerRendererUE4
 					false, 
 					false);
 
-				meshElement.MaterialRenderProxy = mat->GetRenderProxy(false);
+				auto proxy = mat->GetRenderProxy(false);
+				proxy = new FModelMaterialRenderProxy(proxy, uv, color);
+				m_meshElementCollector->RegisterOneFrameMaterialProxy(proxy);
+
+				meshElement.MaterialRenderProxy = proxy;
 				meshElement.VertexFactory = &lodResource.VertexFactory;
 				meshElement.Type = PT_TriangleList;
 

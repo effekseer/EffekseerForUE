@@ -43,7 +43,7 @@ private:
 
 	TMap<int, int>	internalHandle2EfkHandle;
 
-	// この実装でいいのだろうか？
+	// is it safe?
 	::Effekseer::CriticalSection criticalSection;
 	TArray<int32_t> removedHandles;
 
@@ -144,7 +144,7 @@ public:
 		Materials = updateData->Materials;
 		NMaterials = updateData->NMaterials;
 
-		// TODO いずれ高速に処理できる方法を考える。
+		// TODO become fast
 		
 		// Execute commands.
 		for (auto i = 0; i < updateData->Commands.Num(); i++)
@@ -276,6 +276,7 @@ public:
 UEffekseerSystemComponent::UEffekseerSystemComponent()
 {
 	bWantsBeginPlay = true;
+	bTickInEditor = true;
 	PrimaryComponentTick.bCanEverTick = true;
 	currentUpdateData = new EffekseerUpdateData();
 }
@@ -288,31 +289,46 @@ UEffekseerSystemComponent::~UEffekseerSystemComponent()
 void UEffekseerSystemComponent::BeginPlay()
 {
 	Super::BeginPlay();
+
+	EffekseerUpdateData_Command cmd;
+	cmd.Type = EffekseerUpdateData_CommandType::StopAll;
+	currentUpdateData->Commands.Add(cmd);
+}
+
+void UEffekseerSystemComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
+{
+	EffekseerUpdateData_Command cmd;
+	cmd.Type = EffekseerUpdateData_CommandType::StopAll;
+	currentUpdateData->Commands.Add(cmd);
+
+	Super::EndPlay(EndPlayReason);
 }
 
 void UEffekseerSystemComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	auto sp = (FEffekseerSystemSceneProxy*)sceneProxy;
-
-	sp->UpdateData(currentUpdateData);
-	currentUpdateData = new EffekseerUpdateData();
-
-	currentUpdateData->OpaqueDynamicMaterials = OpaqueDynamicMaterials;
-	currentUpdateData->TranslucentDynamicMaterials = TranslucentDynamicMaterials;
-	currentUpdateData->AdditiveDynamicMaterials = AdditiveDynamicMaterials;
-	currentUpdateData->SubtractiveDynamicMaterials = SubtractiveDynamicMaterials;
-	currentUpdateData->ModulateDynamicMaterials = ModulateDynamicMaterials;
-	currentUpdateData->LightingDynamicMaterials = LightingDynamicMaterials;
-
-	currentUpdateData->Materials = Materials;
-	currentUpdateData->NMaterials = NMaterials;
-
-	currentUpdateData->DeltaTime = DeltaTime;
-
-	auto removedHandles = sp->PopRemovedHandles();
-	for (auto& h : removedHandles)
+	if (sp != nullptr)
 	{
-		internalHandle2EfkHandle.Remove(h);
+		sp->UpdateData(currentUpdateData);
+		currentUpdateData = new EffekseerUpdateData();
+
+		currentUpdateData->OpaqueDynamicMaterials = OpaqueDynamicMaterials;
+		currentUpdateData->TranslucentDynamicMaterials = TranslucentDynamicMaterials;
+		currentUpdateData->AdditiveDynamicMaterials = AdditiveDynamicMaterials;
+		currentUpdateData->SubtractiveDynamicMaterials = SubtractiveDynamicMaterials;
+		currentUpdateData->ModulateDynamicMaterials = ModulateDynamicMaterials;
+		currentUpdateData->LightingDynamicMaterials = LightingDynamicMaterials;
+
+		currentUpdateData->Materials = Materials;
+		currentUpdateData->NMaterials = NMaterials;
+
+		currentUpdateData->DeltaTime = DeltaTime;
+
+		auto removedHandles = sp->PopRemovedHandles();
+		for (auto& h : removedHandles)
+		{
+			internalHandle2EfkHandle.Remove(h);
+		}
 	}
 
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
@@ -540,7 +556,7 @@ void UEffekseerSystemComponent::SetEffectScaling(FEffekseerHandle handle, FVecto
 	currentUpdateData->Commands.Add(cmd);
 }
 
-bool UEffekseerSystemComponent::Exists(FEffekseerHandle handle)
+bool UEffekseerSystemComponent::Exists(FEffekseerHandle handle) const
 {
 	if (handle.Effect == nullptr) return false;
 	return internalHandle2EfkHandle.Contains(handle.ID);
