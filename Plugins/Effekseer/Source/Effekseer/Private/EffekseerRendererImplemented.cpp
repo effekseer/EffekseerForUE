@@ -45,11 +45,13 @@ namespace EffekseerRendererUE4
 		if (ParameterName == FName(_T("UserUV")))
 		{
 			*OutValue = uv;
+			return true;
 		}
 		
 		if (ParameterName == FName(_T("UserColor")))
 		{
 			*OutValue = color;
+			return true;
 		}
 
 		return Parent->GetVectorValue(ParameterName, OutValue, Context);
