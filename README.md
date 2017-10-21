@@ -29,6 +29,4 @@ Todo
 
 * Support to a distortion.
 
-* Support to a lighting model
-
 * Write help
