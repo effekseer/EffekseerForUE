@@ -246,6 +246,7 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 		if (!isRoot)
 		{
 			auto param = node->GetBasicRenderParameter();
+			auto modelParam = node->GetEffectModelParameter();
 
 			UTexture2D* texture = nullptr;
 
@@ -259,6 +260,7 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 			mat->Texture = texture;
 			mat->IsDepthTestDisabled = !param.ZTest;
 			mat->AlphaBlend = (EEffekseerAlphaBlendType)param.AlphaBlend;
+			mat->IsLighting = modelParam.Lighting;
 
 			this->Materials.Add(mat);
 

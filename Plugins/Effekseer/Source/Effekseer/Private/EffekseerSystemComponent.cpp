@@ -475,6 +475,8 @@ FEffekseerHandle UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVect
 		if (Materials.Contains(m)) continue;
 
 		auto blendInd = (int32_t)m->AlphaBlend;
+		if (m->IsLighting) blendInd = 5;
+
 		if (m->IsDepthTestDisabled) blendInd += 6;
 		auto mat = _mats[blendInd];
 
@@ -488,6 +490,7 @@ FEffekseerHandle UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVect
 			mkey.Texture = m->Texture;
 			mkey.AlphaBlend = m->AlphaBlend;
 			mkey.IsDepthTestDisabled = m->IsDepthTestDisabled;
+			mkey.IsLighting = m->IsLighting;
 			NMaterials[mkey] = dynamicMaterial;
 		}
 	}

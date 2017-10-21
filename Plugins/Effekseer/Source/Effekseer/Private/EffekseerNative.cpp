@@ -5813,6 +5813,8 @@ public:
 
 	void SetBasicRenderParameter(EffectBasicRenderParameter param) override;
 
+	EffectModelParameter GetEffectModelParameter() override;
+
 	/**
 		@brief	描画部分の読込
 	*/
@@ -9091,6 +9093,20 @@ void EffectNodeImplemented::SetBasicRenderParameter(EffectBasicRenderParameter p
 	RendererCommon.WrapType = param.WrapType;
 	RendererCommon.ZTest = param.ZTest;
 	RendererCommon.ZWrite = param.ZWrite;
+}
+
+EffectModelParameter EffectNodeImplemented::GetEffectModelParameter()
+{
+	EffectModelParameter param;
+	param.Lighting = false;
+
+	if (GetType() == EFFECT_NODE_TYPE_MODEL)
+	{
+		auto t = (EffectNodeModel*)this;
+		param.Lighting = t->Lighting;
+	}
+
+	return param;
 }
 
 //----------------------------------------------------------------------------------

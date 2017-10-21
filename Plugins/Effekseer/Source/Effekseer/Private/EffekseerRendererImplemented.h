@@ -267,6 +267,8 @@ namespace EffekseerRendererUE4
 		FMeshElementCollector*	m_meshElementCollector = nullptr;
 		std::map<EffekseerMaterial, UMaterialInstanceDynamic*>	m_nmaterials;
 
+		bool					m_isLighting = false;
+
 		EffekseerRenderer::StandardRenderer<RendererImplemented, Shader, Vertex, VertexDistortion>*	m_standardRenderer = nullptr;
 	public:
 		
@@ -437,6 +439,7 @@ namespace EffekseerRendererUE4
 		void EndShader(Shader* shader);
 
 		void SetTextures(Shader* shader, Effekseer::TextureData** textures, int32_t count);
+		void SetIsLighting(bool value) { m_isLighting = value; }
 
 		void SetLocalToWorld(FMatrix localToWorld);
 		void SetViewIndex(int32_t viewIndex);

@@ -112,7 +112,7 @@ namespace EffekseerRendererUE4
 		state.CullingType = parameter.Culling;
 
 		m_renderer->GetRenderState()->Update(false);
-
+		m_renderer->SetIsLighting(parameter.Lighting);
 		
 		Effekseer::TextureData* textures[1];
 		textures[0] = parameter.EffectPointer->GetColorImage(parameter.ColorTextureIndex);
@@ -412,6 +412,8 @@ namespace EffekseerRendererUE4
 
 	void RendererImplemented::DrawSprites(int32_t spriteCount, int32_t vertexOffset)
 	{
+		SetIsLighting(false);
+
 		// 1‚Â‚ÌƒŠƒ“ƒO”»’è
 		auto stanMat = ((Effekseer::Matrix44*)m_stanShader->GetVertexConstantBuffer())[0];
 		auto cameraMat = m_camera;
@@ -584,6 +586,7 @@ namespace EffekseerRendererUE4
 
 		m.AlphaBlend = (EEffekseerAlphaBlendType)m_renderState->GetActiveState().AlphaBlend;
 		m.IsDepthTestDisabled = !m_renderState->GetActiveState().DepthTest;
+		m.IsLighting = m_isLighting;
 
 		UMaterialInstanceDynamic* mat = nullptr;
 
