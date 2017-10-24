@@ -50,13 +50,17 @@ public:
 	UPROPERTY()
 	bool			IsLighting = false;
 
+	UPROPERTY()
+	bool			IsDistorted = false;
+
 	bool operator == (const UEffekseerMaterial* Other)
 	{
 		return
 			Texture == Other->Texture &&
 			AlphaBlend == Other->AlphaBlend &&
 			IsDepthTestDisabled == Other->IsDepthTestDisabled &&
-			IsLighting == Other->IsLighting;
+			IsLighting == Other->IsLighting &&
+			IsDistorted == Other->IsDistorted;
 	}
 
 	friend uint32 GetTypeHash(const UEffekseerMaterial* Other)
@@ -74,6 +78,8 @@ struct EffekseerMaterial
 	bool			IsDepthTestDisabled;
 
 	bool			IsLighting = false;
+
+	bool			IsDistorted = false;
 
 	bool operator < (const EffekseerMaterial& rhs) const
 	{
@@ -95,6 +101,11 @@ struct EffekseerMaterial
 		if (IsLighting != rhs.IsLighting)
 		{
 			return IsLighting < rhs.IsLighting;
+		}
+
+		if (IsDistorted != rhs.IsDistorted)
+		{
+			return IsDistorted < rhs.IsDistorted;
 		}
 
 		return false;

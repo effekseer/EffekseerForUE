@@ -257,6 +257,8 @@ namespace EffekseerRendererUE4
 
 		VertexBuffer*			m_vertexBuffer = nullptr;
 		Shader*					m_stanShader = nullptr;
+		Shader*					m_distortionShader = nullptr;
+		Shader*					m_currentShader = nullptr;
 		RenderState*			m_renderState = nullptr;
 
 		void*					m_textures[16];
@@ -267,6 +269,7 @@ namespace EffekseerRendererUE4
 		FMeshElementCollector*	m_meshElementCollector = nullptr;
 		std::map<EffekseerMaterial, UMaterialInstanceDynamic*>	m_nmaterials;
 
+		bool					m_isDistorting = false;
 		bool					m_isLighting = false;
 
 		EffekseerRenderer::StandardRenderer<RendererImplemented, Shader, Vertex, VertexDistortion>*	m_standardRenderer = nullptr;
@@ -440,6 +443,7 @@ namespace EffekseerRendererUE4
 
 		void SetTextures(Shader* shader, Effekseer::TextureData** textures, int32_t count);
 		void SetIsLighting(bool value) { m_isLighting = value; }
+		void SetIsDistorting(bool value) { m_isDistorting = value; }
 
 		void SetLocalToWorld(FMatrix localToWorld);
 		void SetViewIndex(int32_t viewIndex);

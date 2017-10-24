@@ -13,6 +13,52 @@
 
 namespace EffekseerRendererUE4
 {
+	class FDistortionMaterialRenderProxy : public FMaterialRenderProxy
+	{
+	public:
+
+		const FMaterialRenderProxy* const Parent;
+		float			distortionIntensity;
+
+		/** Initialization constructor. */
+		FDistortionMaterialRenderProxy(const FMaterialRenderProxy* InParent, float distortionIntensity) :
+			Parent(InParent),
+			distortionIntensity(distortionIntensity)
+		{}
+
+		// FMaterialRenderProxy interface.
+		virtual const class FMaterial* GetMaterial(ERHIFeatureLevel::Type InFeatureLevel) const;
+		virtual bool GetVectorValue(const FName ParameterName, FLinearColor* OutValue, const FMaterialRenderContext& Context) const;
+		virtual bool GetScalarValue(const FName ParameterName, float* OutValue, const FMaterialRenderContext& Context) const;
+		virtual bool GetTextureValue(const FName ParameterName, const UTexture** OutValue, const FMaterialRenderContext& Context) const;
+	};
+
+	const FMaterial* FDistortionMaterialRenderProxy::GetMaterial(ERHIFeatureLevel::Type InFeatureLevel) const
+	{
+		return Parent->GetMaterial(InFeatureLevel);
+	}
+
+	bool FDistortionMaterialRenderProxy::GetVectorValue(const FName ParameterName, FLinearColor* OutValue, const FMaterialRenderContext& Context) const
+	{
+		return Parent->GetVectorValue(ParameterName, OutValue, Context);
+	}
+
+	bool FDistortionMaterialRenderProxy::GetScalarValue(const FName ParameterName, float* OutValue, const FMaterialRenderContext& Context) const
+	{
+		if (ParameterName == FName(_T("DistortionIntensity")))
+		{
+			*OutValue = distortionIntensity;
+			return true;
+		}
+
+		return Parent->GetScalarValue(ParameterName, OutValue, Context);
+	}
+
+	bool FDistortionMaterialRenderProxy::GetTextureValue(const FName ParameterName, const UTexture** OutValue, const FMaterialRenderContext& Context) const
+	{
+		return Parent->GetTextureValue(ParameterName, OutValue, Context);
+	}
+
 	class FModelMaterialRenderProxy : public FMaterialRenderProxy
 	{
 	public:
@@ -20,12 +66,14 @@ namespace EffekseerRendererUE4
 		const FMaterialRenderProxy* const Parent;
 		FLinearColor	uv;
 		FLinearColor	color;
+		float			distortionIntensity;
 
 		/** Initialization constructor. */
-		FModelMaterialRenderProxy(const FMaterialRenderProxy* InParent, FLinearColor uv, FLinearColor color) :
+		FModelMaterialRenderProxy(const FMaterialRenderProxy* InParent, FLinearColor uv, FLinearColor color, float distortionIntensity) :
 			Parent(InParent),
 			uv(uv),
-			color(color)
+			color(color),
+			distortionIntensity(distortionIntensity)
 		{}
 
 		// FMaterialRenderProxy interface.
@@ -59,6 +107,12 @@ namespace EffekseerRendererUE4
 
 	bool FModelMaterialRenderProxy::GetScalarValue(const FName ParameterName, float* OutValue, const FMaterialRenderContext& Context) const
 	{
+		if (ParameterName == FName(_T("DistortionIntensity")))
+		{
+			*OutValue = distortionIntensity;
+			return true;
+		}
+
 		return Parent->GetScalarValue(ParameterName, OutValue, Context);
 	}
 
@@ -110,7 +164,7 @@ namespace EffekseerRendererUE4
 		state.DepthWrite = parameter.ZWrite;
 		state.AlphaBlend = parameter.AlphaBlend;
 		state.CullingType = parameter.Culling;
-
+		
 		m_renderer->GetRenderState()->Update(false);
 		m_renderer->SetIsLighting(parameter.Lighting);
 		
@@ -146,6 +200,7 @@ namespace EffekseerRendererUE4
 	{
 		ES_SAFE_DELETE(m_renderState);
 		ES_SAFE_DELETE(m_stanShader);
+		ES_SAFE_DELETE(m_distortionShader);
 		ES_SAFE_DELETE(m_standardRenderer);
 		ES_SAFE_DELETE(m_vertexBuffer);
 	}
@@ -156,13 +211,14 @@ namespace EffekseerRendererUE4
 		m_renderState = new RenderState();
 		m_vertexBuffer = new VertexBuffer(sizeof(Vertex) * m_squareMaxCount * 4, true);
 		m_stanShader = new Shader();
+		m_distortionShader = new Shader();
 
 		m_standardRenderer = new EffekseerRenderer::StandardRenderer<RendererImplemented, Shader, Vertex, VertexDistortion>(
 			this,
 			m_stanShader,
 			m_stanShader,
-			m_stanShader,
-			m_stanShader);
+			m_distortionShader,
+			m_distortionShader);
 
 
 		return true;
@@ -414,6 +470,9 @@ namespace EffekseerRendererUE4
 	{
 		SetIsLighting(false);
 
+		UMaterialInstanceDynamic* mat = FindMaterial();
+		if (mat == nullptr) return;
+
 		// 1‚Â‚ÌƒŠƒ“ƒO”»’è
 		auto stanMat = ((Effekseer::Matrix44*)m_stanShader->GetVertexConstantBuffer())[0];
 		auto cameraMat = m_camera;
@@ -443,55 +502,91 @@ namespace EffekseerRendererUE4
 		//auto triangles = vertexOffset / 4 * 2;
 		//glDrawElements(GL_TRIANGLES, spriteCount * 6, GL_UNSIGNED_SHORT, (void*)(triangles * 3 * sizeof(GLushort)));
 
-		// TODO VertexŒˆ‚ß‚¤‚¿
-		Vertex* vs = (Vertex*)m_vertexBuffer->GetResource();
-
-		FDynamicMeshBuilder meshBuilder;
-
-		for (int32_t vi = vertexOffset; vi < vertexOffset + spriteCount * 4; vi++)
+		if (m_isDistorting)
 		{
-			auto& v = vs[vi];
+			VertexDistortion* vs = (VertexDistortion*)m_vertexBuffer->GetResource();
 
-			if (isSingleRing)
+			FDynamicMeshBuilder meshBuilder;
+
+			for (int32_t vi = vertexOffset; vi < vertexOffset + spriteCount * 4; vi++)
 			{
-				Effekseer::Matrix44 trans;
-				trans.Translation(v.Pos.X, v.Pos.Y, v.Pos.Z);
-				Effekseer::Matrix44::Mul(trans, trans, ringMat);
-				v.Pos.X = trans.Values[3][0];
-				v.Pos.Y = trans.Values[3][1];
-				v.Pos.Z = trans.Values[3][2];
+				auto& v = vs[vi];
+
+				if (isSingleRing)
+				{
+					Effekseer::Matrix44 trans;
+					trans.Translation(v.Pos.X, v.Pos.Y, v.Pos.Z);
+					Effekseer::Matrix44::Mul(trans, trans, ringMat);
+					v.Pos.X = trans.Values[3][0];
+					v.Pos.Y = trans.Values[3][1];
+					v.Pos.Z = trans.Values[3][2];
+				}
+
+				Effekseer::Vector3D normal;
+				Effekseer::Vector3D::Cross(normal, v.Binormal, v.Tangent);
+
+				meshBuilder.AddVertex(FVector(v.Pos.X, v.Pos.Z, v.Pos.Y), FVector2D(v.UV[0], v.UV[1]), 
+					FVector(v.Binormal.X, v.Binormal.Z, v.Binormal.Y),
+					FVector(v.Tangent.X, v.Tangent.Z, v.Tangent.Y), 
+					FVector(normal.X, normal.Z, normal.Y), 
+					FColor(v.Col.R, v.Col.G, v.Col.B, v.Col.A));
 			}
 
-			//char temp[200];
-			//sprintf_s<200>(temp, "%f,%f,%f,%f,%f,%d,%d,%d,%d", v.Pos.X, v.Pos.Y, v.Pos.Z, v.UV[0], v.UV[1], (int)v.Col.R, (int)v.Col.G, (int)v.Col.B, (int)v.Col.A);
-			//GEngine->AddOnScreenDebugMessage(-1, 15.0f, FColor::Red, temp);
+			for (int32_t si = 0; si < spriteCount; si++)
+			{
+				meshBuilder.AddTriangle(
+					si * 4 + 0,
+					si * 4 + 1,
+					si * 4 + 2);
 
-			meshBuilder.AddVertex(FVector(v.Pos.X, v.Pos.Z, v.Pos.Y), FVector2D(v.UV[0], v.UV[1]), FVector(1, 0, 0), FVector(1, 1, 0), FVector(0, 0, 1), FColor(v.Col.R, v.Col.G, v.Col.B, v.Col.A));
+				meshBuilder.AddTriangle(
+					si * 4 + 2,
+					si * 4 + 1,
+					si * 4 + 3);
+			}
+
+			auto proxy = mat->GetRenderProxy(false);
+			meshBuilder.GetMesh(m_localToWorld, proxy, SDPG_World, false, false, m_viewIndex, *m_meshElementCollector);
 		}
-
-		for (int32_t si = 0; si < spriteCount; si++)
+		else
 		{
-			meshBuilder.AddTriangle(
-				si * 4 + 0,
-				si * 4 + 1,
-				si * 4 + 2);
+			Vertex* vs = (Vertex*)m_vertexBuffer->GetResource();
 
-			meshBuilder.AddTriangle(
-				si * 4 + 2,
-				si * 4 + 1,
-				si * 4 + 3);
+			FDynamicMeshBuilder meshBuilder;
+
+			for (int32_t vi = vertexOffset; vi < vertexOffset + spriteCount * 4; vi++)
+			{
+				auto& v = vs[vi];
+
+				if (isSingleRing)
+				{
+					Effekseer::Matrix44 trans;
+					trans.Translation(v.Pos.X, v.Pos.Y, v.Pos.Z);
+					Effekseer::Matrix44::Mul(trans, trans, ringMat);
+					v.Pos.X = trans.Values[3][0];
+					v.Pos.Y = trans.Values[3][1];
+					v.Pos.Z = trans.Values[3][2];
+				}
+
+				meshBuilder.AddVertex(FVector(v.Pos.X, v.Pos.Z, v.Pos.Y), FVector2D(v.UV[0], v.UV[1]), FVector(1, 0, 0), FVector(1, 1, 0), FVector(0, 0, 1), FColor(v.Col.R, v.Col.G, v.Col.B, v.Col.A));
+			}
+
+			for (int32_t si = 0; si < spriteCount; si++)
+			{
+				meshBuilder.AddTriangle(
+					si * 4 + 0,
+					si * 4 + 1,
+					si * 4 + 2);
+
+				meshBuilder.AddTriangle(
+					si * 4 + 2,
+					si * 4 + 1,
+					si * 4 + 3);
+			}
+
+			auto proxy = mat->GetRenderProxy(false);
+			meshBuilder.GetMesh(m_localToWorld, proxy, SDPG_World, false, false, m_viewIndex, *m_meshElementCollector);
 		}
-		//meshBuilder.AddVertex(FVector(0, 0, 0), FVector2D(0, 0), FVector(1, 0, 0), FVector(1, 1, 0), FVector(0, 0, 1), FColor::White);
-		//meshBuilder.AddVertex(FVector(0, 100, 0), FVector2D(1, 0), FVector(1, 0, 0), FVector(1, 1, 0), FVector(0, 0, 1), FColor::White);
-		//meshBuilder.AddVertex(FVector(100, 0, 0), FVector2D(0, 1), FVector(1, 0, 0), FVector(1, 1, 0), FVector(0, 0, 1), FColor::White);
-		//
-		//meshBuilder.AddTriangle(0, 1, 2);
-
-		UMaterialInstanceDynamic* mat = FindMaterial();
-		if (mat == nullptr) return;
-
-		auto proxy = mat->GetRenderProxy(false);
-		meshBuilder.GetMesh(m_localToWorld, proxy, SDPG_World, false, false, m_viewIndex, *m_meshElementCollector);
 	}
 
 	void RendererImplemented::DrawModel(void* model, std::vector<Effekseer::Matrix44>& matrixes, std::vector<Effekseer::RectF>& uvs, std::vector<Effekseer::Color>& colors)
@@ -543,7 +638,7 @@ namespace EffekseerRendererUE4
 					false);
 
 				auto proxy = mat->GetRenderProxy(false);
-				proxy = new FModelMaterialRenderProxy(proxy, uv, color);
+				proxy = new FModelMaterialRenderProxy(proxy, uv, color, 0.0);
 				m_meshElementCollector->RegisterOneFrameMaterialProxy(proxy);
 
 				meshElement.MaterialRenderProxy = proxy;
@@ -587,6 +682,7 @@ namespace EffekseerRendererUE4
 		m.AlphaBlend = (EEffekseerAlphaBlendType)m_renderState->GetActiveState().AlphaBlend;
 		m.IsDepthTestDisabled = !m_renderState->GetActiveState().DepthTest;
 		m.IsLighting = m_isLighting;
+		m.IsDistorted = m_isDistorting;
 
 		UMaterialInstanceDynamic* mat = nullptr;
 
@@ -602,7 +698,8 @@ namespace EffekseerRendererUE4
 
 	void RendererImplemented::BeginShader(Shader* shader)
 	{
-		// TODO
+		m_currentShader = shader;
+		m_isDistorting = m_currentShader != m_stanShader;
 	}
 
 	void RendererImplemented::EndShader(Shader* shader)
