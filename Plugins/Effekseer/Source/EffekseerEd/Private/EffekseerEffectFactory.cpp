@@ -3,6 +3,8 @@
 #include "EffekseerEffectFactory.h"
 #include "EffekseerEffect.h"
 
+#include "Runtime/Launch/Resources/Version.h"
+
 UEffekseerEffectFactory::UEffekseerEffectFactory(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
@@ -32,8 +34,12 @@ UObject* UEffekseerEffectFactory::FactoryCreateBinary(
 	const uint8* BufferEnd,
 	FFeedbackContext* Warn)
 {
+#if ENGINE_MINOR_VERSION <= 17
 	UEffekseerEffect* asset = CastChecked<UEffekseerEffect>(StaticConstructObject(InClass, InParent, InName, Flags));
-	
+#else
+	UEffekseerEffect* asset = CastChecked<UEffekseerEffect>(NewObject<UEffekseerEffect>(InParent, InClass, InName, Flags));
+#endif
+
 	if (asset)
 	{
 		auto path = asset->GetPathName();
@@ -41,8 +47,12 @@ UObject* UEffekseerEffectFactory::FactoryCreateBinary(
 
 		if (!asset->AssetImportData)
 		{
+#if ENGINE_MINOR_VERSION <= 17
 			//asset->AssetImportData = NewObject<UAssetImportData>(this, TEXT("AssetImportData"));
 			asset->AssetImportData = ConstructObject<UAssetImportData>(UAssetImportData::StaticClass(), asset);
+#else
+			asset->AssetImportData = NewObject<UAssetImportData>(asset, UAssetImportData::StaticClass());
+#endif
 		}
 
 		asset->AssetImportData->Update(CurrentFilename);

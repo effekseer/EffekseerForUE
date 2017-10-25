@@ -5,6 +5,15 @@ using System.Collections.Generic;
 
 public class EffekseerForUE4EditorTarget : TargetRules
 {
+    public EffekseerForUE4EditorTarget(TargetInfo Target)
+        : base(Target)
+    {
+        Type = TargetType.Editor;
+        ExtraModuleNames.Add("EffekseerForUE4");
+    }
+
+    // UE4.15
+    /*
 	public EffekseerForUE4EditorTarget(TargetInfo Target)
 	{
 		Type = TargetType.Editor;
@@ -22,4 +31,5 @@ public class EffekseerForUE4EditorTarget : TargetRules
 	{
 		OutExtraModuleNames.AddRange( new string[] { "EffekseerForUE4" } );
 	}
+    */
 }

@@ -6,6 +6,8 @@
 #include "Editor/UnrealEd/Public/Editor.h"
 #include "Developer/RawMesh/Public/RawMesh.h"
 
+#include "Runtime/Launch/Resources/Version.h"
+
 UEffekseerModelFactory::UEffekseerModelFactory(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
 {
@@ -49,7 +51,11 @@ UObject* UEffekseerModelFactory::FactoryCreateBinary(
 
 		if (!assetEfkMdl->AssetImportData)
 		{
+#if ENGINE_MINOR_VERSION <= 17
 			assetEfkMdl->AssetImportData = ConstructObject<UAssetImportData>(UAssetImportData::StaticClass(), assetEfkMdl);
+#else
+			assetEfkMdl->AssetImportData = NewObject<UAssetImportData>(assetEfkMdl, UAssetImportData::StaticClass());
+#endif
 		}
 
 		assetEfkMdl->AssetImportData->Update(CurrentFilename);
@@ -105,7 +111,11 @@ UObject* UEffekseerModelFactory::FactoryCreateBinary(
 
 		if (!assetSM->AssetImportData)
 		{
+#if ENGINE_MINOR_VERSION <= 17
 			assetSM->AssetImportData = ConstructObject<UAssetImportData>(UAssetImportData::StaticClass(), assetSM);
+#else
+			assetSM->AssetImportData = NewObject<UAssetImportData>(assetSM, UAssetImportData::StaticClass());
+#endif
 		}
 
 		assetSM->AssetImportData->Update(CurrentFilename);
