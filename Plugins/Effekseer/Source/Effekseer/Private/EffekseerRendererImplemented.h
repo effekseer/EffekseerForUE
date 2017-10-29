@@ -270,6 +270,7 @@ namespace EffekseerRendererUE4
 		std::map<EffekseerMaterial, UMaterialInstanceDynamic*>	m_nmaterials;
 
 		bool					m_isDistorting = false;
+		float					m_distortionIntensity = 0.0f;
 		bool					m_isLighting = false;
 
 		EffekseerRenderer::StandardRenderer<RendererImplemented, Shader, Vertex, VertexDistortion>*	m_standardRenderer = nullptr;
@@ -444,6 +445,7 @@ namespace EffekseerRendererUE4
 		void SetTextures(Shader* shader, Effekseer::TextureData** textures, int32_t count);
 		void SetIsLighting(bool value) { m_isLighting = value; }
 		void SetIsDistorting(bool value) { m_isDistorting = value; }
+		void SetDistortionIntensity(float value) { m_distortionIntensity = value; }
 
 		void SetLocalToWorld(FMatrix localToWorld);
 		void SetViewIndex(int32_t viewIndex);

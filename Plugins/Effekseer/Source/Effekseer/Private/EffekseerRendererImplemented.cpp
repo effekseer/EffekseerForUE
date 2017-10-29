@@ -167,7 +167,9 @@ namespace EffekseerRendererUE4
 		
 		m_renderer->GetRenderState()->Update(false);
 		m_renderer->SetIsLighting(parameter.Lighting);
-		
+		m_renderer->SetIsDistorting(parameter.Distortion);
+		m_renderer->SetDistortionIntensity(parameter.DistortionIntensity);
+
 		Effekseer::TextureData* textures[1];
 		textures[0] = parameter.EffectPointer->GetColorImage(parameter.ColorTextureIndex);
 
@@ -425,19 +427,16 @@ namespace EffekseerRendererUE4
 
 	Effekseer::TextureData* RendererImplemented::GetBackground()
 	{
-		// TODO
-		return nullptr;
+		return (Effekseer::TextureData*)1;
 	}
 
 	VertexBuffer* RendererImplemented::GetVertexBuffer()
 	{
-		// Todo —lX‚Èó‘Ô‚Ö‚Ì‘Î‰
 		return m_vertexBuffer;
 	}
 
 	IndexBuffer* RendererImplemented::GetIndexBuffer()
 	{
-		// TODO
 		return nullptr;
 	}
 
@@ -453,17 +452,14 @@ namespace EffekseerRendererUE4
 
 	void RendererImplemented::SetVertexBuffer(VertexBuffer* vertexBuffer, int32_t size)
 	{
-		// TODO
 	}
 
 	void RendererImplemented::SetIndexBuffer(IndexBuffer* indexBuffer)
 	{
-		// TODO
 	}
 
 	void RendererImplemented::SetLayout(Shader* shader)
 	{
-		// TODO
 	}
 
 	void RendererImplemented::DrawSprites(int32_t spriteCount, int32_t vertexOffset)
@@ -473,7 +469,7 @@ namespace EffekseerRendererUE4
 		UMaterialInstanceDynamic* mat = FindMaterial();
 		if (mat == nullptr) return;
 
-		// 1‚Â‚ÌƒŠƒ“ƒO”»’è
+		// is single ring?
 		auto stanMat = ((Effekseer::Matrix44*)m_stanShader->GetVertexConstantBuffer())[0];
 		auto cameraMat = m_camera;
 		Effekseer::Matrix44 ringMat;
@@ -504,6 +500,9 @@ namespace EffekseerRendererUE4
 
 		if (m_isDistorting)
 		{
+			auto intensity = ((float*)m_distortionShader->GetPixelConstantBuffer())[0];
+			SetDistortionIntensity(intensity);
+
 			VertexDistortion* vs = (VertexDistortion*)m_vertexBuffer->GetResource();
 
 			FDynamicMeshBuilder meshBuilder;
@@ -523,12 +522,12 @@ namespace EffekseerRendererUE4
 				}
 
 				Effekseer::Vector3D normal;
-				Effekseer::Vector3D::Cross(normal, v.Binormal, v.Tangent);
+				Effekseer::Vector3D::Cross(normal, v.Tangent, v.Binormal);
 
 				meshBuilder.AddVertex(FVector(v.Pos.X, v.Pos.Z, v.Pos.Y), FVector2D(v.UV[0], v.UV[1]), 
 					FVector(v.Binormal.X, v.Binormal.Z, v.Binormal.Y),
-					FVector(v.Tangent.X, v.Tangent.Z, v.Tangent.Y), 
-					FVector(normal.X, normal.Z, normal.Y), 
+					FVector(v.Tangent.X, v.Tangent.Z, v.Tangent.Y),
+					FVector(normal.X, normal.Z, normal.Y),
 					FColor(v.Col.R, v.Col.G, v.Col.B, v.Col.A));
 			}
 
@@ -546,6 +545,10 @@ namespace EffekseerRendererUE4
 			}
 
 			auto proxy = mat->GetRenderProxy(false);
+
+			proxy = new FDistortionMaterialRenderProxy(proxy, m_distortionIntensity);
+			m_meshElementCollector->RegisterOneFrameMaterialProxy(proxy);
+
 			meshBuilder.GetMesh(m_localToWorld, proxy, SDPG_World, false, false, m_viewIndex, *m_meshElementCollector);
 		}
 		else
@@ -585,6 +588,7 @@ namespace EffekseerRendererUE4
 			}
 
 			auto proxy = mat->GetRenderProxy(false);
+
 			meshBuilder.GetMesh(m_localToWorld, proxy, SDPG_World, false, false, m_viewIndex, *m_meshElementCollector);
 		}
 	}
@@ -638,7 +642,7 @@ namespace EffekseerRendererUE4
 					false);
 
 				auto proxy = mat->GetRenderProxy(false);
-				proxy = new FModelMaterialRenderProxy(proxy, uv, color, 0.0);
+				proxy = new FModelMaterialRenderProxy(proxy, uv, color, m_distortionIntensity);
 				m_meshElementCollector->RegisterOneFrameMaterialProxy(proxy);
 
 				meshElement.MaterialRenderProxy = proxy;
@@ -704,12 +708,12 @@ namespace EffekseerRendererUE4
 
 	void RendererImplemented::EndShader(Shader* shader)
 	{
-		// TODO
+		
 	}
 
 	void RendererImplemented::SetTextures(Shader* shader, Effekseer::TextureData** textures, int32_t count)
 	{
-		// TODO •L‚¢‘Î‰
+		// TODO Normal map
 		if (count > 0)
 		{
 			m_textures[0] = textures[0];
