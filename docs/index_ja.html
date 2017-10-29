@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="generator" content="pandoc">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <title>EffekseerForUnrealEngine4</title>
+  <style type="text/css">code{white-space: pre;}</style>
+  <link rel="stylesheet" href="base.css">
+  <!--[if lt IE 9]>
+    <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
+  <![endif]-->
+</head>
+<body>
+<header>
+<h1 class="title">EffekseerForUnrealEngine4</h1>
+</header>
+<div class="main">
+<h2>概要</h2>
+<p>これはUnrealEngine4向けのEffekseerプラグインです。 このプラグインを使用すると、UnrealEngine4上でEffekseerで作成したエフェクトを再生できるようになります。</p>
+<h3>動作環境</h3>
+<h4>バージョン</h4>
+<p>UnrealEngine4.16以降</p>
+<h4>プラットフォーム</h4>
+<p>プラットフォーム固有の機能は使用していないため、 EffekseerForUnrealEngine4はほとんどのプラットフォームで動作します。</p>
+<h2>インストール方法</h2>
+<h3>1. ディレクトリのコピー</h3>
+<p><code>Plugins</code> のディレクトリをあなたが作成したuprojectと同じディレクトリにコピーします。</p>
+<h3>2. C++のコードの追加</h3>
+<p>中身は空で問題ないので、何かしらのC++のコードをプロジェクトに追加します。</p>
+<h3>3. Plugin の有効化</h3>
+<p>UnrealEngine4からPluginを有効化します。再起動を求められる場合があるので、UnrealEngine4を再起動します。</p>
+<h2>使用方法</h2>
+<p>EffekseerForUE4.uproject を起動してしてください。 サンプルのレベルが収録されています。</p>
+<p>EffekseerForUE4では主に2つのコンポーネントを使用します。 それは、<code>EffekseerSystemComponent</code> と <code>EffekseerEmitterComponent</code> です。</p>
+<h2>制限</h2>
+<p>乗算、減算、歪みはEffekseerでの表示と異なります。</p>
+<p>モデルへの法線マップは適用されません。</p>
+<h2>Todo</h2>
+<ul>
+<li><p>乗算、減算、歪みのEffekseerとUnrealEngine4の表示の一致</p></li>
+<li><p>モデルの法線の実装</p></li>
+<li><p>使いやすさの向上</p></li>
+</ul>
+<h2>ライセンス</h2>
+<pre>
+
+The MIT License (MIT)
+
+Copyright (c) 2011 Effekseer Project
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of
+this software and associated documentation files (the "Software"), to deal in
+the Software without restriction, including without limitation the rights to
+use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
+the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+</pre>
+</div>
+</body>
+</html>

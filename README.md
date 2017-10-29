@@ -27,6 +27,4 @@ Please read the help below.
 Todo
 =========
 
-* Support to a distortion.
-
 * Write help
