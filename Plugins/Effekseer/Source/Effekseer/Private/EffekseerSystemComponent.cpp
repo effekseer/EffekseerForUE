@@ -350,7 +350,10 @@ UMaterialInterface* UEffekseerSystemComponent::GetMaterial(int32 ElementIndex) c
 	if (ElementIndex == 4) 	return ModulateMaterial;
 	if (ElementIndex == 5) 	return LightingMaterial;
 
-	int32_t offset = 6;
+	if (ElementIndex == 6) 	return DistortionTranslucentMaterial;
+	if (ElementIndex == 7) 	return DistortionAdditiveMaterial;
+
+	int32_t offset = 8;
 
 	if (ElementIndex - offset < NMaterials.size())
 	{
@@ -380,6 +383,8 @@ void UEffekseerSystemComponent::GetUsedMaterials(TArray<UMaterialInterface*>& Ou
 	if (SubtractiveMaterial) OutMaterials.Add(SubtractiveMaterial);
 	if (ModulateMaterial) OutMaterials.Add(ModulateMaterial);
 	if (LightingMaterial) OutMaterials.Add(LightingMaterial);
+	if (DistortionTranslucentMaterial) OutMaterials.Add(DistortionTranslucentMaterial);
+	if (DistortionAdditiveMaterial) OutMaterials.Add(DistortionAdditiveMaterial);
 
 	for (auto& m : NMaterials)
 	{
@@ -396,6 +401,8 @@ int32 UEffekseerSystemComponent::GetNumMaterials()const
 	if (SubtractiveMaterial) ret++;
 	if (ModulateMaterial) ret++;
 	if (LightingMaterial) ret++;
+	if (DistortionTranslucentMaterial) ret++;
+	if (DistortionAdditiveMaterial) ret++;
 
 	ret += NMaterials.size();
 	return ret;
@@ -419,8 +426,8 @@ FEffekseerHandle UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVect
 	position -= this->RelativeLocation;
 
 	// 動的にマテリアルを生成する。
-	UMaterialInstanceConstant* _mats[12];
-	TMap<UTexture2D*, UMaterialInstanceDynamic*>* _matss[6];
+	UMaterialInstanceConstant* _mats[16];
+	TMap<UTexture2D*, UMaterialInstanceDynamic*>* _matss[8];
 
 	_mats[0] = OpaqueMaterial;
 	_mats[1] = TranslucentMaterial;
@@ -428,12 +435,17 @@ FEffekseerHandle UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVect
 	_mats[3] = SubtractiveMaterial;
 	_mats[4] = ModulateMaterial;
 	_mats[5] = LightingMaterial;
-	_mats[0 + 6] = Opaque_DD_Material;
-	_mats[1 + 6] = Translucent_DD_Material;
-	_mats[2 + 6] = Additive_DD_Material;
-	_mats[3 + 6] = Subtractive_DD_Material;
-	_mats[4 + 6] = Modulate_DD_Material;
-	_mats[4 + 6] = LightingMaterial;
+	_mats[6] = DistortionTranslucentMaterial;
+	_mats[7] = DistortionAdditiveMaterial;
+
+	_mats[0 + 8] = Opaque_DD_Material;
+	_mats[1 + 8] = Translucent_DD_Material;
+	_mats[2 + 8] = Additive_DD_Material;
+	_mats[3 + 8] = Subtractive_DD_Material;
+	_mats[4 + 8] = Modulate_DD_Material;
+	_mats[5 + 8] = LightingMaterial;
+	_mats[6 + 8] = DistortionTranslucent_DD_Material;
+	_mats[7 + 8] = DistortionAdditive_DD_Material;
 
 	_matss[0] = &OpaqueDynamicMaterials;
 	_matss[1] = &TranslucentDynamicMaterials;
@@ -441,8 +453,10 @@ FEffekseerHandle UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVect
 	_matss[3] = &SubtractiveDynamicMaterials;
 	_matss[4] = &ModulateDynamicMaterials;
 	_matss[5] = &LightingDynamicMaterials;
+	_matss[6] = &DistortionTranslucentDynamicMaterials;
+	_matss[7] = &DistortionAdditiveDynamicMaterials;
 
-	for(int i = 0; i < 6; i++)
+	for(int i = 0; i < 8; i++)
 	{
 		auto& mat = _mats[i];
 		auto& mats = *_matss[i];
@@ -476,8 +490,10 @@ FEffekseerHandle UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVect
 
 		auto blendInd = (int32_t)m->AlphaBlend;
 		if (m->IsLighting) blendInd = 5;
+		if (blendInd == 1 && m->IsDistorted) blendInd = 6;
+		if (blendInd == 2 && m->IsDistorted) blendInd = 7;
 
-		if (m->IsDepthTestDisabled) blendInd += 6;
+		if (m->IsDepthTestDisabled) blendInd += 8;
 		auto mat = _mats[blendInd];
 
 		if (mat != nullptr)
@@ -491,6 +507,7 @@ FEffekseerHandle UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVect
 			mkey.AlphaBlend = m->AlphaBlend;
 			mkey.IsDepthTestDisabled = m->IsDepthTestDisabled;
 			mkey.IsLighting = m->IsLighting;
+			mkey.IsDistorted = m->IsDistorted;
 			NMaterials[mkey] = dynamicMaterial;
 		}
 	}

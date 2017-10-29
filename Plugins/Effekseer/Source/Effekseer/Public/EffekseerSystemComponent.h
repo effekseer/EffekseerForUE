@@ -109,6 +109,12 @@ public:
 	UMaterialInstanceConstant* LightingMaterial = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Material)
+	UMaterialInstanceConstant* DistortionTranslucentMaterial = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Material)
+	UMaterialInstanceConstant* DistortionAdditiveMaterial = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Material)
 	UMaterialInstanceConstant* Opaque_DD_Material = nullptr;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Material)
@@ -122,6 +128,12 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Material)
 	UMaterialInstanceConstant* Modulate_DD_Material = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Material)
+	UMaterialInstanceConstant* DistortionTranslucent_DD_Material = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Material)
+	UMaterialInstanceConstant* DistortionAdditive_DD_Material = nullptr;
 
 	std::map<EffekseerMaterial, UMaterialInstanceDynamic*> NMaterials;
 
@@ -145,6 +157,12 @@ public:
 
 	UPROPERTY(Transient)
 	TMap<UTexture2D*, UMaterialInstanceDynamic*> LightingDynamicMaterials;
+
+	UPROPERTY(Transient)
+	TMap<UTexture2D*, UMaterialInstanceDynamic*> DistortionTranslucentDynamicMaterials;
+
+	UPROPERTY(Transient)
+	TMap<UTexture2D*, UMaterialInstanceDynamic*> DistortionAdditiveDynamicMaterials;
 
 	UFUNCTION(BlueprintCallable, Category = "Control")
 	FEffekseerHandle Play(UEffekseerEffect* effect, FVector position);

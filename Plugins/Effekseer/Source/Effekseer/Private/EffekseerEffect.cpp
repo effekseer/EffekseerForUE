@@ -261,6 +261,7 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 			mat->IsDepthTestDisabled = !param.ZTest;
 			mat->AlphaBlend = (EEffekseerAlphaBlendType)param.AlphaBlend;
 			mat->IsLighting = modelParam.Lighting;
+			mat->IsDistorted = param.Distortion;
 
 			this->Materials.Add(mat);
 
