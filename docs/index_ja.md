@@ -18,7 +18,28 @@ UnrealEngine4.16以降
 プラットフォーム固有の機能は使用していないため、
 EffekseerForUnrealEngine4はほとんどのプラットフォームで動作します。
 
-## インストール方法
+## 構成
+
+EffekseerForUE4では主に2つのコンポーネントで構成されています。
+
+それは、```EffekseerSystemComponent``` と ```EffekseerEmitterComponent``` です。
+
+EffekseerSystemはエフェクトの描画を行います。そのため、レベル内に必ず1つ必要です。
+
+EffekseerEmitterComponentはエフェクトの生成や操作を行います。エフェクト1つ1つに必要です。
+
+これらの他に、Effekseerのefkファイルに対応するアセットの```EffekseerEffect```と
+Effekseerのefkmdlファイルに対応するアセットの```EffekseerModel```があります。
+
+また、コンポーネントを使用しやすくした、```BP_EffekseerSystem``` と ```BP_EffekseerModel``` のブループリントもあります。
+
+## サンプル
+
+``` EffekseerForUE4.uproject ``` にサンプルのレベルが収録されています。
+
+これを見るとEffekseerのエフェクトが再生されていることがわかります。
+
+## インストール・使用方法
 
 ### 1. ディレクトリのコピー
 
@@ -31,14 +52,6 @@ EffekseerForUnrealEngine4はほとんどのプラットフォームで動作し�
 ### 3. Plugin の有効化
 
 UnrealEngine4からPluginを有効化します。再起動を求められる場合があるので、UnrealEngine4を再起動します。
-
-## 使用方法
-
-EffekseerForUE4.uproject を起動してしてください。
-サンプルのレベルが収録されています。
-
-EffekseerForUE4では主に2つのコンポーネントを使用します。
-それは、```EffekseerSystemComponent``` と ```EffekseerEmitterComponent``` です。
 
 ## 制限
 

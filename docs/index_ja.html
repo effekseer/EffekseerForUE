@@ -23,16 +23,23 @@
 <p>UnrealEngine4.16以降</p>
 <h4>プラットフォーム</h4>
 <p>プラットフォーム固有の機能は使用していないため、 EffekseerForUnrealEngine4はほとんどのプラットフォームで動作します。</p>
-<h2>インストール方法</h2>
+<h2>構成</h2>
+<p>EffekseerForUE4では主に2つのコンポーネントで構成されています。</p>
+<p>それは、<code>EffekseerSystemComponent</code> と <code>EffekseerEmitterComponent</code> です。</p>
+<p>EffekseerSystemはエフェクトの描画を行います。そのため、レベル内に必ず1つ必要です。</p>
+<p>EffekseerEmitterComponentはエフェクトの生成や操作を行います。エフェクト1つ1つに必要です。</p>
+<p>これらの他に、Effekseerのefkファイルに対応するアセットの<code>EffekseerEffect</code>と Effekseerのefkmdlファイルに対応するアセットの<code>EffekseerModel</code>があります。</p>
+<p>また、コンポーネントを使用しやすくした、<code>BP_EffekseerSystem</code> と <code>BP_EffekseerModel</code> のブループリントもあります。</p>
+<h2>サンプル</h2>
+<p><code>EffekseerForUE4.uproject</code> にサンプルのレベルが収録されています。</p>
+<p>これを見るとEffekseerのエフェクトが再生されていることがわかります。</p>
+<h2>インストール・使用方法</h2>
 <h3>1. ディレクトリのコピー</h3>
 <p><code>Plugins</code> のディレクトリをあなたが作成したuprojectと同じディレクトリにコピーします。</p>
 <h3>2. C++のコードの追加</h3>
 <p>中身は空で問題ないので、何かしらのC++のコードをプロジェクトに追加します。</p>
 <h3>3. Plugin の有効化</h3>
 <p>UnrealEngine4からPluginを有効化します。再起動を求められる場合があるので、UnrealEngine4を再起動します。</p>
-<h2>使用方法</h2>
-<p>EffekseerForUE4.uproject を起動してしてください。 サンプルのレベルが収録されています。</p>
-<p>EffekseerForUE4では主に2つのコンポーネントを使用します。 それは、<code>EffekseerSystemComponent</code> と <code>EffekseerEmitterComponent</code> です。</p>
 <h2>制限</h2>
 <p>乗算、減算、歪みはEffekseerでの表示と異なります。</p>
 <p>モデルへの法線マップは適用されません。</p>
