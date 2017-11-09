@@ -178,16 +178,19 @@ However, since EffekseerSystem is complicated, we recommend that you only use th
 <img src="img/addComponent.png">
 </div>
 
+## Caution
+
+A greyscale image with alpha will display incorrectly.
 
 ## Limitation
 
-Multiplication, subtraction, and distortion are different from Effekseer.
+Subtraction, and distortion are different from Effekseer.
 
 The normal map to the model does not apply.
 
 ## Todo
 
-- Match of display of Effekseer and UnrealEngine4 of multiplication, subtraction, distortion
+- Match of display of Effekseer and UnrealEngine4 of subtraction, distortion
 
 - Implementation of model normals
 

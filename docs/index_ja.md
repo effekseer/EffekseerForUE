@@ -173,16 +173,19 @@ EffekseerEmitterコンポーネントのAuto ActivateをOnにします。
 <img src="img/addComponent.png">
 </div>
 
+## 注意
+
+α付きのグレースケールの画像は表示がおかしくなります。
 
 ## 制限
 
-乗算、減算、歪みはEffekseerでの表示と異なります。
+減算、歪みはEffekseerでの表示と異なります。
 
 モデルへの法線マップは適用されません。
 
 ## Todo
 
-- 乗算、減算、歪みのEffekseerとUnrealEngine4の表示の一致
+- 減算、歪みのEffekseerとUnrealEngine4の表示の一致
 
 - モデルの法線の実装
 
