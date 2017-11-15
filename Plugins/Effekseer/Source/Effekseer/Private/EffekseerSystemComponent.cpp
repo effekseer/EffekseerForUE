@@ -126,7 +126,8 @@ public:
 		Result.bMaskedRelevance = false;
 		Result.bSeparateTranslucencyRelevance = true;
 		Result.bNormalTranslucencyRelevance = true;
-		
+		Result.bDistortionRelevance = true;
+
 		return Result;
 	}
 	virtual uint32 GetMemoryFootprint() const { return sizeof(*this) + GetAllocatedSize(); }

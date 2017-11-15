@@ -522,7 +522,7 @@ namespace EffekseerRendererUE4
 				}
 
 				Effekseer::Vector3D normal;
-				Effekseer::Vector3D::Cross(normal, v.Tangent, v.Binormal);
+				Effekseer::Vector3D::Cross(normal, v.Binormal, v.Tangent);
 
 				meshBuilder.AddVertex(FVector(v.Pos.X, v.Pos.Z, v.Pos.Y), FVector2D(v.UV[0], v.UV[1]), 
 					FVector(v.Binormal.X, v.Binormal.Z, v.Binormal.Y),

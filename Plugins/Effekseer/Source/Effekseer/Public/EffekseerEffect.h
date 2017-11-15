@@ -143,6 +143,9 @@ public:
 	TArray<UTexture2D*>	ColorTextures;
 
 	UPROPERTY(VisibleAnywhere)
+	TArray<UTexture2D*>	DistortionTextures;
+
+	UPROPERTY(VisibleAnywhere)
 	TArray<UEffekseerModel*>	Models;
 
 	UPROPERTY(Transient)

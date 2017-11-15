@@ -43,7 +43,8 @@ class TextureLoader
 private:
 	UEffekseerEffect*			m_uobject;
 	bool						m_requiredToCreateResource = false;
-	int32_t						m_loadingIndex = 0;
+	int32_t						m_loadingColorIndex = 0;
+	int32_t						m_loadingDistortionIndex = 0;
 
 public:
 	TextureLoader(::Effekseer::FileInterface* fileInterface = NULL);
@@ -59,7 +60,8 @@ public:
 		m_requiredToCreateResource = requiredToCreateResource;
 		if (!requiredToCreateResource)
 		{
-			m_loadingIndex = 0;
+			m_loadingColorIndex = 0;
+			m_loadingDistortionIndex = 0;
 		}
 	}
 };
@@ -75,12 +77,16 @@ TextureLoader::~TextureLoader()
 
 Effekseer::TextureData* TextureLoader::Load(const EFK_CHAR* path, ::Effekseer::TextureType textureType)
 {
-	if (textureType == ::Effekseer::TextureType::Color)
-	{
-		auto path_we = GetFileNameWithoutExtension(path);
-		auto epath_ = (const char16_t*)path_we.c_str();
-		auto path_ = (const TCHAR*)epath_;
+	if (textureType != ::Effekseer::TextureType::Color &&
+		textureType != ::Effekseer::TextureType::Distortion) return nullptr;
 
+	auto path_we = GetFileNameWithoutExtension(path);
+	auto epath_ = (const char16_t*)path_we.c_str();
+	auto path_ = (const TCHAR*)epath_;
+
+
+	if (textureType == ::Effekseer::TextureType::Color)
+	{	
 		if (m_requiredToCreateResource)
 		{
 			auto texture = Cast<UTexture2D>(StaticLoadObject(UTexture2D::StaticClass(), NULL, path_));
@@ -92,10 +98,34 @@ Effekseer::TextureData* TextureLoader::Load(const EFK_CHAR* path, ::Effekseer::T
 		}
 		else
 		{
-			if (m_uobject->ColorTextures.Num() <= m_loadingIndex) return nullptr;
+			if (m_uobject->ColorTextures.Num() <= m_loadingColorIndex) return nullptr;
 
-			auto o = m_uobject->ColorTextures[m_loadingIndex];
-			m_loadingIndex++;
+			auto o = m_uobject->ColorTextures[m_loadingColorIndex];
+			m_loadingColorIndex++;
+
+			Effekseer::TextureData* data = new Effekseer::TextureData();
+			data->UserPtr = o;
+			return data;
+		}
+	}
+
+	if (textureType == ::Effekseer::TextureType::Distortion)
+	{
+		if (m_requiredToCreateResource)
+		{
+			auto texture = Cast<UTexture2D>(StaticLoadObject(UTexture2D::StaticClass(), NULL, path_));
+			m_uobject->DistortionTextures.Add(texture);
+
+			Effekseer::TextureData* data = new Effekseer::TextureData();
+			data->UserPtr = texture;
+			return data;
+		}
+		else
+		{
+			if (m_uobject->DistortionTextures.Num() <= m_loadingDistortionIndex) return nullptr;
+
+			auto o = m_uobject->DistortionTextures[m_loadingDistortionIndex];
+			m_loadingDistortionIndex++;
 
 			Effekseer::TextureData* data = new Effekseer::TextureData();
 			data->UserPtr = o;
@@ -208,6 +238,7 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 	if (isResourceReset)
 	{
 		this->ColorTextures.Reset();
+		this->DistortionTextures.Reset();
 		this->Models.Reset();
 	}
 
@@ -250,10 +281,21 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 
 			UTexture2D* texture = nullptr;
 
-			if (0 <= param.ColorTextureIndex &&
-				param.ColorTextureIndex < this->ColorTextures.Num())
+			if (param.Distortion)
 			{
-				texture = this->ColorTextures[param.ColorTextureIndex];
+				if (0 <= param.ColorTextureIndex &&
+					param.ColorTextureIndex < this->DistortionTextures.Num())
+				{
+					texture = this->DistortionTextures[param.ColorTextureIndex];
+				}
+			}
+			else
+			{
+				if (0 <= param.ColorTextureIndex &&
+					param.ColorTextureIndex < this->ColorTextures.Num())
+				{
+					texture = this->ColorTextures[param.ColorTextureIndex];
+				}
 			}
 
 			UEffekseerMaterial* mat = NewObject<UEffekseerMaterial>();
@@ -278,7 +320,6 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 	{
 		renode(effect->GetRoot(), true);
 	}
-
 }
 
 void UEffekseerEffect::ReleaseEffect()
