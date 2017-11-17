@@ -5,6 +5,7 @@
 UEffekseerEmitterComponent::UEffekseerEmitterComponent()
 {
 	bTickInEditor = true;
+	bAutoDestroy = false;
 	PrimaryComponentTick.bCanEverTick = true;
 }
 
@@ -12,6 +13,20 @@ UEffekseerEmitterComponent::~UEffekseerEmitterComponent()
 {
 
 }
+
+#if WITH_EDITOR
+void UEffekseerEmitterComponent::PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent)
+{
+	Super::PostEditChangeProperty(PropertyChangedEvent);
+
+	if (bAutoActivate)
+	{
+		Stop();
+		shouldActivate = true;
+	}
+}
+#endif
+
 
 void UEffekseerEmitterComponent::BeginPlay()
 {
@@ -63,6 +78,12 @@ void UEffekseerEmitterComponent::TickComponent(float DeltaTime, ELevelTick TickT
 		else
 		{
 			isPlaying = false;
+
+			if (bAutoDestroy)
+			{
+				DestroyComponent();
+				return;
+			}
 		}
 	}
 
