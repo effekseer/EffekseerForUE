@@ -173,6 +173,15 @@ EffekseerEmitterコンポーネントのAuto ActivateをOnにします。
 <img src="img/addComponent.png">
 </div>
 
+### 3.1. アニメーション通知
+
+アニメーション通知でも使用できます。アニメーションシーケンス内で指定した時間にエフェクトを再生できます。
+
+<div align="center">
+<img src="img/animNotify.png">
+</div>
+
+
 ## 注意
 
 α付きのグレースケールの画像は表示がおかしくなります。

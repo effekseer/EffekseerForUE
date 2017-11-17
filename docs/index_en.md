@@ -147,9 +147,6 @@ Let's enter a large number to make the effect easier to see.
 <img src="img/changeScale.png">
 </div>
 
-BP_EffekseerEmitterを選択して、コンポーネントを表示させます。
-EffekseerEmitterコンポーネントのエフェクトに、先ほど読み込んだEffekseerEffectアセットを設定します。
-
 You select BP_EffekseerEmitter to display the component.
 You set the EffekseerEffect asset you just read into the EffekseerEmitter component.
 
@@ -177,6 +174,16 @@ However, since EffekseerSystem is complicated, we recommend that you only use th
 <div align="center">
 <img src="img/addComponent.png">
 </div>
+
+### 3.1. Animation Notifications
+
+Effects can be played using Animation Notifications.
+Effects can be played at indicated time in Animation Sequence.
+
+<div align="center">
+<img src="img/animNotify.png">
+</div>
+
 
 ## Caution
 
