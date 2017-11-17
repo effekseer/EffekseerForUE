@@ -3,6 +3,7 @@
 #define _WINSOCKAPI_
 #include "EffekseerNative.h"
 #include <math.h>
+#include <cmath>
 #include <float.h>
 #include <assert.h>
 #include <string>
@@ -16264,7 +16265,7 @@ bool ServerImplemented::Start( uint16_t port )
 	int32_t returnCode;
 	sockaddr_in sockAddr = { AF_INET };
 
-	/* ソケット生成 */
+	// Create a socket
 	EfkSocket socket_ = Socket::GenSocket();
 	if ( socket_ == InvalidSocket )
 	{
@@ -16670,11 +16671,10 @@ bool ClientImplemented::Start( char* host, uint16_t port )
 	SOCKADDR_IN sockAddr;
 	HOSTENT* hostEntry= NULL;
 	
-	/* ソケット生成 */
+	// Create a socket
 	EfkSocket socket_ = Socket::GenSocket();
 	if ( socket_ == InvalidSocket )
 	{
-		if ( socket_ != InvalidSocket ) Socket::Close( socket_ );
 		return false;
 	}
 

@@ -233,6 +233,8 @@ static ::Effekseer::Setting* CreateSetting()
 
 void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR* path, bool isResourceReset)
 {
+	Name = (const TCHAR*)GetFileNameWithoutExtension((const EFK_CHAR*)path).c_str();
+
 	::Effekseer::Setting* setting = CreateSetting();
 	 
 	if (isResourceReset)

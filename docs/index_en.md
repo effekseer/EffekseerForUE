@@ -16,7 +16,7 @@ UnrealEngine4.16 or later
 #### Compiler
 
 It is necessary to install a compiler suitable for the environment.
-For example, you need to install VisualStudio 2015 or later on Windows.
+For example, you need to install VisualStudio 2015 on Windows.
 
 #### Platform
 
@@ -147,9 +147,6 @@ Let's enter a large number to make the effect easier to see.
 <img src="img/changeScale.png">
 </div>
 
-BP_EffekseerEmitterを選択して、コンポーネントを表示させます。
-EffekseerEmitterコンポーネントのエフェクトに、先ほど読み込んだEffekseerEffectアセットを設定します。
-
 You select BP_EffekseerEmitter to display the component.
 You set the EffekseerEffect asset you just read into the EffekseerEmitter component.
 
@@ -178,6 +175,16 @@ However, since EffekseerSystem is complicated, we recommend that you only use th
 <img src="img/addComponent.png">
 </div>
 
+### 3.1. Animation Notifications
+
+Effects can be played using Animation Notifications.
+Effects can be played at indicated time in Animation Sequence.
+
+<div align="center">
+<img src="img/animNotify.png">
+</div>
+
+
 ## Caution
 
 A greyscale image with alpha will display incorrectly.
@@ -196,6 +203,17 @@ The normal map to the model does not apply.
 
 - Improved ease of use
 
+## Release note
+
+### 1.31 (2017/11/20) 
+
+- Supported Animation Notifications
+
+- Fixed many bugs
+
+### 1.30 (2017/11/01)
+
+- First release
 
 ## Lisence
 

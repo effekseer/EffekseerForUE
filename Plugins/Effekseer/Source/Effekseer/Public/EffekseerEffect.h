@@ -140,6 +140,9 @@ public:
 	float Scale = 1.0f;
 
 	UPROPERTY(VisibleAnywhere)
+	FString	Name = TEXT("Effect");
+
+	UPROPERTY(VisibleAnywhere)
 	TArray<UTexture2D*>	ColorTextures;
 
 	UPROPERTY(VisibleAnywhere)

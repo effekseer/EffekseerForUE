@@ -21,6 +21,10 @@ public:
 	UEffekseerEmitterComponent();
 	virtual ~UEffekseerEmitterComponent();
 
+#if WITH_EDITOR
+	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
+#endif
+
 	virtual void BeginPlay() override;
 
 	virtual void BeginDestroy() override;
@@ -32,6 +36,9 @@ public:
 	virtual void Deactivate() override;
 
 	virtual void OnUnregister() override;
+
+	UPROPERTY()
+	uint8 bAutoDestroy : 1;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Effect)
 	UEffekseerEffect* Effect = nullptr;

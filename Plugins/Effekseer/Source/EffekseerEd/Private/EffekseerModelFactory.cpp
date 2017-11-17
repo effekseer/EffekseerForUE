@@ -63,7 +63,7 @@ UObject* UEffekseerModelFactory::FactoryCreateBinary(
 
 	retAssets.Add(assetEfkMdl);
 
-	UStaticMesh* assetSM = NewObject<UStaticMesh>(InParent, UStaticMesh::StaticClass(), FName(*(InName.ToString() + _T("_SM"))), Flags);
+	UStaticMesh* assetSM = NewObject<UStaticMesh>(InParent, UStaticMesh::StaticClass(), FName(*(InName.ToString() + TEXT("_SM"))), Flags);
 
 	if (assetSM)
 	{

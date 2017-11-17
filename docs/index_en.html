@@ -22,7 +22,7 @@
 <h4>Version</h4>
 <p>UnrealEngine4.16 or later</p>
 <h4>Compiler</h4>
-<p>It is necessary to install a compiler suitable for the environment. For example, you need to install VisualStudio 2015 or later on Windows.</p>
+<p>It is necessary to install a compiler suitable for the environment. For example, you need to install VisualStudio 2015 on Windows.</p>
 <h4>Platform</h4>
 <p>Since platform-specific functions are not used, EffekseerForUnrealEngine4 works on most platforms.</p>
 <h2>Constitution</h2>
@@ -97,7 +97,6 @@
 <div align="center">
 <p><img src="img/changeScale.png"></p>
 </div>
-<p>BP_EffekseerEmitterを選択して、コンポーネントを表示させます。 EffekseerEmitterコンポーネントのエフェクトに、先ほど読み込んだEffekseerEffectアセットを設定します。</p>
 <p>You select BP_EffekseerEmitter to display the component. You set the EffekseerEffect asset you just read into the EffekseerEmitter component.</p>
 <div align="center">
 <p><img src="img/setEffect.png"></p>
@@ -115,6 +114,11 @@
 <div align="center">
 <p><img src="img/addComponent.png"></p>
 </div>
+<h3>3.1. Animation Notifications</h3>
+<p>Effects can be played using Animation Notifications. Effects can be played at indicated time in Animation Sequence.</p>
+<div align="center">
+<p><img src="img/animNotify.png"></p>
+</div>
 <h2>Caution</h2>
 <p>A greyscale image with alpha will display incorrectly.</p>
 <h2>Limitation</h2>
@@ -125,6 +129,16 @@
 <li><p>Match of display of Effekseer and UnrealEngine4 of subtraction, distortion</p></li>
 <li><p>Implementation of model normals</p></li>
 <li><p>Improved ease of use</p></li>
+</ul>
+<h2>Release note</h2>
+<h3>1.31 (2017/11/20)</h3>
+<ul>
+<li><p>Supported Animation Notifications</p></li>
+<li><p>Fixed many bugs</p></li>
+</ul>
+<h3>1.30 (2017/11/01)</h3>
+<ul>
+<li>First release</li>
 </ul>
 <h2>Lisence</h2>
 <pre>

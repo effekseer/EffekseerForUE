@@ -45,7 +45,7 @@ namespace EffekseerRendererUE4
 
 	bool FDistortionMaterialRenderProxy::GetScalarValue(const FName ParameterName, float* OutValue, const FMaterialRenderContext& Context) const
 	{
-		if (ParameterName == FName(_T("DistortionIntensity")))
+		if (ParameterName == FName(TEXT("DistortionIntensity")))
 		{
 			*OutValue = distortionIntensity;
 			return true;
@@ -90,13 +90,13 @@ namespace EffekseerRendererUE4
 
 	bool FModelMaterialRenderProxy::GetVectorValue(const FName ParameterName, FLinearColor* OutValue, const FMaterialRenderContext& Context) const
 	{
-		if (ParameterName == FName(_T("UserUV")))
+		if (ParameterName == FName(TEXT("UserUV")))
 		{
 			*OutValue = uv;
 			return true;
 		}
 		
-		if (ParameterName == FName(_T("UserColor")))
+		if (ParameterName == FName(TEXT("UserColor")))
 		{
 			*OutValue = color;
 			return true;
@@ -107,7 +107,7 @@ namespace EffekseerRendererUE4
 
 	bool FModelMaterialRenderProxy::GetScalarValue(const FName ParameterName, float* OutValue, const FMaterialRenderContext& Context) const
 	{
-		if (ParameterName == FName(_T("DistortionIntensity")))
+		if (ParameterName == FName(TEXT("DistortionIntensity")))
 		{
 			*OutValue = distortionIntensity;
 			return true;
