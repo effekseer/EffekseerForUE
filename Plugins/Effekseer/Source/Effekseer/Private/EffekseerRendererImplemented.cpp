@@ -171,7 +171,15 @@ namespace EffekseerRendererUE4
 		m_renderer->SetDistortionIntensity(parameter.DistortionIntensity);
 
 		Effekseer::TextureData* textures[1];
-		textures[0] = parameter.EffectPointer->GetColorImage(parameter.ColorTextureIndex);
+
+		if (parameter.ColorTextureIndex >= 0)
+		{
+			textures[0] = parameter.EffectPointer->GetColorImage(parameter.ColorTextureIndex);
+		}
+		else
+		{
+			textures[0] = nullptr;
+		}
 
 		m_renderer->SetTextures(nullptr, textures, 1);
 
