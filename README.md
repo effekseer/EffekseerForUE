@@ -1,4 +1,6 @@
-﻿EffekseerForUE4
+﻿# This repository is for maintenance 1.3x
+
+EffekseerForUE4
 =========
 
 This is a wrapper for UnrealEngine4.
