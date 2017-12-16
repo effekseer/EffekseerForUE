@@ -8,6 +8,8 @@
 #include "EffekseerNative.h"
 #include <assert.h>
 #include <string.h>
+#include <math.h>
+#include <array>
 
 //-----------------------------------------------------------------------------------
 //
@@ -18,6 +20,166 @@ namespace EffekseerRenderer
 //
 //-----------------------------------------------------------------------------------
 
+	static void ApplyDepthOffset(::Effekseer::Matrix43& mat, const ::Effekseer::Matrix44& camera, float depthOffset, bool isDepthOffsetScaledWithCamera, bool isDepthOffsetScaledWithEffect)
+	{
+		if (depthOffset != 0)
+		{
+			auto f = ::Effekseer::Vector3D(camera.Values[0][2], camera.Values[1][2], camera.Values[2][2]);
+
+			auto offset = depthOffset;
+
+			if (isDepthOffsetScaledWithEffect)
+			{
+				std::array<float, 3> scales;
+				scales.fill(0.0);
+
+				for (auto r = 0; r < 3; r++)
+				{
+					for (auto c = 0; c < 3; c++)
+					{
+						scales[c] += mat.Value[c][r] * mat.Value[c][r];
+					}
+				}
+
+				for (auto c = 0; c < 3; c++)
+				{
+					scales[c] = sqrt(scales[c]);
+				}
+
+				auto scale = (scales[0] + scales[1] + scales[2]) / 3.0f;
+
+				offset *= scale;
+			}
+
+			if (isDepthOffsetScaledWithCamera)
+			{
+				auto cx = mat.Value[3][0] + camera.Values[3][0];
+				auto cy = mat.Value[3][1] + camera.Values[3][1];
+				auto cz = mat.Value[3][2] + camera.Values[3][2];
+				auto cl = sqrt(cx * cx + cy * cy + cz * cz);
+
+				if (cl != 0.0)
+				{
+					auto scale = (cl - offset) / cl;
+
+					for (auto r = 0; r < 3; r++)
+					{
+						for (auto c = 0; c < 3; c++)
+						{
+							mat.Value[c][r] *= scale;
+						}
+					}
+				}
+			}
+
+			mat.Value[3][0] += f.X * offset;
+			mat.Value[3][1] += f.Y * offset;
+			mat.Value[3][2] += f.Z * offset;
+
+		}
+	}
+
+	static void ApplyDepthOffset(::Effekseer::Matrix43& mat, const ::Effekseer::Matrix44& camera, ::Effekseer::Vector3D& scaleValues, float depthOffset, bool isDepthOffsetScaledWithCamera, bool isDepthOffsetScaledWithEffect)
+{
+	if (depthOffset != 0)
+	{
+		auto f = ::Effekseer::Vector3D(camera.Values[0][2], camera.Values[1][2], camera.Values[2][2]);
+
+		auto offset = depthOffset;
+		
+		if (isDepthOffsetScaledWithEffect)
+		{
+			auto scale = (scaleValues.X + scaleValues.Y + scaleValues.Z) / 3.0f;
+
+			offset *= scale;
+		}
+
+		if (isDepthOffsetScaledWithCamera)
+		{
+			auto cx = mat.Value[3][0] + camera.Values[3][0];
+			auto cy = mat.Value[3][1] + camera.Values[3][1];
+			auto cz = mat.Value[3][2] + camera.Values[3][2];
+			auto cl = sqrt(cx * cx + cy * cy + cz * cz);
+
+			if (cl != 0.0)
+			{
+				auto scale = (cl - offset) / cl;
+
+				for (auto r = 0; r < 3; r++)
+				{
+					for (auto c = 0; c < 3; c++)
+					{
+						mat.Value[c][r] *= scale;
+					}
+				}
+			}
+		}
+
+		mat.Value[3][0] += f.X * offset;
+		mat.Value[3][1] += f.Y * offset;
+		mat.Value[3][2] += f.Z * offset;
+
+	}
+}
+
+static void ApplyDepthOffset(::Effekseer::Matrix44& mat, const ::Effekseer::Matrix44& camera, float depthOffset, bool isDepthOffsetScaledWithCamera, bool isDepthOffsetScaledWithEffect)
+{
+	if (depthOffset != 0)
+	{
+		auto f = ::Effekseer::Vector3D(camera.Values[0][2], camera.Values[1][2], camera.Values[2][2]);
+
+		auto offset = depthOffset;
+
+		if (isDepthOffsetScaledWithEffect)
+		{
+			std::array<float, 3> scales;
+			scales.fill(0.0);
+
+			for (auto r = 0; r < 3; r++)
+			{
+				for (auto c = 0; c < 3; c++)
+				{
+					scales[c] += mat.Values[c][r] * mat.Values[c][r];
+				}
+			}
+
+			for (auto c = 0; c < 3; c++)
+			{
+				scales[c] = sqrt(scales[c]);
+			}
+
+			auto scale = (scales[0] + scales[1] + scales[2]) / 3.0f;
+
+			offset *= scale;
+		}
+
+		if (isDepthOffsetScaledWithCamera)
+		{
+			auto cx = mat.Values[3][0] + camera.Values[3][0];
+			auto cy = mat.Values[3][1] + camera.Values[3][1];
+			auto cz = mat.Values[3][2] + camera.Values[3][2];
+			auto cl = sqrt(cx * cx + cy * cy + cz * cz);
+
+			if (cl != 0.0)
+			{
+				auto scale = (cl - offset) / cl;
+
+				for (auto r = 0; r < 3; r++)
+				{
+					for (auto c = 0; c < 3; c++)
+					{
+						mat.Values[c][r] *= scale;
+					}
+				}
+			}
+		}
+
+		mat.Values[3][0] += f.X * offset;
+		mat.Values[3][1] += f.Y * offset;
+		mat.Values[3][2] += f.Z * offset;
+
+	}
+}
 
 //-----------------------------------------------------------------------------------
 //
@@ -754,10 +916,13 @@ protected:
 		fc[3] = 1.0f;
 	}
 
-	ModelRendererBase();
+	ModelRendererBase()
+	{
+	}
+
 public:
 
-	virtual ~ModelRendererBase();
+	virtual ~ModelRendererBase() {}
 
 	template<typename RENDERER>
 	void BeginRendering_(RENDERER* renderer, const efkModelNodeParam& parameter, int32_t count, void* userData)
@@ -769,7 +934,144 @@ public:
 		renderer->GetStandardRenderer()->ResetAndRenderingIfRequired();
 	}
 
-	void Rendering( const efkModelNodeParam& parameter, const efkModelInstanceParam& instanceParameter, void* userData );
+	template<typename RENDERER>
+	void Rendering_(RENDERER* renderer, const efkModelNodeParam& parameter, const efkModelInstanceParam& instanceParameter, void* userData)
+	{
+		auto camera = renderer->GetCameraMatrix();
+		::Effekseer::BillboardType btype = parameter.Billboard;
+		Effekseer::Matrix44 mat44;
+
+		if (btype == ::Effekseer::BillboardType::Billboard ||
+			btype == ::Effekseer::BillboardType::RotatedBillboard ||
+			btype == ::Effekseer::BillboardType::YAxisFixed)
+		{
+			const ::Effekseer::Matrix43& mat = instanceParameter.SRTMatrix43;
+			::Effekseer::Vector3D s;
+			::Effekseer::Matrix43 r;
+			::Effekseer::Vector3D t;
+			mat.GetSRT(s, r, t);
+
+			::Effekseer::Vector3D F;
+			::Effekseer::Vector3D R;
+			::Effekseer::Vector3D U;
+
+			if (btype == ::Effekseer::BillboardType::Billboard)
+			{
+				::Effekseer::Vector3D Up(0.0f, 1.0f, 0.0f);
+
+				::Effekseer::Vector3D::Normal(F, ::Effekseer::Vector3D(-camera.Values[0][2], -camera.Values[1][2], -camera.Values[2][2]));
+
+				::Effekseer::Vector3D::Normal(R, ::Effekseer::Vector3D::Cross(R, Up, F));
+				::Effekseer::Vector3D::Normal(U, ::Effekseer::Vector3D::Cross(U, F, R));
+			}
+			else if (btype == ::Effekseer::BillboardType::RotatedBillboard)
+			{
+				::Effekseer::Vector3D Up(0.0f, 1.0f, 0.0f);
+
+				::Effekseer::Vector3D::Normal(F, ::Effekseer::Vector3D(-camera.Values[0][2], -camera.Values[1][2], -camera.Values[2][2]));
+
+				::Effekseer::Vector3D::Normal(R, ::Effekseer::Vector3D::Cross(R, Up, F));
+				::Effekseer::Vector3D::Normal(U, ::Effekseer::Vector3D::Cross(U, F, R));
+
+				float c_zx = sqrt(1.0f - r.Value[2][1] * r.Value[2][1]);
+				float s_z = 0.0f;
+				float c_z = 0.0f;
+
+				if (fabsf(c_zx) > 0.05f)
+				{
+					s_z = -r.Value[0][1] / c_zx;
+					c_z = sqrt(1.0f - s_z * s_z);
+					if (r.Value[1][1] < 0.0f) c_z = -c_z;
+				}
+				else
+				{
+					s_z = 0.0f;
+					c_z = 1.0f;
+				}
+
+				::Effekseer::Vector3D r_temp = R;
+				::Effekseer::Vector3D u_temp = U;
+
+				R.X = r_temp.X * c_z + u_temp.X * s_z;
+				R.Y = r_temp.Y * c_z + u_temp.Y * s_z;
+				R.Z = r_temp.Z * c_z + u_temp.Z * s_z;
+
+				U.X = u_temp.X * c_z - r_temp.X * s_z;
+				U.Y = u_temp.Y * c_z - r_temp.Y * s_z;
+				U.Z = u_temp.Z * c_z - r_temp.Z * s_z;
+			}
+			else if (btype == ::Effekseer::BillboardType::YAxisFixed)
+			{
+				U = ::Effekseer::Vector3D(r.Value[1][0], r.Value[1][1], r.Value[1][2]);
+
+				::Effekseer::Vector3D::Normal(F, ::Effekseer::Vector3D(-camera.Values[0][2], -camera.Values[1][2], -camera.Values[2][2]));
+
+				::Effekseer::Vector3D::Normal(R, ::Effekseer::Vector3D::Cross(R, U, F));
+				::Effekseer::Vector3D::Normal(F, ::Effekseer::Vector3D::Cross(F, R, U));
+			}
+
+			::Effekseer::Matrix43 mat_rot;
+
+			mat_rot.Value[0][0] = -R.X;
+			mat_rot.Value[0][1] = -R.Y;
+			mat_rot.Value[0][2] = -R.Z;
+			mat_rot.Value[1][0] = U.X;
+			mat_rot.Value[1][1] = U.Y;
+			mat_rot.Value[1][2] = U.Z;
+			mat_rot.Value[2][0] = F.X;
+			mat_rot.Value[2][1] = F.Y;
+			mat_rot.Value[2][2] = F.Z;
+			mat_rot.Value[3][0] = t.X;
+			mat_rot.Value[3][1] = t.Y;
+			mat_rot.Value[3][2] = t.Z;
+
+			::Effekseer::Matrix43 mat_scale;
+			mat_scale.Scaling(s.X, s.Y, s.Z);
+			::Effekseer::Matrix43::Multiple(mat_rot, mat_scale, mat_rot);
+
+			for (int32_t r = 0; r < 4; r++)
+			{
+				for (int32_t c = 0; c < 3; c++)
+				{
+					mat44.Values[r][c] = mat_rot.Value[r][c];
+				}
+			}
+		}
+		else if (btype == ::Effekseer::BillboardType::Fixed)
+		{
+			for (int32_t r = 0; r < 4; r++)
+			{
+				for (int32_t c = 0; c < 3; c++)
+				{
+					mat44.Values[r][c] = instanceParameter.SRTMatrix43.Value[r][c];
+				}
+			}
+		}
+
+		if (parameter.Magnification != 1.0f)
+		{
+			Effekseer::Matrix44 mat_scale;
+			mat_scale.Values[0][0] = parameter.Magnification;
+			mat_scale.Values[1][1] = parameter.Magnification;
+			mat_scale.Values[2][2] = parameter.Magnification;
+
+			Effekseer::Matrix44::Mul(mat44, mat_scale, mat44);
+		}
+
+		if (!parameter.IsRightHand)
+		{
+			Effekseer::Matrix44 mat_scale;
+			mat_scale.Values[0][0] = 1.0f;
+			mat_scale.Values[1][1] = 1.0f;
+			mat_scale.Values[2][2] = -1.0f;
+
+			Effekseer::Matrix44::Mul(mat44, mat_scale, mat44);
+		}
+
+		m_matrixes.push_back(mat44);
+		m_uv.push_back(instanceParameter.UV);
+		m_colors.push_back(instanceParameter.AllColor);
+	}
 
 	template<typename RENDERER, typename SHADER, typename MODEL, bool Instancing, int InstanceCount>
 	void EndRendering_(
@@ -786,6 +1088,8 @@ public:
 	{
 		if (m_matrixes.size() == 0) return;
 		if (param.ModelIndex < 0) return;
+
+		auto camera = renderer->GetCameraMatrix();
 
 		MODEL* model = (MODEL*) param.EffectPointer->GetModel(param.ModelIndex);
 		if (model == NULL) return;
@@ -950,6 +1254,9 @@ public:
 				{
 					vcb->ModelMatrix[num] = m_matrixes[loop+num];
 
+					// DepthOffset
+					ApplyDepthOffset(vcb->ModelMatrix[num], camera, param.DepthOffset, param.IsDepthOffsetScaledWithCamera, param.IsDepthOffsetScaledWithParticleScale);
+	
 					vcb->ModelUV[num][0] = m_uv[loop+num].X;
 					vcb->ModelUV[num][1] = m_uv[loop+num].Y;
 					vcb->ModelUV[num][2] = m_uv[loop+num].Width;
@@ -979,6 +1286,9 @@ public:
 				vcb->ModelUV[0][1] = m_uv[loop].Y;
 				vcb->ModelUV[0][2] = m_uv[loop].Width;
 				vcb->ModelUV[0][3] = m_uv[loop].Height;
+
+				// DepthOffset
+				ApplyDepthOffset(vcb->ModelMatrix[0], camera, param.DepthOffset, param.IsDepthOffsetScaledWithCamera, param.IsDepthOffsetScaledWithParticleScale);
 				
 				ColorToFloat4( m_colors[loop], vcb->ModelColor[0] );
 				shader_->SetConstantBuffer();
@@ -1717,6 +2027,8 @@ protected:
 			mat_rot.Value[3][0] = t.X;
 			mat_rot.Value[3][1] = t.Y;
 			mat_rot.Value[3][2] = t.Z;
+
+			ApplyDepthOffset(mat_rot, camera, s, parameter.DepthOffset, parameter.IsDepthOffsetScaledWithCamera, parameter.IsDepthOffsetScaledWithParticleScale);
 			
 			if( m_instanceCount > 1 )
 			{
@@ -1742,17 +2054,21 @@ protected:
 		}
 		else if( parameter.Billboard == ::Effekseer::BillboardType::Fixed )
 		{
+			auto mat = instanceParameter.SRTMatrix43;
+
+			ApplyDepthOffset(mat, camera, parameter.DepthOffset, parameter.IsDepthOffsetScaledWithCamera, parameter.IsDepthOffsetScaledWithParticleScale);
+
 			if( m_instanceCount > 1 )
 			{
-				TransformVertexes( verteies, vertexCount, instanceParameter.SRTMatrix43 );
+				TransformVertexes(verteies, vertexCount, mat);
 			}
 			else
 			{
 				for( int32_t i = 0; i < 4; i++ )
 				{
-					m_singleRenderingMatrix.Values[i][0] = instanceParameter.SRTMatrix43.Value[i][0];
-					m_singleRenderingMatrix.Values[i][1] = instanceParameter.SRTMatrix43.Value[i][1];
-					m_singleRenderingMatrix.Values[i][2] = instanceParameter.SRTMatrix43.Value[i][2];
+					m_singleRenderingMatrix.Values[i][0] = mat.Value[i][0];
+					m_singleRenderingMatrix.Values[i][1] = mat.Value[i][1];
+					m_singleRenderingMatrix.Values[i][2] = mat.Value[i][2];
 				}
 			}
 		}
@@ -1764,6 +2080,7 @@ protected:
 	{
 		if (m_instanceCount == 1)
 		{
+
 			::Effekseer::Matrix44 mat;
 			::Effekseer::Matrix44::Mul(mat, m_singleRenderingMatrix, renderer->GetCameraMatrix());
 
@@ -2033,16 +2350,22 @@ protected:
 			mat_rot.Value[3][1] = t.Y;
 			mat_rot.Value[3][2] = t.Z;
 	
+			ApplyDepthOffset(mat_rot, camera, s, parameter.DepthOffset, parameter.IsDepthOffsetScaledWithCamera, parameter.IsDepthOffsetScaledWithParticleScale);
+
 			TransformVertexes( verteies, 4, mat_rot );
 		}
 		else if( parameter.Billboard == ::Effekseer::BillboardType::Fixed )
 		{
+			auto mat = instanceParameter.SRTMatrix43;
+
+			ApplyDepthOffset(mat, camera, parameter.DepthOffset, parameter.IsDepthOffsetScaledWithCamera, parameter.IsDepthOffsetScaledWithParticleScale);
+
 			for( int i = 0; i < 4; i++ )
 			{
 				::Effekseer::Vector3D::Transform(
 					verteies[i].Pos,
 					verteies[i].Pos,
-					instanceParameter.SRTMatrix43 );
+					mat);
 
 				// 歪み処理
 				if (sizeof(VERTEX) == sizeof(VERTEX_DISTORTION))
@@ -2052,18 +2375,18 @@ protected:
 					::Effekseer::Vector3D::Transform(
 						vs->Tangent,
 						vs->Tangent,
-						instanceParameter.SRTMatrix43);
+						mat);
 
 					::Effekseer::Vector3D::Transform(
 						vs->Binormal,
 						vs->Binormal,
-						instanceParameter.SRTMatrix43);
+						mat);
 
 					Effekseer::Vector3D zero;
 					::Effekseer::Vector3D::Transform(
 						zero,
 						zero,
-						instanceParameter.SRTMatrix43);
+						mat);
 
 					::Effekseer::Vector3D::Normal(vs->Tangent, vs->Tangent - zero);
 					::Effekseer::Vector3D::Normal(vs->Binormal, vs->Binormal - zero);
