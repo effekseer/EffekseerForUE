@@ -17,6 +17,10 @@ private:
 	bool		shouldActivate = false;
 	bool		isPlaying = false;
 	FEffekseerHandle		handle;
+
+	FColor AllColor_ = FColor(255, 255, 255, 255);
+	float Speed_ = 1.0f;
+
 public:
 	UEffekseerEmitterComponent();
 	virtual ~UEffekseerEmitterComponent();
@@ -45,6 +49,15 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Effect)
 	AActor* System = nullptr;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Property)
+	bool IsLooping = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Property)
+	FColor AllColor = FColor(255, 255, 255, 255);
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Property)
+	float Speed = 1.0f;
 
 	UPROPERTY(Transient)
 	UEffekseerSystemComponent* system_ = nullptr;

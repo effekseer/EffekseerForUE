@@ -2627,6 +2627,24 @@ Vector2D RectF::Size() const
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
+#if (_M_IX86_FP >= 2) || defined(__SSE__)
+#define EFK_SSE2
+#elif defined(__ARM_NEON__)
+#define EFK_NEON
+#endif
+
+//----------------------------------------------------------------------------------
+//
+//----------------------------------------------------------------------------------
+#if defined(_MSC_VER)
+#define EFK_ALIGN_AS(n) __declspec(align(n))
+#else
+#define EFK_ALIGN_AS(n) alignas(n)
+#endif
+
+//----------------------------------------------------------------------------------
+//
+//----------------------------------------------------------------------------------
 namespace Effekseer {
 
 //----------------------------------------------------------------------------------
@@ -2855,6 +2873,66 @@ void Matrix43::Translation( float x, float y, float z )
 //----------------------------------------------------------------------------------
 void Matrix43::GetSRT( Vector3D& s, Matrix43& r, Vector3D& t ) const
 {
+#if defined(EFK_SSE2)
+	t.X = Value[3][0];
+	t.Y = Value[3][1];
+	t.Z = Value[3][2];
+
+	__m128 v0 = _mm_loadu_ps(&Value[0][0]);
+	__m128 v1 = _mm_loadu_ps(&Value[1][0]);
+	__m128 v2 = _mm_loadu_ps(&Value[2][0]);
+	__m128 m0 = _mm_shuffle_ps(v0, v1, _MM_SHUFFLE(1, 0, 1, 0));
+	__m128 m1 = _mm_shuffle_ps(v0, v1, _MM_SHUFFLE(3, 2, 3, 2));
+	__m128 s0 = _mm_shuffle_ps(m0, v2, _MM_SHUFFLE(0, 0, 2, 0));
+	__m128 s1 = _mm_shuffle_ps(m0, v2, _MM_SHUFFLE(0, 1, 3, 1));
+	__m128 s2 = _mm_shuffle_ps(m1, v2, _MM_SHUFFLE(0, 2, 2, 0));
+	s0 = _mm_mul_ps(s0, s0);
+	s1 = _mm_mul_ps(s1, s1);
+	s2 = _mm_mul_ps(s2, s2);
+	__m128 vscq = _mm_add_ps(_mm_add_ps(s0, s1), s2);
+	__m128 vsc = _mm_sqrt_ps(vscq);
+	__m128 vscr = _mm_div_ps(vsc, vscq);
+	EFK_ALIGN_AS(16) float sc[4];
+	_mm_store_ps(sc, vsc);
+	s.X = sc[0];
+	s.Y = sc[1];
+	s.Z = sc[2];
+	v0 = _mm_mul_ps(v0, _mm_shuffle_ps(vscr, vscr, _MM_SHUFFLE(0, 0, 0, 0)));
+	v1 = _mm_mul_ps(v1, _mm_shuffle_ps(vscr, vscr, _MM_SHUFFLE(1, 1, 1, 1)));
+	v2 = _mm_mul_ps(v2, _mm_shuffle_ps(vscr, vscr, _MM_SHUFFLE(2, 2, 2, 2)));
+	_mm_storeu_ps(&r.Value[0][0], v0);
+	_mm_storeu_ps(&r.Value[1][0], v1);
+	_mm_storeu_ps(&r.Value[2][0], v2);
+	r.Value[3][0] = 0.0f;
+	r.Value[3][1] = 0.0f;
+	r.Value[3][2] = 0.0f;
+#elif defined(EFK_NEON)
+	t.X = Value[3][0];
+	t.Y = Value[3][1];
+	t.Z = Value[3][2];
+
+	float32x4x3_t m = vld3q_f32(&Value[0][0]);
+	float32x4_t vscq = vmulq_f32(m.val[0], m.val[0]);
+	vscq = vmlaq_f32(vscq, m.val[1], m.val[1]);
+	vscq = vmlaq_f32(vscq, m.val[2], m.val[2]);
+	float32x4_t scr_rep = vrsqrteq_f32(vscq);
+	float32x4_t scr_v = vmulq_f32(vrsqrtsq_f32(vmulq_f32(vscq, scr_rep), scr_rep), scr_rep);
+	float32x4_t sc_v = vmulq_f32(scr_v, vscq);
+	float sc[4];
+	vst1q_f32(sc, sc_v);
+	s.X = sc[0];
+	s.Y = sc[1];
+	s.Z = sc[2];
+	float32x4_t v0 = vld1q_f32(&Value[0][0]);
+	float32x4_t v1 = vld1q_f32(&Value[1][0]);
+	float32x4_t v2 = vld1q_f32(&Value[2][0]);
+	vst1q_f32(&r.Value[0][0], vmulq_lane_f32(v0, vget_low_f32(scr_v), 0));
+	vst1q_f32(&r.Value[1][0], vmulq_lane_f32(v1, vget_low_f32(scr_v), 1));
+	vst1q_f32(&r.Value[2][0], vmulq_lane_f32(v2, vget_high_f32(scr_v), 0));
+	r.Value[3][0] = 0.0f;
+	r.Value[3][1] = 0.0f;
+	r.Value[3][2] = 0.0f;
+#else
 	t.X = Value[3][0];
 	t.Y = Value[3][1];
 	t.Z = Value[3][2];
@@ -2879,6 +2957,7 @@ void Matrix43::GetSRT( Vector3D& s, Matrix43& r, Vector3D& t ) const
 	r.Value[3][0] = 0.0f;
 	r.Value[3][1] = 0.0f;
 	r.Value[3][2] = 0.0f;
+#endif
 }
 
 //----------------------------------------------------------------------------------
@@ -2886,6 +2965,39 @@ void Matrix43::GetSRT( Vector3D& s, Matrix43& r, Vector3D& t ) const
 //----------------------------------------------------------------------------------
 void Matrix43::GetScale( Vector3D& s ) const
 {
+#if defined(EFK_SSE2)
+	__m128 v0 = _mm_loadu_ps(&Value[0][0]);
+	__m128 v1 = _mm_loadu_ps(&Value[1][0]);
+	__m128 v2 = _mm_loadu_ps(&Value[2][0]);
+	__m128 m0 = _mm_shuffle_ps(v0, v1, _MM_SHUFFLE(1, 0, 1, 0));
+	__m128 m1 = _mm_shuffle_ps(v0, v1, _MM_SHUFFLE(3, 2, 3, 2));
+	__m128 s0 = _mm_shuffle_ps(m0, v2, _MM_SHUFFLE(0, 0, 2, 0));
+	__m128 s1 = _mm_shuffle_ps(m0, v2, _MM_SHUFFLE(0, 1, 3, 1));
+	__m128 s2 = _mm_shuffle_ps(m1, v2, _MM_SHUFFLE(0, 2, 2, 0));
+	s0 = _mm_mul_ps(s0, s0);
+	s1 = _mm_mul_ps(s1, s1);
+	s2 = _mm_mul_ps(s2, s2);
+	__m128 vscq = _mm_add_ps(_mm_add_ps(s0, s1), s2);
+	__m128 sc_v = _mm_sqrt_ps(vscq);
+	EFK_ALIGN_AS(16) float sc[4];
+	_mm_store_ps(sc, sc_v);
+	s.X = sc[0];
+	s.Y = sc[1];
+	s.Z = sc[2];
+#elif defined(EFK_NEON)
+	float32x4x3_t m = vld3q_f32(&Value[0][0]);
+	float32x4_t vscq = vmulq_f32(m.val[0], m.val[0]);
+	vscq = vmlaq_f32(vscq, m.val[1], m.val[1]);
+	vscq = vmlaq_f32(vscq, m.val[2], m.val[2]);
+	float32x4_t scr_rep = vrsqrteq_f32(vscq);
+	float32x4_t scr_v = vmulq_f32(vrsqrtsq_f32(vmulq_f32(vscq, scr_rep), scr_rep), scr_rep);
+	float32x4_t sc_v = vmulq_f32(scr_v, vscq);
+	float sc[4];
+	vst1q_f32(sc, sc_v);
+	s.X = sc[0];
+	s.Y = sc[1];
+	s.Z = sc[2];
+#else
 	float sc[3];
 	for( int m = 0; m < 3; m++ )
 	{
@@ -2895,6 +3007,7 @@ void Matrix43::GetScale( Vector3D& s ) const
 	s.X = sc[0];
 	s.Y = sc[1];
 	s.Z = sc[2];
+#endif
 }
 
 //----------------------------------------------------------------------------------
@@ -2902,6 +3015,47 @@ void Matrix43::GetScale( Vector3D& s ) const
 //----------------------------------------------------------------------------------
 void Matrix43::GetRotation( Matrix43& r ) const
 {
+#if defined(EFK_SSE2)
+	__m128 v0 = _mm_loadu_ps(&Value[0][0]);
+	__m128 v1 = _mm_loadu_ps(&Value[1][0]);
+	__m128 v2 = _mm_loadu_ps(&Value[2][0]);
+	__m128 m0 = _mm_shuffle_ps(v0, v1, _MM_SHUFFLE(1, 0, 1, 0));
+	__m128 m1 = _mm_shuffle_ps(v0, v1, _MM_SHUFFLE(3, 2, 3, 2));
+	__m128 s0 = _mm_shuffle_ps(m0, v2, _MM_SHUFFLE(0, 0, 2, 0));
+	__m128 s1 = _mm_shuffle_ps(m0, v2, _MM_SHUFFLE(0, 1, 3, 1));
+	__m128 s2 = _mm_shuffle_ps(m1, v2, _MM_SHUFFLE(0, 2, 2, 0));
+	s0 = _mm_mul_ps(s0, s0);
+	s1 = _mm_mul_ps(s1, s1);
+	s2 = _mm_mul_ps(s2, s2);
+	__m128 vscq = _mm_add_ps(_mm_add_ps(s0, s1), s2);
+	__m128 vsc = _mm_sqrt_ps(vscq);
+	__m128 vscr = _mm_div_ps(vsc, vscq);
+	v0 = _mm_mul_ps(v0, _mm_shuffle_ps(vscr, vscr, _MM_SHUFFLE(0, 0, 0, 0)));
+	v1 = _mm_mul_ps(v1, _mm_shuffle_ps(vscr, vscr, _MM_SHUFFLE(1, 1, 1, 1)));
+	v2 = _mm_mul_ps(v2, _mm_shuffle_ps(vscr, vscr, _MM_SHUFFLE(2, 2, 2, 2)));
+	_mm_storeu_ps(&r.Value[0][0], v0);
+	_mm_storeu_ps(&r.Value[1][0], v1);
+	_mm_storeu_ps(&r.Value[2][0], v2);
+	r.Value[3][0] = 0.0f;
+	r.Value[3][1] = 0.0f;
+	r.Value[3][2] = 0.0f;
+#elif defined(EFK_NEON)
+	float32x4x3_t m = vld3q_f32(&Value[0][0]);
+	float32x4_t vscq = vmulq_f32(m.val[0], m.val[0]);
+	vscq = vmlaq_f32(vscq, m.val[1], m.val[1]);
+	vscq = vmlaq_f32(vscq, m.val[2], m.val[2]);
+	float32x4_t scr_rep = vrsqrteq_f32(vscq);
+	float32x4_t scr_v = vmulq_f32(vrsqrtsq_f32(vmulq_f32(vscq, scr_rep), scr_rep), scr_rep);
+	float32x4_t v0 = vld1q_f32(&Value[0][0]);
+	float32x4_t v1 = vld1q_f32(&Value[1][0]);
+	float32x4_t v2 = vld1q_f32(&Value[2][0]);
+	vst1q_f32(&r.Value[0][0], vmulq_lane_f32(v0, vget_low_f32(scr_v), 0));
+	vst1q_f32(&r.Value[1][0], vmulq_lane_f32(v1, vget_low_f32(scr_v), 1));
+	vst1q_f32(&r.Value[2][0], vmulq_lane_f32(v2, vget_high_f32(scr_v), 0));
+	r.Value[3][0] = 0.0f;
+	r.Value[3][1] = 0.0f;
+	r.Value[3][2] = 0.0f;
+#else
 	float sc[3];
 	for( int m = 0; m < 3; m++ )
 	{
@@ -2918,6 +3072,7 @@ void Matrix43::GetRotation( Matrix43& r ) const
 	r.Value[3][0] = 0.0f;
 	r.Value[3][1] = 0.0f;
 	r.Value[3][2] = 0.0f;
+#endif
 }
 
 //----------------------------------------------------------------------------------
@@ -2935,11 +3090,15 @@ void Matrix43::GetTranslation( Vector3D& t ) const
 //----------------------------------------------------------------------------------
 void Matrix43::SetSRT( const Vector3D& s, const Matrix43& r, const Vector3D& t )
 {
-	Matrix43 mats;
-	mats.Scaling( s.X, s.Y, s.Z );
-
-	Multiple( *this, mats, r );
-
+	Value[0][0] = s.X * r.Value[0][0];
+	Value[0][1] = s.X * r.Value[0][1];
+	Value[0][2] = s.X * r.Value[0][2];
+	Value[1][0] = s.Y * r.Value[1][0];
+	Value[1][1] = s.Y * r.Value[1][1];
+	Value[1][2] = s.Y * r.Value[1][2];
+	Value[2][0] = s.Z * r.Value[2][0];
+	Value[2][1] = s.Z * r.Value[2][1];
+	Value[2][2] = s.Z * r.Value[2][2];
 	Value[3][0] = t.X;
 	Value[3][1] = t.Y;
 	Value[3][2] = t.Z;
@@ -2950,7 +3109,101 @@ void Matrix43::SetSRT( const Vector3D& s, const Matrix43& r, const Vector3D& t )
 //----------------------------------------------------------------------------------
 void Matrix43::Multiple( Matrix43& out, const Matrix43& in1, const Matrix43& in2 )
 {
-#if 1
+#if defined(EFK_SSE2)
+	__m128 s1_v0 = _mm_loadu_ps(&in1.Value[0][0]);
+	__m128 s1_v1 = _mm_loadu_ps(&in1.Value[1][0]);
+	__m128 s1_v2 = _mm_loadu_ps(&in1.Value[2][0]);
+	__m128 s1_v3 = _mm_loadu_ps(&in1.Value[3][0] - 1);
+	__m128 s2_v0 = _mm_loadu_ps(&in2.Value[0][0]);
+	__m128 s2_v1 = _mm_loadu_ps(&in2.Value[1][0]);
+	__m128 s2_v2 = _mm_loadu_ps(&in2.Value[2][0]);
+	__m128 s2_v3 = _mm_loadu_ps(&in2.Value[3][0] - 1);
+	__m128 o_v3;
+
+	{
+		__m128 s1_00 = _mm_shuffle_ps(s1_v0, s1_v0, _MM_SHUFFLE(0, 0, 0, 0));
+		__m128 s1_01 = _mm_shuffle_ps(s1_v0, s1_v0, _MM_SHUFFLE(1, 1, 1, 1));
+		__m128 s1_02 = _mm_shuffle_ps(s1_v0, s1_v0, _MM_SHUFFLE(2, 2, 2, 2));
+		__m128 o_m00 = _mm_mul_ps(s1_00, s2_v0);
+		__m128 o_m01 = _mm_mul_ps(s1_01, s2_v1);
+		__m128 o_m02 = _mm_mul_ps(s1_02, s2_v2);
+		__m128 o_v0 = _mm_add_ps(_mm_add_ps(o_m00, o_m01), o_m02);
+		_mm_storeu_ps(&out.Value[0][0], o_v0);
+	}
+	{
+		__m128 s1_10 = _mm_shuffle_ps(s1_v1, s1_v1, _MM_SHUFFLE(0, 0, 0, 0));
+		__m128 s1_11 = _mm_shuffle_ps(s1_v1, s1_v1, _MM_SHUFFLE(1, 1, 1, 1));
+		__m128 s1_12 = _mm_shuffle_ps(s1_v1, s1_v1, _MM_SHUFFLE(2, 2, 2, 2));
+		__m128 o_m10 = _mm_mul_ps(s1_10, s2_v0);
+		__m128 o_m11 = _mm_mul_ps(s1_11, s2_v1);
+		__m128 o_m12 = _mm_mul_ps(s1_12, s2_v2);
+		__m128 o_v1 = _mm_add_ps(_mm_add_ps(o_m10, o_m11), o_m12);
+		_mm_storeu_ps(&out.Value[1][0], o_v1);
+	}
+	{
+		__m128 s1_20 = _mm_shuffle_ps(s1_v2, s1_v2, _MM_SHUFFLE(0, 0, 0, 0));
+		__m128 s1_21 = _mm_shuffle_ps(s1_v2, s1_v2, _MM_SHUFFLE(1, 1, 1, 1));
+		__m128 s1_22 = _mm_shuffle_ps(s1_v2, s1_v2, _MM_SHUFFLE(2, 2, 2, 2));
+		__m128 o_m20 = _mm_mul_ps(s1_20, s2_v0);
+		__m128 o_m21 = _mm_mul_ps(s1_21, s2_v1);
+		__m128 o_m22 = _mm_mul_ps(s1_22, s2_v2);
+		__m128 o_v2 = _mm_add_ps(_mm_add_ps(o_m20, o_m21), o_m22);
+		_mm_storeu_ps(&out.Value[2][0], o_v2);
+		o_v3 = _mm_shuffle_ps(o_v2, o_v2, _MM_SHUFFLE(2, 2, 2, 2));
+	}
+	{
+		EFK_ALIGN_AS(16) const uint32_t mask_u32[4] = {0xffffffff, 0x00000000, 0x00000000, 0x00000000};
+		__m128 mask = _mm_load_ps((const float*)mask_u32);
+		s2_v0 = _mm_shuffle_ps(s2_v0, s2_v0, _MM_SHUFFLE(2, 1, 0, 0));
+		s2_v1 = _mm_shuffle_ps(s2_v1, s2_v1, _MM_SHUFFLE(2, 1, 0, 0));
+		s2_v2 = _mm_shuffle_ps(s2_v2, s2_v2, _MM_SHUFFLE(2, 1, 0, 0));
+		__m128 s1_30 = _mm_shuffle_ps(s1_v3, s1_v3, _MM_SHUFFLE(1, 1, 1, 1));
+		__m128 s1_31 = _mm_shuffle_ps(s1_v3, s1_v3, _MM_SHUFFLE(2, 2, 2, 2));
+		__m128 s1_32 = _mm_shuffle_ps(s1_v3, s1_v3, _MM_SHUFFLE(3, 3, 3, 3));
+		__m128 o_m30 = _mm_mul_ps(s1_30, s2_v0);
+		__m128 o_m31 = _mm_mul_ps(s1_31, s2_v1);
+		__m128 o_m32 = _mm_mul_ps(s1_32, s2_v2);
+		__m128 o_v3p = _mm_add_ps(_mm_add_ps(o_m30, o_m31), _mm_add_ps(o_m32, s2_v3));
+		o_v3 = _mm_or_ps(_mm_and_ps(mask, o_v3), _mm_andnot_ps(mask, o_v3p));
+		_mm_storeu_ps(&out.Value[3][0] - 1, o_v3);
+	}
+#elif defined(EFK_NEON)
+	float32x4_t s1_v0 = vld1q_f32(&in1.Value[0][0]);
+	float32x4_t s1_v12 = vld1q_f32(&in1.Value[1][1]);
+	float32x4_t s1_v3 = vld1q_f32(&in1.Value[2][2]);
+	float32x4_t s1_v1 = vextq_f32(s1_v0, s1_v12, 3);
+	float32x4_t s1_v2 = vextq_f32(s1_v12, s1_v3, 2);
+	float32x4_t s2_v0 = vld1q_f32(&in2.Value[0][0]);
+	float32x4_t s2_v12 = vld1q_f32(&in2.Value[1][1]);
+	float32x4_t s2_v3 = vld1q_f32(&in2.Value[2][2]);
+	float32x4_t s2_v1 = vextq_f32(s2_v0, s2_v12, 3);
+	float32x4_t s2_v2 = vextq_f32(s2_v12, s2_v3, 2);
+	float o_v3_0;
+	{
+		float32x4_t o_v0 = vmulq_lane_f32(s2_v0, vget_low_f32(s1_v0), 0);
+		float32x4_t o_v1 = vmulq_lane_f32(s2_v0, vget_low_f32(s1_v1), 0);
+		float32x4_t o_v2 = vmulq_lane_f32(s2_v0, vget_low_f32(s1_v2), 0);
+		o_v0 = vmlaq_lane_f32(o_v0, s2_v1, vget_low_f32(s1_v0), 1);
+		o_v1 = vmlaq_lane_f32(o_v1, s2_v1, vget_low_f32(s1_v1), 1);
+		o_v2 = vmlaq_lane_f32(o_v2, s2_v1, vget_low_f32(s1_v2), 1);
+		o_v0 = vmlaq_lane_f32(o_v0, s2_v2, vget_high_f32(s1_v0), 0);
+		o_v1 = vmlaq_lane_f32(o_v1, s2_v2, vget_high_f32(s1_v1), 0);
+		o_v2 = vmlaq_lane_f32(o_v2, s2_v2, vget_high_f32(s1_v2), 0);
+		vst1q_f32(&out.Value[0][0], o_v0);
+		vst1q_f32(&out.Value[1][0], o_v1);
+		vst1q_f32(&out.Value[2][0], o_v2);
+		o_v3_0 = vgetq_lane_f32(o_v2, 2);
+	}
+	{
+		s2_v0 = vextq_f32(s2_v0, s2_v0, 3);
+		s2_v1 = vextq_f32(s2_v1, s2_v1, 3);
+		s2_v2 = vextq_f32(s2_v2, s2_v2, 3);
+		float32x4_t o_v3 = vmlaq_lane_f32(s2_v3, s2_v0, vget_low_f32(s1_v3), 1);
+		o_v3 = vmlaq_lane_f32(o_v3, s2_v1, vget_high_f32(s1_v3), 0);
+		o_v3 = vmlaq_lane_f32(o_v3, s2_v2, vget_high_f32(s1_v3), 1);
+		vst1q_f32(&out.Value[3][0] - 1, vsetq_lane_f32(o_v3_0, o_v3, 0));
+	}
+#elif 1
 	Matrix43 temp1, temp2;
 	// 共通の場合は一時変数にコピー
 	const Matrix43& s1 = (&out == &in1) ? (temp1 = in1) : in1;
@@ -7557,6 +7810,8 @@ public:
 	*/
 	void SetScale( Handle handle, float x, float y, float z );
 
+	void SetAllColor(Handle handle, Color color) override;
+
 	// エフェクトのターゲット位置を指定する。
 	void SetTargetLocation( Handle handle, float x, float y, float z );
 	void SetTargetLocation( Handle handle, const Vector3D& location );
@@ -7582,8 +7837,12 @@ public:
 
 	void SetPausedToAllEffects(bool paused);
 
+	float GetSpeed(Handle handle) const override;
+
 	void SetSpeed( Handle handle, float speed );
+	
 	void SetAutoDrawing( Handle handle, bool autoDraw );
+	
 	void Flip();
 
 	/**
@@ -8034,6 +8293,9 @@ public:
 	// 親の変換用行列
 	Matrix43		m_ParentMatrix43;
 
+	// 行列が計算済かどうか
+	bool			m_MatrixCalculated;
+
 	/* 時間を進めるかどうか? */
 	bool			m_stepTime;
 
@@ -8091,7 +8353,7 @@ private:
 	/**
 		@brief	行列の更新
 	*/
-	void CalculateParentMatrix();
+	void CalculateParentMatrix( float deltaFrame );
 	
 	/**
 		@brief	絶対パラメータの反映
@@ -8152,6 +8414,10 @@ private:
 	virtual ~InstanceGlobal();
 
 public:
+
+	bool		IsGlobalColorSet = false;
+	Color		GlobalColor = Color(255, 255, 255, 255);
+
 	void SetSeed(int32_t seed);
 
 	virtual float GetRand() override;
@@ -9502,6 +9768,7 @@ void EffectNodeModel::Rendering(const Instance& instance, Manager* manager)
 
 		ModelRenderer::InstanceParameter instanceParameter;
 		instanceParameter.SRTMatrix43 = instance.GetGlobalMatrix43();
+		instanceParameter.Time = instance.m_LivingTime;
 
 		instanceParameter.UV = instance.GetUV();
 		
@@ -9516,6 +9783,12 @@ void EffectNodeModel::Rendering(const Instance& instance, Manager* manager)
 		}
 
 		_color.setValueToArg( instanceParameter.AllColor );
+
+		// Apply global color
+		if (instance.m_pContainer->GetRootInstance()->IsGlobalColorSet)
+		{
+			Color::Mul(instanceParameter.AllColor, instanceParameter.AllColor, instance.m_pContainer->GetRootInstance()->GlobalColor);
+		}
 
 		renderer->Rendering( nodeParameter, instanceParameter, m_userData );
 	}
@@ -9854,6 +10127,8 @@ void EffectNodeRibbon::Rendering(const Instance& instance, Manager* manager)
 		}
 
 		_color.setValueToArg( m_instanceParameter.AllColor );
+
+
 		m_instanceParameter.SRTMatrix43 = instance.GetGlobalMatrix43();
 
 		color color_l = _color;
@@ -9871,6 +10146,13 @@ void EffectNodeRibbon::Rendering(const Instance& instance, Manager* manager)
 
 		color_l.setValueToArg( m_instanceParameter.Colors[0] );
 		color_r.setValueToArg( m_instanceParameter.Colors[1] );
+
+		// Apply global color
+		if (instance.m_pContainer->GetRootInstance()->IsGlobalColorSet)
+		{
+			Color::Mul(m_instanceParameter.Colors[0], m_instanceParameter.Colors[0], instance.m_pContainer->GetRootInstance()->GlobalColor);
+			Color::Mul(m_instanceParameter.Colors[1], m_instanceParameter.Colors[1], instance.m_pContainer->GetRootInstance()->GlobalColor);
+		}
 
 		if( RibbonPosition.type == RibbonPositionParameter::Default )
 		{
@@ -10241,6 +10523,14 @@ void EffectNodeRing::Rendering(const Instance& instance, Manager* manager)
 		_outerColor.setValueToArg( instanceParameter.OuterColor );
 		_centerColor.setValueToArg( instanceParameter.CenterColor );
 		_innerColor.setValueToArg( instanceParameter.InnerColor );
+
+		// Apply global color
+		if (instance.m_pContainer->GetRootInstance()->IsGlobalColorSet)
+		{
+			Color::Mul(instanceParameter.OuterColor, instanceParameter.OuterColor, instance.m_pContainer->GetRootInstance()->GlobalColor);
+			Color::Mul(instanceParameter.CenterColor, instanceParameter.CenterColor, instance.m_pContainer->GetRootInstance()->GlobalColor);
+			Color::Mul(instanceParameter.InnerColor, instanceParameter.InnerColor, instance.m_pContainer->GetRootInstance()->GlobalColor);
+		}
 		
 		instanceParameter.UV = instance.GetUV();
 		renderer->Rendering( nodeParameter, instanceParameter, m_userData );
@@ -10774,6 +11064,7 @@ void EffectNodeSprite::Rendering(const Instance& instance, Manager* manager)
 
 		SpriteRenderer::InstanceParameter instanceParameter;
 		instValues._color.setValueToArg( instanceParameter.AllColor );
+
 		instanceParameter.SRTMatrix43 = instance.GetGlobalMatrix43();
 
 		// Inherit color
@@ -10808,6 +11099,14 @@ void EffectNodeSprite::Rendering(const Instance& instance, Manager* manager)
 		color_ul.setValueToArg( instanceParameter.Colors[2] );
 		color_ur.setValueToArg( instanceParameter.Colors[3] );
 		
+		// Apply global color
+		if (instance.m_pContainer->GetRootInstance()->IsGlobalColorSet)
+		{
+			Color::Mul(instanceParameter.Colors[0], instanceParameter.Colors[0], instance.m_pContainer->GetRootInstance()->GlobalColor);
+			Color::Mul(instanceParameter.Colors[1], instanceParameter.Colors[1], instance.m_pContainer->GetRootInstance()->GlobalColor);
+			Color::Mul(instanceParameter.Colors[2], instanceParameter.Colors[2], instance.m_pContainer->GetRootInstance()->GlobalColor);
+			Color::Mul(instanceParameter.Colors[3], instanceParameter.Colors[3], instance.m_pContainer->GetRootInstance()->GlobalColor);
+		}
 
 		if( SpritePosition.type == SpritePosition.Default )
 		{
@@ -11301,6 +11600,12 @@ void EffectNodeTrack::SetValues(Color& c, const Instance& instance, InstanceGrou
 	}
 
 	_c.setValueToArg(c);
+
+	// Apply global color
+	if (instance.m_pContainer->GetRootInstance()->IsGlobalColorSet)
+	{
+		Color::Mul(c, c, instance.m_pContainer->GetRootInstance()->GlobalColor);
+	}
 }
 
 //----------------------------------------------------------------------------------
@@ -13176,6 +13481,17 @@ void ManagerImplemented::SetScale( Handle handle, float x, float y, float z )
 	}
 }
 
+void ManagerImplemented::SetAllColor(Handle handle, Color color)
+{
+	if (m_DrawSets.count(handle) > 0)
+	{
+		auto& drawSet = m_DrawSets[handle];
+
+		drawSet.GlobalPointer->IsGlobalColorSet = true;
+		drawSet.GlobalPointer->GlobalColor = color;
+	}
+}
+
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
@@ -13290,6 +13606,14 @@ void ManagerImplemented::SetPausedToAllEffects(bool paused)
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
+float ManagerImplemented::GetSpeed(Handle handle) const
+{
+	auto it = m_DrawSets.find(handle);
+	if (it == m_DrawSets.end()) return 0.0f;
+	return it->second.Speed;
+}
+
+
 void ManagerImplemented::SetSpeed( Handle handle, float speed )
 {
 	if( m_DrawSets.count( handle ) > 0 )
@@ -14118,6 +14442,7 @@ Instance::Instance(Manager* pManager, EffectNode* pEffectNode, InstanceContainer
 	, m_LivedTime(0)
 	, m_LivingTime(0)
 	, uvTimeOffset(0)
+	, m_MatrixCalculated(false)
 	, m_stepTime(false)
 	, m_sequenceNumber(0)
 	, m_flexibleGeneratedChildrenCount(nullptr)
@@ -14197,6 +14522,10 @@ const Matrix43& Instance::GetGlobalMatrix43() const
 void Instance::Initialize( Instance* parent, int32_t instanceNumber )
 {
 	assert(this->m_pContainer != nullptr);
+	
+	// Invalidate own matrix
+	m_MatrixCalculated = false;
+
 	auto instanceGlobal = this->m_pContainer->GetRootInstance();
 
 	auto parameter = (EffectNodeImplemented*) m_pEffectNode;
@@ -14244,6 +14573,9 @@ void Instance::Initialize( Instance* parent, int32_t instanceNumber )
 
 		return;
 	}
+	
+	// 親の行列を計算
+	m_pParent->CalculateMatrix( 0 );
 
 	// 状態の初期化
 	m_State = INSTANCE_STATE_ACTIVE;
@@ -14555,6 +14887,7 @@ void Instance::Initialize( Instance* parent, int32_t instanceNumber )
 				{
 					emitter = model->GetEmitter( 
 						instanceGlobal, 
+						m_LivingTime,
 						m_pManager->GetCoordinateSystem(), 
 						((EffectImplemented*)m_pEffectNode->GetEffect())->GetMaginification() );
 				}
@@ -14562,6 +14895,7 @@ void Instance::Initialize( Instance* parent, int32_t instanceNumber )
 				{
 					emitter = model->GetEmitterFromVertex( 
 						instanceNumber,
+						m_LivingTime,
 						m_pManager->GetCoordinateSystem(), 
 						((EffectImplemented*)m_pEffectNode->GetEffect())->GetMaginification() );
 				}
@@ -14569,6 +14903,7 @@ void Instance::Initialize( Instance* parent, int32_t instanceNumber )
 				{
 					emitter = model->GetEmitterFromVertex( 
 						instanceGlobal,
+						m_LivingTime,
 						m_pManager->GetCoordinateSystem(), 
 						((EffectImplemented*)m_pEffectNode->GetEffect())->GetMaginification() );
 				}
@@ -14576,6 +14911,7 @@ void Instance::Initialize( Instance* parent, int32_t instanceNumber )
 				{
 					emitter = model->GetEmitterFromFace( 
 						instanceNumber,
+						m_LivingTime,
 						m_pManager->GetCoordinateSystem(), 
 						((EffectImplemented*)m_pEffectNode->GetEffect())->GetMaginification() );
 				}
@@ -14583,6 +14919,7 @@ void Instance::Initialize( Instance* parent, int32_t instanceNumber )
 				{
 					emitter = model->GetEmitterFromFace( 
 						instanceGlobal,
+						m_LivingTime,
 						m_pManager->GetCoordinateSystem(), 
 						((EffectImplemented*)m_pEffectNode->GetEffect())->GetMaginification() );
 				}
@@ -14695,14 +15032,12 @@ void Instance::Initialize( Instance* parent, int32_t instanceNumber )
 	// Generate zero frame effect
 	{
 		InstanceGroup* group = m_headGroups;
-		bool calculateMatrix = false;
 
 		for (int32_t i = 0; i < parameter->GetChildrenCount(); i++, group = group->NextUsedByInstance)
 		{
 			auto node = (EffectNodeImplemented*) parameter->GetChild(i);
 			auto container = m_pContainer->GetChild(i);
 			assert(group != NULL);
-
 
 			while (true)
 			{
@@ -14715,12 +15050,6 @@ void Instance::Initialize( Instance* parent, int32_t instanceNumber )
 					auto newInstance = group->CreateInstance();
 					if (newInstance != nullptr)
 					{
-						if (!calculateMatrix)
-						{
-							CalculateMatrix(0);
-							calculateMatrix = true;
-						}
-
 						newInstance->Initialize(this, m_generatedChildrenCount[i]);
 					}
 
@@ -14742,6 +15071,10 @@ void Instance::Initialize( Instance* parent, int32_t instanceNumber )
 void Instance::Update( float deltaFrame, bool shown )
 {
 	assert(this->m_pContainer != nullptr);
+	
+	// Invalidate own matrix
+	m_MatrixCalculated = false;
+	
 	auto instanceGlobal = this->m_pContainer->GetRootInstance();
 
 	if (m_stepTime && m_pEffectNode->GetType() != EFFECT_NODE_TYPE_ROOT)
@@ -14760,50 +15093,14 @@ void Instance::Update( float deltaFrame, bool shown )
 	}
 
 	float originalTime = m_LivingTime;
-	bool calculateMatrix = false;
 
 	if(shown)
 	{
-		calculateMatrix = true;
+		CalculateMatrix( deltaFrame );
 	}
 	else if( m_pEffectNode->LocationAbs.type != LocationAbsParameter::None )
 	{
 		// If attraction forces are not default, updating is needed in each frame.
-		calculateMatrix = true;
-	}
-	else
-	{
-		/**
-			見えないケースで行列計算が必要なケース
-			-子が生成される。
-			-子の子が生成される。
-			*/
-		if (m_stepTime && (originalTime <= m_LivedTime || !m_pEffectNode->CommonValues.RemoveWhenLifeIsExtinct))
-		{
-			for (int i = 0; i < m_pEffectNode->GetChildrenCount(); i++)
-			{
-				auto pNode = (EffectNodeImplemented*) m_pEffectNode->GetChild(i);
-
-				// When this instance creates a particle
-				if (pNode->CommonValues.MaxGeneration > m_generatedChildrenCount[i] &&
-					originalTime + deltaFrame >= m_nextGenerationTime[i])
-				{
-					calculateMatrix = true;
-					break;
-				}
-			}
-		}
-	}
-
-	/* 親が破棄される瞬間に行列計算(条件を絞れば更に最適化可能) */
-	if( !calculateMatrix && m_pParent != NULL && m_pParent->GetState() != INSTANCE_STATE_ACTIVE &&
-		!(m_pEffectNode->CommonValues.RemoveWhenParentIsRemoved && m_pEffectNode->GetChildrenCount() == 0))
-	{
-		calculateMatrix = true;
-	}
-
-	if( calculateMatrix )
-	{
 		CalculateMatrix( deltaFrame );
 	}
 
@@ -14926,12 +15223,8 @@ void Instance::Update( float deltaFrame, bool shown )
 	if(killed)
 	{
 		/* 死亡確定時、計算が必要な場合は計算をする。*/
-		if( !calculateMatrix &&
-			m_pEffectNode->GetChildrenCount() > 0)
+		if( m_pEffectNode->GetChildrenCount() > 0)
 		{
-			calculateMatrix = true;
-			CalculateMatrix( deltaFrame );
-
 			// Get parent color.
 			if (m_pParent != NULL)
 			{
@@ -14956,7 +15249,10 @@ void Instance::Update( float deltaFrame, bool shown )
 //----------------------------------------------------------------------------------
 void Instance::CalculateMatrix( float deltaFrame )
 {
-	if( m_sequenceNumber == ((ManagerImplemented*)m_pManager)->GetSequenceNumber() ) return;
+	// 計算済なら終了
+	if( m_MatrixCalculated ) return;
+	
+	//if( m_sequenceNumber == ((ManagerImplemented*)m_pManager)->GetSequenceNumber() ) return;
 	m_sequenceNumber = ((ManagerImplemented*)m_pManager)->GetSequenceNumber();
 
 	assert( m_pEffectNode != NULL );
@@ -14965,7 +15261,7 @@ void Instance::CalculateMatrix( float deltaFrame )
 	// 親の処理
 	if( m_pParent != NULL )
 	{
-		CalculateParentMatrix();
+		CalculateParentMatrix( deltaFrame );
 	}
 
 	Vector3D localPosition;
@@ -15210,12 +15506,14 @@ void Instance::CalculateMatrix( float deltaFrame )
 			ModifyMatrixFromLocationAbs( deltaFrame );
 		}
 	}
+
+	m_MatrixCalculated = true;
 }
 
-void Instance::CalculateParentMatrix()
+void Instance::CalculateParentMatrix( float deltaFrame )
 {
-	/* 親の行列を更新(現在は必要不必要関わらず行なっている) */
-	//m_pParent->CalculateMatrix( deltaFrame );
+	// 親の行列を計算
+	m_pParent->CalculateMatrix( deltaFrame );
 
 	if( m_pEffectNode->GetType() != EFFECT_NODE_TYPE_ROOT )
 	{
@@ -15516,9 +15814,9 @@ float InstanceGlobal::GetRand()
 	const int m = 2147483647;
 	
 	m_seed = (m_seed * a + c) & m;
-	m_seed = m_seed % 0x7fff;
+	auto ret = m_seed % 0x7fff;
 
-	return (float) m_seed / (float) (0x7fff - 1);
+	return (float)ret / (float) (0x7fff - 1);
 }
 
 float InstanceGlobal::GetRand(float min_, float max_)

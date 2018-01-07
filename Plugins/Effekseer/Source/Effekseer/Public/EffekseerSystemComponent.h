@@ -21,6 +21,8 @@ enum class EffekseerUpdateData_CommandType
 	Stop,
 	StopRoot,
 	StopAll,
+	SetSpeed,
+	SetAllColor,
 };
 
 
@@ -32,6 +34,8 @@ public:
 	FVector	Position;
 	FRotator	Rotation;
 	FVector	Scale;
+	FColor	AllColor;
+	float	Speed;
 
 	EffekseerUpdateData_CommandType	Type;
 };
@@ -184,4 +188,10 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Control")
 	void StopRoot(FEffekseerHandle handle);
+
+	UFUNCTION(BlueprintCallable, Category = "Control")
+	void SetEffectSpeed(FEffekseerHandle handle, float speed);
+
+	UFUNCTION(BlueprintCallable, Category = "Control")
+	void SetEffectAllColor(FEffekseerHandle handle, FColor color);
 };

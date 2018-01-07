@@ -63,6 +63,18 @@ void UEffekseerEmitterComponent::TickComponent(float DeltaTime, ELevelTick TickT
 		isPlaying = true;
 
 		shouldActivate = false;
+
+		if (AllColor != AllColor_)
+		{
+			system_->SetEffectAllColor(handle, AllColor);
+			AllColor_ = AllColor;
+		}
+
+		if (Speed != Speed_)
+		{
+			system_->SetEffectSpeed(handle, Speed);
+			Speed_ = Speed;
+		}
 	}
 
 	if (system_ != nullptr && isPlaying)
@@ -74,15 +86,36 @@ void UEffekseerEmitterComponent::TickComponent(float DeltaTime, ELevelTick TickT
 			system_->SetEffectPosition(handle, transform.GetTranslation());
 			system_->SetEffectRotation(handle, transform.GetRotation().Rotator());
 			system_->SetEffectScaling(handle, transform.GetScale3D());
+
+			if (AllColor != AllColor_)
+			{
+				system_->SetEffectAllColor(handle, AllColor);
+				AllColor_ = AllColor;
+			}
+
+			if (Speed != Speed_)
+			{
+				system_->SetEffectSpeed(handle, Speed);
+				Speed_ = Speed;
+			}
 		}
 		else
 		{
-			isPlaying = false;
-
-			if (bAutoDestroy)
+			if (IsLooping)
 			{
-				DestroyComponent();
-				return;
+				AllColor_ = FColor(255, 255, 255, 255);
+				Speed_ = 1.0f;
+				handle = Play();
+			}
+			else
+			{
+				isPlaying = false;
+
+				if (bAutoDestroy)
+				{
+					DestroyComponent();
+					return;
+				}
 			}
 		}
 	}

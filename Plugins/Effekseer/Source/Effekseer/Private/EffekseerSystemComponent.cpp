@@ -211,6 +211,24 @@ public:
 					effekseerManager->StopEffect(eid);
 				}
 			}
+
+			if (cmd.Type == EffekseerUpdateData_CommandType::SetAllColor)
+			{
+				if (internalHandle2EfkHandle.Contains(cmd.ID))
+				{
+					auto eid = internalHandle2EfkHandle[cmd.ID];
+					effekseerManager->SetAllColor(eid, Effekseer::Color(cmd.AllColor.R, cmd.AllColor.G, cmd.AllColor.B, cmd.AllColor.A));
+				}
+			}
+
+			if (cmd.Type == EffekseerUpdateData_CommandType::SetSpeed)
+			{
+				if (internalHandle2EfkHandle.Contains(cmd.ID))
+				{
+					auto eid = internalHandle2EfkHandle[cmd.ID];
+					effekseerManager->SetSpeed(eid, cmd.Speed);
+				}
+			}
 		}
 
 		// Update effects.
@@ -600,5 +618,27 @@ void UEffekseerSystemComponent::StopRoot(FEffekseerHandle handle)
 	EffekseerUpdateData_Command cmd;
 	cmd.Type = EffekseerUpdateData_CommandType::StopRoot;
 	cmd.ID = handle.ID;
+	currentUpdateData->Commands.Add(cmd);
+}
+
+void UEffekseerSystemComponent::SetEffectSpeed(FEffekseerHandle handle, float speed)
+{
+	if (handle.Effect == nullptr) return;
+
+	EffekseerUpdateData_Command cmd;
+	cmd.Type = EffekseerUpdateData_CommandType::SetSpeed;
+	cmd.ID = handle.ID;
+	cmd.Speed = speed;
+	currentUpdateData->Commands.Add(cmd);
+}
+
+void UEffekseerSystemComponent::SetEffectAllColor(FEffekseerHandle handle, FColor color)
+{
+	if (handle.Effect == nullptr) return;
+
+	EffekseerUpdateData_Command cmd;
+	cmd.Type = EffekseerUpdateData_CommandType::SetAllColor;
+	cmd.ID = handle.ID;
+	cmd.AllColor = color;
 	currentUpdateData->Commands.Add(cmd);
 }
