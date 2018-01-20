@@ -145,11 +145,10 @@ namespace EffekseerRendererUE4
 		BeginRendering_(m_renderer, parameter, count, userData);
 	}
 
-	/*
 	void ModelRenderer::Rendering(const efkModelNodeParam& parameter, const efkModelInstanceParam& instanceParameter, void* userData)
 	{
+		Rendering_(m_renderer, parameter, instanceParameter, userData);
 	}
-	*/
 
 	void ModelRenderer::EndRendering(const efkModelNodeParam& parameter, void* userData)
 	{

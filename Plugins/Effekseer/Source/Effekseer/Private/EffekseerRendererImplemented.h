@@ -236,7 +236,7 @@ namespace EffekseerRendererUE4
 	public:
 		void BeginRendering(const efkModelNodeParam& parameter, int32_t count, void* userData);
 
-		//void Rendering(const efkModelNodeParam& parameter, const efkModelInstanceParam& instanceParameter, void* userData);
+		void Rendering(const efkModelNodeParam& parameter, const efkModelInstanceParam& instanceParameter, void* userData) override;
 
 		void EndRendering(const efkModelNodeParam& parameter, void* userData);
 	};

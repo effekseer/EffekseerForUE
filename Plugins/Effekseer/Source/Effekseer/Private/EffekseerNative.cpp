@@ -7952,6 +7952,275 @@ public:
 //----------------------------------------------------------------------------------
 #endif	// __EFFEKSEER_MANAGER_IMPLEMENTED_H__
 
+#ifndef	__EFFEKSEER_INTRUSIVE_LIST_H__
+#define	__EFFEKSEER_INTRUSIVE_LIST_H__
+
+//----------------------------------------------------------------------------------
+// Include
+//----------------------------------------------------------------------------------
+
+//----------------------------------------------------------------------------------
+//
+//----------------------------------------------------------------------------------
+namespace Effekseer { 
+//----------------------------------------------------------------------------------
+//
+//----------------------------------------------------------------------------------
+/**
+	@brief	Intrusive List
+	@code
+	class Instance : public IntrusiveList<Instance> {...};
+	@endcode
+*/
+template <typename T>
+class IntrusiveList final
+{
+public:
+	typedef T Type;
+	
+	class Iterator
+	{
+		Type* m_Node = nullptr;
+	public:
+		Iterator() = default;
+		Iterator( const Iterator& it ) = default;
+		Iterator( Type* node ): m_Node(node) {}
+		Type* operator*() const { assert( m_Node != nullptr ); return m_Node; }
+		Type* operator->() const { assert( m_Node != nullptr ); return m_Node; }
+		Iterator& operator++() { assert( m_Node != nullptr ); m_Node = m_Node->m_NextNode; return *this; }
+		Iterator operator++(int) { assert( m_Node != nullptr ); Iterator it(m_Node); m_Node = m_Node->m_NextNode; return it; }
+		bool operator==( const Iterator& rhs ) const { return m_Node == rhs.m_Node; }
+		bool operator!=( const Iterator& rhs ) const { return m_Node != rhs.m_Node; }
+	};
+	
+	class ReverseIterator
+	{
+		Type* m_Node = nullptr;
+	public:
+		ReverseIterator() = default;
+		ReverseIterator( const ReverseIterator& it ) = default;
+		ReverseIterator( Type* node ): m_Node(node) {}
+		Type* operator*() const { assert( m_Node != nullptr ); return m_Node; }
+		Type* operator->() const { assert( m_Node != nullptr ); return m_Node; }
+		ReverseIterator& operator++() { assert( m_Node != nullptr ); m_Node = m_Node->m_PrevNode; return *this; }
+		ReverseIterator operator++(int) { assert( m_Node != nullptr ); ReverseIterator it(m_Node); m_Node = m_Node->m_NextNode; return it; }
+		bool operator==( const ReverseIterator& rhs ) const { return m_Node == rhs.m_Node; }
+		bool operator!=( const ReverseIterator& rhs ) const { return m_Node != rhs.m_Node; }
+	};
+	
+	class Node
+	{
+		friend class IntrusiveList<Type>;
+		friend class IntrusiveList<Type>::Iterator;
+		
+	private:
+		Type* m_PrevNode = nullptr;
+		Type* m_NextNode = nullptr;
+	};
+
+private:
+	Type* m_HeadNode = nullptr;
+	Type* m_TailNode = nullptr;
+	size_t m_Count = 0;
+
+public:
+	IntrusiveList() = default;
+	IntrusiveList( const IntrusiveList<T>& rhs ) = delete;
+	IntrusiveList<T>& operator=( const IntrusiveList<T>& rhs ) = delete;
+	IntrusiveList( IntrusiveList<T>&& rhs );
+	IntrusiveList<T>& operator=( IntrusiveList<T>&& rhs );
+	~IntrusiveList();
+
+	void push_back( Type* newObject );
+	void pop_back();
+	void push_front( Type* newObject );
+	void pop_front();
+		
+	Iterator insert( Iterator it, Type* newObject );
+	Iterator erase( Iterator it );
+	void clear();
+		
+	Type* front() const;
+	Type* back() const;
+
+	bool empty() const { return m_Count == 0; }
+	size_t size() const { return m_Count; }
+
+	Iterator begin() const { return Iterator( m_HeadNode ); }
+	Iterator end() const { return Iterator( nullptr ); }
+	ReverseIterator rbegin() const { return ReverseIterator( m_TailNode ); }
+	ReverseIterator rend() const { return ReverseIterator( nullptr ); }
+};
+
+template <typename T>
+IntrusiveList<T>::IntrusiveList( IntrusiveList<T>&& rhs )
+{
+	m_HeadNode = rhs.m_HeadNode;
+	m_TailNode = rhs.m_TailNode;
+	m_Count = rhs.m_Count;
+	rhs.m_HeadNode = nullptr;
+	rhs.m_TailNode = nullptr;
+	rhs.m_Count = 0;
+}
+
+template <typename T>
+IntrusiveList<T>& IntrusiveList<T>::operator=( IntrusiveList<T>&& rhs )
+{
+	m_HeadNode = rhs.m_HeadNode;
+	m_TailNode = rhs.m_TailNode;
+	m_Count = rhs.m_Count;
+	rhs.m_HeadNode = nullptr;
+	rhs.m_TailNode = nullptr;
+	rhs.m_Count = 0;
+}
+
+template <typename T>
+IntrusiveList<T>::~IntrusiveList()
+{
+	clear();
+}
+
+template <typename T>
+inline void IntrusiveList<T>::push_back( typename IntrusiveList<T>::Type* newObject )
+{
+	assert( newObject != nullptr );
+	assert( newObject->m_PrevNode == nullptr );
+	assert( newObject->m_NextNode == nullptr );
+
+	if( m_TailNode )
+	{
+		newObject->m_PrevNode = m_TailNode;
+		m_TailNode->m_NextNode = newObject;
+		m_TailNode = newObject;
+	}
+	else
+	{
+		m_HeadNode = newObject;
+		m_TailNode = newObject;
+	}
+	m_Count++;
+}
+	
+template <typename T>
+inline void IntrusiveList<T>::pop_back()
+{
+	assert( m_TailNode != nullptr );
+	if( m_TailNode )
+	{
+		auto prev = m_TailNode->m_PrevNode;
+		m_TailNode->m_PrevNode = nullptr;
+		m_TailNode->m_NextNode = nullptr;
+		if( prev ){ prev->m_NextNode = nullptr; }
+		m_TailNode = prev;
+		m_Count--;
+	}
+}
+	
+template <typename T>
+inline void IntrusiveList<T>::push_front( typename IntrusiveList<T>::Type* newObject )
+{
+	assert( newObject != nullptr );
+	assert( newObject->m_PrevNode == nullptr );
+	assert( newObject->m_NextNode == nullptr );
+
+	if( m_HeadNode )
+	{
+		newObject->m_NextNode = m_HeadNode;
+		m_HeadNode->m_PrevNode = newObject;
+		m_HeadNode = newObject;
+	}
+	else
+	{
+		m_HeadNode = newObject;
+		m_TailNode = newObject;
+	}
+	m_Count++;
+}
+	
+template <typename T>
+inline void IntrusiveList<T>::pop_front()
+{
+	assert( m_HeadNode != nullptr );
+	if( m_HeadNode )
+	{
+		auto next = m_HeadNode->m_NextNode;
+		m_HeadNode->m_PrevNode = nullptr;
+		m_HeadNode->m_NextNode = nullptr;
+		if( next ){ next->m_PrevNode = nullptr; }
+		m_HeadNode = next;
+		m_Count--;
+	}
+}
+	
+template <typename T>
+inline typename IntrusiveList<T>::Iterator
+IntrusiveList<T>::insert( typename IntrusiveList<T>::Iterator it, Type* newObject )
+{
+	assert( newObject != nullptr );
+	assert( newObject->m_PrevNode == nullptr );
+	assert( newObject->m_NextNode == nullptr );
+	auto prev = it->m_PrevNode;
+	newObject->m_PrevNode = prev;
+	newObject->m_NextNode = *it;
+	if( prev ){ prev->m_NextNode = newObject; }
+	else{ m_HeadNode = newObject; }
+	m_Count++;
+	return IntrusiveList<T>::Iterator( newObject );
+}
+	
+template <typename T>
+inline typename IntrusiveList<T>::Iterator 
+IntrusiveList<T>::erase( typename IntrusiveList<T>::Iterator it )
+{
+	auto prev = it->m_PrevNode;
+	auto next = it->m_NextNode;
+	it->m_PrevNode = nullptr;
+	it->m_NextNode = nullptr;
+	if( prev ) prev->m_NextNode = next;
+	else m_HeadNode = next;
+	if( next ){ next->m_PrevNode = prev; }
+	else{ m_TailNode = prev; }
+	m_Count--;
+	return IntrusiveList<T>::Iterator( next );
+}
+	
+template <typename T>
+inline void IntrusiveList<T>::clear()
+{
+	for( Type* it = m_HeadNode; it != nullptr; )
+	{
+		Type* next = it->m_NextNode;
+		it->m_PrevNode = nullptr;
+		it->m_NextNode = nullptr;
+		it = next;
+	}
+	m_HeadNode = nullptr;
+	m_TailNode = nullptr;
+	m_Count = 0;
+}
+
+template <typename T>
+T* IntrusiveList<T>::front() const
+{
+	assert( m_HeadNode != nullptr );
+	return m_HeadNode;
+}
+
+template <typename T>
+T* IntrusiveList<T>::back() const
+{
+	assert( m_TailNode != nullptr );
+	return m_TailNode;
+}
+//----------------------------------------------------------------------------------
+//
+//----------------------------------------------------------------------------------
+ } 
+//----------------------------------------------------------------------------------
+//
+//----------------------------------------------------------------------------------
+#endif	// __EFFEKSEER_INTRUSIVE_LIST_H__
+
 #ifndef	__EFFEKSEER_INSTANCECONTAINER_H__
 #define	__EFFEKSEER_INSTANCECONTAINER_H__
 
@@ -8078,7 +8347,7 @@ namespace Effekseer
 /**
 	@brief	エフェクトの実体
 */
-class Instance
+class Instance : public IntrusiveList<Instance>::Node
 {
 	friend class Manager;
 	friend class InstanceContainer;
@@ -8488,8 +8757,8 @@ private:
 	int32_t				m_time;
 
 	// インスタンスの実体
-	std::list<Instance*> m_instances;
-	std::list<Instance*> m_removingInstances;
+	IntrusiveList<Instance> m_instances;
+	IntrusiveList<Instance> m_removingInstances;
 
 	InstanceGroup( Manager* manager, EffectNode* effectNode, InstanceContainer* container, InstanceGlobal* global );
 
@@ -10454,6 +10723,8 @@ void EffectNodeRing::BeginRendering(int32_t count, Manager* manager)
 		nodeParameter.ColorTextureIndex = RingTexture;
 		nodeParameter.VertexCount = VertexCount;
 		nodeParameter.EffectPointer = GetEffect();
+		nodeParameter.IsRightHand = manager->GetCoordinateSystem() ==
+			CoordinateSystem::RH;
 
 		nodeParameter.Distortion = RendererCommon.Distortion;
 		nodeParameter.DistortionIntensity = RendererCommon.DistortionIntensity;
@@ -10485,6 +10756,8 @@ void EffectNodeRing::Rendering(const Instance& instance, Manager* manager)
 		nodeParameter.Billboard = Billboard;
 		nodeParameter.VertexCount = VertexCount;
 		nodeParameter.ColorTextureIndex = RingTexture;
+		nodeParameter.IsRightHand = manager->GetCoordinateSystem() ==
+			CoordinateSystem::RH;
 
 		nodeParameter.Distortion = RendererCommon.Distortion;
 		nodeParameter.DistortionIntensity = RendererCommon.DistortionIntensity;
@@ -10554,6 +10827,8 @@ void EffectNodeRing::EndRendering(Manager* manager)
 		nodeParameter.Billboard = Billboard;
 		nodeParameter.ColorTextureIndex = RingTexture;
 		nodeParameter.EffectPointer = GetEffect();
+		nodeParameter.IsRightHand = manager->GetCoordinateSystem() ==
+			CoordinateSystem::RH;
 
 		nodeParameter.Distortion = RendererCommon.Distortion;
 		nodeParameter.DistortionIntensity = RendererCommon.DistortionIntensity;
@@ -11024,7 +11299,9 @@ void EffectNodeSprite::BeginRendering(int32_t count, Manager* manager)
 		nodeParameter.Billboard = Billboard;
 		nodeParameter.ColorTextureIndex = SpriteTexture;
 		nodeParameter.EffectPointer = GetEffect();
-		
+		nodeParameter.IsRightHand = manager->GetCoordinateSystem() ==
+			CoordinateSystem::RH;
+
 		nodeParameter.Distortion = RendererCommon.Distortion;
 		nodeParameter.DistortionIntensity = RendererCommon.DistortionIntensity;
 
@@ -11054,6 +11331,8 @@ void EffectNodeSprite::Rendering(const Instance& instance, Manager* manager)
 		nodeParameter.Billboard = Billboard;
 		nodeParameter.ColorTextureIndex = SpriteTexture;
 		nodeParameter.EffectPointer = GetEffect();
+		nodeParameter.IsRightHand = manager->GetCoordinateSystem() ==
+			CoordinateSystem::RH;
 
 		nodeParameter.Distortion = RendererCommon.Distortion;
 		nodeParameter.DistortionIntensity = RendererCommon.DistortionIntensity;
@@ -11149,6 +11428,8 @@ void EffectNodeSprite::EndRendering(Manager* manager)
 		nodeParameter.Billboard = Billboard;
 		nodeParameter.ColorTextureIndex = SpriteTexture;
 		nodeParameter.EffectPointer = GetEffect();
+		nodeParameter.IsRightHand = manager->GetCoordinateSystem() ==
+			CoordinateSystem::RH;
 
 		nodeParameter.Distortion = RendererCommon.Distortion;
 		nodeParameter.DistortionIntensity = RendererCommon.DistortionIntensity;
@@ -14090,6 +14371,20 @@ void ManagerImplemented::RessignCulling()
 //
 //----------------------------------------------------------------------------------
 
+//----------------------------------------------------------------------------------
+//
+//----------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------
+//
+//----------------------------------------------------------------------------------
+namespace Effekseer {
+//----------------------------------------------------------------------------------
+//
+//----------------------------------------------------------------------------------
+}
+//----------------------------------------------------------------------------------
+//
+//----------------------------------------------------------------------------------
 
 //----------------------------------------------------------------------------------
 //
@@ -14328,7 +14623,7 @@ void InstanceContainer::Draw( bool recursive )
 		{
 			for( InstanceGroup* group = m_headGroups; group != NULL; group = group->NextUsedByContainer )
 			{
-				for (auto& instance : group->m_instances)
+				for (auto instance : group->m_instances)
 				{
 					if (instance->m_State == INSTANCE_STATE_ACTIVE)
 					{
@@ -14349,7 +14644,7 @@ void InstanceContainer::Draw( bool recursive )
 
 				if( m_pEffectNode->RenderingOrder == RenderingOrder_FirstCreatedInstanceIsFirst )
 				{
-					for (auto& instance : group->m_instances)
+					for (auto instance : group->m_instances)
 					{
 						if (instance->m_State == INSTANCE_STATE_ACTIVE)
 						{
@@ -14359,7 +14654,7 @@ void InstanceContainer::Draw( bool recursive )
 				}
 				else
 				{
-					std::list<Instance*>::reverse_iterator it = group->m_instances.rbegin();
+					auto it = group->m_instances.rbegin();
 
 					while( it != group->m_instances.rend() )
 					{
@@ -15941,34 +16236,37 @@ InstanceGroup::~InstanceGroup()
 //----------------------------------------------------------------------------------
 void InstanceGroup::RemoveInvalidInstances()
 {
-	std::list<Instance*>::iterator it = m_removingInstances.begin();
+	auto it = m_removingInstances.begin();
 
 	while( it != m_removingInstances.end() )
 	{
-		if( (*it)->m_State == INSTANCE_STATE_ACTIVE )
+		auto instance = *it;
+
+		if( instance->m_State == INSTANCE_STATE_ACTIVE )
 		{
 			assert(0);
 		}
-		else if( (*it)->m_State == INSTANCE_STATE_REMOVING )
+		else if( instance->m_State == INSTANCE_STATE_REMOVING )
 		{
 			// 削除中処理
-			(*it)->m_State = INSTANCE_STATE_REMOVED;
+			instance->m_State = INSTANCE_STATE_REMOVED;
 			it++;
 		}
-		else if( (*it)->m_State == INSTANCE_STATE_REMOVED )
+		else if( instance->m_State == INSTANCE_STATE_REMOVED )
 		{
+			it = m_removingInstances.erase( it );
+
 			// 削除処理
-			if( (*it)->m_pEffectNode->GetType() == EFFECT_NODE_TYPE_ROOT )
+			if( instance->m_pEffectNode->GetType() == EFFECT_NODE_TYPE_ROOT )
 			{
-				delete (*it);
+				delete instance;
 			}
 			else
 			{
-				(*it)->~Instance();
-				m_manager->PushInstance( (*it) );
+				instance->~Instance();
+				m_manager->PushInstance( instance );
 			}
 
-			it = m_removingInstances.erase( it );
 			m_global->DecInstanceCount();
 		}
 	}
@@ -16031,20 +16329,22 @@ void InstanceGroup::Update( float deltaFrame, bool shown )
 {
 	RemoveInvalidInstances();
 
-	std::list<Instance*>::iterator it = m_instances.begin();
+	auto it = m_instances.begin();
 
 	while( it != m_instances.end() )
 	{
-		if( (*it)->m_State == INSTANCE_STATE_ACTIVE )
+		auto instance = *it;
+
+		if( instance->m_State == INSTANCE_STATE_ACTIVE )
 		{
 			// 更新処理
-			(*it)->Update( deltaFrame, shown );
+			instance->Update( deltaFrame, shown );
 
 			// 破棄チェック
-			if( (*it)->m_State != INSTANCE_STATE_ACTIVE )
+			if( instance->m_State != INSTANCE_STATE_ACTIVE )
 			{
-				m_removingInstances.push_back( (*it) );
 				it = m_instances.erase( it );
+				m_removingInstances.push_back( instance );
 			}
 			else
 			{
@@ -16061,7 +16361,7 @@ void InstanceGroup::Update( float deltaFrame, bool shown )
 //----------------------------------------------------------------------------------
 void InstanceGroup::SetBaseMatrix( const Matrix43& mat )
 {
-	for (auto& instance : m_instances)
+	for (auto instance : m_instances)
 	{
 		if (instance->m_State == INSTANCE_STATE_ACTIVE)
 		{
@@ -16086,16 +16386,17 @@ void InstanceGroup::RemoveForcibly()
 //----------------------------------------------------------------------------------
 void InstanceGroup::KillAllInstances()
 {
-	for (auto& instance : m_instances)
+	while (!m_instances.empty())
 	{
+		auto instance = m_instances.front();
+		m_instances.pop_front();
+
 		if (instance->GetState() == INSTANCE_STATE_ACTIVE)
 		{
 			instance->Kill();
 			m_removingInstances.push_back(instance);
 		}
 	}
-
-	m_instances.clear();
 }
 
 //----------------------------------------------------------------------------------

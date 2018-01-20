@@ -20,7 +20,7 @@ namespace EffekseerRenderer
 //
 //-----------------------------------------------------------------------------------
 
-	static void ApplyDepthOffset(::Effekseer::Matrix43& mat, const ::Effekseer::Matrix44& camera, float depthOffset, bool isDepthOffsetScaledWithCamera, bool isDepthOffsetScaledWithEffect)
+	static void ApplyDepthOffset(::Effekseer::Matrix43& mat, const ::Effekseer::Matrix44& camera, float depthOffset, bool isDepthOffsetScaledWithCamera, bool isDepthOffsetScaledWithEffect, bool isRightHand)
 	{
 		if (depthOffset != 0)
 		{
@@ -72,14 +72,22 @@ namespace EffekseerRenderer
 				}
 			}
 
-			mat.Value[3][0] += f.X * offset;
-			mat.Value[3][1] += f.Y * offset;
-			mat.Value[3][2] += f.Z * offset;
-
+			if (isRightHand)
+			{
+				mat.Value[3][0] += f.X * offset;
+				mat.Value[3][1] += f.Y * offset;
+				mat.Value[3][2] += f.Z * offset;
+			}
+			else
+			{
+				mat.Value[3][0] -= f.X * offset;
+				mat.Value[3][1] -= f.Y * offset;
+				mat.Value[3][2] -= f.Z * offset;
+			}
 		}
 	}
 
-	static void ApplyDepthOffset(::Effekseer::Matrix43& mat, const ::Effekseer::Matrix44& camera, ::Effekseer::Vector3D& scaleValues, float depthOffset, bool isDepthOffsetScaledWithCamera, bool isDepthOffsetScaledWithEffect)
+	static void ApplyDepthOffset(::Effekseer::Matrix43& mat, const ::Effekseer::Matrix44& camera, ::Effekseer::Vector3D& scaleValues, float depthOffset, bool isDepthOffsetScaledWithCamera, bool isDepthOffsetScaledWithEffect, bool isRightHand)
 {
 	if (depthOffset != 0)
 	{
@@ -115,14 +123,23 @@ namespace EffekseerRenderer
 			}
 		}
 
-		mat.Value[3][0] += f.X * offset;
-		mat.Value[3][1] += f.Y * offset;
-		mat.Value[3][2] += f.Z * offset;
+		if (isRightHand)
+		{
+			mat.Value[3][0] += f.X * offset;
+			mat.Value[3][1] += f.Y * offset;
+			mat.Value[3][2] += f.Z * offset;
+		}
+		else
+		{
+			mat.Value[3][0] -= f.X * offset;
+			mat.Value[3][1] -= f.Y * offset;
+			mat.Value[3][2] -= f.Z * offset;
+		}
 
 	}
 }
 
-static void ApplyDepthOffset(::Effekseer::Matrix44& mat, const ::Effekseer::Matrix44& camera, float depthOffset, bool isDepthOffsetScaledWithCamera, bool isDepthOffsetScaledWithEffect)
+	static void ApplyDepthOffset(::Effekseer::Matrix44& mat, const ::Effekseer::Matrix44& camera, float depthOffset, bool isDepthOffsetScaledWithCamera, bool isDepthOffsetScaledWithEffect, bool isRightHand)
 {
 	if (depthOffset != 0)
 	{
@@ -174,9 +191,18 @@ static void ApplyDepthOffset(::Effekseer::Matrix44& mat, const ::Effekseer::Matr
 			}
 		}
 
-		mat.Values[3][0] += f.X * offset;
-		mat.Values[3][1] += f.Y * offset;
-		mat.Values[3][2] += f.Z * offset;
+		if (isRightHand)
+		{
+			mat.Values[3][0] += f.X * offset;
+			mat.Values[3][1] += f.Y * offset;
+			mat.Values[3][2] += f.Z * offset;
+		}
+		else
+		{
+			mat.Values[3][0] -= f.X * offset;
+			mat.Values[3][1] -= f.Y * offset;
+			mat.Values[3][2] -= f.Z * offset;
+		}
 
 	}
 }
@@ -1274,7 +1300,7 @@ public:
 					vcb->ModelMatrix[num] = m_matrixes[loop+num];
 
 					// DepthOffset
-					ApplyDepthOffset(vcb->ModelMatrix[num], camera, param.DepthOffset, param.IsDepthOffsetScaledWithCamera, param.IsDepthOffsetScaledWithParticleScale);
+					ApplyDepthOffset(vcb->ModelMatrix[num], camera, param.DepthOffset, param.IsDepthOffsetScaledWithCamera, param.IsDepthOffsetScaledWithParticleScale, param.IsRightHand);
 	
 					vcb->ModelUV[num][0] = m_uv[loop+num].X;
 					vcb->ModelUV[num][1] = m_uv[loop+num].Y;
@@ -1310,7 +1336,7 @@ public:
 				vcb->ModelUV[0][3] = m_uv[loop].Height;
 
 				// DepthOffset
-				ApplyDepthOffset(vcb->ModelMatrix[0], camera, param.DepthOffset, param.IsDepthOffsetScaledWithCamera, param.IsDepthOffsetScaledWithParticleScale);
+				ApplyDepthOffset(vcb->ModelMatrix[0], camera, param.DepthOffset, param.IsDepthOffsetScaledWithCamera, param.IsDepthOffsetScaledWithParticleScale, param.IsRightHand);
 				
 				ColorToFloat4( m_colors[loop], vcb->ModelColor[0] );
 				shader_->SetConstantBuffer();
@@ -2050,7 +2076,7 @@ protected:
 			mat_rot.Value[3][1] = t.Y;
 			mat_rot.Value[3][2] = t.Z;
 
-			ApplyDepthOffset(mat_rot, camera, s, parameter.DepthOffset, parameter.IsDepthOffsetScaledWithCamera, parameter.IsDepthOffsetScaledWithParticleScale);
+			ApplyDepthOffset(mat_rot, camera, s, parameter.DepthOffset, parameter.IsDepthOffsetScaledWithCamera, parameter.IsDepthOffsetScaledWithParticleScale, parameter.IsRightHand);
 			
 			if( m_instanceCount > 1 )
 			{
@@ -2078,7 +2104,7 @@ protected:
 		{
 			auto mat = instanceParameter.SRTMatrix43;
 
-			ApplyDepthOffset(mat, camera, parameter.DepthOffset, parameter.IsDepthOffsetScaledWithCamera, parameter.IsDepthOffsetScaledWithParticleScale);
+			ApplyDepthOffset(mat, camera, parameter.DepthOffset, parameter.IsDepthOffsetScaledWithCamera, parameter.IsDepthOffsetScaledWithParticleScale, parameter.IsRightHand);
 
 			if( m_instanceCount > 1 )
 			{
@@ -2372,7 +2398,7 @@ protected:
 			mat_rot.Value[3][1] = t.Y;
 			mat_rot.Value[3][2] = t.Z;
 	
-			ApplyDepthOffset(mat_rot, camera, s, parameter.DepthOffset, parameter.IsDepthOffsetScaledWithCamera, parameter.IsDepthOffsetScaledWithParticleScale);
+			ApplyDepthOffset(mat_rot, camera, s, parameter.DepthOffset, parameter.IsDepthOffsetScaledWithCamera, parameter.IsDepthOffsetScaledWithParticleScale, parameter.IsRightHand);
 
 			TransformVertexes( verteies, 4, mat_rot );
 		}
@@ -2380,7 +2406,7 @@ protected:
 		{
 			auto mat = instanceParameter.SRTMatrix43;
 
-			ApplyDepthOffset(mat, camera, parameter.DepthOffset, parameter.IsDepthOffsetScaledWithCamera, parameter.IsDepthOffsetScaledWithParticleScale);
+			ApplyDepthOffset(mat, camera, parameter.DepthOffset, parameter.IsDepthOffsetScaledWithCamera, parameter.IsDepthOffsetScaledWithParticleScale, parameter.IsRightHand);
 
 			for( int i = 0; i < 4; i++ )
 			{
