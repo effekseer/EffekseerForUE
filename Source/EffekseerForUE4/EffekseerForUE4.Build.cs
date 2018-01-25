@@ -4,7 +4,8 @@ using UnrealBuildTool;
 
 public class EffekseerForUE4 : ModuleRules
 {
-	public EffekseerForUE4(TargetInfo Target)
+	public EffekseerForUE4(ReadOnlyTargetRules Target)
+		: base(Target)
 	{
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore" });
 
