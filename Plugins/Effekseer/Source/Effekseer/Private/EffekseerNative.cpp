@@ -13070,11 +13070,6 @@ ManagerImplemented::ManagerImplemented( int instance_max, bool autoFlip )
 	, m_cullingWorld	(NULL)
 	, m_culled(false)
 
-	, m_MallocFunc(NULL)
-	, m_FreeFunc(NULL)
-	, m_randFunc(NULL)
-	, m_randMax(0)
-
 	, m_spriteRenderer(NULL)
 	, m_ribbonRenderer(NULL)
 	, m_ringRenderer(NULL)
@@ -13082,6 +13077,11 @@ ManagerImplemented::ManagerImplemented( int instance_max, bool autoFlip )
 	, m_trackRenderer(NULL)
 
 	, m_soundPlayer(NULL)
+	
+	, m_MallocFunc(NULL)
+	, m_FreeFunc(NULL)
+	, m_randFunc(NULL)
+	, m_randMax(0)
 {
 	m_setting = Setting::Create();
 
@@ -14418,8 +14418,8 @@ void InstanceContainer::operator delete( void* p, Manager* pManager )
 //----------------------------------------------------------------------------------
 InstanceContainer::InstanceContainer( Manager* pManager, EffectNode* pEffectNode, InstanceGlobal* pGlobal, int ChildrenCount )
 	: m_pManager		( pManager )
-	, m_pGlobal			( pGlobal )
 	, m_pEffectNode((EffectNodeImplemented*) pEffectNode)
+	, m_pGlobal			( pGlobal )
 	, m_Children		( NULL )
 	, m_ChildrenCount	( ChildrenCount )
 	, m_headGroups		( NULL )
