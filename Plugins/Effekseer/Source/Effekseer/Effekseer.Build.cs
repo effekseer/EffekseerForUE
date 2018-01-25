@@ -4,7 +4,8 @@ namespace UnrealBuildTool.Rules
 {
 	public class Effekseer : ModuleRules
 	{
-		public Effekseer(TargetInfo Target)
+		public Effekseer(ReadOnlyTargetRules Target)
+			: base(Target)
 		{
 			PublicIncludePaths.AddRange(
 				new string[] {
