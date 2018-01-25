@@ -7159,14 +7159,6 @@ private:
 	EFK_CHAR**		m_ImagePaths;
 	TextureData**	m_pImages;
 
-	int	m_normalImageCount;
-	EFK_CHAR**		m_normalImagePaths;
-	TextureData**	m_normalImages;
-	
-	int	m_distortionImageCount;
-	EFK_CHAR**		m_distortionImagePaths;
-	TextureData**	m_distortionImages;
-
 	int	m_WaveCount;
 	EFK_CHAR**		m_WavePaths;
 	void**			m_pWaves;
@@ -7187,6 +7179,14 @@ private:
 
 	// 子ノード
 	EffectNode* m_pRoot;
+
+	int	m_normalImageCount;
+	EFK_CHAR**		m_normalImagePaths;
+	TextureData**	m_normalImages;
+	
+	int	m_distortionImageCount;
+	EFK_CHAR**		m_distortionImagePaths;
+	TextureData**	m_distortionImages;
 
 	/* カリング */
 	struct
