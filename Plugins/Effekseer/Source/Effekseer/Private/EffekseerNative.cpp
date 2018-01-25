@@ -7159,6 +7159,14 @@ private:
 	EFK_CHAR**		m_ImagePaths;
 	TextureData**	m_pImages;
 
+	int	m_normalImageCount;
+	EFK_CHAR**		m_normalImagePaths;
+	TextureData**	m_normalImages;
+	
+	int	m_distortionImageCount;
+	EFK_CHAR**		m_distortionImagePaths;
+	TextureData**	m_distortionImages;
+
 	int	m_WaveCount;
 	EFK_CHAR**		m_WavePaths;
 	void**			m_pWaves;
@@ -7179,14 +7187,6 @@ private:
 
 	// 子ノード
 	EffectNode* m_pRoot;
-
-	int	m_normalImageCount;
-	EFK_CHAR**		m_normalImagePaths;
-	TextureData**	m_normalImages;
-	
-	int	m_distortionImageCount;
-	EFK_CHAR**		m_distortionImagePaths;
-	TextureData**	m_distortionImages;
 
 	/* カリング */
 	struct
@@ -7432,7 +7432,7 @@ private:
 			, IsRemoving				( false )
 			, IsParameterChanged		( false )
 			, DoUseBaseMatrix			( false )
-			, RemovingCallback			( NULL )
+			, RemovingCallback			(NULL)
 			, Speed						( 1.0f )
 			, Self						( -1 )
 		{
@@ -8562,8 +8562,11 @@ public:
 	// 親の変換用行列
 	Matrix43		m_ParentMatrix43;
 
-	// 行列が計算済かどうか
-	bool			m_MatrixCalculated;
+	// 変換用行列が計算済かどうか
+	bool			m_GlobalMatrix43Calculated;
+
+	// 親の変換用行列が計算済かどうか
+	bool			m_ParentMatrix43Calculated;
 
 	/* 時間を進めるかどうか? */
 	bool			m_stepTime;
@@ -9123,12 +9126,12 @@ namespace Effekseer
 EffectNodeImplemented::EffectNodeImplemented(Effect* effect, unsigned char*& pos)
 	: m_effect		( effect )
 	, m_userData		( NULL )
-	, IsRendered		( true )
+	, IsRendered		(true)
 	, TranslationFCurve	( NULL )
 	, RotationFCurve	( NULL )
 	, ScalingFCurve		( NULL )
-	, SoundType			( ParameterSoundType_None )
-	, RenderingOrder	( RenderingOrder_FirstCreatedInstanceIsFirst )
+	, SoundType			(ParameterSoundType_None)
+	, RenderingOrder	(RenderingOrder_FirstCreatedInstanceIsFirst)
 {
 }
 
@@ -12101,6 +12104,12 @@ EffectImplemented::EffectImplemented( Manager* pManager, void* pData, int size )
 	, m_ImageCount		( 0 )
 	, m_ImagePaths		( NULL )
 	, m_pImages			( NULL )
+	, m_normalImageCount(0)
+	, m_normalImagePaths(nullptr)
+	, m_normalImages(nullptr)
+	, m_distortionImageCount(0)
+	, m_distortionImagePaths(nullptr)
+	, m_distortionImages(nullptr)
 	, m_WaveCount		( 0 )
 	, m_WavePaths		( NULL )
 	, m_pWaves			( NULL )
@@ -12111,14 +12120,6 @@ EffectImplemented::EffectImplemented( Manager* pManager, void* pData, int size )
 	, m_maginificationExternal	( 1.0f )
 	, m_defaultRandomSeed	(-1)
 	, m_pRoot			( NULL )
-
-	, m_normalImageCount(0)
-	, m_normalImagePaths(nullptr)
-	, m_normalImages(nullptr)
-
-	, m_distortionImageCount(0)
-	, m_distortionImagePaths(nullptr)
-	, m_distortionImages(nullptr)
 
 {
 	ES_SAFE_ADDREF( m_pManager );
@@ -13077,7 +13078,7 @@ ManagerImplemented::ManagerImplemented( int instance_max, bool autoFlip )
 	, m_trackRenderer(NULL)
 
 	, m_soundPlayer(NULL)
-	
+
 	, m_MallocFunc(NULL)
 	, m_FreeFunc(NULL)
 	, m_randFunc(NULL)
@@ -14419,7 +14420,7 @@ void InstanceContainer::operator delete( void* p, Manager* pManager )
 InstanceContainer::InstanceContainer( Manager* pManager, EffectNode* pEffectNode, InstanceGlobal* pGlobal, int ChildrenCount )
 	: m_pManager		( pManager )
 	, m_pEffectNode((EffectNodeImplemented*) pEffectNode)
-	, m_pGlobal			( pGlobal )
+	, m_pGlobal			(pGlobal)
 	, m_Children		( NULL )
 	, m_ChildrenCount	( ChildrenCount )
 	, m_headGroups		( NULL )
@@ -14737,9 +14738,10 @@ Instance::Instance(Manager* pManager, EffectNode* pEffectNode, InstanceContainer
 	, m_LivedTime(0)
 	, m_LivingTime(0)
 	, uvTimeOffset(0)
+	, m_GlobalMatrix43Calculated(false)
+	, m_ParentMatrix43Calculated(false)
 	, m_flexibleGeneratedChildrenCount(nullptr)
 	, m_flexibleNextGenerationTime(nullptr)
-	, m_MatrixCalculated(false)
 	, m_stepTime(false)
 	, m_sequenceNumber(0)
 {
@@ -14818,8 +14820,9 @@ void Instance::Initialize( Instance* parent, int32_t instanceNumber )
 {
 	assert(this->m_pContainer != nullptr);
 	
-	// Invalidate own matrix
-	m_MatrixCalculated = false;
+	// Invalidate matrix
+	m_GlobalMatrix43Calculated = false;
+	m_ParentMatrix43Calculated = false;
 
 	auto instanceGlobal = this->m_pContainer->GetRootInstance();
 
@@ -15367,9 +15370,10 @@ void Instance::Update( float deltaFrame, bool shown )
 {
 	assert(this->m_pContainer != nullptr);
 	
-	// Invalidate own matrix
-	m_MatrixCalculated = false;
-	
+	// Invalidate matrix
+	m_GlobalMatrix43Calculated = false;
+	m_ParentMatrix43Calculated = false;
+
 	auto instanceGlobal = this->m_pContainer->GetRootInstance();
 
 	if (m_stepTime && m_pEffectNode->GetType() != EFFECT_NODE_TYPE_ROOT)
@@ -15411,6 +15415,7 @@ void Instance::Update( float deltaFrame, bool shown )
 	/* 親の削除処理 */
 	if (m_pParent != NULL && m_pParent->GetState() != INSTANCE_STATE_ACTIVE)
 	{
+		CalculateParentMatrix( deltaFrame );
 		m_pParent = nullptr;
 	}
 
@@ -15545,7 +15550,7 @@ void Instance::Update( float deltaFrame, bool shown )
 void Instance::CalculateMatrix( float deltaFrame )
 {
 	// 計算済なら終了
-	if( m_MatrixCalculated ) return;
+	if( m_GlobalMatrix43Calculated ) return;
 	
 	//if( m_sequenceNumber == ((ManagerImplemented*)m_pManager)->GetSequenceNumber() ) return;
 	m_sequenceNumber = ((ManagerImplemented*)m_pManager)->GetSequenceNumber();
@@ -15802,11 +15807,14 @@ void Instance::CalculateMatrix( float deltaFrame )
 		}
 	}
 
-	m_MatrixCalculated = true;
+	m_GlobalMatrix43Calculated = true;
 }
 
 void Instance::CalculateParentMatrix( float deltaFrame )
 {
+	// 計算済なら終了
+	if( m_ParentMatrix43Calculated ) return;
+
 	// 親の行列を計算
 	m_pParent->CalculateMatrix( deltaFrame );
 
@@ -15880,6 +15888,8 @@ void Instance::CalculateParentMatrix( float deltaFrame )
 		// Rootの場合
 		m_ParentMatrix43 = m_pParent->GetGlobalMatrix43();
 	}
+
+	m_ParentMatrix43Calculated = true;
 }
 
 //----------------------------------------------------------------------------------
