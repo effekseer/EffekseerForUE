@@ -4692,8 +4692,8 @@ void* Thread::ThreadProc( void* arguments )
 //
 //-----------------------------------------------------------------------------------
 Thread::Thread()
-	: m_running		( false )
-	, m_thread		()
+	: m_thread		()
+	, m_running		( false )
 	, m_data		( NULL )
 	, m_mainProc	( NULL )
 {
@@ -7159,14 +7159,6 @@ private:
 	EFK_CHAR**		m_ImagePaths;
 	TextureData**	m_pImages;
 
-	int	m_normalImageCount;
-	EFK_CHAR**		m_normalImagePaths;
-	TextureData**	m_normalImages;
-	
-	int	m_distortionImageCount;
-	EFK_CHAR**		m_distortionImagePaths;
-	TextureData**	m_distortionImages;
-
 	int	m_WaveCount;
 	EFK_CHAR**		m_WavePaths;
 	void**			m_pWaves;
@@ -7187,6 +7179,14 @@ private:
 
 	// 子ノード
 	EffectNode* m_pRoot;
+
+	int	m_normalImageCount;
+	EFK_CHAR**		m_normalImagePaths;
+	TextureData**	m_normalImages;
+	
+	int	m_distortionImageCount;
+	EFK_CHAR**		m_distortionImagePaths;
+	TextureData**	m_distortionImages;
 
 	/* カリング */
 	struct
@@ -7431,8 +7431,8 @@ private:
 			, IsShown					( true )
 			, IsRemoving				( false )
 			, IsParameterChanged		( false )
-			, RemovingCallback			( NULL )
 			, DoUseBaseMatrix			( false )
+			, RemovingCallback			( NULL )
 			, Speed						( 1.0f )
 			, Self						( -1 )
 		{
@@ -9122,13 +9122,13 @@ namespace Effekseer
 //----------------------------------------------------------------------------------
 EffectNodeImplemented::EffectNodeImplemented(Effect* effect, unsigned char*& pos)
 	: m_effect		( effect )
-	, IsRendered		( true )
-	, SoundType			( ParameterSoundType_None )
-	, RenderingOrder	( RenderingOrder_FirstCreatedInstanceIsFirst )
 	, m_userData		( NULL )
+	, IsRendered		( true )
 	, TranslationFCurve	( NULL )
 	, RotationFCurve	( NULL )
 	, ScalingFCurve		( NULL )
+	, SoundType			( ParameterSoundType_None )
+	, RenderingOrder	( RenderingOrder_FirstCreatedInstanceIsFirst )
 {
 }
 
@@ -13070,11 +13070,6 @@ ManagerImplemented::ManagerImplemented( int instance_max, bool autoFlip )
 	, m_cullingWorld	(NULL)
 	, m_culled(false)
 
-	, m_MallocFunc(NULL)
-	, m_FreeFunc(NULL)
-	, m_randFunc(NULL)
-	, m_randMax(0)
-
 	, m_spriteRenderer(NULL)
 	, m_ribbonRenderer(NULL)
 	, m_ringRenderer(NULL)
@@ -13082,6 +13077,11 @@ ManagerImplemented::ManagerImplemented( int instance_max, bool autoFlip )
 	, m_trackRenderer(NULL)
 
 	, m_soundPlayer(NULL)
+	
+	, m_MallocFunc(NULL)
+	, m_FreeFunc(NULL)
+	, m_randFunc(NULL)
+	, m_randMax(0)
 {
 	m_setting = Setting::Create();
 
@@ -14418,8 +14418,8 @@ void InstanceContainer::operator delete( void* p, Manager* pManager )
 //----------------------------------------------------------------------------------
 InstanceContainer::InstanceContainer( Manager* pManager, EffectNode* pEffectNode, InstanceGlobal* pGlobal, int ChildrenCount )
 	: m_pManager		( pManager )
-	, m_pGlobal			( pGlobal )
 	, m_pEffectNode((EffectNodeImplemented*) pEffectNode)
+	, m_pGlobal			( pGlobal )
 	, m_Children		( NULL )
 	, m_ChildrenCount	( ChildrenCount )
 	, m_headGroups		( NULL )
@@ -14737,11 +14737,11 @@ Instance::Instance(Manager* pManager, EffectNode* pEffectNode, InstanceContainer
 	, m_LivedTime(0)
 	, m_LivingTime(0)
 	, uvTimeOffset(0)
+	, m_flexibleGeneratedChildrenCount(nullptr)
+	, m_flexibleNextGenerationTime(nullptr)
 	, m_MatrixCalculated(false)
 	, m_stepTime(false)
 	, m_sequenceNumber(0)
-	, m_flexibleGeneratedChildrenCount(nullptr)
-	, m_flexibleNextGenerationTime(nullptr)
 {
 	m_generatedChildrenCount = m_fixedGeneratedChildrenCount;
 	m_nextGenerationTime = m_fixedNextGenerationTime;
