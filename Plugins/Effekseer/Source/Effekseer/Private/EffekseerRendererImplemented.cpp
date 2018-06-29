@@ -328,7 +328,7 @@ namespace EffekseerRendererUE4
 		return m_lightDirection;
 	}
 
-	void RendererImplemented::SetLightDirection(::Effekseer::Vector3D& direction)
+	void RendererImplemented::SetLightDirection(const ::Effekseer::Vector3D& direction)
 	{
 		m_lightDirection = direction;
 	}
@@ -338,7 +338,7 @@ namespace EffekseerRendererUE4
 		return m_lightColor;
 	}
 
-	void RendererImplemented::SetLightColor(::Effekseer::Color& color)
+	void RendererImplemented::SetLightColor(const ::Effekseer::Color& color)
 	{
 		m_lightColor = color;
 	}
@@ -348,7 +348,7 @@ namespace EffekseerRendererUE4
 		return m_lightAmbient;
 	}
 
-	void RendererImplemented::SetLightAmbientColor(::Effekseer::Color& color)
+	void RendererImplemented::SetLightAmbientColor(const ::Effekseer::Color& color)
 	{
 		m_lightAmbient = color;
 	}
@@ -707,15 +707,33 @@ namespace EffekseerRendererUE4
 		return mat;
 	}
 
+	Shader* RendererImplemented::GetShader(bool useTexture, bool useDistortion) const
+	{
+		if (useDistortion) return m_distortionShader;
+		return m_stanShader;
+	}
+
 	void RendererImplemented::BeginShader(Shader* shader)
 	{
 		m_currentShader = shader;
 		m_isDistorting = m_currentShader != m_stanShader;
 	}
 
-	void RendererImplemented::EndShader(Shader* shader)
+	void RendererImplemented::RendererImplemented::EndShader(Shader* shader)
 	{
-		
+
+	}
+
+	void RendererImplemented::SetVertexBufferToShader(const void* data, int32_t size)
+	{
+		assert(m_currentShader != nullptr);
+		memcpy(m_currentShader->GetVertexConstantBuffer(), data, size);
+	}
+
+	void RendererImplemented::SetPixelBufferToShader(const void* data, int32_t size)
+	{
+		assert(m_currentShader != nullptr);
+		memcpy(m_currentShader->GetPixelConstantBuffer(), data, size);
 	}
 
 	void RendererImplemented::SetTextures(Shader* shader, Effekseer::TextureData** textures, int32_t count)

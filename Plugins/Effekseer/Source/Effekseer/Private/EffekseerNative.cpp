@@ -45,7 +45,7 @@
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-typedef uint16_t			EFK_CHAR;
+typedef char16_t			EFK_CHAR;
 
 //----------------------------------------------------------------------------------
 //
@@ -62,6 +62,7 @@ class ManagerImplemented;
 class Effect;
 class EffectImplemented;
 class EffectNode;
+class EffectNodeImplemented;
 class EffectNodeRoot;
 class EffectNodeSprite;
 class EffectNodeRibbon;
@@ -2347,6 +2348,21 @@ Vector3D Vector3D::operator / ( const float& o ) const
 	return Vector3D( X / o, Y / o, Z / o );
 }
 
+Vector3D Vector3D::operator * (const Vector3D& o) const
+{
+	return Vector3D(X * o.X, Y * o.Y, Z * o.Z);
+}
+
+Vector3D Vector3D::operator / (const Vector3D& o) const
+{
+	return Vector3D(X / o.X, Y / o.Y, Z / o.Z);
+}
+
+bool Vector3D::operator == (const Vector3D& o)
+{
+	return this->X == o.X && this->Y == o.Y && this->Z == o.Z;
+}
+
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
@@ -2521,19 +2537,17 @@ Vector3D& Vector3D::Transform( Vector3D& o, const Vector3D& in, const Matrix44& 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-namespace Effekseer
-{
+#if (_M_IX86_FP >= 2) || defined(__SSE__)
+#define EFK_SSE2
+#elif defined(__ARM_NEON__)
+#define EFK_NEON
+#endif
+
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-Color::Color()
-	: R	( 255 )
-	, G	( 255 )
-	, B	( 255 )
-	, A	( 255 )
+namespace Effekseer
 {
-
-}
 
 //----------------------------------------------------------------------------------
 //
@@ -2544,18 +2558,163 @@ Color::Color( uint8_t r, uint8_t g, uint8_t b, uint8_t a )
 	, B	( b )
 	, A	( a )
 {
-
 }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void Color::Mul( Color& o, const Color& in1, const Color& in2 )
+Color Color::Mul( Color in1, Color in2 )
 {
+#if defined(EFK_SSE2)
+	__m128i s1 = _mm_cvtsi32_si128(*(int32_t*)&in1);
+	__m128i s2 = _mm_cvtsi32_si128(*(int32_t*)&in2);
+	__m128i zero = _mm_setzero_si128();
+	__m128i mask = _mm_set1_epi16(1);
+
+	s1 = _mm_unpacklo_epi8(s1, zero);
+	s2 = _mm_unpacklo_epi8(s2, zero);
+
+	__m128i r0 = _mm_mullo_epi16(s1, s2);
+	__m128i r1 = _mm_srli_epi16(r0, 8);
+	__m128i r2 = _mm_and_si128(r0, mask);
+	__m128i r3 = _mm_or_si128(r2, r1);
+	__m128i res = _mm_packus_epi16(r3, zero);
+	
+	Color o;
+	*(int*)&o = _mm_cvtsi128_si32(res);
+	return o;
+#elif defined(EFK_NEON)
+	uint8x8_t s1 = vreinterpret_u8_u32(vmov_n_u32(*(uint32_t*)&in1));
+	uint8x8_t s2 = vreinterpret_u8_u32(vmov_n_u32(*(uint32_t*)&in2));
+	uint16x8_t mask = vmovq_n_u16(1);
+	uint16x8_t s3 = vmovl_u8(s1);
+	uint16x8_t s4 = vmovl_u8(s2);
+	uint16x8_t r0 = vmulq_u16(s3, s4);
+	uint16x8_t r1 = vshrq_n_u16(r0, 8);
+	uint16x8_t r2 = vandq_u16(r0, mask);
+	uint16x8_t r3 = vorrq_u16(r2, r1);
+	uint8x8_t res = vqmovn_u16(r3);
+	
+	Color o;
+	*(uint32_t*)&o = vget_lane_u32(vreinterpret_u32_u8(res), 0);
+	return o;
+#else
+	Color o;
 	o.R = (uint8_t)((float)in1.R * (float)in2.R / 255.0f);
 	o.G = (uint8_t)((float)in1.G * (float)in2.G / 255.0f);
 	o.B = (uint8_t)((float)in1.B * (float)in2.B / 255.0f);
 	o.A = (uint8_t)((float)in1.A * (float)in2.A / 255.0f);
+	return o;
+#endif
+}
+
+//----------------------------------------------------------------------------------
+//
+//----------------------------------------------------------------------------------
+Color Color::Mul( Color in1, float in2 )
+{
+#if defined(EFK_SSE2)
+	__m128i s1 = _mm_cvtsi32_si128(*(int32_t*)&in1);
+	__m128i s2 = _mm_set1_epi16((int16_t)(in2 * 256));
+	__m128i zero = _mm_setzero_si128();
+	
+	s1 = _mm_unpacklo_epi8(s1, zero);
+
+	__m128i res = _mm_mullo_epi16(s1, s2);
+	res = _mm_srli_epi16(res, 8);
+	res = _mm_packus_epi16(res, zero);
+	
+	Color o;
+	*(int*)&o = _mm_cvtsi128_si32(res);
+	return o;
+#elif defined(EFK_NEON)
+	uint8x8_t s1 = vreinterpret_u8_u32(vmov_n_u32(*(uint32_t*)&in1));
+	uint16x8_t s2 = vmovq_n_u16((uint16_t)(in2 * 256));
+	uint16x8_t s3 = vmovl_u8(s1);
+	uint16x8_t r0 = vmulq_u16(s3, s2);
+	uint16x8_t r1 = vshrq_n_u16(r0, 8);
+	uint8x8_t res = vqmovn_u16(r1);
+	
+	Color o;
+	*(uint32_t*)&o = vget_lane_u32(vreinterpret_u32_u8(res), 0);
+	return o;
+#else
+	Color o;
+	o.R = (uint8_t)Clamp((int)((float)in1.R * in2), 255, 0);
+	o.G = (uint8_t)Clamp((int)((float)in1.G * in2), 255, 0);
+	o.B = (uint8_t)Clamp((int)((float)in1.B * in2), 255, 0);
+	o.A = (uint8_t)Clamp((int)((float)in1.A * in2), 255, 0);
+	return o;
+#endif
+}
+
+//----------------------------------------------------------------------------------
+//
+//----------------------------------------------------------------------------------
+Color Color::Lerp( const Color in1, const Color in2, float t )
+{
+	/*
+#if defined(EFK_SSE2)
+	__m128i s1 = _mm_cvtsi32_si128(*(int32_t*)&in1);
+	__m128i s2 = _mm_cvtsi32_si128(*(int32_t*)&in2);
+	__m128i tm = _mm_set1_epi16((int16_t)(t * 256));
+	__m128i zero = _mm_setzero_si128();
+
+	s1 = _mm_unpacklo_epi8(s1, zero);
+	s2 = _mm_unpacklo_epi8(s2, zero);
+	
+	__m128i r0 = _mm_subs_epi16(s2, s1);
+	__m128i r1 = _mm_mullo_epi16(r0, tm);
+	__m128i r2 = _mm_srai_epi16(r1, 8);
+	__m128i r3 = _mm_adds_epi16(s1, r2);
+	__m128i res = _mm_packus_epi16(r3, zero);
+	
+	Color o;
+	*(int*)&o = _mm_cvtsi128_si32(res);
+	return o;
+#elif defined(EFK_NEON)
+
+#ifdef __ANDROID__
+	uint8x8_t s1 = vreinterpret_u8_u32(vmov_n_u32(*(uint32_t*)&in1));
+	uint8x8_t s2 = vreinterpret_u8_u32(vmov_n_u32(*(uint32_t*)&in2));
+	int16x8_t tm = vmovq_n_s16((int16_t)(t * 256));
+	uint16x8_t s3 = vmovl_u8(s1);
+	uint16x8_t s4 = vmovl_u8(s2);
+	int16x8_t r0 = (int16x8_t)vqsubq_s16((int16x8_t)s4, (int16x8_t)s3);
+	int16x8_t r1 = vmulq_s16(r0, tm);
+	int16x8_t r2 = vrshrq_n_s16(r1, 8);
+	int16x8_t r3 = (int16x8_t)vqaddq_s16((int16x8_t)s3, r2);
+	uint8x8_t res = (uint8x8_t)vqmovn_u16((uint16x8_t)r3);
+
+	Color o;
+	*(uint32_t*)&o = vget_lane_u32(vreinterpret_u32_u8(res), 0);
+	return o;
+#else
+	uint8x8_t s1 = vreinterpret_u8_u32(vmov_n_u32(*(uint32_t*)&in1));
+	uint8x8_t s2 = vreinterpret_u8_u32(vmov_n_u32(*(uint32_t*)&in2));
+	int16x8_t tm = vmovq_n_s16((int16_t)(t * 256));
+	uint16x8_t s3 = vmovl_u8(s1);
+	uint16x8_t s4 = vmovl_u8(s2);
+	int16x8_t r0 = vqsubq_s16(s4, s3);
+	int16x8_t r1 = vmulq_s16(r0, tm);
+	int16x8_t r2 = vrshrq_n_s16(r1, 8);
+	int16x8_t r3 = vqaddq_s16(s3, r2);
+	uint8x8_t res = vqmovn_u16(r3);
+	
+	Color o;
+	*(uint32_t*)&o = vget_lane_u32(vreinterpret_u32_u8(res), 0);
+	return o;
+#endif
+
+#else
+	*/
+	Color o;
+	o.R = (uint8_t)Clamp( in1.R + (in2.R - in1.R) * t, 255, 0 );
+	o.G = (uint8_t)Clamp( in1.G + (in2.G - in1.G) * t, 255, 0 );
+	o.B = (uint8_t)Clamp( in1.B + (in2.B - in1.B) * t, 255, 0 );
+	o.A = (uint8_t)Clamp( in1.A + (in2.A - in1.A) * t, 255, 0 );
+	return o;
+//#endif
 }
 
 //----------------------------------------------------------------------------------
@@ -4196,53 +4355,8 @@ struct easing_vector3d
 	}
 };
 
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
-struct color
-{
-	uint8_t		r;
-	uint8_t		g;
-	uint8_t		b;
-	uint8_t		a;
-	
-	void reset()
-	{
-		assert( sizeof(color) == 4 );
-		memset( this, 255, sizeof(color) );
-	}
-
-	void setValueToArg( Color& c ) const
-	{
-		c.R = r;
-		c.G = g;
-		c.B = b;
-		c.A = a;
-	}
-
-	static color mul( const color& in1, const color& in2 )
-	{
-		color o;
-		o.r = (uint8_t)((float)in1.r * (float)in2.r / 255.0f);
-		o.g = (uint8_t)((float)in1.g * (float)in2.g / 255.0f);
-		o.b = (uint8_t)((float)in1.b * (float)in2.b / 255.0f);
-		o.a = (uint8_t)((float)in1.a * (float)in2.a / 255.0f);
-		return o;
-	}
-
-	static color mul( const color& in1, float in2 )
-	{
-		color o;
-		o.r = (uint8_t)((float)in1.r * in2);
-		o.g = (uint8_t)((float)in1.g * in2);
-		o.b = (uint8_t)((float)in1.b * in2);
-		o.a = (uint8_t)((float)in1.a * in2);
-		return o;
-	}
-};
-
-inline color HSVToRGB(color hsv) {
-	int H = hsv.r, S = hsv.g, V = hsv.b;
+inline Color HSVToRGB(Color hsv) {
+	int H = hsv.R, S = hsv.G, V = hsv.B;
 	int Hi, R=0, G=0, B=0, p, q, t;
 	float f, s;
 
@@ -4263,11 +4377,11 @@ inline color HSVToRGB(color hsv) {
 	case 4: R = t; G = p; B = V; break;
 	case 5: R = V; G = p; B = q; break;
 	}
-	color result;
-	result.r = R;
-	result.g = G;
-	result.b = B;
-	result.a = hsv.a;
+	Color result;
+	result.R = R;
+	result.G = G;
+	result.B = B;
+	result.A = hsv.A;
 	return result;
 }
 
@@ -4277,20 +4391,20 @@ inline color HSVToRGB(color hsv) {
 struct random_color
 {
 	ColorMode mode;
-	color	max;
-	color	min;
+	Color	max;
+	Color	min;
 
 	void reset()
 	{
 		assert( sizeof(random_color) == 12 );
 		mode = COLOR_MODE_RGBA;
-		max.reset();
-		min.reset();
+		max = {255, 255, 255, 255};
+		min = {255, 255, 255, 255};
 	};
 
-	color getValue(IRandObject& g) const
+	Color getValue(IRandObject& g) const
 	{
-		color r = getDirectValue( g );
+		Color r = getDirectValue( g );
 		if( mode == COLOR_MODE_HSVA )
 		{
 			r = HSVToRGB( r );
@@ -4298,13 +4412,13 @@ struct random_color
 		return r;
 	}
 	
-	color getDirectValue(IRandObject& g) const
+	Color getDirectValue(IRandObject& g) const
 	{
-		color r;
-		r.r = (uint8_t) (g.GetRand(min.r, max.r));
-		r.g = (uint8_t) (g.GetRand(min.g, max.g));
-		r.b = (uint8_t) (g.GetRand(min.b, max.b));
-		r.a = (uint8_t) (g.GetRand(min.a, max.a));
+		Color r;
+		r.R = (uint8_t) (g.GetRand(min.R, max.R));
+		r.G = (uint8_t) (g.GetRand(min.G, max.G));
+		r.B = (uint8_t) (g.GetRand(min.B, max.B));
+		r.A = (uint8_t) (g.GetRand(min.A, max.A));
 		return r;
 	}
 
@@ -4319,8 +4433,8 @@ struct random_color
 		{
 			mode = COLOR_MODE_RGBA;
 		}
-		max = ReadData<color>( pos );
-		min = ReadData<color>( pos );
+		max = ReadData<Color>( pos );
+		min = ReadData<Color>( pos );
 	}
 };
 
@@ -4335,48 +4449,23 @@ struct easing_color
 	float easingB;
 	float easingC;
 
-	void setValueToArg( color& o, const color& start_, const color& end_, float t ) const
+	void setValueToArg( Color& o, const Color& start_, const Color& end_, float t ) const
 	{
 		assert( start.mode == end.mode );
-		int d_r = end_.r - start_.r;
-		int d_g = end_.g - start_.g;
-		int d_b = end_.b - start_.b;
-		int d_a = end_.a - start_.a;
 		float d = easingA * t * t * t + easingB * t * t + easingC * t;
-		o.r = (uint8_t)Clamp( start_.r + d * d_r, 255.0f, 0.0f );
-		o.g = (uint8_t)Clamp( start_.g + d * d_g, 255.0f, 0.0f );
-		o.b = (uint8_t)Clamp( start_.b + d * d_b, 255.0f, 0.0f );
-		o.a = (uint8_t)Clamp( start_.a + d * d_a, 255.0f, 0.0f );
+		o = Color::Lerp(start_, end_, d);
 		if( start.mode == COLOR_MODE_HSVA )
 		{
 			o = HSVToRGB( o );
 		}
 	}
 
-	void setValueToArg( Color& o, const color& start_, const color& end_, float t ) const
-	{
-		assert( start.mode == end.mode );
-		int d_r = end_.r - start_.r;
-		int d_g = end_.g - start_.g;
-		int d_b = end_.b - start_.b;
-		int d_a = end_.a - start_.a;
-		float d = easingA * t * t * t + easingB * t * t + easingC * t;
-		o.R = (uint8_t)Clamp( start_.r + d * d_r, 255.0f, 0.0f );
-		o.G = (uint8_t)Clamp( start_.g + d * d_g, 255.0f, 0.0f );
-		o.B = (uint8_t)Clamp( start_.b + d * d_b, 255.0f, 0.0f );
-		o.A = (uint8_t)Clamp( start_.a + d * d_a, 255.0f, 0.0f );
-		if( start.mode == COLOR_MODE_HSVA )
-		{
-			*(color*)&o = HSVToRGB( *(color*)&o );
-		}
-	}
-
-	color getStartValue(IRandObject& g) const
+	Color getStartValue(IRandObject& g) const
 	{
 		return start.getDirectValue( g );
 	}
 	
-	color getEndValue(IRandObject& g) const
+	Color getEndValue(IRandObject& g) const
 	{
 		return end.getDirectValue( g);
 	}
@@ -5234,6 +5323,7 @@ public:
 //----------------------------------------------------------------------------------
 namespace Effekseer
 {
+
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
@@ -5264,7 +5354,7 @@ public:
 	{
 		struct
 		{
-			color all;
+			Color all;
 		} fixed;
 
 		struct
@@ -5290,34 +5380,34 @@ public:
 
 	~StandardColorParameter()
 	{
-		if( type == FCurve_RGBA )
+		if (type == FCurve_RGBA)
 		{
-			ES_SAFE_DELETE( fcurve_rgba.FCurve );
+			ES_SAFE_DELETE(fcurve_rgba.FCurve);
 		}
 	}
 
-	void load( uint8_t*& pos, int32_t version )
+	void load(uint8_t*& pos, int32_t version)
 	{
-		memcpy( &type, pos, sizeof(int) );
+		memcpy(&type, pos, sizeof(int));
 		pos += sizeof(int);
-		
-		if( type == Fixed )
+
+		if (type == Fixed)
 		{
-			memcpy( &fixed, pos, sizeof(fixed) );
+			memcpy(&fixed, pos, sizeof(fixed));
 			pos += sizeof(fixed);
 		}
-		else if( type == Random )
+		else if (type == Random)
 		{
-			random.all.load( version, pos );
+			random.all.load(version, pos);
 		}
-		else if( type == Easing )
+		else if (type == Easing)
 		{
-			easing.all.load( version, pos );
+			easing.all.load(version, pos);
 		}
-		else if( type == FCurve_RGBA )
+		else if (type == FCurve_RGBA)
 		{
 			fcurve_rgba.FCurve = new FCurveVectorColor();
-			int32_t size = fcurve_rgba.FCurve->Load(  pos, version );
+			int32_t size = fcurve_rgba.FCurve->Load(pos, version);
 			pos += size;
 		}
 	}
@@ -5358,6 +5448,8 @@ struct ParameterDepthValues
 	float	DepthOffset;
 	bool	IsDepthOffsetScaledWithCamera;
 	bool	IsDepthOffsetScaledWithParticleScale;
+	ZSortType	ZSort;
+	int32_t	DrawingPriority;
 	float	SoftParticle;
 
 	ParameterDepthValues()
@@ -5365,6 +5457,8 @@ struct ParameterDepthValues
 		DepthOffset = 0;
 		IsDepthOffsetScaledWithCamera = false;
 		IsDepthOffsetScaledWithParticleScale = false;
+		ZSort = ZSortType::None;
+		DrawingPriority = 0;
 		SoftParticle = 0.0f;
 	}
 };
@@ -5405,23 +5499,22 @@ struct ParameterTranslationPVA
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
+enum class LocationAbsType : int32_t
+{
+	None = 0,
+	Gravity = 1,
+	AttractiveForce = 2,
+};
+
 struct LocationAbsParameter
 {
-	enum
-	{
-		None = 0,
-		Gravity = 1,
-		AttractiveForce = 2,
-		
-		//UniformlyAttractiveForce = 3,
-		Parameter_DWORD = 0x7fffffff,
-	} type;
+	LocationAbsType type = LocationAbsType::None;
 
 	union
 	{
 		struct
 		{
-		
+
 		} none;
 
 		vector3d	gravity;
@@ -5502,7 +5595,7 @@ enum ParameterScalingType
 	ParameterScalingType_SinglePVA = 3,
 	ParameterScalingType_SingleEasing = 4,
 	ParameterScalingType_FCurve = 5,
-	
+
 	ParameterScalingType_None = 0x7fffffff - 1,
 
 	ParameterScalingType_DWORD = 0x7fffffff,
@@ -5626,30 +5719,30 @@ struct ParameterGenerationLocation
 		} line;
 	};
 
-	void load( uint8_t*& pos, int32_t version)
+	void load(uint8_t*& pos, int32_t version)
 	{
-		memcpy( &EffectsRotation, pos, sizeof(int) );
+		memcpy(&EffectsRotation, pos, sizeof(int));
 		pos += sizeof(int);
 
-		memcpy( &type, pos, sizeof(int) );
+		memcpy(&type, pos, sizeof(int));
 		pos += sizeof(int);
 
-		if( type == TYPE_POINT )
+		if (type == TYPE_POINT)
 		{
-			memcpy( &point, pos, sizeof(point) );
+			memcpy(&point, pos, sizeof(point));
 			pos += sizeof(point);
 		}
-		else if( type == TYPE_SPHERE )
+		else if (type == TYPE_SPHERE)
 		{
-			memcpy( &sphere, pos, sizeof(sphere) );
+			memcpy(&sphere, pos, sizeof(sphere));
 			pos += sizeof(sphere);
 		}
-		else if( type == TYPE_MODEL )
+		else if (type == TYPE_MODEL)
 		{
-			memcpy( &model, pos, sizeof(model) );
+			memcpy(&model, pos, sizeof(model));
 			pos += sizeof(model);
 		}
-		else if( type == TYPE_CIRCLE )
+		else if (type == TYPE_CIRCLE)
 		{
 			if (version < 10)
 			{
@@ -5689,7 +5782,7 @@ struct ParameterRendererCommon
 	bool				Distortion;
 
 	float				DistortionIntensity;
-	
+
 	BindType			ColorBindType;
 
 	enum
@@ -5733,9 +5826,9 @@ struct ParameterRendererCommon
 
 
 	/**
-		@brief	UV Parameter
-		@note
-		for Compatibility
+	@brief	UV Parameter
+	@note
+	for Compatibility
 	*/
 	struct UVScroll_09
 	{
@@ -5766,7 +5859,7 @@ struct ParameterRendererCommon
 				LOOPTYPE_ONCE = 0,
 				LOOPTYPE_LOOP = 1,
 				LOOPTYPE_REVERSELOOP = 2,
-				
+
 				LOOPTYPE_DWORD = 0x7fffffff,
 			} LoopType;
 
@@ -5791,33 +5884,33 @@ struct ParameterRendererCommon
 
 	void reset()
 	{
-		memset( this, 0, sizeof(ParameterRendererCommon) );
+		memset(this, 0, sizeof(ParameterRendererCommon));
 	}
 
-	void load( uint8_t*& pos, int32_t version )
+	void load(uint8_t*& pos, int32_t version)
 	{
-		memset( this, 0, sizeof(ParameterRendererCommon) );
+		memset(this, 0, sizeof(ParameterRendererCommon));
 
-		memcpy( &ColorTextureIndex, pos, sizeof(int) );
+		memcpy(&ColorTextureIndex, pos, sizeof(int));
 		pos += sizeof(int);
 
-		memcpy( &AlphaBlend, pos, sizeof(int) );
+		memcpy(&AlphaBlend, pos, sizeof(int));
 		pos += sizeof(int);
 
-		memcpy( &FilterType, pos, sizeof(int) );
+		memcpy(&FilterType, pos, sizeof(int));
 		pos += sizeof(int);
 
-		memcpy( &WrapType, pos, sizeof(int) );
+		memcpy(&WrapType, pos, sizeof(int));
 		pos += sizeof(int);
 
-		if( version >= 5 )
+		if (version >= 5)
 		{
 			int32_t zwrite, ztest = 0;
 
-			memcpy( &ztest, pos, sizeof(int32_t) );
+			memcpy(&ztest, pos, sizeof(int32_t));
 			pos += sizeof(int32_t);
 
-			memcpy( &zwrite, pos, sizeof(int32_t) );
+			memcpy(&zwrite, pos, sizeof(int32_t));
 			pos += sizeof(int32_t);
 
 			ZWrite = zwrite != 0;
@@ -5829,36 +5922,36 @@ struct ParameterRendererCommon
 			ZTest = true;
 		}
 
-		memcpy( &FadeInType, pos, sizeof(int) );
+		memcpy(&FadeInType, pos, sizeof(int));
 		pos += sizeof(int);
-		
-		if( FadeInType == FADEIN_ON )
+
+		if (FadeInType == FADEIN_ON)
 		{
-			memcpy( &FadeIn, pos, sizeof(FadeIn) );
+			memcpy(&FadeIn, pos, sizeof(FadeIn));
 			pos += sizeof(FadeIn);
 		}
 
-		memcpy( &FadeOutType, pos, sizeof(int) );
+		memcpy(&FadeOutType, pos, sizeof(int));
 		pos += sizeof(int);
-		
-		if( FadeOutType == FADEOUT_ON )
+
+		if (FadeOutType == FADEOUT_ON)
 		{
-			memcpy( &FadeOut, pos, sizeof(FadeOut) );
+			memcpy(&FadeOut, pos, sizeof(FadeOut));
 			pos += sizeof(FadeOut);
 		}
 
-		memcpy( &UVType, pos, sizeof(int) );
+		memcpy(&UVType, pos, sizeof(int));
 		pos += sizeof(int);
 
-		if( UVType == UV_DEFAULT )
+		if (UVType == UV_DEFAULT)
 		{
 		}
-		else if( UVType == UV_FIXED )
+		else if (UVType == UV_FIXED)
 		{
-			memcpy( &UV.Fixed, pos, sizeof(UV.Fixed) );
+			memcpy(&UV.Fixed, pos, sizeof(UV.Fixed));
 			pos += sizeof(UV.Fixed);
 		}
-		else if( UVType == UV_ANIMATION )
+		else if (UVType == UV_ANIMATION)
 		{
 			if (version < 10)
 			{
@@ -5874,7 +5967,7 @@ struct ParameterRendererCommon
 				pos += sizeof(UV.Animation);
 			}
 		}
-		else if( UVType == UV_SCROLL )
+		else if (UVType == UV_SCROLL)
 		{
 			if (version < 10)
 			{
@@ -5930,7 +6023,7 @@ struct ParameterRendererCommon
 
 			memcpy(&DistortionIntensity, pos, sizeof(float));
 			pos += sizeof(float);
-			
+
 		}
 	}
 
@@ -5996,9 +6089,9 @@ enum eRenderingOrder
 //----------------------------------------------------------------------------------
 
 /**
-	@brief	ノードインスタンス生成クラス
-	@note
-	エフェクトのノードの実体を生成する。
+@brief	ノードインスタンス生成クラス
+@note
+エフェクトのノードの実体を生成する。
 */
 class EffectNodeImplemented
 	: public EffectNode
@@ -6024,7 +6117,7 @@ protected:
 	virtual ~EffectNodeImplemented();
 
 	// 読込
-	void LoadParameter( unsigned char*& pos, EffectNode* parent, Setting* setting );
+	void LoadParameter(unsigned char*& pos, EffectNode* parent, Setting* setting);
 
 	// 初期化
 	void Initialize();
@@ -6032,12 +6125,12 @@ protected:
 public:
 
 	/**
-		@brief	\~english Whether to draw the node.
-				\~japanese このノードを描画するか?
+	@brief	\~english Whether to draw the node.
+	\~japanese このノードを描画するか?
 
-		@note
-		\~english 普通は描画されないノードは、描画の種類が変更されて、描画しないノードになる。ただし、色の継承をする場合、描画のみを行わないノードになる。
-		\~japanese For nodes that are not normally rendered, the rendering type is changed to become a node that does not render. However, when color inheritance is done, it becomes a node which does not perform drawing only.
+	@note
+	\~english 普通は描画されないノードは、描画の種類が変更されて、描画しないノードになる。ただし、色の継承をする場合、描画のみを行わないノードになる。
+	\~japanese For nodes that are not normally rendered, the rendering type is changed to become a node that does not render. However, when color inheritance is done, it becomes a node which does not perform drawing only.
 	*/
 	bool IsRendered;
 
@@ -6079,11 +6172,13 @@ public:
 
 	eRenderingOrder				RenderingOrder;
 
+	int32_t						RenderingPriority = -1;
+
 	Effect* GetEffect() const override;
 
 	int GetChildrenCount() const override;
 
-	EffectNode* GetChild( int index ) const override;
+	EffectNode* GetChild(int index) const override;
 
 	EffectBasicRenderParameter GetBasicRenderParameter() override;
 
@@ -6092,74 +6187,76 @@ public:
 	EffectModelParameter GetEffectModelParameter() override;
 
 	/**
-		@brief	描画部分の読込
+	@brief	描画部分の読込
 	*/
 	virtual void LoadRendererParameter(unsigned char*& pos, Setting* setting);
 
 	/**
-		@brief	描画開始
+	@brief	描画開始
 	*/
 	virtual void BeginRendering(int32_t count, Manager* manager);
 
 	/**
-		@brief	グループ描画開始
+	@brief	グループ描画開始
 	*/
 	virtual void BeginRenderingGroup(InstanceGroup* group, Manager* manager);
 
-	/**
-		@brief	描画
-	*/
-	virtual void Rendering(const Instance& instance, Manager* manager);
+	virtual void EndRenderingGroup(InstanceGroup* group, Manager* manager);
 
 	/**
-		@brief	描画終了
+	@brief	描画
+	*/
+	virtual void Rendering(const Instance& instance, const Instance* next_instance, Manager* manager);
+
+	/**
+	@brief	描画終了
 	*/
 	virtual void EndRendering(Manager* manager);
 
 	/**
-		@brief	インスタンスグループ描画時初期化
+	@brief	インスタンスグループ描画時初期化
 	*/
 	virtual void InitializeRenderedInstanceGroup(InstanceGroup& instanceGroup, Manager* manager);
 
 	/**
-		@brief	描画部分初期化
+	@brief	描画部分初期化
 	*/
-	virtual void InitializeRenderedInstance( Instance& instance, Manager* manager );
+	virtual void InitializeRenderedInstance(Instance& instance, Manager* manager);
 
 	/**
-		@brief	描画部分更新
+	@brief	描画部分更新
 	*/
 	virtual void UpdateRenderedInstance(Instance& instance, Manager* manager);
 
 	/**
-		@brief	描画部分更新
+	@brief	描画部分更新
 	*/
-	virtual float GetFadeAlpha( const Instance& instance );
+	virtual float GetFadeAlpha(const Instance& instance);
 
 	/**
-		@brief	サウンド再生
+	@brief	サウンド再生
 	*/
 	virtual void PlaySound_(Instance& instance, SoundTag tag, Manager* manager);
 
 	/**
-		@brief	エフェクトノード生成
+	@brief	エフェクトノード生成
 	*/
 	static EffectNodeImplemented* Create(Effect* effect, EffectNode* parent, unsigned char*& pos);
 
 	/**
-		@brief	ノードの種類取得
+	@brief	ノードの種類取得
 	*/
 	virtual eEffectNodeType GetType() const { return EFFECT_NODE_TYPE_NONE; }
 };
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
+
 }
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
 #endif	// __EFFEKSEER_EFFECTNODE_H__
-
 #ifndef	__EFFEKSEER_ParameterNODE_MODEL_H__
 #define	__EFFEKSEER_ParameterNODE_MODEL_H__
 
@@ -6191,25 +6288,25 @@ public:
 	struct InstanceValues
 	{
 		// 色
-		color _color;
-		color _original;
+		Color _color;
+		Color _original;
 
 		union 
 		{
 			struct
 			{
-				color _color;
+				Color _color;
 			} fixed;
 
 			struct
 			{
-				color _color;
+				Color _color;
 			} random;
 
 			struct
 			{
-				color start;
-				color  end;
+				Color start;
+				Color  end;
 
 			} easing;
 
@@ -6244,7 +6341,7 @@ public:
 
 	void BeginRendering(int32_t count, Manager* manager);
 
-	void Rendering(const Instance& instance, Manager* manager);
+	void Rendering(const Instance& instance, const Instance* next_instance, Manager* manager) override;
 
 	void EndRendering(Manager* manager);
 
@@ -6294,7 +6391,7 @@ struct RibbonAllColorParameter
 	{
 		struct
 		{
-			color all;
+			Color all;
 		} fixed;
 
 		struct
@@ -6323,13 +6420,13 @@ struct RibbonColorParameter
 	{
 		struct
 		{
-		
+
 		} def;
 
 		struct
 		{
-			color l;
-			color r;
+			Color l;
+			Color r;
 		} fixed;
 	};
 };
@@ -6348,7 +6445,7 @@ struct RibbonPositionParameter
 	{
 		struct
 		{
-		
+
 		} def;
 
 		struct
@@ -6370,25 +6467,25 @@ public:
 	struct InstanceValues
 	{
 		// 色
-		color _color;
-		color _original;
+		Color _color;
+		Color _original;
 
-		union 
+		union
 		{
 			struct
 			{
-				color _color;
+				Color _color;
 			} fixed;
 
 			struct
 			{
-				color _color;
+				Color _color;
 			} random;
 
 			struct
 			{
-				color start;
-				color  end;
+				Color start;
+				Color  end;
 
 			} easing;
 
@@ -6396,12 +6493,12 @@ public:
 
 		union
 		{
-	
+
 		} colorValues;
 
 		union
 		{
-	
+
 		} positionValues;
 	};
 
@@ -6420,7 +6517,9 @@ public:
 
 	int RibbonTexture;
 
-	EffectNodeRibbon( Effect* effect, unsigned char*& pos )
+	int32_t	SplineDivision = 1;
+
+	EffectNodeRibbon(Effect* effect, unsigned char*& pos)
 		: EffectNodeImplemented(effect, pos)
 	{
 	}
@@ -6433,9 +6532,11 @@ public:
 
 	void BeginRendering(int32_t count, Manager* manager);
 
-	void BeginRenderingGroup(InstanceGroup* group, Manager* manager);
+	void BeginRenderingGroup(InstanceGroup* group, Manager* manager) override;
 
-	void Rendering(const Instance& instance, Manager* manager);
+	void EndRenderingGroup(InstanceGroup* group, Manager* manager) override;
+
+	void Rendering(const Instance& instance, const Instance* next_instance, Manager* manager) override;
 
 	void EndRendering(Manager* manager);
 
@@ -6454,7 +6555,6 @@ public:
 //
 //----------------------------------------------------------------------------------
 #endif	// __EFFEKSEER_ParameterNODE_RIBBON_H__
-
 #ifndef	__EFFEKSEER_ParameterNODE_RING_H__
 #define	__EFFEKSEER_ParameterNODE_RING_H__
 
@@ -6537,7 +6637,7 @@ struct RingColorParameter
 
 	union
 	{	
-		color fixed;
+		Color fixed;
 		random_color random;
 		easing_color easing;
 	};
@@ -6602,25 +6702,25 @@ struct RingLocationValues
 //----------------------------------------------------------------------------------
 struct RingColorValues
 {
-	color	current;
-	color	original;
+	Color	current;
+	Color	original;
 
 	union
 	{
 		struct
 		{
-			color _color;
+			Color _color;
 		} fixed;
 
 		struct
 		{
-			color _color;
+			Color _color;
 		} random;
 
 		struct
 		{
-			color  start;
-			color  end;
+			Color  start;
+			Color  end;
 		} easing;
 	};
 };
@@ -6681,7 +6781,7 @@ public:
 
 	void BeginRendering(int32_t count, Manager* manager);
 
-	void Rendering(const Instance& instance, Manager* manager);
+	void Rendering(const Instance& instance, const Instance* next_instance, Manager* manager) override;
 
 	void EndRendering(Manager* manager);
 
@@ -6801,10 +6901,10 @@ struct SpriteColorParameter
 
 		struct
 		{
-			color ll;
-			color lr;
-			color ul;
-			color ur;
+			Color ll;
+			Color lr;
+			Color ul;
+			Color ur;
 		} fixed;
 	};
 };
@@ -6851,26 +6951,26 @@ public:
 	struct InstanceValues
 	{
 		// 色
-		color _color;
+		Color _color;
 
-		color _originalColor;
+		Color _originalColor;
 		
 		union 
 		{
 			struct
 			{
-				color _color;
+				Color _color;
 			} fixed;
 
 			struct
 			{
-				color _color;
+				Color _color;
 			} random;
 
 			struct
 			{
-				color start;
-				color  end;
+				Color start;
+				Color  end;
 
 			} easing;
 
@@ -6913,7 +7013,7 @@ public:
 
 	void BeginRendering(int32_t count, Manager* manager);
 
-	void Rendering(const Instance& instance, Manager* manager);
+	void Rendering(const Instance& instance, const Instance* next_instance, Manager* manager) override;
 
 	void EndRendering(Manager* manager);
 
@@ -6978,22 +7078,22 @@ public:
 	{
 		struct Color
 		{
-			union 
+			union
 			{
 				struct
 				{
-					color color_;
+					Effekseer::Color color_;
 				} fixed;
 
 				struct
 				{
-					color color_;
+					Effekseer::Color color_;
 				} random;
 
 				struct
 				{
-					color start;
-					color  end;
+					Effekseer::Color start;
+					Effekseer::Color  end;
 				} easing;
 
 				struct
@@ -7031,21 +7131,21 @@ public:
 
 	struct InstanceValues
 	{
-		color	colorLeft;
-		color	colorCenter;
-		color	colorRight;
+		Color	colorLeft;
+		Color	colorCenter;
+		Color	colorRight;
 
-		color	colorLeftMiddle;
-		color	colorCenterMiddle;
-		color	colorRightMiddle;
+		Color	colorLeftMiddle;
+		Color	colorCenterMiddle;
+		Color	colorRightMiddle;
 
-		color	_colorLeft;
-		color	_colorCenter;
-		color	_colorRight;
+		Color	_colorLeft;
+		Color	_colorCenter;
+		Color	_colorRight;
 
-		color	_colorLeftMiddle;
-		color	_colorCenterMiddle;
-		color	_colorRightMiddle;
+		Color	_colorLeftMiddle;
+		Color	_colorCenterMiddle;
+		Color	_colorRightMiddle;
 
 		float	SizeFor;
 		float	SizeMiddle;
@@ -7068,16 +7168,18 @@ public:
 	StandardColorParameter	TrackColorLeftMiddle;
 	StandardColorParameter	TrackColorCenterMiddle;
 	StandardColorParameter	TrackColorRightMiddle;
-	
+
 	TrackSizeParameter	TrackSizeFor;
 	TrackSizeParameter	TrackSizeMiddle;
 	TrackSizeParameter	TrackSizeBack;
 
 	int TrackTexture;
 
-	EffectNodeTrack( Effect* effect, unsigned char*& pos )
+	int32_t	SplineDivision = 1;
+
+	EffectNodeTrack(Effect* effect, unsigned char*& pos)
 		: EffectNodeImplemented(effect, pos)
-		, TrackTexture	( -1 )
+		, TrackTexture(-1)
 	{
 	}
 
@@ -7089,9 +7191,11 @@ public:
 
 	void BeginRendering(int32_t count, Manager* manager);
 
-	void BeginRenderingGroup(InstanceGroup* group, Manager* manager);
+	void BeginRenderingGroup(InstanceGroup* group, Manager* manager) override;
 
-	void Rendering(const Instance& instance, Manager* manager);
+	void EndRenderingGroup(InstanceGroup* group, Manager* manager) override;
+
+	void Rendering(const Instance& instance, const Instance* next_instance, Manager* manager) override;
 
 	void EndRendering(Manager* manager);
 
@@ -7106,8 +7210,8 @@ public:
 	void InitializeValues(InstanceGroupValues::Color& value, StandardColorParameter& param, InstanceGlobal* instanceGlobal);
 	void InitializeValues(InstanceGroupValues::Size& value, TrackSizeParameter& param, Manager* manager);
 	void SetValues(Color& c, const Instance& instance, InstanceGroupValues::Color& value, StandardColorParameter& param, int32_t time, int32_t livedTime);
-	void SetValues( float& s, InstanceGroupValues::Size& value, TrackSizeParameter& param, float time );
-	void LoadValues( TrackSizeParameter& param, unsigned char*& pos );
+	void SetValues(float& s, InstanceGroupValues::Size& value, TrackSizeParameter& param, float time);
+	void LoadValues(TrackSizeParameter& param, unsigned char*& pos);
 };
 
 //----------------------------------------------------------------------------------
@@ -7118,7 +7222,6 @@ public:
 //
 //----------------------------------------------------------------------------------
 #endif	// __EFFEKSEER_ParameterNODE_TRACK_H__
-
 #ifndef	__EFFEKSEER_EFFECT_IMPLEMENTED_H__
 #define	__EFFEKSEER_EFFECT_IMPLEMENTED_H__
 
@@ -7146,6 +7249,7 @@ class EffectImplemented
 	, public ReferenceObject
 {
 	friend class ManagerImplemented;
+	friend class EffectNodeImplemented;
 private:
 	ManagerImplemented* m_pManager;
 
@@ -7177,6 +7281,9 @@ private:
 
 	std::basic_string<EFK_CHAR>		m_materialPath;
 
+	int32_t			renderingNodesCount = 0;
+	int32_t			renderingNodesThreshold = 0;
+
 	/* 拡大率 */
 	float	m_maginification;
 
@@ -7207,7 +7314,6 @@ private:
 		};
 
 	} Culling;
-
 
 public:
 	/**
@@ -7881,12 +7987,17 @@ public:
 	/**
 		@brief	描画処理
 	*/
-	void Draw();
+	void Draw() override;
 	
-	/**
-		@brief	ハンドル単位の描画処理
-	*/
-	void DrawHandle( Handle handle );
+	void DrawBack() override;
+
+	void DrawFront() override;
+
+	void DrawHandle( Handle handle ) override;
+
+	void DrawHandleBack(Handle handle) override;
+
+	void DrawHandleFront(Handle handle) override;
 
 	/**
 		@brief	再生
@@ -8380,10 +8491,10 @@ public:
 	Vector3D	m_GlobalRevisionVelocity;
 	
 	// Color for binding
-	color		ColorInheritance;
+	Color		ColorInheritance;
 
 	// Parent color
-	color		ColorParent;
+	Color		ColorParent;
 
 	union 
 	{
@@ -8602,9 +8713,9 @@ public:
 	void Update( float deltaFrame, bool shown );
 
 	/**
-		@brief	描画
+		@brief	Draw instance
 	*/
-	void Draw();
+	void Draw(Instance* next);
 
 	/**
 		@brief	破棄
@@ -8689,6 +8800,8 @@ public:
 
 	bool		IsGlobalColorSet = false;
 	Color		GlobalColor = Color(255, 255, 255, 255);
+
+	std::vector<InstanceContainer*>	RenderedInstanceContainers;
 
 	void SetSeed(int32_t seed);
 
@@ -9120,18 +9233,19 @@ int32_t FCurveVectorColor::Load( void* data, int32_t version )
 //----------------------------------------------------------------------------------
 namespace Effekseer
 {
+
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
 EffectNodeImplemented::EffectNodeImplemented(Effect* effect, unsigned char*& pos)
-	: m_effect		( effect )
-	, m_userData		( NULL )
-	, IsRendered		(true)
-	, TranslationFCurve	( NULL )
-	, RotationFCurve	( NULL )
-	, ScalingFCurve		( NULL )
-	, SoundType			(ParameterSoundType_None)
-	, RenderingOrder	(RenderingOrder_FirstCreatedInstanceIsFirst)
+	: m_effect(effect)
+	, m_userData(NULL)
+	, IsRendered(true)
+	, TranslationFCurve(NULL)
+	, RotationFCurve(NULL)
+	, ScalingFCurve(NULL)
+	, SoundType(ParameterSoundType_None)
+	, RenderingOrder(RenderingOrder_FirstCreatedInstanceIsFirst)
 {
 }
 
@@ -9142,15 +9256,15 @@ void EffectNodeImplemented::LoadParameter(unsigned char*& pos, EffectNode* paren
 {
 	int size = 0;
 	int node_type = 0;
-	auto ef = (EffectImplemented*) m_effect;
+	auto ef = (EffectImplemented*)m_effect;
 
-	memcpy( &node_type, pos, sizeof(int) );
+	memcpy(&node_type, pos, sizeof(int));
 	pos += sizeof(int);
 
-	if( node_type == -1 )
+	if (node_type == -1)
 	{
 		TranslationType = ParameterTranslationType_None;
-		LocationAbs.type = LocationAbsParameter::None;
+		LocationAbs.type = LocationAbsType::None;
 		RotationType = ParameterRotationType_None;
 		ScalingType = ParameterScalingType_None;
 		CommonValues.MaxGeneration = 1;
@@ -9158,6 +9272,8 @@ void EffectNodeImplemented::LoadParameter(unsigned char*& pos, EffectNode* paren
 		GenerationLocation.EffectsRotation = 0;
 		GenerationLocation.type = ParameterGenerationLocation::TYPE_POINT;
 		GenerationLocation.point.location.reset();
+
+		RenderingPriority = -1;
 	}
 	else
 	{
@@ -9170,7 +9286,18 @@ void EffectNodeImplemented::LoadParameter(unsigned char*& pos, EffectNode* paren
 			IsRendered = rendered != 0;
 		}
 
-		memcpy( &size, pos, sizeof(int) );
+		// To render with priority, nodes are assigned a list.
+		if (m_effect->GetVersion() >= 13)
+		{
+			memcpy(&RenderingPriority, pos, sizeof(int32_t));
+			pos += sizeof(int32_t);
+		}
+		else
+		{
+			RenderingPriority = -1;
+		}
+
+		memcpy(&size, pos, sizeof(int));
 		pos += sizeof(int);
 
 		if (m_effect->GetVersion() >= 9)
@@ -9199,60 +9326,60 @@ void EffectNodeImplemented::LoadParameter(unsigned char*& pos, EffectNode* paren
 			CommonValues.GenerationTimeOffset.max = param_8.GenerationTimeOffset;
 			CommonValues.GenerationTimeOffset.min = param_8.GenerationTimeOffset;
 		}
-		
-		memcpy( &TranslationType, pos, sizeof(int) );
+
+		memcpy(&TranslationType, pos, sizeof(int));
 		pos += sizeof(int);
 
-		if( TranslationType == ParameterTranslationType_Fixed )
+		if (TranslationType == ParameterTranslationType_Fixed)
 		{
-			memcpy( &size, pos, sizeof(int) );
+			memcpy(&size, pos, sizeof(int));
 			pos += sizeof(int);
-			assert( size == sizeof(ParameterTranslationFixed) );
-			memcpy( &TranslationFixed, pos, size );
+			assert(size == sizeof(ParameterTranslationFixed));
+			memcpy(&TranslationFixed, pos, size);
 			pos += size;
 
 			// 無効化
-			if( TranslationFixed.Position.X == 0.0f &&
+			if (TranslationFixed.Position.X == 0.0f &&
 				TranslationFixed.Position.Y == 0.0f &&
-				TranslationFixed.Position.Z == 0.0f )
+				TranslationFixed.Position.Z == 0.0f)
 			{
 				TranslationType = ParameterTranslationType_None;
 				EffekseerPrintDebug("LocationType Change None\n");
 			}
 		}
-		else if( TranslationType == ParameterTranslationType_PVA )
+		else if (TranslationType == ParameterTranslationType_PVA)
 		{
-			memcpy( &size, pos, sizeof(int) );
+			memcpy(&size, pos, sizeof(int));
 			pos += sizeof(int);
-			assert( size == sizeof(ParameterTranslationPVA) );
-			memcpy( &TranslationPVA, pos, size );
+			assert(size == sizeof(ParameterTranslationPVA));
+			memcpy(&TranslationPVA, pos, size);
 			pos += size;
 		}
-		else if( TranslationType == ParameterTranslationType_Easing )
+		else if (TranslationType == ParameterTranslationType_Easing)
 		{
-			memcpy( &size, pos, sizeof(int) );
+			memcpy(&size, pos, sizeof(int));
 			pos += sizeof(int);
-			assert( size == sizeof(easing_vector3d) );
-			memcpy( &TranslationEasing, pos, size );
+			assert(size == sizeof(easing_vector3d));
+			memcpy(&TranslationEasing, pos, size);
 			pos += size;
 		}
-		else if( TranslationType == ParameterTranslationType_FCurve )
+		else if (TranslationType == ParameterTranslationType_FCurve)
 		{
-			memcpy( &size, pos, sizeof(int) );
+			memcpy(&size, pos, sizeof(int));
 			pos += sizeof(int);
-			
+
 			TranslationFCurve = new FCurveVector3D();
-			pos += TranslationFCurve->Load( pos, m_effect->GetVersion() );
+			pos += TranslationFCurve->Load(pos, m_effect->GetVersion());
 		}
 
 		/* 位置拡大処理 */
 		if (ef->IsDyanamicMagnificationValid())
 		{
-			if( TranslationType == ParameterTranslationType_Fixed )
+			if (TranslationType == ParameterTranslationType_Fixed)
 			{
 				TranslationFixed.Position *= m_effect->GetMaginification();
 			}
-			else if( TranslationType == ParameterTranslationType_PVA )
+			else if (TranslationType == ParameterTranslationType_PVA)
 			{
 				TranslationPVA.location.min *= m_effect->GetMaginification();
 				TranslationPVA.location.max *= m_effect->GetMaginification();
@@ -9261,136 +9388,143 @@ void EffectNodeImplemented::LoadParameter(unsigned char*& pos, EffectNode* paren
 				TranslationPVA.acceleration.min *= m_effect->GetMaginification();
 				TranslationPVA.acceleration.max *= m_effect->GetMaginification();
 			}
-			else if( TranslationType == ParameterTranslationType_Easing )
+			else if (TranslationType == ParameterTranslationType_Easing)
 			{
 				TranslationEasing.start.min *= m_effect->GetMaginification();
-				TranslationEasing.start.max *= m_effect->GetMaginification();	
+				TranslationEasing.start.max *= m_effect->GetMaginification();
 				TranslationEasing.end.min *= m_effect->GetMaginification();
 				TranslationEasing.end.max *= m_effect->GetMaginification();
 			}
-			else if( TranslationType == ParameterTranslationType_FCurve )
+			else if (TranslationType == ParameterTranslationType_FCurve)
 			{
-				TranslationFCurve->X.Maginify( m_effect->GetMaginification() );
-				TranslationFCurve->Y.Maginify( m_effect->GetMaginification() );
-				TranslationFCurve->Z.Maginify( m_effect->GetMaginification() );
+				TranslationFCurve->X.Maginify(m_effect->GetMaginification());
+				TranslationFCurve->Y.Maginify(m_effect->GetMaginification());
+				TranslationFCurve->Z.Maginify(m_effect->GetMaginification());
 			}
 		}
 
-		memcpy( &LocationAbs.type, pos, sizeof(int) );
+		memcpy(&LocationAbs.type, pos, sizeof(int));
 		pos += sizeof(int);
 
 		// Calc attraction forces
-		if( LocationAbs.type == LocationAbsParameter::None )
+		if (LocationAbs.type == LocationAbsType::None)
 		{
-			memcpy( &size, pos, sizeof(int) );
+			memcpy(&size, pos, sizeof(int));
 			pos += sizeof(int);
-			assert( size == 0 );
-			memcpy( &LocationAbs.none, pos, size );
+			assert(size == 0);
+			memcpy(&LocationAbs.none, pos, size);
 			pos += size;
 		}
-		else if( LocationAbs.type == LocationAbsParameter::Gravity )
+		else if (LocationAbs.type == LocationAbsType::Gravity)
 		{
-			memcpy( &size, pos, sizeof(int) );
+			memcpy(&size, pos, sizeof(int));
 			pos += sizeof(int);
-			assert( size == sizeof(vector3d) );
-			memcpy( &LocationAbs.gravity, pos, size );
+			assert(size == sizeof(vector3d));
+			memcpy(&LocationAbs.gravity, pos, size);
 			pos += size;
 		}
-		else if( LocationAbs.type == LocationAbsParameter::AttractiveForce )
+		else if (LocationAbs.type == LocationAbsType::AttractiveForce)
 		{
-			memcpy( &size, pos, sizeof(int) );
+			memcpy(&size, pos, sizeof(int));
 			pos += sizeof(int);
-			assert( size == sizeof(LocationAbs.attractiveForce) );
-			memcpy( &LocationAbs.attractiveForce, pos, size );
+			assert(size == sizeof(LocationAbs.attractiveForce));
+			memcpy(&LocationAbs.attractiveForce, pos, size);
 			pos += size;
 		}
 
 		// Magnify attraction forces
 		if (ef->IsDyanamicMagnificationValid())
 		{
-			if( LocationAbs.type == LocationAbsParameter::None )
+			if (LocationAbs.type == LocationAbsType::None)
 			{
 			}
-			else if( LocationAbs.type == LocationAbsParameter::Gravity )
+			else if (LocationAbs.type == LocationAbsType::Gravity)
 			{
 				LocationAbs.gravity *= m_effect->GetMaginification();
 			}
+			else if (LocationAbs.type == LocationAbsType::AttractiveForce)
+			{
+				LocationAbs.attractiveForce.control *= m_effect->GetMaginification();
+				LocationAbs.attractiveForce.force *= m_effect->GetMaginification();
+				LocationAbs.attractiveForce.minRange *= m_effect->GetMaginification();
+				LocationAbs.attractiveForce.maxRange *= m_effect->GetMaginification();
+			}
 		}
 
-		memcpy( &RotationType, pos, sizeof(int) );
+		memcpy(&RotationType, pos, sizeof(int));
 		pos += sizeof(int);
 		EffekseerPrintDebug("RotationType %d\n", RotationType);
-		if( RotationType == ParameterRotationType_Fixed )
+		if (RotationType == ParameterRotationType_Fixed)
 		{
-			memcpy( &size, pos, sizeof(int) );
+			memcpy(&size, pos, sizeof(int));
 			pos += sizeof(int);
-			assert( size == sizeof(ParameterRotationFixed) );
-			memcpy( &RotationFixed, pos, size );
+			assert(size == sizeof(ParameterRotationFixed));
+			memcpy(&RotationFixed, pos, size);
 			pos += size;
 
 			// 無効化
-			if( RotationFixed.Position.X == 0.0f &&
+			if (RotationFixed.Position.X == 0.0f &&
 				RotationFixed.Position.Y == 0.0f &&
-				RotationFixed.Position.Z == 0.0f )
+				RotationFixed.Position.Z == 0.0f)
 			{
 				RotationType = ParameterRotationType_None;
 				EffekseerPrintDebug("RotationType Change None\n");
 			}
 		}
-		else if( RotationType == ParameterRotationType_PVA )
+		else if (RotationType == ParameterRotationType_PVA)
 		{
-			memcpy( &size, pos, sizeof(int) );
+			memcpy(&size, pos, sizeof(int));
 			pos += sizeof(int);
-			assert( size == sizeof(ParameterRotationPVA) );
-			memcpy( &RotationPVA, pos, size );
+			assert(size == sizeof(ParameterRotationPVA));
+			memcpy(&RotationPVA, pos, size);
 			pos += size;
 		}
-		else if( RotationType == ParameterRotationType_Easing )
+		else if (RotationType == ParameterRotationType_Easing)
 		{
-			memcpy( &size, pos, sizeof(int) );
+			memcpy(&size, pos, sizeof(int));
 			pos += sizeof(int);
-			assert( size == sizeof(easing_vector3d) );
-			memcpy( &RotationEasing, pos, size );
+			assert(size == sizeof(easing_vector3d));
+			memcpy(&RotationEasing, pos, size);
 			pos += size;
 		}
-		else if( RotationType == ParameterRotationType_AxisPVA )
+		else if (RotationType == ParameterRotationType_AxisPVA)
 		{
-			memcpy( &size, pos, sizeof(int) );
+			memcpy(&size, pos, sizeof(int));
 			pos += sizeof(int);
-			assert( size == sizeof(ParameterRotationAxisPVA) );
-			memcpy( &RotationAxisPVA, pos, size );
+			assert(size == sizeof(ParameterRotationAxisPVA));
+			memcpy(&RotationAxisPVA, pos, size);
 			pos += size;
 		}
-		else if( RotationType == ParameterRotationType_AxisEasing )
+		else if (RotationType == ParameterRotationType_AxisEasing)
 		{
-			memcpy( &size, pos, sizeof(int) );
+			memcpy(&size, pos, sizeof(int));
 			pos += sizeof(int);
-			assert( size == sizeof(ParameterRotationAxisEasing) );
-			memcpy( &RotationAxisEasing, pos, size );
+			assert(size == sizeof(ParameterRotationAxisEasing));
+			memcpy(&RotationAxisEasing, pos, size);
 			pos += size;
 		}
-		else if( RotationType == ParameterRotationType_FCurve )
+		else if (RotationType == ParameterRotationType_FCurve)
 		{
-			memcpy( &size, pos, sizeof(int) );
+			memcpy(&size, pos, sizeof(int));
 			pos += sizeof(int);
-			
+
 			RotationFCurve = new FCurveVector3D();
-			pos += RotationFCurve->Load( pos, m_effect->GetVersion() );
+			pos += RotationFCurve->Load(pos, m_effect->GetVersion());
 		}
 
-		memcpy( &ScalingType, pos, sizeof(int) );
+		memcpy(&ScalingType, pos, sizeof(int));
 		pos += sizeof(int);
 		EffekseerPrintDebug("ScalingType %d\n", ScalingType);
-		if( ScalingType == ParameterScalingType_Fixed )
+		if (ScalingType == ParameterScalingType_Fixed)
 		{
-			memcpy( &size, pos, sizeof(int) );
+			memcpy(&size, pos, sizeof(int));
 			pos += sizeof(int);
-			assert( size == sizeof(ParameterScalingFixed) );
-			memcpy( &ScalingFixed, pos, size );
+			assert(size == sizeof(ParameterScalingFixed));
+			memcpy(&ScalingFixed, pos, size);
 			pos += size;
 
 			// 無効化
-			if( ScalingFixed.Position.X == 1.0f &&
+			if (ScalingFixed.Position.X == 1.0f &&
 				ScalingFixed.Position.Y == 1.0f &&
 				ScalingFixed.Position.Z == 1.0f)
 			{
@@ -9398,58 +9532,58 @@ void EffectNodeImplemented::LoadParameter(unsigned char*& pos, EffectNode* paren
 				EffekseerPrintDebug("ScalingType Change None\n");
 			}
 		}
-		else if( ScalingType == ParameterScalingType_PVA )
+		else if (ScalingType == ParameterScalingType_PVA)
 		{
-			memcpy( &size, pos, sizeof(int) );
+			memcpy(&size, pos, sizeof(int));
 			pos += sizeof(int);
-			assert( size == sizeof(ParameterScalingPVA) );
-			memcpy( &ScalingPVA, pos, size );
+			assert(size == sizeof(ParameterScalingPVA));
+			memcpy(&ScalingPVA, pos, size);
 			pos += size;
 		}
-		else if( ScalingType == ParameterScalingType_Easing )
+		else if (ScalingType == ParameterScalingType_Easing)
 		{
-			memcpy( &size, pos, sizeof(int) );
+			memcpy(&size, pos, sizeof(int));
 			pos += sizeof(int);
-			assert( size == sizeof(easing_vector3d) );
-			memcpy( &ScalingEasing, pos, size );
+			assert(size == sizeof(easing_vector3d));
+			memcpy(&ScalingEasing, pos, size);
 			pos += size;
 		}
-		else if( ScalingType == ParameterScalingType_SinglePVA )
+		else if (ScalingType == ParameterScalingType_SinglePVA)
 		{
-			memcpy( &size, pos, sizeof(int) );
+			memcpy(&size, pos, sizeof(int));
 			pos += sizeof(int);
-			assert( size == sizeof(ParameterScalingSinglePVA) );
-			memcpy( &ScalingSinglePVA, pos, size );
+			assert(size == sizeof(ParameterScalingSinglePVA));
+			memcpy(&ScalingSinglePVA, pos, size);
 			pos += size;
 		}
-		else if( ScalingType == ParameterScalingType_SingleEasing )
+		else if (ScalingType == ParameterScalingType_SingleEasing)
 		{
-			memcpy( &size, pos, sizeof(int) );
+			memcpy(&size, pos, sizeof(int));
 			pos += sizeof(int);
-			assert( size == sizeof(easing_float) );
-			memcpy( &ScalingSingleEasing, pos, size );
+			assert(size == sizeof(easing_float));
+			memcpy(&ScalingSingleEasing, pos, size);
 			pos += size;
 		}
-		else if( ScalingType == ParameterScalingType_FCurve )
+		else if (ScalingType == ParameterScalingType_FCurve)
 		{
-			memcpy( &size, pos, sizeof(int) );
+			memcpy(&size, pos, sizeof(int));
 			pos += sizeof(int);
-			
+
 			ScalingFCurve = new FCurveVector3D();
-			pos += ScalingFCurve->Load( pos, m_effect->GetVersion() );
-			ScalingFCurve->X.SetDefaultValue( 1.0f );
-			ScalingFCurve->Y.SetDefaultValue( 1.0f );
-			ScalingFCurve->Z.SetDefaultValue( 1.0f );
+			pos += ScalingFCurve->Load(pos, m_effect->GetVersion());
+			ScalingFCurve->X.SetDefaultValue(1.0f);
+			ScalingFCurve->Y.SetDefaultValue(1.0f);
+			ScalingFCurve->Z.SetDefaultValue(1.0f);
 		}
 
 		/* Spawning Method */
-		GenerationLocation.load( pos, m_effect->GetVersion());
+		GenerationLocation.load(pos, m_effect->GetVersion());
 
 		/* Spawning Method 拡大処理*/
 		if (ef->IsDyanamicMagnificationValid()
-			/* && (this->CommonValues.ScalingBindType == BindType::NotBind || parent->GetType() == EFFECT_NODE_TYPE_ROOT)*/ )
+			/* && (this->CommonValues.ScalingBindType == BindType::NotBind || parent->GetType() == EFFECT_NODE_TYPE_ROOT)*/)
 		{
-			if( GenerationLocation.type == ParameterGenerationLocation::TYPE_POINT )
+			if (GenerationLocation.type == ParameterGenerationLocation::TYPE_POINT)
 			{
 				GenerationLocation.point.location.min *= m_effect->GetMaginification();
 				GenerationLocation.point.location.max *= m_effect->GetMaginification();
@@ -9463,16 +9597,16 @@ void EffectNodeImplemented::LoadParameter(unsigned char*& pos, EffectNode* paren
 				GenerationLocation.line.position_noize.min *= m_effect->GetMaginification();
 				GenerationLocation.line.position_noize.max *= m_effect->GetMaginification();
 			}
-			else if( GenerationLocation.type == ParameterGenerationLocation::TYPE_SPHERE )
+			else if (GenerationLocation.type == ParameterGenerationLocation::TYPE_SPHERE)
 			{
 				GenerationLocation.sphere.radius.min *= m_effect->GetMaginification();
 				GenerationLocation.sphere.radius.max *= m_effect->GetMaginification();
 			}
-			else if( GenerationLocation.type == ParameterGenerationLocation::TYPE_CIRCLE )
+			else if (GenerationLocation.type == ParameterGenerationLocation::TYPE_CIRCLE)
 			{
 				GenerationLocation.circle.radius.min *= m_effect->GetMaginification();
 				GenerationLocation.circle.radius.max *= m_effect->GetMaginification();
-			}		
+			}
 		}
 
 		// Load depth values
@@ -9493,6 +9627,14 @@ void EffectNodeImplemented::LoadParameter(unsigned char*& pos, EffectNode* paren
 
 			DepthValues.IsDepthOffsetScaledWithParticleScale = IsDepthOffsetScaledWithParticleScale > 0;
 
+			if (m_effect->GetVersion() >= 13)
+			{
+				memcpy(&DepthValues.ZSort, pos, sizeof(int32_t));
+				pos += sizeof(int32_t);
+				memcpy(&DepthValues.DrawingPriority, pos, sizeof(int32_t));
+				pos += sizeof(int32_t);
+			}
+
 			memcpy(&DepthValues.SoftParticle, pos, sizeof(float));
 			pos += sizeof(float);
 
@@ -9501,14 +9643,14 @@ void EffectNodeImplemented::LoadParameter(unsigned char*& pos, EffectNode* paren
 		}
 
 		// Convert right handle coordinate system into left handle coordinate system
-		if( setting->GetCoordinateSystem() == CoordinateSystem::LH )
+		if (setting->GetCoordinateSystem() == CoordinateSystem::LH)
 		{
 			// Translation
-			if( TranslationType == ParameterTranslationType_Fixed )
+			if (TranslationType == ParameterTranslationType_Fixed)
 			{
 				TranslationFixed.Position.Z *= -1.0f;
 			}
-			else if( TranslationType == ParameterTranslationType_PVA )
+			else if (TranslationType == ParameterTranslationType_PVA)
 			{
 				TranslationPVA.location.max.z *= -1.0f;
 				TranslationPVA.location.min.z *= -1.0f;
@@ -9517,7 +9659,7 @@ void EffectNodeImplemented::LoadParameter(unsigned char*& pos, EffectNode* paren
 				TranslationPVA.acceleration.max.z *= -1.0f;
 				TranslationPVA.acceleration.min.z *= -1.0f;
 			}
-			else if( TranslationType == ParameterTranslationType_Easing )
+			else if (TranslationType == ParameterTranslationType_Easing)
 			{
 				TranslationEasing.start.max.z *= -1.0f;
 				TranslationEasing.start.min.z *= -1.0f;
@@ -9526,12 +9668,12 @@ void EffectNodeImplemented::LoadParameter(unsigned char*& pos, EffectNode* paren
 			}
 
 			// Rotation
-			if( RotationType == ParameterRotationType_Fixed )
+			if (RotationType == ParameterRotationType_Fixed)
 			{
 				RotationFixed.Position.X *= -1.0f;
 				RotationFixed.Position.Y *= -1.0f;
 			}
-			else if( RotationType == ParameterRotationType_PVA )
+			else if (RotationType == ParameterRotationType_PVA)
 			{
 				RotationPVA.rotation.max.x *= -1.0f;
 				RotationPVA.rotation.min.x *= -1.0f;
@@ -9546,7 +9688,7 @@ void EffectNodeImplemented::LoadParameter(unsigned char*& pos, EffectNode* paren
 				RotationPVA.acceleration.max.y *= -1.0f;
 				RotationPVA.acceleration.min.y *= -1.0f;
 			}
-			else if( RotationType == ParameterRotationType_Easing )
+			else if (RotationType == ParameterRotationType_Easing)
 			{
 				RotationEasing.start.max.x *= -1.0f;
 				RotationEasing.start.min.x *= -1.0f;
@@ -9557,28 +9699,28 @@ void EffectNodeImplemented::LoadParameter(unsigned char*& pos, EffectNode* paren
 				RotationEasing.end.max.y *= -1.0f;
 				RotationEasing.end.min.y *= -1.0f;
 			}
-			else if( RotationType == ParameterRotationType_AxisPVA )
+			else if (RotationType == ParameterRotationType_AxisPVA)
 			{
 				RotationAxisPVA.axis.max.z *= -1.0f;
 				RotationAxisPVA.axis.min.z *= -1.0f;
 			}
-			else if( RotationType == ParameterRotationType_AxisEasing )
+			else if (RotationType == ParameterRotationType_AxisEasing)
 			{
 				RotationAxisEasing.axis.max.z *= -1.0f;
 				RotationAxisEasing.axis.min.z *= -1.0f;
 			}
-			else if( RotationType == ParameterRotationType_FCurve )
+			else if (RotationType == ParameterRotationType_FCurve)
 			{
 				RotationFCurve->X.ChangeCoordinate();
 				RotationFCurve->Y.ChangeCoordinate();
 			}
 
 			// GenerationLocation
-			if( GenerationLocation.type == ParameterGenerationLocation::TYPE_POINT )
+			if (GenerationLocation.type == ParameterGenerationLocation::TYPE_POINT)
 			{
-			
+
 			}
-			else if( GenerationLocation.type == ParameterGenerationLocation::TYPE_SPHERE )
+			else if (GenerationLocation.type == ParameterGenerationLocation::TYPE_SPHERE)
 			{
 				GenerationLocation.sphere.rotation_x.max *= -1.0f;
 				GenerationLocation.sphere.rotation_x.min *= -1.0f;
@@ -9587,37 +9729,37 @@ void EffectNodeImplemented::LoadParameter(unsigned char*& pos, EffectNode* paren
 			}
 		}
 
-		if( m_effect->GetVersion() >= 3)
+		if (m_effect->GetVersion() >= 3)
 		{
-			RendererCommon.load( pos, m_effect->GetVersion() );
+			RendererCommon.load(pos, m_effect->GetVersion());
 		}
 		else
 		{
 			RendererCommon.reset();
 		}
 
-		LoadRendererParameter( pos, m_effect->GetSetting() );
+		LoadRendererParameter(pos, m_effect->GetSetting());
 
-		if( m_effect->GetVersion() >= 1)
+		if (m_effect->GetVersion() >= 1)
 		{
 			// Sound
-			memcpy( &SoundType, pos, sizeof(int) );
+			memcpy(&SoundType, pos, sizeof(int));
 			pos += sizeof(int);
-			if( SoundType == ParameterSoundType_Use )
+			if (SoundType == ParameterSoundType_Use)
 			{
-				memcpy( &Sound.WaveId, pos, sizeof(int32_t) );
+				memcpy(&Sound.WaveId, pos, sizeof(int32_t));
 				pos += sizeof(int32_t);
-				memcpy( &Sound.Volume, pos, sizeof(random_float) );
+				memcpy(&Sound.Volume, pos, sizeof(random_float));
 				pos += sizeof(random_float);
-				memcpy( &Sound.Pitch, pos, sizeof(random_float) );
+				memcpy(&Sound.Pitch, pos, sizeof(random_float));
 				pos += sizeof(random_float);
-				memcpy( &Sound.PanType, pos, sizeof(ParameterSoundPanType) );
+				memcpy(&Sound.PanType, pos, sizeof(ParameterSoundPanType));
 				pos += sizeof(ParameterSoundPanType);
-				memcpy( &Sound.Pan, pos, sizeof(random_float) );
+				memcpy(&Sound.Pan, pos, sizeof(random_float));
 				pos += sizeof(random_float);
-				memcpy( &Sound.Distance, pos, sizeof(float) );
+				memcpy(&Sound.Distance, pos, sizeof(float));
 				pos += sizeof(float);
-				memcpy( &Sound.Delay, pos, sizeof(random_int) );
+				memcpy(&Sound.Delay, pos, sizeof(random_int));
 				pos += sizeof(random_int);
 			}
 		}
@@ -9625,11 +9767,11 @@ void EffectNodeImplemented::LoadParameter(unsigned char*& pos, EffectNode* paren
 
 	// ノード
 	int nodeCount = 0;
-	memcpy( &nodeCount, pos, sizeof(int) );
-	pos += sizeof( int );
-	EffekseerPrintDebug("ChildrenCount : %d\n", nodeCount );
-	m_Nodes.resize( nodeCount );
-	for( size_t i = 0; i < m_Nodes.size(); i++ )
+	memcpy(&nodeCount, pos, sizeof(int));
+	pos += sizeof(int);
+	EffekseerPrintDebug("ChildrenCount : %d\n", nodeCount);
+	m_Nodes.resize(nodeCount);
+	for (size_t i = 0; i < m_Nodes.size(); i++)
 	{
 		m_Nodes[i] = EffectNodeImplemented::Create(m_effect, this, pos);
 	}
@@ -9640,14 +9782,14 @@ void EffectNodeImplemented::LoadParameter(unsigned char*& pos, EffectNode* paren
 //----------------------------------------------------------------------------------
 EffectNodeImplemented::~EffectNodeImplemented()
 {
-	for( size_t i = 0; i < m_Nodes.size(); i++ )
+	for (size_t i = 0; i < m_Nodes.size(); i++)
 	{
-		ES_SAFE_DELETE( m_Nodes[i] );
+		ES_SAFE_DELETE(m_Nodes[i]);
 	}
 
-	ES_SAFE_DELETE( TranslationFCurve );
-	ES_SAFE_DELETE( RotationFCurve );
-	ES_SAFE_DELETE( ScalingFCurve );
+	ES_SAFE_DELETE(TranslationFCurve);
+	ES_SAFE_DELETE(RotationFCurve);
+	ES_SAFE_DELETE(ScalingFCurve);
 }
 
 //----------------------------------------------------------------------------------
@@ -9722,9 +9864,9 @@ EffectModelParameter EffectNodeImplemented::GetEffectModelParameter()
 void EffectNodeImplemented::LoadRendererParameter(unsigned char*& pos, Setting* setting)
 {
 	int32_t type = 0;
-	memcpy( &type, pos, sizeof(int) );
+	memcpy(&type, pos, sizeof(int));
 	pos += sizeof(int);
-	assert( type == GetType() );
+	assert(type == GetType());
 	EffekseerPrintDebug("Renderer : None\n");
 }
 
@@ -9742,10 +9884,14 @@ void EffectNodeImplemented::BeginRenderingGroup(InstanceGroup* group, Manager* m
 {
 }
 
+void EffectNodeImplemented::EndRenderingGroup(InstanceGroup* group, Manager* manager)
+{
+}
+
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void EffectNodeImplemented::Rendering(const Instance& instance, Manager* manager)
+void EffectNodeImplemented::Rendering(const Instance& instance, const Instance* next_instance, Manager* manager)
 {
 }
 
@@ -9784,26 +9930,26 @@ float EffectNodeImplemented::GetFadeAlpha(const Instance& instance)
 {
 	float alpha = 1.0f;
 
-	if( RendererCommon.FadeInType == ParameterRendererCommon::FADEIN_ON && instance.m_LivingTime < RendererCommon.FadeIn.Frame )
+	if (RendererCommon.FadeInType == ParameterRendererCommon::FADEIN_ON && instance.m_LivingTime < RendererCommon.FadeIn.Frame)
 	{
 		float v = 1.0f;
-		RendererCommon.FadeIn.Value.setValueToArg( 
+		RendererCommon.FadeIn.Value.setValueToArg(
 			v,
 			0.0f,
 			1.0f,
-			(float)instance.m_LivingTime / (float)RendererCommon.FadeIn.Frame );
+			(float)instance.m_LivingTime / (float)RendererCommon.FadeIn.Frame);
 
 		alpha *= v;
 	}
 
-	if( RendererCommon.FadeOutType == ParameterRendererCommon::FADEOUT_ON && instance.m_LivingTime + RendererCommon.FadeOut.Frame > instance.m_LivedTime )
+	if (RendererCommon.FadeOutType == ParameterRendererCommon::FADEOUT_ON && instance.m_LivingTime + RendererCommon.FadeOut.Frame > instance.m_LivedTime)
 	{
 		float v = 1.0f;
-		RendererCommon.FadeOut.Value.setValueToArg( 
+		RendererCommon.FadeOut.Value.setValueToArg(
 			v,
 			1.0f,
 			0.0f,
-			(float)( instance.m_LivingTime + RendererCommon.FadeOut.Frame - instance.m_LivedTime ) / (float)RendererCommon.FadeOut.Frame );
+			(float)(instance.m_LivingTime + RendererCommon.FadeOut.Frame - instance.m_LivedTime) / (float)RendererCommon.FadeOut.Frame);
 
 		alpha *= v;
 	}
@@ -9819,25 +9965,25 @@ void EffectNodeImplemented::PlaySound_(Instance& instance, SoundTag tag, Manager
 	auto instanceGlobal = instance.m_pContainer->GetRootInstance();
 
 	SoundPlayer* player = manager->GetSoundPlayer();
-	if( player == NULL )
+	if (player == NULL)
 	{
 		return;
 	}
 
-	if( Sound.WaveId >= 0 )
+	if (Sound.WaveId >= 0)
 	{
 		SoundPlayer::InstanceParameter parameter;
-		parameter.Data = m_effect->GetWave( Sound.WaveId );
+		parameter.Data = m_effect->GetWave(Sound.WaveId);
 		parameter.Volume = Sound.Volume.getValue(*instanceGlobal);
 		parameter.Pitch = Sound.Pitch.getValue(*instanceGlobal);
 		parameter.Pan = Sound.Pan.getValue(*instanceGlobal);
-		
+
 		parameter.Mode3D = (Sound.PanType == ParameterSoundPanType_3D);
-		Vector3D::Transform( parameter.Position, 
-			Vector3D(0.0f, 0.0f, 0.0f), instance.GetGlobalMatrix43() );
+		Vector3D::Transform(parameter.Position,
+			Vector3D(0.0f, 0.0f, 0.0f), instance.GetGlobalMatrix43());
 		parameter.Distance = Sound.Distance;
 
-		player->Play( tag, parameter );
+		player->Play(tag, parameter);
 	}
 }
 
@@ -9849,49 +9995,49 @@ EffectNodeImplemented* EffectNodeImplemented::Create(Effect* effect, EffectNode*
 	EffectNodeImplemented* effectnode = NULL;
 
 	int node_type = 0;
-	memcpy( &node_type, pos, sizeof(int) );
+	memcpy(&node_type, pos, sizeof(int));
 
-	if( node_type == EFFECT_NODE_TYPE_ROOT )
+	if (node_type == EFFECT_NODE_TYPE_ROOT)
 	{
 		EffekseerPrintDebug("* Create : EffectNodeRoot\n");
-		effectnode = new EffectNodeRoot( effect, pos );
+		effectnode = new EffectNodeRoot(effect, pos);
 	}
-	else if( node_type == EFFECT_NODE_TYPE_NONE )
+	else if (node_type == EFFECT_NODE_TYPE_NONE)
 	{
 		EffekseerPrintDebug("* Create : EffectNodeNone\n");
 		effectnode = new EffectNodeImplemented(effect, pos);
 	}
-	else if( node_type == EFFECT_NODE_TYPE_SPRITE )
+	else if (node_type == EFFECT_NODE_TYPE_SPRITE)
 	{
 		EffekseerPrintDebug("* Create : EffectNodeSprite\n");
-		effectnode = new EffectNodeSprite( effect, pos );
+		effectnode = new EffectNodeSprite(effect, pos);
 	}
-	else if( node_type == EFFECT_NODE_TYPE_RIBBON )
+	else if (node_type == EFFECT_NODE_TYPE_RIBBON)
 	{
 		EffekseerPrintDebug("* Create : EffectNodeRibbon\n");
-		effectnode = new EffectNodeRibbon( effect, pos );
+		effectnode = new EffectNodeRibbon(effect, pos);
 	}
-	else if( node_type == EFFECT_NODE_TYPE_RING )
+	else if (node_type == EFFECT_NODE_TYPE_RING)
 	{
 		EffekseerPrintDebug("* Create : EffectNodeRing\n");
-		effectnode = new EffectNodeRing( effect, pos );
+		effectnode = new EffectNodeRing(effect, pos);
 	}
-	else if( node_type == EFFECT_NODE_TYPE_MODEL )
+	else if (node_type == EFFECT_NODE_TYPE_MODEL)
 	{
 		EffekseerPrintDebug("* Create : EffectNodeModel\n");
-		effectnode = new EffectNodeModel( effect, pos );
+		effectnode = new EffectNodeModel(effect, pos);
 	}
-	else if( node_type == EFFECT_NODE_TYPE_TRACK )
+	else if (node_type == EFFECT_NODE_TYPE_TRACK)
 	{
 		EffekseerPrintDebug("* Create : EffectNodeTrack\n");
-		effectnode = new EffectNodeTrack( effect, pos );
+		effectnode = new EffectNodeTrack(effect, pos);
 	}
 	else
 	{
 		assert(0);
 	}
 
-	effectnode->LoadParameter( pos, parent, effect->GetSetting());
+	effectnode->LoadParameter(pos, parent, effect->GetSetting());
 
 	return effectnode;
 }
@@ -9899,12 +10045,12 @@ EffectNodeImplemented* EffectNodeImplemented::Create(Effect* effect, EffectNode*
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
+
 }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-
 
 //----------------------------------------------------------------------------------
 //
@@ -10008,7 +10154,7 @@ void EffectNodeModel::BeginRendering(int32_t count, Manager* manager)
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void EffectNodeModel::Rendering(const Instance& instance, Manager* manager)
+void EffectNodeModel::Rendering(const Instance& instance, const Instance* next_instance, Manager* manager)
 {
 	const InstanceValues& instValues = instance.rendererValues.model;
 	ModelRenderer* renderer = manager->GetModelRenderer();
@@ -10044,22 +10190,20 @@ void EffectNodeModel::Rendering(const Instance& instance, Manager* manager)
 
 		instanceParameter.UV = instance.GetUV();
 		
-		color _color;
+		Color _color;
 		if (RendererCommon.ColorBindType == BindType::Always || RendererCommon.ColorBindType == BindType::WhenCreating)
 		{
-			_color = color::mul(instValues._original, instance.ColorParent);
+			_color = Color::Mul(instValues._original, instance.ColorParent);
 		}
 		else
 		{
 			_color = instValues._original;
 		}
-
-		_color.setValueToArg( instanceParameter.AllColor );
-
-		// Apply global color
+		instanceParameter.AllColor = _color;
+		
 		if (instance.m_pContainer->GetRootInstance()->IsGlobalColorSet)
 		{
-			Color::Mul(instanceParameter.AllColor, instanceParameter.AllColor, instance.m_pContainer->GetRootInstance()->GlobalColor);
+			instanceParameter.AllColor = Color::Mul(instanceParameter.AllColor, instance.m_pContainer->GetRootInstance()->GlobalColor);
 		}
 
 		renderer->Rendering( nodeParameter, instanceParameter, m_userData );
@@ -10140,15 +10284,15 @@ void EffectNodeModel::InitializeRenderedInstance(Instance& instance, Manager* ma
 		instValues.allColorValues.fcurve_rgba.offset[2] = AllColor.fcurve_rgba.FCurve->B.GetOffset(*instanceGlobal);
 		instValues.allColorValues.fcurve_rgba.offset[3] = AllColor.fcurve_rgba.FCurve->A.GetOffset(*instanceGlobal);
 		
-		instValues._original.r = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[0] + AllColor.fcurve_rgba.FCurve->R.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
-		instValues._original.g = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[1] + AllColor.fcurve_rgba.FCurve->G.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
-		instValues._original.b = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[2] + AllColor.fcurve_rgba.FCurve->B.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
-		instValues._original.a = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[3] + AllColor.fcurve_rgba.FCurve->A.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
+		instValues._original.R = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[0] + AllColor.fcurve_rgba.FCurve->R.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
+		instValues._original.G = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[1] + AllColor.fcurve_rgba.FCurve->G.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
+		instValues._original.B = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[2] + AllColor.fcurve_rgba.FCurve->B.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
+		instValues._original.A = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[3] + AllColor.fcurve_rgba.FCurve->A.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
 	}
 
 	if (RendererCommon.ColorBindType == BindType::Always || RendererCommon.ColorBindType == BindType::WhenCreating)
 	{
-		instValues._color = color::mul(instValues._original, instance.ColorParent);
+		instValues._color = Color::Mul(instValues._original, instance.ColorParent);
 	}
 	else
 	{
@@ -10185,21 +10329,21 @@ void EffectNodeModel::UpdateRenderedInstance(Instance& instance, Manager* manage
 	}
 	else if( AllColor.type == StandardColorParameter::FCurve_RGBA )
 	{
-		instValues._original.r = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[0] + AllColor.fcurve_rgba.FCurve->R.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
-		instValues._original.g = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[1] + AllColor.fcurve_rgba.FCurve->G.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
-		instValues._original.b = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[2] + AllColor.fcurve_rgba.FCurve->B.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
-		instValues._original.a = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[3] + AllColor.fcurve_rgba.FCurve->A.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
+		instValues._original.R = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[0] + AllColor.fcurve_rgba.FCurve->R.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
+		instValues._original.G = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[1] + AllColor.fcurve_rgba.FCurve->G.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
+		instValues._original.B = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[2] + AllColor.fcurve_rgba.FCurve->B.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
+		instValues._original.A = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[3] + AllColor.fcurve_rgba.FCurve->A.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
 	}
 
 	float fadeAlpha = GetFadeAlpha(instance);
 	if (fadeAlpha != 1.0f)
 	{
-		instValues._original.a = (uint8_t)(instValues._original.a * fadeAlpha);
+		instValues._original.A = (uint8_t)(instValues._original.A * fadeAlpha);
 	}
 
 	if (RendererCommon.ColorBindType == BindType::Always || RendererCommon.ColorBindType == BindType::WhenCreating)
 	{
-		instValues._color = color::mul(instValues._original, instance.ColorParent);
+		instValues._color = Color::Mul(instValues._original, instance.ColorParent);
 	}
 	else
 	{
@@ -10237,98 +10381,104 @@ namespace Effekseer
 void EffectNodeRibbon::LoadRendererParameter(unsigned char*& pos, Setting* setting)
 {
 	int32_t type = 0;
-	memcpy( &type, pos, sizeof(int) );
+	memcpy(&type, pos, sizeof(int));
 	pos += sizeof(int);
-	assert( type == GetType() );
+	assert(type == GetType());
 	EffekseerPrintDebug("Renderer : Ribbon\n");
 
 	int32_t size = 0;
 
-	if( m_effect->GetVersion() >= 3)
+	if (m_effect->GetVersion() >= 3)
 	{
 		AlphaBlend = RendererCommon.AlphaBlend;
 	}
 	else
 	{
-		memcpy( &AlphaBlend, pos, sizeof(int) );
+		memcpy(&AlphaBlend, pos, sizeof(int));
 		pos += sizeof(int);
 	}
 
-	memcpy( &ViewpointDependent, pos, sizeof(int) );
+	memcpy(&ViewpointDependent, pos, sizeof(int));
 	pos += sizeof(int);
-	
-	memcpy( &RibbonAllColor.type, pos, sizeof(int) );
-	pos += sizeof(int);
-	EffekseerPrintDebug("RibbonColorAllType : %d\n", RibbonAllColor.type );
 
-	if( RibbonAllColor.type == RibbonAllColorParameter::Fixed )
+	memcpy(&RibbonAllColor.type, pos, sizeof(int));
+	pos += sizeof(int);
+	EffekseerPrintDebug("RibbonColorAllType : %d\n", RibbonAllColor.type);
+
+	if (RibbonAllColor.type == RibbonAllColorParameter::Fixed)
 	{
-		memcpy( &RibbonAllColor.fixed, pos, sizeof(RibbonAllColor.fixed) );
+		memcpy(&RibbonAllColor.fixed, pos, sizeof(RibbonAllColor.fixed));
 		pos += sizeof(RibbonAllColor.fixed);
 	}
-	else if( RibbonAllColor.type == RibbonAllColorParameter::Random )
+	else if (RibbonAllColor.type == RibbonAllColorParameter::Random)
 	{
-		RibbonAllColor.random.all.load( m_effect->GetVersion(), pos );
+		RibbonAllColor.random.all.load(m_effect->GetVersion(), pos);
 	}
-	else if( RibbonAllColor.type == RibbonAllColorParameter::Easing )
+	else if (RibbonAllColor.type == RibbonAllColorParameter::Easing)
 	{
-		RibbonAllColor.easing.all.load( m_effect->GetVersion(), pos );
+		RibbonAllColor.easing.all.load(m_effect->GetVersion(), pos);
 	}
 
-	memcpy( &RibbonColor.type, pos, sizeof(int) );
+	memcpy(&RibbonColor.type, pos, sizeof(int));
 	pos += sizeof(int);
-	EffekseerPrintDebug("RibbonColorType : %d\n", RibbonColor.type );
+	EffekseerPrintDebug("RibbonColorType : %d\n", RibbonColor.type);
 
-	if( RibbonColor.type == RibbonColor.Default )
+	if (RibbonColor.type == RibbonColor.Default)
 	{
 	}
-	else if( RibbonColor.type == RibbonColor.Fixed )
+	else if (RibbonColor.type == RibbonColor.Fixed)
 	{
-		memcpy( &RibbonColor.fixed, pos, sizeof(RibbonColor.fixed) );
+		memcpy(&RibbonColor.fixed, pos, sizeof(RibbonColor.fixed));
 		pos += sizeof(RibbonColor.fixed);
 	}
 
-	memcpy( &RibbonPosition.type, pos, sizeof(int) );
+	memcpy(&RibbonPosition.type, pos, sizeof(int));
 	pos += sizeof(int);
-	EffekseerPrintDebug("RibbonPosition : %d\n", RibbonPosition.type );
+	EffekseerPrintDebug("RibbonPosition : %d\n", RibbonPosition.type);
 
-	if( RibbonPosition.type == RibbonPosition.Default )
+	if (RibbonPosition.type == RibbonPosition.Default)
 	{
-		if( m_effect->GetVersion() >= 8 )
+		if (m_effect->GetVersion() >= 8)
 		{
-			memcpy( &RibbonPosition.fixed, pos, sizeof(RibbonPosition.fixed) );
+			memcpy(&RibbonPosition.fixed, pos, sizeof(RibbonPosition.fixed));
 			pos += sizeof(RibbonPosition.fixed);
 			RibbonPosition.type = RibbonPosition.Fixed;
 		}
 	}
-	else if( RibbonPosition.type == RibbonPosition.Fixed )
+	else if (RibbonPosition.type == RibbonPosition.Fixed)
 	{
-		memcpy( &RibbonPosition.fixed, pos, sizeof(RibbonPosition.fixed) );
+		memcpy(&RibbonPosition.fixed, pos, sizeof(RibbonPosition.fixed));
 		pos += sizeof(RibbonPosition.fixed);
 	}
 
-	if( m_effect->GetVersion() >= 3)
+	if (m_effect->GetVersion() >= 13)
+	{
+		memcpy(&SplineDivision, pos, sizeof(int32_t));
+		pos += sizeof(int32_t);
+	}
+
+	if (m_effect->GetVersion() >= 3)
 	{
 		RibbonTexture = RendererCommon.ColorTextureIndex;
 	}
 	else
 	{
-		memcpy( &RibbonTexture, pos, sizeof(int) );
+		memcpy(&RibbonTexture, pos, sizeof(int));
 		pos += sizeof(int);
 	}
 
 	// 右手系左手系変換
-	if( setting->GetCoordinateSystem() == CoordinateSystem::LH )
+	if (setting->GetCoordinateSystem() == CoordinateSystem::LH)
 	{
 	}
 
 	/* 位置拡大処理 */
-	if( m_effect->GetVersion() >= 8 )
+	if (m_effect->GetVersion() >= 8)
 	{
-		if( RibbonPosition.type == RibbonPosition.Default )
+		if (RibbonPosition.type == RibbonPosition.Default)
 		{
 		}
-		else if( RibbonPosition.type == RibbonPosition.Fixed )
+		else if (RibbonPosition.type == RibbonPosition.Fixed)
 		{
 			RibbonPosition.fixed.l *= m_effect->GetMaginification();
 			RibbonPosition.fixed.r *= m_effect->GetMaginification();
@@ -10342,7 +10492,7 @@ void EffectNodeRibbon::LoadRendererParameter(unsigned char*& pos, Setting* setti
 void EffectNodeRibbon::BeginRendering(int32_t count, Manager* manager)
 {
 	RibbonRenderer* renderer = manager->GetRibbonRenderer();
-	if( renderer != NULL )
+	if (renderer != NULL)
 	{
 		m_nodeParameter.AlphaBlend = AlphaBlend;
 		m_nodeParameter.TextureFilter = RendererCommon.FilterType;
@@ -10356,18 +10506,16 @@ void EffectNodeRibbon::BeginRendering(int32_t count, Manager* manager)
 		m_nodeParameter.Distortion = RendererCommon.Distortion;
 		m_nodeParameter.DistortionIntensity = RendererCommon.DistortionIntensity;
 
+		m_nodeParameter.SplineDivision = SplineDivision;
 
-		renderer->BeginRendering( m_nodeParameter, count, m_userData );
+		renderer->BeginRendering(m_nodeParameter, count, m_userData);
 	}
 }
 
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
 void EffectNodeRibbon::BeginRenderingGroup(InstanceGroup* group, Manager* manager)
 {
 	RibbonRenderer* renderer = manager->GetRibbonRenderer();
-	if( renderer != NULL )
+	if (renderer != NULL)
 	{
 		m_instanceParameter.InstanceCount = group->GetInstanceCount();
 		m_instanceParameter.InstanceIndex = 0;
@@ -10376,68 +10524,100 @@ void EffectNodeRibbon::BeginRenderingGroup(InstanceGroup* group, Manager* manage
 		{
 			m_instanceParameter.UV = group->GetFirst()->GetUV();
 		}
+
+		renderer->BeginRenderingGroup(m_nodeParameter, m_instanceParameter.InstanceCount, m_userData);
+	}
+}
+
+void EffectNodeRibbon::EndRenderingGroup(InstanceGroup* group, Manager* manager)
+{
+	RibbonRenderer* renderer = manager->GetRibbonRenderer();
+	if (renderer != NULL)
+	{
+		renderer->EndRenderingGroup(m_nodeParameter, m_instanceParameter.InstanceCount, m_userData);
 	}
 }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void EffectNodeRibbon::Rendering(const Instance& instance, Manager* manager)
+void EffectNodeRibbon::Rendering(const Instance& instance, const Instance* next_instance, Manager* manager)
 {
 	const InstanceValues& instValues = instance.rendererValues.ribbon;
 	RibbonRenderer* renderer = manager->GetRibbonRenderer();
-	if( renderer != NULL )
+	if (renderer != NULL)
 	{
-		color _color;
+		Color _color;
 		if (RendererCommon.ColorBindType == BindType::Always || RendererCommon.ColorBindType == BindType::WhenCreating)
 		{
-			_color = color::mul(instValues._original, instance.ColorParent);
+			_color = Color::Mul(instValues._original, instance.ColorParent);
 		}
 		else
 		{
 			_color = instValues._original;
 		}
 
-		_color.setValueToArg( m_instanceParameter.AllColor );
-
-
+		m_instanceParameter.AllColor = _color;
 		m_instanceParameter.SRTMatrix43 = instance.GetGlobalMatrix43();
 
-		color color_l = _color;
-		color color_r = _color;
+		Color color_l = _color;
+		Color color_r = _color;
+		Color color_nl = _color;
+		Color color_nr = _color;
 
-		if( RibbonColor.type == RibbonColorParameter::Default )
+		if (next_instance != nullptr)
+		{
+			const InstanceValues& instValues_next = next_instance->rendererValues.ribbon;
+			Color _color_next;
+			if (RendererCommon.ColorBindType == BindType::Always || RendererCommon.ColorBindType == BindType::WhenCreating)
+			{
+				_color_next = Color::Mul(instValues_next._original, next_instance->ColorParent);
+			}
+			else
+			{
+				_color_next = instValues_next._original;
+			}
+
+			color_nl = _color_next;
+			color_nr = _color_next;
+		}
+
+		if (RibbonColor.type == RibbonColorParameter::Default)
 		{
 
 		}
-		else if( RibbonColor.type == RibbonColorParameter::Fixed )
+		else if (RibbonColor.type == RibbonColorParameter::Fixed)
 		{
-			color_l = color::mul( color_l, RibbonColor.fixed.l );
-			color_r = color::mul( color_r, RibbonColor.fixed.r );
+			color_l = Color::Mul(color_l, RibbonColor.fixed.l);
+			color_r = Color::Mul(color_r, RibbonColor.fixed.r);
+			color_nl = Color::Mul(color_nl, RibbonColor.fixed.l);
+			color_nr = Color::Mul(color_nr, RibbonColor.fixed.r);
 		}
 
-		color_l.setValueToArg( m_instanceParameter.Colors[0] );
-		color_r.setValueToArg( m_instanceParameter.Colors[1] );
+		m_instanceParameter.Colors[0] = color_l;
+		m_instanceParameter.Colors[1] = color_r;
+		m_instanceParameter.Colors[2] = color_nl;
+		m_instanceParameter.Colors[3] = color_nr;
 
-		// Apply global color
+		// Apply global Color
 		if (instance.m_pContainer->GetRootInstance()->IsGlobalColorSet)
 		{
-			Color::Mul(m_instanceParameter.Colors[0], m_instanceParameter.Colors[0], instance.m_pContainer->GetRootInstance()->GlobalColor);
-			Color::Mul(m_instanceParameter.Colors[1], m_instanceParameter.Colors[1], instance.m_pContainer->GetRootInstance()->GlobalColor);
+			m_instanceParameter.Colors[0] = Color::Mul(m_instanceParameter.Colors[0], instance.m_pContainer->GetRootInstance()->GlobalColor);
+			m_instanceParameter.Colors[1] = Color::Mul(m_instanceParameter.Colors[1], instance.m_pContainer->GetRootInstance()->GlobalColor);
 		}
 
-		if( RibbonPosition.type == RibbonPositionParameter::Default )
+		if (RibbonPosition.type == RibbonPositionParameter::Default)
 		{
 			m_instanceParameter.Positions[0] = -0.5f;
 			m_instanceParameter.Positions[1] = 0.5f;
 		}
-		else if( RibbonPosition.type == RibbonPositionParameter::Fixed )
+		else if (RibbonPosition.type == RibbonPositionParameter::Fixed)
 		{
 			m_instanceParameter.Positions[0] = RibbonPosition.fixed.l;
 			m_instanceParameter.Positions[1] = RibbonPosition.fixed.r;
 		}
 
-		renderer->Rendering( m_nodeParameter, m_instanceParameter, m_userData );
+		renderer->Rendering(m_nodeParameter, m_instanceParameter, m_userData);
 
 		m_instanceParameter.InstanceIndex++;
 	}
@@ -10449,9 +10629,9 @@ void EffectNodeRibbon::Rendering(const Instance& instance, Manager* manager)
 void EffectNodeRibbon::EndRendering(Manager* manager)
 {
 	RibbonRenderer* renderer = manager->GetRibbonRenderer();
-	if( renderer != NULL )
+	if (renderer != NULL)
 	{
-		renderer->EndRendering( m_nodeParameter, m_userData );
+		renderer->EndRendering(m_nodeParameter, m_userData);
 	}
 }
 
@@ -10463,17 +10643,17 @@ void EffectNodeRibbon::InitializeRenderedInstance(Instance& instance, Manager* m
 	InstanceValues& instValues = instance.rendererValues.ribbon;
 	auto instanceGlobal = instance.m_pContainer->GetRootInstance();
 
-	if( RibbonAllColor.type == RibbonAllColorParameter::Fixed )
+	if (RibbonAllColor.type == RibbonAllColorParameter::Fixed)
 	{
 		instValues._original = RibbonAllColor.fixed.all;
 		instValues.allColorValues.fixed._color = instValues._original;
 	}
-	else if( RibbonAllColor.type == RibbonAllColorParameter::Random )
+	else if (RibbonAllColor.type == RibbonAllColorParameter::Random)
 	{
 		instValues._original = RibbonAllColor.random.all.getValue(*instanceGlobal);
 		instValues.allColorValues.random._color = instValues._original;
 	}
-	else if( RibbonAllColor.type == RibbonAllColorParameter::Easing )
+	else if (RibbonAllColor.type == RibbonAllColorParameter::Easing)
 	{
 		instValues.allColorValues.easing.start = RibbonAllColor.easing.all.getStartValue(*instanceGlobal);
 		instValues.allColorValues.easing.end = RibbonAllColor.easing.all.getEndValue(*instanceGlobal);
@@ -10481,7 +10661,7 @@ void EffectNodeRibbon::InitializeRenderedInstance(Instance& instance, Manager* m
 
 	if (RendererCommon.ColorBindType == BindType::Always || RendererCommon.ColorBindType == BindType::WhenCreating)
 	{
-		instValues._color = color::mul(instValues._original, instance.ColorParent);
+		instValues._color = Color::Mul(instValues._original, instance.ColorParent);
 	}
 	else
 	{
@@ -10506,7 +10686,7 @@ void EffectNodeRibbon::UpdateRenderedInstance(Instance& instance, Manager* manag
 	{
 		instValues._original = instValues.allColorValues.random._color;
 	}
-	else if( RibbonAllColor.type == RibbonAllColorParameter::Easing )
+	else if (RibbonAllColor.type == RibbonAllColorParameter::Easing)
 	{
 		float t = instance.m_LivingTime / instance.m_LivedTime;
 
@@ -10514,18 +10694,18 @@ void EffectNodeRibbon::UpdateRenderedInstance(Instance& instance, Manager* manag
 			instValues._original,
 			instValues.allColorValues.easing.start,
 			instValues.allColorValues.easing.end,
-			t );
+			t);
 	}
 
 	float fadeAlpha = GetFadeAlpha(instance);
 	if (fadeAlpha != 1.0f)
 	{
-		instValues._original.a = (uint8_t)(instValues._original.a * fadeAlpha);
+		instValues._original.A = (uint8_t)(instValues._original.A * fadeAlpha);
 	}
 
 	if (RendererCommon.ColorBindType == BindType::Always || RendererCommon.ColorBindType == BindType::WhenCreating)
 	{
-		instValues._color = color::mul(instValues._original, instance.ColorParent);
+		instValues._color = Color::Mul(instValues._original, instance.ColorParent);
 	}
 	else
 	{
@@ -10543,7 +10723,6 @@ void EffectNodeRibbon::UpdateRenderedInstance(Instance& instance, Manager* manag
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-
 
 //----------------------------------------------------------------------------------
 //
@@ -10743,7 +10922,7 @@ void EffectNodeRing::BeginRendering(int32_t count, Manager* manager)
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void EffectNodeRing::Rendering(const Instance& instance, Manager* manager)
+void EffectNodeRing::Rendering(const Instance& instance, const Instance* next_instance, Manager* manager)
 {
 	const InstanceValues& instValues = instance.rendererValues.ring;
 	RingRenderer* renderer = manager->GetRingRenderer();
@@ -10769,15 +10948,15 @@ void EffectNodeRing::Rendering(const Instance& instance, Manager* manager)
 		nodeParameter.IsDepthOffsetScaledWithCamera = DepthValues.IsDepthOffsetScaledWithCamera;
 		nodeParameter.IsDepthOffsetScaledWithParticleScale = DepthValues.IsDepthOffsetScaledWithParticleScale;
 
-		color _outerColor;
-		color _centerColor;
-		color _innerColor;
+		Color _outerColor;
+		Color _centerColor;
+		Color _innerColor;
 
 		if (RendererCommon.ColorBindType == BindType::Always || RendererCommon.ColorBindType == BindType::WhenCreating)
 		{
-			_outerColor = color::mul(instValues.outerColor.original, instance.ColorParent);
-			_centerColor = color::mul(instValues.centerColor.original, instance.ColorParent);
-			_innerColor = color::mul(instValues.innerColor.original, instance.ColorParent);
+			_outerColor = Color::Mul(instValues.outerColor.original, instance.ColorParent);
+			_centerColor = Color::Mul(instValues.centerColor.original, instance.ColorParent);
+			_innerColor = Color::Mul(instValues.innerColor.original, instance.ColorParent);
 		}
 		else
 		{
@@ -10796,17 +10975,17 @@ void EffectNodeRing::Rendering(const Instance& instance, Manager* manager)
 
 		instanceParameter.CenterRatio = instValues.centerRatio.current;
 
-		_outerColor.setValueToArg( instanceParameter.OuterColor );
-		_centerColor.setValueToArg( instanceParameter.CenterColor );
-		_innerColor.setValueToArg( instanceParameter.InnerColor );
-
-		// Apply global color
+		// Apply global Color
 		if (instance.m_pContainer->GetRootInstance()->IsGlobalColorSet)
 		{
-			Color::Mul(instanceParameter.OuterColor, instanceParameter.OuterColor, instance.m_pContainer->GetRootInstance()->GlobalColor);
-			Color::Mul(instanceParameter.CenterColor, instanceParameter.CenterColor, instance.m_pContainer->GetRootInstance()->GlobalColor);
-			Color::Mul(instanceParameter.InnerColor, instanceParameter.InnerColor, instance.m_pContainer->GetRootInstance()->GlobalColor);
+			Color::Mul(_outerColor, instance.m_pContainer->GetRootInstance()->GlobalColor);
+			Color::Mul(_centerColor, instance.m_pContainer->GetRootInstance()->GlobalColor);
+			Color::Mul(_innerColor, instance.m_pContainer->GetRootInstance()->GlobalColor);
 		}
+
+		instanceParameter.OuterColor  = _outerColor;
+		instanceParameter.CenterColor = _centerColor;
+		instanceParameter.InnerColor  = _innerColor;
 		
 		instanceParameter.UV = instance.GetUV();
 		renderer->Rendering( nodeParameter, instanceParameter, m_userData );
@@ -10866,9 +11045,9 @@ void EffectNodeRing::InitializeRenderedInstance(Instance& instance, Manager* man
 
 	if (RendererCommon.ColorBindType == BindType::Always || RendererCommon.ColorBindType == BindType::WhenCreating)
 	{
-		instValues.outerColor.current = color::mul(instValues.outerColor.original, instance.ColorParent);
-		instValues.centerColor.current = color::mul(instValues.centerColor.original, instance.ColorParent);
-		instValues.innerColor.current = color::mul(instValues.innerColor.original, instance.ColorParent);
+		instValues.outerColor.current = Color::Mul(instValues.outerColor.original, instance.ColorParent);
+		instValues.centerColor.current = Color::Mul(instValues.centerColor.original, instance.ColorParent);
+		instValues.innerColor.current = Color::Mul(instValues.innerColor.original, instance.ColorParent);
 	}
 	else
 	{
@@ -10900,9 +11079,9 @@ void EffectNodeRing::UpdateRenderedInstance(Instance& instance, Manager* manager
 
 	if (RendererCommon.ColorBindType == BindType::Always || RendererCommon.ColorBindType == BindType::WhenCreating)
 	{
-		instValues.outerColor.current = color::mul(instValues.outerColor.original, instance.ColorParent);
-		instValues.centerColor.current = color::mul(instValues.centerColor.original, instance.ColorParent);
-		instValues.innerColor.current = color::mul(instValues.innerColor.original, instance.ColorParent);
+		instValues.outerColor.current = Color::Mul(instValues.outerColor.original, instance.ColorParent);
+		instValues.centerColor.current = Color::Mul(instValues.centerColor.original, instance.ColorParent);
+		instValues.innerColor.current = Color::Mul(instValues.innerColor.original, instance.ColorParent);
 	}
 	else
 	{
@@ -11122,7 +11301,7 @@ void EffectNodeRing::UpdateColorValues( Instance& instance, const RingColorParam
 	float fadeAlpha = GetFadeAlpha(instance);
 	if (fadeAlpha != 1.0f)
 	{
-		values.original.a = (uint8_t)(values.original.a * fadeAlpha);
+		values.original.A = (uint8_t)(values.original.A * fadeAlpha);
 	}
 }
 
@@ -11312,6 +11491,8 @@ void EffectNodeSprite::BeginRendering(int32_t count, Manager* manager)
 		nodeParameter.IsDepthOffsetScaledWithCamera = DepthValues.IsDepthOffsetScaledWithCamera;
 		nodeParameter.IsDepthOffsetScaledWithParticleScale = DepthValues.IsDepthOffsetScaledWithParticleScale;
 
+		nodeParameter.ZSort = DepthValues.ZSort;
+
 		renderer->BeginRendering( nodeParameter, count, m_userData );
 	}
 }
@@ -11319,7 +11500,7 @@ void EffectNodeSprite::BeginRendering(int32_t count, Manager* manager)
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void EffectNodeSprite::Rendering(const Instance& instance, Manager* manager)
+void EffectNodeSprite::Rendering(const Instance& instance, const Instance* next_instance, Manager* manager)
 {
 	const InstanceValues& instValues = instance.rendererValues.sprite;
 	SpriteRenderer* renderer = manager->GetSpriteRenderer();
@@ -11344,50 +11525,52 @@ void EffectNodeSprite::Rendering(const Instance& instance, Manager* manager)
 		nodeParameter.IsDepthOffsetScaledWithCamera = DepthValues.IsDepthOffsetScaledWithCamera;
 		nodeParameter.IsDepthOffsetScaledWithParticleScale = DepthValues.IsDepthOffsetScaledWithParticleScale;
 
+		nodeParameter.ZSort = DepthValues.ZSort;
+
 		SpriteRenderer::InstanceParameter instanceParameter;
-		instValues._color.setValueToArg( instanceParameter.AllColor );
+		instanceParameter.AllColor = instValues._color;
 
 		instanceParameter.SRTMatrix43 = instance.GetGlobalMatrix43();
 
-		// Inherit color
-		color _color;
+		// Inherit Color
+		Color _color;
 		if (RendererCommon.ColorBindType == BindType::Always || RendererCommon.ColorBindType == BindType::WhenCreating)
 		{
-			_color = color::mul(instValues._originalColor, instance.ColorParent);
+			_color = Color::Mul(instValues._originalColor, instance.ColorParent);
 		}
 		else
 		{
 			_color = instValues._originalColor;
 		}
 
-		color color_ll = _color;
-		color color_lr = _color;
-		color color_ul = _color;
-		color color_ur = _color;
+		Color color_ll = _color;
+		Color color_lr = _color;
+		Color color_ul = _color;
+		Color color_ur = _color;
 
 		if( SpriteColor.type == SpriteColorParameter::Default )
 		{
 		}
 		else if( SpriteColor.type == SpriteColorParameter::Fixed )
 		{
-			color_ll = color::mul( color_ll, SpriteColor.fixed.ll );
-			color_lr = color::mul( color_lr, SpriteColor.fixed.lr );
-			color_ul = color::mul( color_ul, SpriteColor.fixed.ul );
-			color_ur = color::mul( color_ur, SpriteColor.fixed.ur );
+			color_ll = Color::Mul( color_ll, SpriteColor.fixed.ll );
+			color_lr = Color::Mul( color_lr, SpriteColor.fixed.lr );
+			color_ul = Color::Mul( color_ul, SpriteColor.fixed.ul );
+			color_ur = Color::Mul( color_ur, SpriteColor.fixed.ur );
 		}
 
-		color_ll.setValueToArg( instanceParameter.Colors[0] );
-		color_lr.setValueToArg( instanceParameter.Colors[1] );
-		color_ul.setValueToArg( instanceParameter.Colors[2] );
-		color_ur.setValueToArg( instanceParameter.Colors[3] );
+		instanceParameter.Colors[0] = color_ll;
+		instanceParameter.Colors[1] = color_lr;
+		instanceParameter.Colors[2] = color_ul;
+		instanceParameter.Colors[3] = color_ur;
 		
-		// Apply global color
+		// Apply global Color
 		if (instance.m_pContainer->GetRootInstance()->IsGlobalColorSet)
 		{
-			Color::Mul(instanceParameter.Colors[0], instanceParameter.Colors[0], instance.m_pContainer->GetRootInstance()->GlobalColor);
-			Color::Mul(instanceParameter.Colors[1], instanceParameter.Colors[1], instance.m_pContainer->GetRootInstance()->GlobalColor);
-			Color::Mul(instanceParameter.Colors[2], instanceParameter.Colors[2], instance.m_pContainer->GetRootInstance()->GlobalColor);
-			Color::Mul(instanceParameter.Colors[3], instanceParameter.Colors[3], instance.m_pContainer->GetRootInstance()->GlobalColor);
+			instanceParameter.Colors[0] = Color::Mul(instanceParameter.Colors[0], instance.m_pContainer->GetRootInstance()->GlobalColor);
+			instanceParameter.Colors[1] = Color::Mul(instanceParameter.Colors[1], instance.m_pContainer->GetRootInstance()->GlobalColor);
+			instanceParameter.Colors[2] = Color::Mul(instanceParameter.Colors[2], instance.m_pContainer->GetRootInstance()->GlobalColor);
+			instanceParameter.Colors[3] = Color::Mul(instanceParameter.Colors[3], instance.m_pContainer->GetRootInstance()->GlobalColor);
 		}
 
 		if( SpritePosition.type == SpritePosition.Default )
@@ -11441,6 +11624,8 @@ void EffectNodeSprite::EndRendering(Manager* manager)
 		nodeParameter.IsDepthOffsetScaledWithCamera = DepthValues.IsDepthOffsetScaledWithCamera;
 		nodeParameter.IsDepthOffsetScaledWithParticleScale = DepthValues.IsDepthOffsetScaledWithParticleScale;
 
+		nodeParameter.ZSort = DepthValues.ZSort;
+
 		renderer->EndRendering( nodeParameter, m_userData );
 	}
 }
@@ -11483,15 +11668,15 @@ void EffectNodeSprite::InitializeRenderedInstance(Instance& instance, Manager* m
 		instValues.allColorValues.fcurve_rgba.offset[2] = SpriteAllColor.fcurve_rgba.FCurve->B.GetOffset(*instanceGlobal);
 		instValues.allColorValues.fcurve_rgba.offset[3] = SpriteAllColor.fcurve_rgba.FCurve->A.GetOffset(*instanceGlobal);
 		
-		instValues._originalColor.r = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[0] + SpriteAllColor.fcurve_rgba.FCurve->R.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
-		instValues._originalColor.g = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[1] + SpriteAllColor.fcurve_rgba.FCurve->G.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
-		instValues._originalColor.b = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[2] + SpriteAllColor.fcurve_rgba.FCurve->B.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
-		instValues._originalColor.a = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[3] + SpriteAllColor.fcurve_rgba.FCurve->A.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
+		instValues._originalColor.R = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[0] + SpriteAllColor.fcurve_rgba.FCurve->R.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
+		instValues._originalColor.G = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[1] + SpriteAllColor.fcurve_rgba.FCurve->G.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
+		instValues._originalColor.B = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[2] + SpriteAllColor.fcurve_rgba.FCurve->B.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
+		instValues._originalColor.A = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[3] + SpriteAllColor.fcurve_rgba.FCurve->A.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
 	}
 
 	if (RendererCommon.ColorBindType == BindType::Always || RendererCommon.ColorBindType == BindType::WhenCreating)
 	{
-		instValues._color = color::mul(instValues._originalColor, instance.ColorParent);
+		instValues._color = Color::Mul(instValues._originalColor, instance.ColorParent);
 	}
 	else
 	{
@@ -11528,21 +11713,21 @@ void EffectNodeSprite::UpdateRenderedInstance(Instance& instance, Manager* manag
 	}
 	else if( SpriteAllColor.type == StandardColorParameter::FCurve_RGBA )
 	{
-		instValues._originalColor.r = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[0] + SpriteAllColor.fcurve_rgba.FCurve->R.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
-		instValues._originalColor.g = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[1] + SpriteAllColor.fcurve_rgba.FCurve->G.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
-		instValues._originalColor.b = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[2] + SpriteAllColor.fcurve_rgba.FCurve->B.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
-		instValues._originalColor.a = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[3] + SpriteAllColor.fcurve_rgba.FCurve->A.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
+		instValues._originalColor.R = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[0] + SpriteAllColor.fcurve_rgba.FCurve->R.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
+		instValues._originalColor.G = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[1] + SpriteAllColor.fcurve_rgba.FCurve->G.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
+		instValues._originalColor.B = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[2] + SpriteAllColor.fcurve_rgba.FCurve->B.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
+		instValues._originalColor.A = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[3] + SpriteAllColor.fcurve_rgba.FCurve->A.GetValue( (int32_t)instance.m_LivingTime )), 255, 0);
 	}
 
 	float fadeAlpha = GetFadeAlpha(instance);
 	if (fadeAlpha != 1.0f)
 	{
-		instValues._originalColor.a = (uint8_t)(instValues._originalColor.a * fadeAlpha);
+		instValues._originalColor.A = (uint8_t)(instValues._originalColor.A * fadeAlpha);
 	}
 
 	if (RendererCommon.ColorBindType == BindType::Always || RendererCommon.ColorBindType == BindType::WhenCreating)
 	{
-		instValues._color = color::mul(instValues._originalColor, instance.ColorParent);
+		instValues._color = Color::Mul(instValues._originalColor, instance.ColorParent);
 	}
 	else
 	{
@@ -11580,36 +11765,42 @@ namespace Effekseer
 void EffectNodeTrack::LoadRendererParameter(unsigned char*& pos, Setting* setting)
 {
 	int32_t type = 0;
-	memcpy( &type, pos, sizeof(int) );
+	memcpy(&type, pos, sizeof(int));
 	pos += sizeof(int);
-	assert( type == GetType() );
+	assert(type == GetType());
 	EffekseerPrintDebug("Renderer : Track\n");
 
 	int32_t size = 0;
 
-	
-	LoadValues( TrackSizeFor, pos );
-	LoadValues( TrackSizeMiddle, pos );
-	LoadValues( TrackSizeBack, pos );
 
-	TrackColorLeft.load( pos, m_effect->GetVersion() );
-	TrackColorLeftMiddle.load( pos, m_effect->GetVersion() );
+	LoadValues(TrackSizeFor, pos);
+	LoadValues(TrackSizeMiddle, pos);
+	LoadValues(TrackSizeBack, pos);
 
-	TrackColorCenter.load( pos, m_effect->GetVersion() );
-	TrackColorCenterMiddle.load( pos, m_effect->GetVersion() );
+	if (m_effect->GetVersion() >= 13)
+	{
+		memcpy(&SplineDivision, pos, sizeof(int32_t));
+		pos += sizeof(int32_t);
+	}
 
-	TrackColorRight.load( pos, m_effect->GetVersion() );
-	TrackColorRightMiddle.load( pos, m_effect->GetVersion() );
+	TrackColorLeft.load(pos, m_effect->GetVersion());
+	TrackColorLeftMiddle.load(pos, m_effect->GetVersion());
+
+	TrackColorCenter.load(pos, m_effect->GetVersion());
+	TrackColorCenterMiddle.load(pos, m_effect->GetVersion());
+
+	TrackColorRight.load(pos, m_effect->GetVersion());
+	TrackColorRightMiddle.load(pos, m_effect->GetVersion());
 
 	AlphaBlend = RendererCommon.AlphaBlend;
 	TrackTexture = RendererCommon.ColorTextureIndex;
 
-	EffekseerPrintDebug("TrackColorLeft : %d\n", TrackColorLeft.type );
-	EffekseerPrintDebug("TrackColorLeftMiddle : %d\n", TrackColorLeftMiddle.type );
-	EffekseerPrintDebug("TrackColorCenter : %d\n", TrackColorCenter.type );
-	EffekseerPrintDebug("TrackColorCenterMiddle : %d\n", TrackColorCenterMiddle.type );
-	EffekseerPrintDebug("TrackColorRight : %d\n", TrackColorRight.type );
-	EffekseerPrintDebug("TrackColorRightMiddle : %d\n", TrackColorRightMiddle.type );
+	EffekseerPrintDebug("TrackColorLeft : %d\n", TrackColorLeft.type);
+	EffekseerPrintDebug("TrackColorLeftMiddle : %d\n", TrackColorLeftMiddle.type);
+	EffekseerPrintDebug("TrackColorCenter : %d\n", TrackColorCenter.type);
+	EffekseerPrintDebug("TrackColorCenterMiddle : %d\n", TrackColorCenterMiddle.type);
+	EffekseerPrintDebug("TrackColorRight : %d\n", TrackColorRight.type);
+	EffekseerPrintDebug("TrackColorRightMiddle : %d\n", TrackColorRightMiddle.type);
 
 	// 右手系左手系変換
 	if (setting->GetCoordinateSystem() == CoordinateSystem::LH)
@@ -11617,7 +11808,7 @@ void EffectNodeTrack::LoadRendererParameter(unsigned char*& pos, Setting* settin
 	}
 
 	/* 位置拡大処理 */
-	if( m_effect->GetVersion() >= 8 )
+	if (m_effect->GetVersion() >= 8)
 	{
 		TrackSizeFor.fixed.size *= m_effect->GetMaginification();
 		TrackSizeMiddle.fixed.size *= m_effect->GetMaginification();
@@ -11631,7 +11822,7 @@ void EffectNodeTrack::LoadRendererParameter(unsigned char*& pos, Setting* settin
 void EffectNodeTrack::BeginRendering(int32_t count, Manager* manager)
 {
 	TrackRenderer* renderer = manager->GetTrackRenderer();
-	if( renderer != NULL )
+	if (renderer != NULL)
 	{
 		m_nodeParameter.AlphaBlend = AlphaBlend;
 		m_nodeParameter.TextureFilter = RendererCommon.FilterType;
@@ -11644,7 +11835,9 @@ void EffectNodeTrack::BeginRendering(int32_t count, Manager* manager)
 		m_nodeParameter.Distortion = RendererCommon.Distortion;
 		m_nodeParameter.DistortionIntensity = RendererCommon.DistortionIntensity;
 
-		renderer->BeginRendering( m_nodeParameter, count, m_userData );
+		m_nodeParameter.SplineDivision = SplineDivision;
+
+		renderer->BeginRendering(m_nodeParameter, count, m_userData);
 	}
 }
 
@@ -11654,7 +11847,7 @@ void EffectNodeTrack::BeginRendering(int32_t count, Manager* manager)
 void EffectNodeTrack::BeginRenderingGroup(InstanceGroup* group, Manager* manager)
 {
 	TrackRenderer* renderer = manager->GetTrackRenderer();
-	if( renderer != NULL )
+	if (renderer != nullptr)
 	{
 		InstanceGroupValues& instValues = group->rendererValues.track;
 		m_currentGroupValues = group->rendererValues.track;
@@ -11666,7 +11859,7 @@ void EffectNodeTrack::BeginRenderingGroup(InstanceGroup* group, Manager* manager
 		{
 			m_instanceParameter.UV = group->GetFirst()->GetUV();
 		}
-		
+
 		/*
 		SetValues( m_instanceParameter.ColorLeft, instValues.ColorLeft, TrackColorLeft, group->GetTime() );
 		SetValues( m_instanceParameter.ColorCenter,instValues.ColorCenter, TrackColorCenter, group->GetTime() );
@@ -11675,23 +11868,30 @@ void EffectNodeTrack::BeginRenderingGroup(InstanceGroup* group, Manager* manager
 		SetValues( m_instanceParameter.ColorLeftMiddle,instValues.ColorLeftMiddle, TrackColorLeftMiddle, group->GetTime() );
 		SetValues( m_instanceParameter.ColorCenterMiddle,instValues.ColorCenterMiddle, TrackColorCenterMiddle, group->GetTime() );
 		SetValues( m_instanceParameter.ColorRightMiddle,instValues.ColorRightMiddle, TrackColorRightMiddle, group->GetTime() );
-	
+
 		SetValues( m_instanceParameter.SizeFor, instValues.SizeFor, TrackSizeFor, group->GetTime() );
 		SetValues( m_instanceParameter.SizeMiddle, instValues.SizeMiddle, TrackSizeMiddle, group->GetTime() );
 		SetValues( m_instanceParameter.SizeBack, instValues.SizeBack, TrackSizeBack, group->GetTime() );
 		*/
+		renderer->BeginRenderingGroup(m_nodeParameter, group->GetInstanceCount(), m_userData);
 	}
 }
 
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
-void EffectNodeTrack::Rendering(const Instance& instance, Manager* manager)
+void EffectNodeTrack::EndRenderingGroup(InstanceGroup* group, Manager* manager)
+{
+	TrackRenderer* renderer = manager->GetTrackRenderer();
+	if (renderer != NULL)
+	{
+		renderer->EndRenderingGroup(m_nodeParameter, group->GetInstanceCount(), m_userData);
+	}
+}
+
+void EffectNodeTrack::Rendering(const Instance& instance, const Instance* next_instance, Manager* manager)
 {
 	const InstanceValues& instValues = instance.rendererValues.track;
 
 	TrackRenderer* renderer = manager->GetTrackRenderer();
-	if( renderer != NULL )
+	if (renderer != NULL)
 	{
 		float t = (float)instance.m_LivingTime / (float)instance.m_LivedTime;
 		int32_t time = instance.m_LivingTime;
@@ -11704,14 +11904,14 @@ void EffectNodeTrack::Rendering(const Instance& instance, Manager* manager)
 		SetValues(m_instanceParameter.ColorLeftMiddle, instance, m_currentGroupValues.ColorLeftMiddle, TrackColorLeftMiddle, time, livedTime);
 		SetValues(m_instanceParameter.ColorCenterMiddle, instance, m_currentGroupValues.ColorCenterMiddle, TrackColorCenterMiddle, time, livedTime);
 		SetValues(m_instanceParameter.ColorRightMiddle, instance, m_currentGroupValues.ColorRightMiddle, TrackColorRightMiddle, time, livedTime);
-	
-		SetValues( m_instanceParameter.SizeFor, m_currentGroupValues.SizeFor, TrackSizeFor, t );
-		SetValues( m_instanceParameter.SizeMiddle, m_currentGroupValues.SizeMiddle, TrackSizeMiddle, t );
-		SetValues( m_instanceParameter.SizeBack, m_currentGroupValues.SizeBack, TrackSizeBack, t );
+
+		SetValues(m_instanceParameter.SizeFor, m_currentGroupValues.SizeFor, TrackSizeFor, t);
+		SetValues(m_instanceParameter.SizeMiddle, m_currentGroupValues.SizeMiddle, TrackSizeMiddle, t);
+		SetValues(m_instanceParameter.SizeBack, m_currentGroupValues.SizeBack, TrackSizeBack, t);
 
 		m_instanceParameter.SRTMatrix43 = instance.GetGlobalMatrix43();
 
-		renderer->Rendering( m_nodeParameter, m_instanceParameter, m_userData );
+		renderer->Rendering(m_nodeParameter, m_instanceParameter, m_userData);
 		m_instanceParameter.InstanceIndex++;
 	}
 }
@@ -11722,9 +11922,9 @@ void EffectNodeTrack::Rendering(const Instance& instance, Manager* manager)
 void EffectNodeTrack::EndRendering(Manager* manager)
 {
 	TrackRenderer* renderer = manager->GetTrackRenderer();
-	if( renderer != NULL )
+	if (renderer != NULL)
 	{
-		renderer->EndRendering( m_nodeParameter, m_userData );
+		renderer->EndRendering(m_nodeParameter, m_userData);
 	}
 }
 
@@ -11757,25 +11957,19 @@ void EffectNodeTrack::InitializeRenderedInstance(Instance& instance, Manager* ma
 	InstanceValues& instValues = instance.rendererValues.track;
 
 	// Calculate only center
-	float t = (float) instance.m_LivingTime / (float) instance.m_LivedTime;
+	float t = (float)instance.m_LivingTime / (float)instance.m_LivedTime;
 	int32_t time = instance.m_LivingTime;
 	int32_t livedTime = instance.m_LivedTime;
 
 	Color c;
 	SetValues(c, instance, m_currentGroupValues.ColorCenterMiddle, TrackColorCenterMiddle, time, livedTime);
 
-	color _c;
-	_c.r = c.R;
-	_c.g = c.G;
-	_c.b = c.B;
-	_c.a = c.A;
-
 	if (RendererCommon.ColorBindType == BindType::Always || RendererCommon.ColorBindType == BindType::WhenCreating)
 	{
-		_c = color::mul(_c, instance.ColorParent);
+		c = Color::Mul(c, instance.ColorParent);
 	}
 
-	instance.ColorInheritance = _c;
+	instance.ColorInheritance = c;
 }
 
 //----------------------------------------------------------------------------------
@@ -11786,20 +11980,14 @@ void EffectNodeTrack::UpdateRenderedInstance(Instance& instance, Manager* manage
 	InstanceValues& instValues = instance.rendererValues.track;
 
 	// Calculate only center
-	float t = (float) instance.m_LivingTime / (float) instance.m_LivedTime;
+	float t = (float)instance.m_LivingTime / (float)instance.m_LivedTime;
 	int32_t time = instance.m_LivingTime;
 	int32_t livedTime = instance.m_LivedTime;
 
 	Color c;
 	SetValues(c, instance, m_currentGroupValues.ColorCenterMiddle, TrackColorCenterMiddle, time, livedTime);
 
-	color _c;
-	_c.r = c.R;
-	_c.g = c.G;
-	_c.b = c.B;
-	_c.a = c.A;
-
-	instance.ColorInheritance = _c;
+	instance.ColorInheritance = c;
 }
 
 //----------------------------------------------------------------------------------
@@ -11807,20 +11995,20 @@ void EffectNodeTrack::UpdateRenderedInstance(Instance& instance, Manager* manage
 //----------------------------------------------------------------------------------
 void EffectNodeTrack::InitializeValues(InstanceGroupValues::Color& value, StandardColorParameter& param, InstanceGlobal* instanceGlobal)
 {
-	if( param.type == StandardColorParameter::Fixed )
+	if (param.type == StandardColorParameter::Fixed)
 	{
 		value.color.fixed.color_ = param.fixed.all;
 	}
-	else if( param.type == StandardColorParameter::Random )
+	else if (param.type == StandardColorParameter::Random)
 	{
 		value.color.random.color_ = param.random.all.getValue(*(instanceGlobal));
 	}
-	else if( param.type == StandardColorParameter::Easing )
+	else if (param.type == StandardColorParameter::Easing)
 	{
 		value.color.easing.start = param.easing.all.getStartValue(*(instanceGlobal));
 		value.color.easing.end = param.easing.all.getEndValue(*(instanceGlobal));
 	}
-	else if( param.type == StandardColorParameter::FCurve_RGBA )
+	else if (param.type == StandardColorParameter::FCurve_RGBA)
 	{
 		value.color.fcurve_rgba.offset[0] = param.fcurve_rgba.FCurve->R.GetOffset(*instanceGlobal);
 		value.color.fcurve_rgba.offset[1] = param.fcurve_rgba.FCurve->G.GetOffset(*instanceGlobal);
@@ -11834,7 +12022,7 @@ void EffectNodeTrack::InitializeValues(InstanceGroupValues::Color& value, Standa
 //----------------------------------------------------------------------------------
 void EffectNodeTrack::InitializeValues(InstanceGroupValues::Size& value, TrackSizeParameter& param, Manager* manager)
 {
-	if( param.type == TrackSizeParameter::Fixed )
+	if (param.type == TrackSizeParameter::Fixed)
 	{
 		value.size.fixed.size_ = param.fixed.size;
 	}
@@ -11845,59 +12033,55 @@ void EffectNodeTrack::InitializeValues(InstanceGroupValues::Size& value, TrackSi
 //----------------------------------------------------------------------------------
 void EffectNodeTrack::SetValues(Color& c, const Instance& instance, InstanceGroupValues::Color& value, StandardColorParameter& param, int32_t time, int32_t livedTime)
 {
-	color _c;
-
-	if( param.type == StandardColorParameter::Fixed )
+	if (param.type == StandardColorParameter::Fixed)
 	{
-		_c = value.color.fixed.color_;
+		c = value.color.fixed.color_;
 	}
-	else if(param.type == StandardColorParameter::Random )
+	else if (param.type == StandardColorParameter::Random)
 	{
-		_c = value.color.random.color_;
+		c = value.color.random.color_;
 	}
-	else if( param.type == StandardColorParameter::Easing )
+	else if (param.type == StandardColorParameter::Easing)
 	{
 		float t = (float)time / (float)livedTime;
 		param.easing.all.setValueToArg(
-			_c, 
+			c,
 			value.color.easing.start,
 			value.color.easing.end,
-			t );
+			t);
 	}
-	else if( param.type == StandardColorParameter::FCurve_RGBA )
+	else if (param.type == StandardColorParameter::FCurve_RGBA)
 	{
-		_c.r = (uint8_t)Clamp( (value.color.fcurve_rgba.offset[0] + param.fcurve_rgba.FCurve->R.GetValue( (int32_t)time )), 255, 0);
-		_c.g = (uint8_t)Clamp( (value.color.fcurve_rgba.offset[1] + param.fcurve_rgba.FCurve->G.GetValue( (int32_t)time )), 255, 0);
-		_c.b = (uint8_t)Clamp( (value.color.fcurve_rgba.offset[2] + param.fcurve_rgba.FCurve->B.GetValue( (int32_t)time )), 255, 0);
-		_c.a = (uint8_t)Clamp( (value.color.fcurve_rgba.offset[3] + param.fcurve_rgba.FCurve->A.GetValue( (int32_t)time )), 255, 0);
+		c.R = (uint8_t)Clamp((value.color.fcurve_rgba.offset[0] + param.fcurve_rgba.FCurve->R.GetValue((int32_t)time)), 255, 0);
+		c.G = (uint8_t)Clamp((value.color.fcurve_rgba.offset[1] + param.fcurve_rgba.FCurve->G.GetValue((int32_t)time)), 255, 0);
+		c.B = (uint8_t)Clamp((value.color.fcurve_rgba.offset[2] + param.fcurve_rgba.FCurve->B.GetValue((int32_t)time)), 255, 0);
+		c.A = (uint8_t)Clamp((value.color.fcurve_rgba.offset[3] + param.fcurve_rgba.FCurve->A.GetValue((int32_t)time)), 255, 0);
 	}
 
 	if (RendererCommon.ColorBindType == BindType::Always || RendererCommon.ColorBindType == BindType::WhenCreating)
 	{
-		_c = color::mul(_c, instance.ColorParent);
+		c = Color::Mul(c, instance.ColorParent);
 	}
 
 	float fadeAlpha = GetFadeAlpha(instance);
 	if (fadeAlpha != 1.0f)
 	{
-		_c.a = (uint8_t)(_c.a * fadeAlpha);
+		c.A = (uint8_t)(c.A * fadeAlpha);
 	}
 
-	_c.setValueToArg(c);
-
-	// Apply global color
+	// Apply global Color
 	if (instance.m_pContainer->GetRootInstance()->IsGlobalColorSet)
 	{
-		Color::Mul(c, c, instance.m_pContainer->GetRootInstance()->GlobalColor);
+		c = Color::Mul(c, instance.m_pContainer->GetRootInstance()->GlobalColor);
 	}
 }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void EffectNodeTrack::SetValues( float& s, InstanceGroupValues::Size& value, TrackSizeParameter& param, float time )
+void EffectNodeTrack::SetValues(float& s, InstanceGroupValues::Size& value, TrackSizeParameter& param, float time)
 {
-	if( param.type == TrackSizeParameter::Fixed )
+	if (param.type == TrackSizeParameter::Fixed)
 	{
 		s = value.size.fixed.size_;
 	}
@@ -11906,14 +12090,14 @@ void EffectNodeTrack::SetValues( float& s, InstanceGroupValues::Size& value, Tra
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void EffectNodeTrack::LoadValues( TrackSizeParameter& param, unsigned char*& pos )
+void EffectNodeTrack::LoadValues(TrackSizeParameter& param, unsigned char*& pos)
 {
-	memcpy( &param.type, pos, sizeof(int) );
+	memcpy(&param.type, pos, sizeof(int));
 	pos += sizeof(int);
-	
-	if( param.type == TrackSizeParameter::Fixed )
-	{	
-		memcpy( &param.fixed, pos, sizeof(param.fixed) );
+
+	if (param.type == TrackSizeParameter::Fixed)
+	{
+		memcpy(&param.fixed, pos, sizeof(param.fixed));
 		pos += sizeof(param.fixed);
 	}
 }
@@ -11926,7 +12110,6 @@ void EffectNodeTrack::LoadValues( TrackSizeParameter& param, unsigned char*& pos
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-
 
 //----------------------------------------------------------------------------------
 //
@@ -12016,9 +12199,6 @@ Effect* Effect::Create(Manager* manager, const EFK_CHAR* path, float magnificati
 	return effect;
 }
 
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
 Effect* EffectImplemented::Create( Manager* pManager, void* pData, int size, float magnification, const EFK_CHAR* materialPath )
 {
 	if( pData == NULL || size == 0 ) return NULL;
@@ -12328,6 +12508,15 @@ bool EffectImplemented::Load( void* pData, int size, float mag, const EFK_CHAR* 
 				m_pModels[i] = NULL;
 			}
 		}
+	}
+
+	if (m_version >= 13)
+	{
+		memcpy(&renderingNodesCount, pos, sizeof(int32_t));
+		pos += sizeof(int32_t);
+
+		memcpy(&renderingNodesThreshold, pos, sizeof(int32_t));
+		pos += sizeof(int32_t);	
 	}
 
 	// 拡大率
@@ -14127,19 +14316,16 @@ void ManagerImplemented::UpdateHandle( Handle handle, float deltaFrame )
 //----------------------------------------------------------------------------------
 void ManagerImplemented::UpdateHandle( DrawSet& drawSet, float deltaFrame )
 {
-	if( !drawSet.IsPaused )
+	float df = drawSet.IsPaused ? 0 : deltaFrame * drawSet.Speed;
+
+	drawSet.InstanceContainerPointer->Update( true, df, drawSet.IsShown );
+
+	if( drawSet.DoUseBaseMatrix )
 	{
-		float df = deltaFrame * drawSet.Speed;
-
-		drawSet.InstanceContainerPointer->Update( true, df, drawSet.IsShown );
-
-		if( drawSet.DoUseBaseMatrix )
-		{
-			drawSet.InstanceContainerPointer->SetBaseMatrix( true, drawSet.BaseMatrix );
-		}
-
-		drawSet.GlobalPointer->AddUpdatedFrame( df );
+		drawSet.InstanceContainerPointer->SetBaseMatrix( true, drawSet.BaseMatrix );
 	}
+
+	drawSet.GlobalPointer->AddUpdatedFrame( df );
 }
 
 //----------------------------------------------------------------------------------
@@ -14160,7 +14346,17 @@ void ManagerImplemented::Draw()
 
 			if( drawSet.IsShown && drawSet.IsAutoDrawing )
 			{
-				drawSet.InstanceContainerPointer->Draw( true );
+				if (drawSet.GlobalPointer->RenderedInstanceContainers.size() > 0)
+				{
+					for (auto& c : drawSet.GlobalPointer->RenderedInstanceContainers)
+					{
+						c->Draw(false);
+					}
+				}
+				else
+				{
+					drawSet.InstanceContainerPointer->Draw( true );
+				}
 			}
 		}
 	}
@@ -14172,7 +14368,109 @@ void ManagerImplemented::Draw()
 
 			if( drawSet.IsShown && drawSet.IsAutoDrawing )
 			{
-				drawSet.InstanceContainerPointer->Draw( true );
+				if (drawSet.GlobalPointer->RenderedInstanceContainers.size() > 0)
+				{
+					for (auto& c : drawSet.GlobalPointer->RenderedInstanceContainers)
+					{
+						c->Draw(false);
+					}
+				}
+				else
+				{
+					drawSet.InstanceContainerPointer->Draw(true);
+				}
+			}
+		}
+	}
+
+	// 経過時間を計算
+	m_drawTime = (int)(Effekseer::GetTime() - beginTime);
+
+	m_renderingSession.Leave();
+}
+
+void ManagerImplemented::DrawBack()
+{
+	m_renderingSession.Enter();
+
+	// 開始時間を記録
+	int64_t beginTime = ::Effekseer::GetTime();
+
+	if (m_culled)
+	{
+		for (size_t i = 0; i < m_culledObjects.size(); i++)
+		{
+			DrawSet& drawSet = *m_culledObjects[i];
+
+			if (drawSet.IsShown && drawSet.IsAutoDrawing)
+			{
+				auto e = (EffectImplemented*)drawSet.ParameterPointer;
+				for (int32_t i = 0; i < e->renderingNodesThreshold; i++)
+				{
+					drawSet.GlobalPointer->RenderedInstanceContainers[i]->Draw(false);
+				}
+			}
+		}
+	}
+	else
+	{
+		for (size_t i = 0; i < m_renderingDrawSets.size(); i++)
+		{
+			DrawSet& drawSet = m_renderingDrawSets[i];
+
+			if (drawSet.IsShown && drawSet.IsAutoDrawing)
+			{
+				auto e = (EffectImplemented*)drawSet.ParameterPointer;
+				for (int32_t i = 0; i < e->renderingNodesThreshold; i++)
+				{
+					drawSet.GlobalPointer->RenderedInstanceContainers[i]->Draw(false);
+				}
+			}
+		}
+	}
+
+	// 経過時間を計算
+	m_drawTime = (int)(Effekseer::GetTime() - beginTime);
+
+	m_renderingSession.Leave();
+}
+
+void ManagerImplemented::DrawFront()
+{
+	m_renderingSession.Enter();
+
+	// 開始時間を記録
+	int64_t beginTime = ::Effekseer::GetTime();
+
+	if (m_culled)
+	{
+		for (size_t i = 0; i < m_culledObjects.size(); i++)
+		{
+			DrawSet& drawSet = *m_culledObjects[i];
+
+			if (drawSet.IsShown && drawSet.IsAutoDrawing)
+			{
+				auto e = (EffectImplemented*)drawSet.ParameterPointer;
+				for (int32_t i = e->renderingNodesThreshold; i < drawSet.GlobalPointer->RenderedInstanceContainers.size(); i++)
+				{
+					drawSet.GlobalPointer->RenderedInstanceContainers[i]->Draw(false);
+				}
+			}
+		}
+	}
+	else
+	{
+		for (size_t i = 0; i < m_renderingDrawSets.size(); i++)
+		{
+			DrawSet& drawSet = m_renderingDrawSets[i];
+
+			if (drawSet.IsShown && drawSet.IsAutoDrawing)
+			{
+				auto e = (EffectImplemented*)drawSet.ParameterPointer;
+				for (int32_t i = e->renderingNodesThreshold; i < drawSet.GlobalPointer->RenderedInstanceContainers.size(); i++)
+				{
+					drawSet.GlobalPointer->RenderedInstanceContainers[i]->Draw(false);
+				}
 			}
 		}
 	}
@@ -14202,6 +14500,12 @@ Handle ManagerImplemented::Play( Effect* effect, float x, float y, float z )
 	else
 	{
 		pGlobal->SetSeed(GetRandFunc()());
+	}
+
+	pGlobal->RenderedInstanceContainers.resize(e->renderingNodesCount);
+	for (auto i = 0; i < pGlobal->RenderedInstanceContainers.size(); i++)
+	{
+		pGlobal->RenderedInstanceContainers[i] = nullptr;
 	}
 
 	InstanceContainer* pContainer = CreateInstanceContainer( ((EffectImplemented*)effect)->GetRoot(), pGlobal, true, NULL );
@@ -14240,7 +14544,17 @@ void ManagerImplemented::DrawHandle( Handle handle )
 			{
 				if( drawSet.IsShown )
 				{
-					drawSet.InstanceContainerPointer->Draw( true );
+					if (drawSet.GlobalPointer->RenderedInstanceContainers.size() > 0)
+					{
+						for (auto& c : drawSet.GlobalPointer->RenderedInstanceContainers)
+						{
+							c->Draw(false);
+						}
+					}
+					else
+					{
+						drawSet.InstanceContainerPointer->Draw(true);
+					}
 				}
 			}
 		}
@@ -14248,7 +14562,95 @@ void ManagerImplemented::DrawHandle( Handle handle )
 		{
 			if( drawSet.IsShown )
 			{
-				drawSet.InstanceContainerPointer->Draw( true );
+				if (drawSet.GlobalPointer->RenderedInstanceContainers.size() > 0)
+				{
+					for (auto& c : drawSet.GlobalPointer->RenderedInstanceContainers)
+					{
+						c->Draw(false);
+					}
+				}
+				else
+				{
+					drawSet.InstanceContainerPointer->Draw(true);
+				}
+			}
+		}
+	}
+
+	m_renderingSession.Leave();
+}
+
+void ManagerImplemented::DrawHandleBack(Handle handle)
+{
+	m_renderingSession.Enter();
+
+	std::map<Handle, DrawSet>::iterator it = m_renderingDrawSetMaps.find(handle);
+	if (it != m_renderingDrawSetMaps.end())
+	{
+		DrawSet& drawSet = it->second;
+
+		if (m_culled)
+		{
+			if (m_culledObjectSets.find(drawSet.Self) != m_culledObjectSets.end())
+			{
+				if (drawSet.IsShown)
+				{
+					auto e = (EffectImplemented*)drawSet.ParameterPointer;
+					for (int32_t i = 0; i < e->renderingNodesThreshold; i++)
+					{
+						drawSet.GlobalPointer->RenderedInstanceContainers[i]->Draw(false);
+					}
+				}
+			}
+		}
+		else
+		{
+			if (drawSet.IsShown)
+			{
+				auto e = (EffectImplemented*)drawSet.ParameterPointer;
+				for (int32_t i = 0; i < e->renderingNodesThreshold; i++)
+				{
+					drawSet.GlobalPointer->RenderedInstanceContainers[i]->Draw(false);
+				}
+			}
+		}
+	}
+
+	m_renderingSession.Leave();
+}
+
+void ManagerImplemented::DrawHandleFront(Handle handle)
+{
+	m_renderingSession.Enter();
+
+	std::map<Handle, DrawSet>::iterator it = m_renderingDrawSetMaps.find(handle);
+	if (it != m_renderingDrawSetMaps.end())
+	{
+		DrawSet& drawSet = it->second;
+
+		if (m_culled)
+		{
+			if (m_culledObjectSets.find(drawSet.Self) != m_culledObjectSets.end())
+			{
+				if (drawSet.IsShown)
+				{
+					auto e = (EffectImplemented*)drawSet.ParameterPointer;
+					for (int32_t i = e->renderingNodesThreshold; i < drawSet.GlobalPointer->RenderedInstanceContainers.size(); i++)
+					{
+						drawSet.GlobalPointer->RenderedInstanceContainers[i]->Draw(false);
+					}
+				}
+			}
+		}
+		else
+		{
+			if (drawSet.IsShown)
+			{
+				auto e = (EffectImplemented*)drawSet.ParameterPointer;
+				for (int32_t i = e->renderingNodesThreshold; i < drawSet.GlobalPointer->RenderedInstanceContainers.size(); i++)
+				{
+					drawSet.GlobalPointer->RenderedInstanceContainers[i]->Draw(false);
+				}
 			}
 		}
 	}
@@ -14398,39 +14800,46 @@ namespace Effekseer {
 //----------------------------------------------------------------------------------
 namespace Effekseer
 {
+
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void* InstanceContainer::operator new( size_t size, Manager* pManager )
+void* InstanceContainer::operator new(size_t size, Manager* pManager)
 {
-	return pManager->GetMallocFunc()( size );
+	return pManager->GetMallocFunc()(size);
 }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void InstanceContainer::operator delete( void* p, Manager* pManager )
+void InstanceContainer::operator delete(void* p, Manager* pManager)
 {
-	pManager->GetFreeFunc()( p, sizeof(InstanceContainer) );
+	pManager->GetFreeFunc()(p, sizeof(InstanceContainer));
 }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-InstanceContainer::InstanceContainer( Manager* pManager, EffectNode* pEffectNode, InstanceGlobal* pGlobal, int ChildrenCount )
-	: m_pManager		( pManager )
-	, m_pEffectNode((EffectNodeImplemented*) pEffectNode)
-	, m_pGlobal			(pGlobal)
-	, m_Children		( NULL )
-	, m_ChildrenCount	( ChildrenCount )
-	, m_headGroups		( NULL )
-	, m_tailGroups		( NULL )
+InstanceContainer::InstanceContainer(Manager* pManager, EffectNode* pEffectNode, InstanceGlobal* pGlobal, int ChildrenCount)
+	: m_pManager(pManager)
+	, m_pEffectNode((EffectNodeImplemented*)pEffectNode)
+	, m_pGlobal(pGlobal)
+	, m_Children(NULL)
+	, m_ChildrenCount(ChildrenCount)
+	, m_headGroups(NULL)
+	, m_tailGroups(NULL)
 
 {
-	m_Children = (InstanceContainer**)m_pManager->GetMallocFunc()( sizeof(InstanceContainer*) * m_ChildrenCount );
-	for( int i = 0; i < m_ChildrenCount; i++ )
+	auto en = (EffectNodeImplemented*)pEffectNode;
+	if (en->RenderingPriority >= 0)
 	{
-		m_Children[ i ] = NULL;
+		pGlobal->RenderedInstanceContainers[en->RenderingPriority] = this;
+	}
+
+	m_Children = (InstanceContainer**)m_pManager->GetMallocFunc()(sizeof(InstanceContainer*) * m_ChildrenCount);
+	for (int i = 0; i < m_ChildrenCount; i++)
+	{
+		m_Children[i] = NULL;
 	}
 }
 
@@ -14439,27 +14848,27 @@ InstanceContainer::InstanceContainer( Manager* pManager, EffectNode* pEffectNode
 //----------------------------------------------------------------------------------
 InstanceContainer::~InstanceContainer()
 {
-	RemoveForcibly( false );
+	RemoveForcibly(false);
 
-	assert( m_headGroups == NULL );
-	assert( m_tailGroups == NULL );
+	assert(m_headGroups == NULL);
+	assert(m_tailGroups == NULL);
 
-	for( int i = 0; i < m_ChildrenCount; i++ )
+	for (int i = 0; i < m_ChildrenCount; i++)
 	{
-		if( m_Children[i] != NULL )
+		if (m_Children[i] != NULL)
 		{
 			m_Children[i]->~InstanceContainer();
-			InstanceContainer::operator delete( m_Children[i], m_pManager );
+			InstanceContainer::operator delete(m_Children[i], m_pManager);
 			m_Children[i] = NULL;
 		}
 	}
-	m_pManager->GetFreeFunc()( (void*)m_Children, sizeof(InstanceContainer*) * m_ChildrenCount );
+	m_pManager->GetFreeFunc()((void*)m_Children, sizeof(InstanceContainer*) * m_ChildrenCount);
 }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-InstanceContainer* InstanceContainer::GetChild( int num )
+InstanceContainer* InstanceContainer::GetChild(int num)
 {
 	return m_Children[num];
 }
@@ -14467,7 +14876,7 @@ InstanceContainer* InstanceContainer::GetChild( int num )
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void InstanceContainer::SetChild( int num, InstanceContainer* pContainter )
+void InstanceContainer::SetChild(int num, InstanceContainer* pContainter)
 {
 	m_Children[num] = pContainter;
 }
@@ -14480,21 +14889,21 @@ void InstanceContainer::RemoveInvalidGroups()
 	/* 最後に存在する有効なグループ */
 	InstanceGroup* tailGroup = NULL;
 
-	for( InstanceGroup* group = m_headGroups; group != NULL; )
+	for (InstanceGroup* group = m_headGroups; group != NULL; )
 	{
-		if( !group->IsReferencedFromInstance && group->GetInstanceCount() == 0  && group->GetRemovingInstanceCount() == 0 )
+		if (!group->IsReferencedFromInstance && group->GetInstanceCount() == 0 && group->GetRemovingInstanceCount() == 0)
 		{
 			InstanceGroup* next = group->NextUsedByContainer;
 
 			delete group;
 
-			if( m_headGroups == group )
+			if (m_headGroups == group)
 			{
 				m_headGroups = next;
 			}
 			group = next;
 
-			if( tailGroup != NULL )
+			if (tailGroup != NULL)
 			{
 				tailGroup->NextUsedByContainer = next;
 			}
@@ -14509,7 +14918,7 @@ void InstanceContainer::RemoveInvalidGroups()
 
 	m_tailGroups = tailGroup;
 
-	assert( m_tailGroups == NULL || m_tailGroups->NextUsedByContainer == NULL );
+	assert(m_tailGroups == NULL || m_tailGroups->NextUsedByContainer == NULL);
 }
 
 //----------------------------------------------------------------------------------
@@ -14547,22 +14956,22 @@ InstanceGroup* InstanceContainer::GetFirstGroup() const
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void InstanceContainer::Update( bool recursive, float deltaFrame, bool shown )
+void InstanceContainer::Update(bool recursive, float deltaFrame, bool shown)
 {
 	// 更新
-	for( InstanceGroup* group = m_headGroups; group != NULL; group = group->NextUsedByContainer )
+	for (InstanceGroup* group = m_headGroups; group != NULL; group = group->NextUsedByContainer)
 	{
-		group->Update( deltaFrame, shown );
+		group->Update(deltaFrame, shown);
 	}
-	
+
 	// 破棄
 	RemoveInvalidGroups();
 
-	if( recursive )
+	if (recursive)
 	{
-		for( int i = 0; i < m_ChildrenCount; i++ )
+		for (int i = 0; i < m_ChildrenCount; i++)
 		{
-			m_Children[i]->Update( recursive, deltaFrame, shown );
+			m_Children[i]->Update(recursive, deltaFrame, shown);
 		}
 	}
 }
@@ -14570,21 +14979,21 @@ void InstanceContainer::Update( bool recursive, float deltaFrame, bool shown )
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void InstanceContainer::SetBaseMatrix( bool recursive, const Matrix43& mat )
+void InstanceContainer::SetBaseMatrix(bool recursive, const Matrix43& mat)
 {
-	if( m_pEffectNode->GetType() != EFFECT_NODE_TYPE_ROOT )
+	if (m_pEffectNode->GetType() != EFFECT_NODE_TYPE_ROOT)
 	{
-		for( InstanceGroup* group = m_headGroups; group != NULL; group = group->NextUsedByContainer )
+		for (InstanceGroup* group = m_headGroups; group != NULL; group = group->NextUsedByContainer)
 		{
-			group->SetBaseMatrix( mat );
+			group->SetBaseMatrix(mat);
 		}
 	}
 
-	if( recursive )
+	if (recursive)
 	{
-		for( int i = 0; i < m_ChildrenCount; i++ )
+		for (int i = 0; i < m_ChildrenCount; i++)
 		{
-			m_Children[i]->SetBaseMatrix( recursive, mat );
+			m_Children[i]->SetBaseMatrix(recursive, mat);
 		}
 	}
 }
@@ -14592,22 +15001,22 @@ void InstanceContainer::SetBaseMatrix( bool recursive, const Matrix43& mat )
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void InstanceContainer::RemoveForcibly( bool recursive )
+void InstanceContainer::RemoveForcibly(bool recursive)
 {
-	KillAllInstances( false );
-	
-	
-	for( InstanceGroup* group = m_headGroups; group != NULL; group = group->NextUsedByContainer )
+	KillAllInstances(false);
+
+
+	for (InstanceGroup* group = m_headGroups; group != NULL; group = group->NextUsedByContainer)
 	{
 		group->RemoveForcibly();
 	}
 	RemoveInvalidGroups();
 
-	if( recursive )
+	if (recursive)
 	{
-		for( int i = 0; i < m_ChildrenCount; i++ )
+		for (int i = 0; i < m_ChildrenCount; i++)
 		{
-			m_Children[i]->RemoveForcibly( recursive );
+			m_Children[i]->RemoveForcibly(recursive);
 		}
 	}
 }
@@ -14615,14 +15024,14 @@ void InstanceContainer::RemoveForcibly( bool recursive )
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void InstanceContainer::Draw( bool recursive )
+void InstanceContainer::Draw(bool recursive)
 {
-	if( m_pEffectNode->GetType() != EFFECT_NODE_TYPE_ROOT && m_pEffectNode->GetType() != EFFECT_NODE_TYPE_NONE )
+	if (m_pEffectNode->GetType() != EFFECT_NODE_TYPE_ROOT && m_pEffectNode->GetType() != EFFECT_NODE_TYPE_NONE)
 	{
 		/* 個数計測 */
 		int32_t count = 0;
 		{
-			for( InstanceGroup* group = m_headGroups; group != NULL; group = group->NextUsedByContainer )
+			for (InstanceGroup* group = m_headGroups; group != NULL; group = group->NextUsedByContainer)
 			{
 				for (auto instance : group->m_instances)
 				{
@@ -14634,49 +15043,75 @@ void InstanceContainer::Draw( bool recursive )
 			}
 		}
 
-		if( count > 0 )
+		if (count > 0)
 		{
 			/* 描画 */
 			m_pEffectNode->BeginRendering(count, m_pManager);
 
-			for( InstanceGroup* group = m_headGroups; group != NULL; group = group->NextUsedByContainer )
+			for (InstanceGroup* group = m_headGroups; group != NULL; group = group->NextUsedByContainer)
 			{
 				m_pEffectNode->BeginRenderingGroup(group, m_pManager);
 
-				if( m_pEffectNode->RenderingOrder == RenderingOrder_FirstCreatedInstanceIsFirst )
+				if (m_pEffectNode->RenderingOrder == RenderingOrder_FirstCreatedInstanceIsFirst)
 				{
-					for (auto instance : group->m_instances)
+					auto it = group->m_instances.begin();
+
+					while (it != group->m_instances.end())
 					{
-						if (instance->m_State == INSTANCE_STATE_ACTIVE)
+						if ((*it)->m_State == INSTANCE_STATE_ACTIVE)
 						{
-							instance->Draw();
+							auto it_temp = it;
+							it_temp++;
+
+							if (it_temp != group->m_instances.end())
+							{
+								(*it)->Draw((*it_temp));
+							}
+							else
+							{
+								(*it)->Draw(nullptr);
+							}
 						}
+
+						it++;
 					}
 				}
 				else
 				{
 					auto it = group->m_instances.rbegin();
 
-					while( it != group->m_instances.rend() )
+					while (it != group->m_instances.rend())
 					{
-						if( (*it)->m_State == INSTANCE_STATE_ACTIVE )
+						if ((*it)->m_State == INSTANCE_STATE_ACTIVE)
 						{
-							(*it)->Draw();
+							auto it_temp = it;
+							it_temp++;
+
+							if (it_temp != group->m_instances.rend())
+							{
+								(*it)->Draw((*it_temp));
+							}
+							else
+							{
+								(*it)->Draw(nullptr);
+							}
 						}
 						it++;
 					}
 				}
+
+				m_pEffectNode->EndRenderingGroup(group, m_pManager);
 			}
 
 			m_pEffectNode->EndRendering(m_pManager);
 		}
 	}
 
-	if( recursive )
+	if (recursive)
 	{
-		for( int i = 0; i < m_ChildrenCount; i++ )
+		for (int i = 0; i < m_ChildrenCount; i++)
 		{
-			m_Children[i]->Draw( recursive );
+			m_Children[i]->Draw(recursive);
 		}
 	}
 }
@@ -14684,18 +15119,18 @@ void InstanceContainer::Draw( bool recursive )
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void InstanceContainer::KillAllInstances( bool recursive )
+void InstanceContainer::KillAllInstances(bool recursive)
 {
-	for( InstanceGroup* group = m_headGroups; group != NULL; group = group->NextUsedByContainer )
+	for (InstanceGroup* group = m_headGroups; group != NULL; group = group->NextUsedByContainer)
 	{
 		group->KillAllInstances();
 	}
 
-	if( recursive )
+	if (recursive)
 	{
-		for( int i = 0; i < m_ChildrenCount; i++ )
+		for (int i = 0; i < m_ChildrenCount; i++)
 		{
-			m_Children[i]->KillAllInstances( recursive );
+			m_Children[i]->KillAllInstances(recursive);
 		}
 	}
 }
@@ -14711,6 +15146,7 @@ InstanceGlobal* InstanceContainer::GetRootInstance()
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
+
 }
 
 //----------------------------------------------------------------------------------
@@ -14748,15 +15184,8 @@ Instance::Instance(Manager* pManager, EffectNode* pEffectNode, InstanceContainer
 	m_generatedChildrenCount = m_fixedGeneratedChildrenCount;
 	m_nextGenerationTime = m_fixedNextGenerationTime;
 	
-	ColorInheritance.r = 255;
-	ColorInheritance.g = 255;
-	ColorInheritance.b = 255;
-	ColorInheritance.a = 255;
-
-	ColorParent.r = 255;
-	ColorParent.g = 255;
-	ColorParent.b = 255;
-	ColorParent.a = 255;
+	ColorInheritance = Color(255, 255, 255, 255);
+	ColorParent = Color(255, 255, 255, 255);
 
 	InstanceGroup* group = NULL;
 
@@ -15397,7 +15826,7 @@ void Instance::Update( float deltaFrame, bool shown )
 	{
 		CalculateMatrix( deltaFrame );
 	}
-	else if( m_pEffectNode->LocationAbs.type != LocationAbsParameter::None )
+	else if( m_pEffectNode->LocationAbs.type != LocationAbsType::None )
 	{
 		// If attraction forces are not default, updating is needed in each frame.
 		CalculateMatrix( deltaFrame );
@@ -15801,7 +16230,7 @@ void Instance::CalculateMatrix( float deltaFrame )
 		m_GlobalVelocity = currentPosition - m_GlobalPosition;
 		m_GlobalPosition = currentPosition;
 
-		if( m_pEffectNode->LocationAbs.type != LocationAbsParameter::None )
+		if( m_pEffectNode->LocationAbs.type != LocationAbsType::None )
 		{
 			ModifyMatrixFromLocationAbs( deltaFrame );
 		}
@@ -15900,10 +16329,10 @@ void Instance::ModifyMatrixFromLocationAbs( float deltaFrame )
 	InstanceGlobal* instanceGlobal = m_pContainer->GetRootInstance();
 
 	// Update attraction forces
-	if( m_pEffectNode->LocationAbs.type == LocationAbsParameter::None )
+	if( m_pEffectNode->LocationAbs.type == LocationAbsType::None )
 	{	
 	}
-	else if( m_pEffectNode->LocationAbs.type == LocationAbsParameter::Gravity )
+	else if( m_pEffectNode->LocationAbs.type == LocationAbsType::Gravity )
 	{
 		m_GlobalRevisionLocation.X = m_pEffectNode->LocationAbs.gravity.x *
 			m_LivingTime * m_LivingTime * 0.5f;
@@ -15912,7 +16341,7 @@ void Instance::ModifyMatrixFromLocationAbs( float deltaFrame )
 		m_GlobalRevisionLocation.Z = m_pEffectNode->LocationAbs.gravity.z *
 			m_LivingTime * m_LivingTime * 0.5f;
 	}
-	else if( m_pEffectNode->LocationAbs.type == LocationAbsParameter::AttractiveForce )
+	else if( m_pEffectNode->LocationAbs.type == LocationAbsType::AttractiveForce )
 	{
 		InstanceGlobal* instanceGlobal = m_pContainer->GetRootInstance();
 
@@ -15961,7 +16390,7 @@ void Instance::ModifyMatrixFromLocationAbs( float deltaFrame )
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void Instance::Draw()
+void Instance::Draw(Instance* next)
 {
 	assert( m_pEffectNode != NULL );
 
@@ -15972,7 +16401,7 @@ void Instance::Draw()
 		CalculateMatrix( 0 );
 	}
 
-	m_pEffectNode->Rendering(*this, m_pManager);
+	m_pEffectNode->Rendering(*this, next, m_pManager);
 }
 
 //----------------------------------------------------------------------------------
@@ -16790,9 +17219,9 @@ private:
 	std::set<InternalClient*>	m_clients;
 	std::set<InternalClient*>	m_removedClients;
 
-	std::map<std::wstring,Effect*>	m_effects;
+	std::map<std::u16string,Effect*>	m_effects;
 
-	std::map<std::wstring,std::vector<uint8_t> >	m_data;
+	std::map<std::u16string,std::vector<uint8_t> >	m_data;
 
 	std::vector<EFK_CHAR>	m_materialPath;
 
@@ -17130,7 +17559,7 @@ void ServerImplemented::Regist( const EFK_CHAR* key, Effect* effect )
 {
 	if( effect == NULL ) return;
 
-	std::wstring key_( (const wchar_t*)key );
+	std::u16string key_( (const char16_t*)key );
 
 	if( m_effects.count( key_ ) > 0 )
 	{
@@ -17160,8 +17589,8 @@ void ServerImplemented::Unregist( Effect* effect )
 {
 	if( effect == NULL ) return;
 
-	std::map<std::wstring,Effect*>::iterator it = m_effects.begin();
-	std::map<std::wstring,Effect*>::iterator it_end = m_effects.end();
+	auto it = m_effects.begin();
+	auto it_end = m_effects.end();
 
 	while( it != it_end )
 	{
@@ -17207,11 +17636,11 @@ void ServerImplemented::Update()
 			memcpy( &keylen, p, sizeof(int32_t) );
 			p += sizeof(int32_t);
 
-			std::wstring key;
+			std::u16string key;
 			for( int32_t k = 0; k < keylen; k++ )
 			{
-				key.push_back( ((wchar_t*)p)[0] );
-				p += sizeof(wchar_t);
+				key.push_back( ((char16_t*)p)[0] );
+				p += sizeof(char16_t);
 			}
 
 			uint8_t* data = p;

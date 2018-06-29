@@ -317,7 +317,7 @@ namespace EffekseerRendererUE4
 		/**
 		@brief	ライトの方向を設定する。
 		*/
-		void SetLightDirection(::Effekseer::Vector3D& direction) override;
+		void SetLightDirection(const ::Effekseer::Vector3D& direction) override;
 
 		/**
 		@brief	ライトの色を取得する。
@@ -327,7 +327,7 @@ namespace EffekseerRendererUE4
 		/**
 		@brief	ライトの色を設定する。
 		*/
-		void SetLightColor(::Effekseer::Color& color) override;
+		void SetLightColor(const ::Effekseer::Color& color) override;
 
 		/**
 		@brief	ライトの環境光の色を取得する。
@@ -337,7 +337,7 @@ namespace EffekseerRendererUE4
 		/**
 		@brief	ライトの環境光の色を設定する。
 		*/
-		void SetLightAmbientColor(::Effekseer::Color& color) override;
+		void SetLightAmbientColor(const ::Effekseer::Color& color) override;
 
 		/**
 		@brief	最大描画スプライト数を取得する。
@@ -419,6 +419,18 @@ namespace EffekseerRendererUE4
 		*/
 		void SetDistortingCallback(::EffekseerRenderer::DistortingCallback* callback) override;
 
+		int32_t GetDrawCallCount() const override { return 0; }
+
+		int32_t GetDrawVertexCount() const override { return 0; }
+
+		void ResetDrawCallCount() override { }
+
+		void ResetDrawVertexCount() override { }
+
+		void SetRenderMode(Effekseer::RenderMode renderMode) override { }
+
+		Effekseer::RenderMode GetRenderMode() override { return Effekseer::RenderMode::Normal; }
+
 		Effekseer::TextureData* GetBackground();
 
 		VertexBuffer* GetVertexBuffer();
@@ -439,8 +451,14 @@ namespace EffekseerRendererUE4
 
 		UMaterialInstanceDynamic* FindMaterial();
 
+		Shader* GetShader(bool useTexture, bool useDistortion) const;
+
 		void BeginShader(Shader* shader);
 		void EndShader(Shader* shader);
+
+		void SetVertexBufferToShader(const void* data, int32_t size);
+
+		void SetPixelBufferToShader(const void* data, int32_t size);
 
 		void SetTextures(Shader* shader, Effekseer::TextureData** textures, int32_t count);
 		void SetIsLighting(bool value) { m_isLighting = value; }

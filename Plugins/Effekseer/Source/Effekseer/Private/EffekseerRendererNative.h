@@ -289,7 +289,7 @@ public:
 	/**
 		@brief	ライトの方向を設定する。
 	*/
-	virtual void SetLightDirection( ::Effekseer::Vector3D& direction ) = 0;
+	virtual void SetLightDirection( const ::Effekseer::Vector3D& direction ) = 0;
 
 	/**
 		@brief	ライトの色を取得する。
@@ -299,7 +299,7 @@ public:
 	/**
 		@brief	ライトの色を設定する。
 	*/
-	virtual void SetLightColor( ::Effekseer::Color& color ) = 0;
+	virtual void SetLightColor( const ::Effekseer::Color& color ) = 0;
 
 	/**
 		@brief	ライトの環境光の色を取得する。
@@ -309,7 +309,7 @@ public:
 	/**
 		@brief	ライトの環境光の色を設定する。
 	*/
-	virtual void SetLightAmbientColor( ::Effekseer::Color& color ) = 0;
+	virtual void SetLightAmbientColor( const ::Effekseer::Color& color ) = 0;
 
 		/**
 		@brief	最大描画スプライト数を取得する。
@@ -390,6 +390,44 @@ public:
 	@brief	背景を歪ませるエフェクトが描画される前に呼ばれるコールバックを設定する。
 	*/
 	virtual void SetDistortingCallback(DistortingCallback* callback) = 0;
+
+	/**
+	@brief	
+	\~english Get draw call count
+	\~japanese ドローコールの回数を取得する
+	*/
+	virtual int32_t GetDrawCallCount() const = 0;
+
+	/**
+	@brief
+	\~english Get the number of vertex drawn
+	\~japanese 描画された頂点数をリセットする
+	*/
+	virtual int32_t GetDrawVertexCount() const = 0;
+
+	/**
+	@brief
+	\~english Reset draw call count
+	\~japanese ドローコールの回数をリセットする
+	*/
+	virtual void ResetDrawCallCount() = 0;
+
+	/**
+	@brief
+	\~english Reset the number of vertex drawn
+	\~japanese 描画された頂点数をリセットする
+	*/
+	virtual void ResetDrawVertexCount() = 0;
+
+	/**
+	@brief	描画モードを設定する。
+	*/
+	virtual void SetRenderMode( Effekseer::RenderMode renderMode ) = 0;
+
+	/**
+	@brief	描画モードを取得する。
+	*/
+	virtual Effekseer::RenderMode GetRenderMode() = 0;
 };
 
 //----------------------------------------------------------------------------------
@@ -588,6 +626,7 @@ struct StandardRendererState
 	bool								DepthWrite;
 	bool								Distortion;
 	float								DistortionIntensity;
+	bool								Wireframe;
 
 	::Effekseer::AlphaBlendType			AlphaBlend;
 	::Effekseer::CullingType			CullingType;
@@ -601,6 +640,7 @@ struct StandardRendererState
 		DepthWrite = false;
 		Distortion = false;
 		DistortionIntensity = 1.0f;
+		Wireframe = true;
 
 		AlphaBlend = ::Effekseer::AlphaBlendType::Blend;
 		CullingType = ::Effekseer::CullingType::Front;
@@ -641,13 +681,13 @@ private:
 	StandardRendererState		m_state;
 
 	std::vector<uint8_t>		vertexCaches;
-	int32_t						vertexCacheMaxSize;
+	int32_t						renderVertexMaxSize;
 
 	bool						m_isDistortionMode;
 public:
 
 	StandardRenderer(RENDERER* renderer, SHADER* shader, SHADER* shader_no_texture, SHADER* shader_distortion, SHADER* shader_no_texture_distortion)
-		: vertexCacheMaxSize(0)
+		: renderVertexMaxSize(0)
 		, m_isDistortionMode(false)
 	{
 		m_renderer = renderer;
@@ -657,7 +697,7 @@ public:
 		m_shader_no_texture_distortion = shader_no_texture_distortion;
 
 		vertexCaches.reserve(m_renderer->GetVertexBuffer()->GetMaxSize());
-		vertexCacheMaxSize = m_renderer->GetVertexBuffer()->GetMaxSize();
+		renderVertexMaxSize = m_renderer->GetVertexBuffer()->GetMaxSize();
 	}
 
 	void UpdateStateAndRenderingIfRequired(StandardRendererState state)
@@ -676,7 +716,7 @@ public:
 	{
 		if (m_isDistortionMode)
 		{
-			if (count * sizeof(VERTEX_DISTORTION) + vertexCaches.size() > vertexCacheMaxSize)
+			if (count * sizeof(VERTEX_DISTORTION) + vertexCaches.size() > renderVertexMaxSize)
 			{
 				Rendering();
 			}
@@ -688,7 +728,7 @@ public:
 		}
 		else
 		{
-			if (count * sizeof(VERTEX) + vertexCaches.size() > vertexCacheMaxSize)
+			if (count * sizeof(VERTEX) + vertexCaches.size() > renderVertexMaxSize)
 			{
 				Rendering();
 			}
@@ -712,6 +752,43 @@ public:
 	{
 		if (vertexCaches.size() == 0) return;
 
+		int32_t offset = 0;
+
+		auto vsize = 0;
+
+		if (m_state.Distortion)
+		{
+			vsize = sizeof(VERTEX_DISTORTION);
+		}
+		else
+		{
+			vsize = sizeof(VERTEX);
+		}
+
+		while (true)
+		{
+			auto renderBufferSize = 0;
+	
+			// only sprite
+			renderBufferSize = vertexCaches.size() - offset;
+
+			if (renderBufferSize > renderVertexMaxSize)
+			{
+				renderBufferSize = (int32_t)(Effekseer::Min(renderVertexMaxSize, vertexCaches.size() - offset) / (vsize * 4)) * (vsize * 4);
+			}
+
+			Rendering_(mCamera, mProj, offset, renderBufferSize);
+
+			offset += renderBufferSize;
+
+			if (offset == vertexCaches.size()) break;
+		}
+
+		vertexCaches.clear();
+	}
+
+	void Rendering_(const Effekseer::Matrix44& mCamera, const Effekseer::Matrix44& mProj, int32_t bufferOffset, int32_t bufferSize)
+	{
 		if (m_state.Distortion)
 		{
 			auto callback = m_renderer->GetDistortingCallback();
@@ -719,7 +796,6 @@ public:
 			{
 				if (!callback->OnDistorting())
 				{
-					vertexCaches.clear();
 					return;
 				}
 			}
@@ -727,11 +803,10 @@ public:
 
 		if (m_state.Distortion && m_renderer->GetBackground() == 0)
 		{
-			vertexCaches.clear();
 			return;
 		}
 
-		int32_t vertexSize = vertexCaches.size();
+		int32_t vertexSize = bufferSize;
 		int32_t offsetSize = 0;
 		{
 			VertexBufferBase* vb = m_renderer->GetVertexBuffer();
@@ -742,30 +817,24 @@ public:
 			{
 				// For OpenGL ES(Because OpenGL ES 3.2 and later can only realize a vertex layout variable ring buffer)
 				vb->Lock();
-				data = vb->GetBufferDirect(vertexCaches.size());
+				data = vb->GetBufferDirect(vertexSize);
 				if (data == nullptr)
 				{
-					vertexCaches.clear();
 					return;
 				}
-				memcpy(data, vertexCaches.data(), vertexCaches.size());
+				memcpy(data, vertexCaches.data() + bufferOffset, vertexSize);
 				vb->Unlock();
 			}
-			else if (vb->RingBufferLock(vertexCaches.size(), offsetSize, data))
+			else if (vb->RingBufferLock(vertexSize, offsetSize, data))
 			{
 				assert(data != nullptr);
-				memcpy(data, vertexCaches.data(), vertexCaches.size());
+				memcpy(data, vertexCaches.data() + bufferOffset, vertexSize);
 				vb->Unlock();
 			}
 			else
 			{
-				// 現状、描画するインスタンス数が多すぎる場合は描画しなくしている
-				vertexCaches.clear();
 				return;
 			}
-
-			vertexCaches.clear();
-
 		}
 
 		RenderStateBase::State& state = m_renderer->GetRenderState()->Push();
@@ -778,40 +847,19 @@ public:
 
 		bool distortion = m_state.Distortion;
 
-		if (distortion)
-		{
-			if (m_state.TexturePtr != nullptr)
-			{
-				shader_ = m_shader_distortion;
-			}
-			else
-			{
-				shader_ = m_shader_no_texture_distortion;
-			}
-		}
-		else
-		{
-			if (m_state.TexturePtr != nullptr)
-			{
-				shader_ = m_shader;
-			}
-			else
-			{
-				shader_ = m_shader_no_texture;
-			}
-		}
+		shader_ = m_renderer->GetShader(m_state.TexturePtr != nullptr, distortion);
 
 		m_renderer->BeginShader(shader_);
 
 		Effekseer::TextureData* textures[2];
 
-		if (m_state.TexturePtr != nullptr)
+		if (m_state.TexturePtr != nullptr && m_state.TexturePtr != (Effekseer::TextureData*)0x01)
 		{
 			textures[0] = m_state.TexturePtr;
 		}
 		else
 		{
-			textures[0] = 0;
+			textures[0] = nullptr;
 		}
 
 		if (distortion)
@@ -824,12 +872,17 @@ public:
 			m_renderer->SetTextures(shader_, textures, 1);
 		}
 
-		((Effekseer::Matrix44*)(shader_->GetVertexConstantBuffer()))[0] = mCamera;
-		((Effekseer::Matrix44*)(shader_->GetVertexConstantBuffer()))[1] = mProj;
+		Effekseer::Matrix44 constantVSBuffer[2];
+		constantVSBuffer[0] = mCamera;
+		constantVSBuffer[1] = mProj;
+		m_renderer->SetVertexBufferToShader(constantVSBuffer, sizeof(Effekseer::Matrix44) * 2);
 
 		if (distortion)
 		{
-			((float*) (shader_->GetPixelConstantBuffer()))[0] = m_state.DistortionIntensity;
+			float constantPSBuffer[1];
+			constantPSBuffer[0] = m_state.DistortionIntensity;
+
+			m_renderer->SetPixelBufferToShader(constantPSBuffer, sizeof(float));
 		}
 
 		shader_->SetConstantBuffer();
@@ -1375,145 +1428,533 @@ public:
 //-----------------------------------------------------------------------------------
 namespace EffekseerRenderer
 {
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
-typedef ::Effekseer::RibbonRenderer::NodeParameter efkRibbonNodeParam;
-typedef ::Effekseer::RibbonRenderer::InstanceParameter efkRibbonInstanceParam;
-typedef ::Effekseer::Vector3D efkVector3D;
+	//----------------------------------------------------------------------------------
+	//
+	//----------------------------------------------------------------------------------
+	typedef ::Effekseer::RibbonRenderer::NodeParameter efkRibbonNodeParam;
+	typedef ::Effekseer::RibbonRenderer::InstanceParameter efkRibbonInstanceParam;
+	typedef ::Effekseer::Vector3D efkVector3D;
 
-template<typename RENDERER, typename VERTEX_NORMAL, typename VERTEX_DISTORTION>
-class RibbonRendererBase
-	: public ::Effekseer::RibbonRenderer
-{
-protected:
-	RENDERER*						m_renderer;
-	int32_t							m_ribbonCount;
-
-	int32_t							m_ringBufferOffset;
-	uint8_t*						m_ringBufferData;
-
-public:
-
-	RibbonRendererBase(RENDERER* renderer)
-		: m_renderer(renderer)
-		, m_ribbonCount(0)
-		, m_ringBufferOffset(0)
-		, m_ringBufferData(NULL)
+	template<typename RENDERER, typename VERTEX_NORMAL, typename VERTEX_DISTORTION>
+	class RibbonRendererBase
+		: public ::Effekseer::RibbonRenderer
 	{
-	}
+	private:
 
-	virtual ~RibbonRendererBase()
-	{
-	}
-
-
-protected:
-
-	void BeginRendering_(RENDERER* renderer, int32_t count, const efkRibbonNodeParam& param)
-	{
-		m_ribbonCount = 0;
-		int32_t vertexCount = (count - 1) * 4;
-		if (vertexCount <= 0) return;
-
-		EffekseerRenderer::StandardRendererState state;
-		state.AlphaBlend = param.AlphaBlend;
-		state.CullingType = ::Effekseer::CullingType::Double;
-		state.DepthTest = param.ZTest;
-		state.DepthWrite = param.ZWrite;
-		state.TextureFilterType = param.TextureFilter;
-		state.TextureWrapType = param.TextureWrap;
-
-		state.Distortion = param.Distortion;
-		state.DistortionIntensity = param.DistortionIntensity;
-
-		if (param.ColorTextureIndex >= 0)
+		/**
+		@brief Spline generator
+		@note
+		Reference https://qiita.com/edo_m18/items/f2f0c6bf9032b0ec12d4
+		*/
+		class Spline
 		{
-			if (state.Distortion)
+			std::vector<efkVector3D>	a;
+			std::vector<efkVector3D>	b;
+			std::vector<efkVector3D>	c;
+			std::vector<efkVector3D>	d;
+			std::vector<efkVector3D>	w;
+			std::vector<bool>			isSame;
+
+		public:
+
+			void AddVertex(const efkVector3D& v)
 			{
-				state.TexturePtr = param.EffectPointer->GetDistortionImage(param.ColorTextureIndex);
+				a.push_back(v);
+				if (a.size() >= 2)
+				{
+					isSame.push_back(a[a.size() - 1] == a[a.size() - 2]);
+				}
+			}
+
+			void Calculate()
+			{
+				b.resize(a.size());
+				c.resize(a.size());
+				d.resize(a.size());
+				w.resize(a.size());
+
+				for (auto i = 1; i < a.size() - 1; i++)
+				{
+					c[i] = (a[i - 1] + a[i] * (-2.0) + a[i + 1]) * 3.0;
+				}
+
+				for (auto i = 1; i < a.size() - 1; i++)
+				{
+					auto tmp = efkVector3D(4.0, 4.0, 4.0) - w[i - 1];
+					c[i] = (c[i] - c[i - 1]) / tmp;
+					w[i] = efkVector3D(1.0, 1.0, 1.0) / tmp;
+				}
+
+				for (auto i = (a.size() - 1) - 1; i > 0; i--)
+				{
+					c[i] = c[i] - c[i + 1] * w[i];
+				}
+
+				for (auto i = 0; i < a.size() - 1; i++)
+				{
+					d[i] = (c[i + 1] - c[i]) / 3.0;
+					b[i] = a[i + 1] - a[i] - c[i] - d[i];
+				}
+			}
+
+			void Reset()
+			{
+				a.clear();
+				b.clear();
+				c.clear();
+				d.clear();
+				w.clear();
+				isSame.clear();
+			}
+
+			efkVector3D GetValue(float t)
+			{
+				auto j = floorf(t);
+
+				if (j < 0)
+				{
+					j = 0;
+				}
+
+				if (j > a.size())
+				{
+					j = a.size() - 1;
+				}
+
+				auto dt = t - j;
+
+				if (j < isSame.size() && isSame[j]) return a[j];
+
+				return a[j] + (b[j] + (c[j] + d[j] * dt) * dt) * dt;
+			}
+		};
+
+	protected:
+		RENDERER*						m_renderer;
+		int32_t							m_ribbonCount;
+
+		int32_t							m_ringBufferOffset;
+		uint8_t*						m_ringBufferData;
+
+		efkRibbonNodeParam					innstancesNodeParam;
+		std::vector<efkRibbonInstanceParam>	instances;
+		Spline								spline_left;
+		Spline								spline_right;
+
+		template<typename VERTEX>
+		void RenderSplines(const ::Effekseer::Matrix44& camera)
+		{
+			auto& parameter = innstancesNodeParam;
+
+			VERTEX* verteies0 = (VERTEX*)m_ringBufferData;
+
+			// Calculate spline
+			if (parameter.SplineDivision > 1)
+			{
+				spline_left.Reset();
+				spline_right.Reset();
+
+				for (auto loop = 0; loop < instances.size(); loop++)
+				{
+					auto pl = efkVector3D();
+					auto pr = efkVector3D();
+
+					auto& param = instances[loop];
+
+					pl.X = param.Positions[0];
+					pl.Y = 0.0f;
+					pl.Z = 0.0f;
+
+					pr.X = param.Positions[1];
+					pr.Y = 0.0f;
+					pr.Z = 0.0f;
+
+					if (parameter.ViewpointDependent)
+					{
+						const ::Effekseer::Matrix43& mat = param.SRTMatrix43;
+						::Effekseer::Vector3D s;
+						::Effekseer::Matrix43 r;
+						::Effekseer::Vector3D t;
+						mat.GetSRT(s, r, t);
+
+						// extend
+						pl.X = pl.X * s.X;
+						pr.X = pr.X * s.X;
+
+						::Effekseer::Vector3D F;
+						::Effekseer::Vector3D R;
+						::Effekseer::Vector3D U;
+
+						U = ::Effekseer::Vector3D(r.Value[1][0], r.Value[1][1], r.Value[1][2]);
+
+						::Effekseer::Vector3D::Normal(F, ::Effekseer::Vector3D(-camera.Values[0][2], -camera.Values[1][2], -camera.Values[2][2]));
+
+						::Effekseer::Vector3D::Normal(R, ::Effekseer::Vector3D::Cross(R, U, F));
+						::Effekseer::Vector3D::Normal(F, ::Effekseer::Vector3D::Cross(F, R, U));
+
+						::Effekseer::Matrix43 mat_rot;
+
+						mat_rot.Value[0][0] = -R.X;
+						mat_rot.Value[0][1] = -R.Y;
+						mat_rot.Value[0][2] = -R.Z;
+						mat_rot.Value[1][0] = U.X;
+						mat_rot.Value[1][1] = U.Y;
+						mat_rot.Value[1][2] = U.Z;
+						mat_rot.Value[2][0] = F.X;
+						mat_rot.Value[2][1] = F.Y;
+						mat_rot.Value[2][2] = F.Z;
+						mat_rot.Value[3][0] = t.X;
+						mat_rot.Value[3][1] = t.Y;
+						mat_rot.Value[3][2] = t.Z;
+
+
+						::Effekseer::Vector3D::Transform(
+							pl,
+							pl,
+							mat_rot);
+
+						::Effekseer::Vector3D::Transform(
+							pr,
+							pr,
+							mat_rot);
+
+						spline_left.AddVertex(pl);
+						spline_right.AddVertex(pr);
+					}
+					else
+					{
+						::Effekseer::Vector3D::Transform(
+							pl,
+							pl,
+							param.SRTMatrix43);
+
+						::Effekseer::Vector3D::Transform(
+							pr,
+							pr,
+							param.SRTMatrix43);
+
+						spline_left.AddVertex(pl);
+						spline_right.AddVertex(pr);
+					}
+				}
+
+				spline_left.Calculate();
+				spline_right.Calculate();
+			}
+
+
+			for (auto loop = 0; loop < instances.size(); loop++)
+			{
+				auto& param = instances[loop];
+
+				for (auto sploop = 0; sploop < parameter.SplineDivision; sploop++)
+				{
+					bool isFirst = param.InstanceIndex == 0 && sploop == 0;
+					bool isLast = param.InstanceIndex == (param.InstanceCount - 1);
+
+					VERTEX* verteies = (VERTEX*)m_ringBufferData;
+
+					float percent_instance = sploop / (float)parameter.SplineDivision;
+
+					if (parameter.SplineDivision > 1)
+					{
+						verteies[0].Pos = spline_left.GetValue(param.InstanceIndex + sploop / (float)parameter.SplineDivision);
+						verteies[1].Pos = spline_right.GetValue(param.InstanceIndex + sploop / (float)parameter.SplineDivision);
+
+						verteies[0].SetColor(Effekseer::Color::Lerp(param.Colors[0], param.Colors[2], percent_instance));
+						verteies[1].SetColor(Effekseer::Color::Lerp(param.Colors[1], param.Colors[3], percent_instance));
+					}
+					else
+					{
+						for (int i = 0; i < 2; i++)
+						{
+							verteies[i].Pos.X = param.Positions[i];
+							verteies[i].Pos.Y = 0.0f;
+							verteies[i].Pos.Z = 0.0f;
+							verteies[i].SetColor(param.Colors[i]);
+						}
+					}
+
+
+					float percent = (float)(param.InstanceIndex  * parameter.SplineDivision + sploop) / (float)((param.InstanceCount - 1) * parameter.SplineDivision);
+
+					verteies[0].UV[0] = param.UV.X;
+					verteies[0].UV[1] = param.UV.Y + percent * param.UV.Height;
+
+					verteies[1].UV[0] = param.UV.X + param.UV.Width;
+					verteies[1].UV[1] = param.UV.Y + percent * param.UV.Height;
+
+					if (parameter.ViewpointDependent)
+					{
+						const ::Effekseer::Matrix43& mat = param.SRTMatrix43;
+						::Effekseer::Vector3D s;
+						::Effekseer::Matrix43 r;
+						::Effekseer::Vector3D t;
+						mat.GetSRT(s, r, t);
+
+						if (parameter.SplineDivision > 1)
+						{
+						}
+						else
+						{
+							for (int i = 0; i < 2; i++)
+							{
+								verteies[i].Pos.X = verteies[i].Pos.X * s.X;
+							}
+
+							::Effekseer::Vector3D F;
+							::Effekseer::Vector3D R;
+							::Effekseer::Vector3D U;
+
+							U = ::Effekseer::Vector3D(r.Value[1][0], r.Value[1][1], r.Value[1][2]);
+
+							::Effekseer::Vector3D::Normal(F, ::Effekseer::Vector3D(-camera.Values[0][2], -camera.Values[1][2], -camera.Values[2][2]));
+
+							::Effekseer::Vector3D::Normal(R, ::Effekseer::Vector3D::Cross(R, U, F));
+							::Effekseer::Vector3D::Normal(F, ::Effekseer::Vector3D::Cross(F, R, U));
+
+							::Effekseer::Matrix43 mat_rot;
+
+							mat_rot.Value[0][0] = -R.X;
+							mat_rot.Value[0][1] = -R.Y;
+							mat_rot.Value[0][2] = -R.Z;
+							mat_rot.Value[1][0] = U.X;
+							mat_rot.Value[1][1] = U.Y;
+							mat_rot.Value[1][2] = U.Z;
+							mat_rot.Value[2][0] = F.X;
+							mat_rot.Value[2][1] = F.Y;
+							mat_rot.Value[2][2] = F.Z;
+							mat_rot.Value[3][0] = t.X;
+							mat_rot.Value[3][1] = t.Y;
+							mat_rot.Value[3][2] = t.Z;
+
+							for (int i = 0; i < 2; i++)
+							{
+								::Effekseer::Vector3D::Transform(
+									verteies[i].Pos,
+									verteies[i].Pos,
+									mat_rot);
+							}
+						}
+					}
+					else
+					{
+						if (parameter.SplineDivision > 1)
+						{
+						}
+						else
+						{
+							for (int i = 0; i < 2; i++)
+							{
+								::Effekseer::Vector3D::Transform(
+									verteies[i].Pos,
+									verteies[i].Pos,
+									param.SRTMatrix43);
+							}
+						}
+					}
+
+					if (isFirst || isLast)
+					{
+						m_ringBufferData += sizeof(VERTEX) * 2;
+					}
+					else
+					{
+						verteies[2] = verteies[0];
+						verteies[3] = verteies[1];
+						m_ringBufferData += sizeof(VERTEX) * 4;
+					}
+
+					if (!isFirst)
+					{
+						m_ribbonCount++;
+					}
+
+					if (isLast)
+					{
+						break;
+					}
+				}
+			}
+
+			// Apply distortion
+			if (sizeof(VERTEX) == sizeof(VERTEX_DISTORTION))
+			{
+				VERTEX_DISTORTION* vs_ = (VERTEX_DISTORTION*)verteies0;
+
+				Effekseer::Vector3D axisBefore;
+
+				for (int32_t i = 0; i < (instances.size() - 1) * parameter.SplineDivision + 1; i++)
+				{
+					bool isFirst_ = (i == 0);
+					bool isLast_ = (i == ((instances.size() - 1) * parameter.SplineDivision));
+
+					Effekseer::Vector3D axis;
+					Effekseer::Vector3D pos;
+
+					if (isFirst_)
+					{
+						axis = (vs_[3].Pos - vs_[1].Pos);
+						Effekseer::Vector3D::Normal(axis, axis);
+						axisBefore = axis;
+					}
+					else if (isLast_)
+					{
+						axis = axisBefore;
+					}
+					else
+					{
+						Effekseer::Vector3D axisOld = axisBefore;
+						axis = (vs_[5].Pos - vs_[3].Pos);
+						Effekseer::Vector3D::Normal(axis, axis);
+						axisBefore = axis;
+
+						axis = (axisBefore + axisOld) / 2.0f;
+						Effekseer::Vector3D::Normal(axis, axis);
+					}
+
+					auto tangent = vs_[1].Pos - vs_[0].Pos;
+					Effekseer::Vector3D::Normal(tangent, tangent);
+
+					if (isFirst_)
+					{
+						vs_[0].Binormal = axis;
+						vs_[1].Binormal = axis;
+
+						vs_[0].Tangent = tangent;
+						vs_[1].Tangent = tangent;
+
+						vs_ += 2;
+
+					}
+					else if (isLast_)
+					{
+						vs_[0].Binormal = axis;
+						vs_[1].Binormal = axis;
+
+						vs_[0].Tangent = tangent;
+						vs_[1].Tangent = tangent;
+
+						vs_ += 2;
+					}
+					else
+					{
+						vs_[0].Binormal = axis;
+						vs_[1].Binormal = axis;
+						vs_[2].Binormal = axis;
+						vs_[3].Binormal = axis;
+
+						vs_[0].Tangent = tangent;
+						vs_[1].Tangent = tangent;
+						vs_[2].Tangent = tangent;
+						vs_[3].Tangent = tangent;
+
+						vs_ += 4;
+					}
+				}
+			}
+		}
+
+	public:
+
+		RibbonRendererBase(RENDERER* renderer)
+			: m_renderer(renderer)
+			, m_ribbonCount(0)
+			, m_ringBufferOffset(0)
+			, m_ringBufferData(NULL)
+		{
+		}
+
+		virtual ~RibbonRendererBase()
+		{
+		}
+
+
+	protected:
+
+		void Rendering_(const efkRibbonNodeParam& parameter, const efkRibbonInstanceParam& instanceParameter, void* userData, const ::Effekseer::Matrix44& camera)
+		{
+			if (parameter.Distortion)
+			{
+				Rendering_Internal<VERTEX_DISTORTION>(parameter, instanceParameter, userData, camera);
 			}
 			else
 			{
-				state.TexturePtr = param.EffectPointer->GetColorImage(param.ColorTextureIndex);
+				Rendering_Internal<VERTEX_NORMAL>(parameter, instanceParameter, userData, camera);
 			}
 		}
-		else
-		{
-			state.TexturePtr = nullptr;
-		}
 
-		renderer->GetStandardRenderer()->UpdateStateAndRenderingIfRequired(state);
-
-		renderer->GetStandardRenderer()->BeginRenderingAndRenderingIfRequired(vertexCount, m_ringBufferOffset, (void*&) m_ringBufferData);
-	}
-
-	void Rendering_(const efkRibbonNodeParam& parameter, const efkRibbonInstanceParam& instanceParameter, void* userData, const ::Effekseer::Matrix44& camera)
-	{
-		if (parameter.Distortion)
+		template<typename VERTEX>
+		void Rendering_Internal(const efkRibbonNodeParam& parameter, const efkRibbonInstanceParam& instanceParameter, void* userData, const ::Effekseer::Matrix44& camera)
 		{
-			Rendering_Internal<VERTEX_DISTORTION>(parameter, instanceParameter, userData, camera);
-		}
-		else
-		{
-			Rendering_Internal<VERTEX_NORMAL>(parameter, instanceParameter, userData, camera);
-		}
-	}
+			if (m_ringBufferData == NULL) return;
+			if (instanceParameter.InstanceCount < 2) return;
 
-	template<typename VERTEX>
-	void Rendering_Internal( const efkRibbonNodeParam& parameter, const efkRibbonInstanceParam& instanceParameter, void* userData, const ::Effekseer::Matrix44& camera )
-	{
-		if( m_ringBufferData == NULL ) return;
-		if( instanceParameter.InstanceCount < 2 ) return;
-	
-		bool isFirst = instanceParameter.InstanceIndex == 0;
-		bool isLast = instanceParameter.InstanceIndex == (instanceParameter.InstanceCount - 1);
-	
-		VERTEX* verteies = (VERTEX*)m_ringBufferData;
-	
-		for( int i = 0; i < 2; i++ )
-		{
+			bool isFirst = instanceParameter.InstanceIndex == 0;
+			bool isLast = instanceParameter.InstanceIndex == (instanceParameter.InstanceCount - 1);
+
+			auto& param = instanceParameter;
+
+			if (isFirst)
+			{
+				instances.reserve(param.InstanceCount);
+				instances.resize(0);
+				innstancesNodeParam = parameter;
+			}
+
+			instances.push_back(param);
+
+			if (isLast)
+			{
+				RenderSplines<VERTEX>(camera);
+			}
+
+			/*
+			VERTEX* verteies = (VERTEX*)m_ringBufferData;
+
+			for( int i = 0; i < 2; i++ )
+			{
 			verteies[i].Pos.X = instanceParameter.Positions[i];
 			verteies[i].Pos.Y = 0.0f;
 			verteies[i].Pos.Z = 0.0f;
 			verteies[i].SetColor( instanceParameter.Colors[i] );
-		}
+			}
 
-		float percent = (float) instanceParameter.InstanceIndex / (float) (instanceParameter.InstanceCount - 1);
-		
-		verteies[0].UV[0] = instanceParameter.UV.X;
-		verteies[0].UV[1] = instanceParameter.UV.Y + percent * instanceParameter.UV.Height;
-	
-		verteies[1].UV[0] = instanceParameter.UV.X + instanceParameter.UV.Width;
-		verteies[1].UV[1] = instanceParameter.UV.Y + percent * instanceParameter.UV.Height;
-		
-		if( parameter.ViewpointDependent)
-		{
+			float percent = (float) instanceParameter.InstanceIndex / (float) (instanceParameter.InstanceCount - 1);
+
+			verteies[0].UV[0] = instanceParameter.UV.X;
+			verteies[0].UV[1] = instanceParameter.UV.Y + percent * instanceParameter.UV.Height;
+
+			verteies[1].UV[0] = instanceParameter.UV.X + instanceParameter.UV.Width;
+			verteies[1].UV[1] = instanceParameter.UV.Y + percent * instanceParameter.UV.Height;
+
+			if( parameter.ViewpointDependent)
+			{
 			const ::Effekseer::Matrix43& mat = instanceParameter.SRTMatrix43;
 			::Effekseer::Vector3D s;
 			::Effekseer::Matrix43 r;
 			::Effekseer::Vector3D t;
 			mat.GetSRT( s, r, t );
-	
+
 			// 拡大
 			for( int i = 0; i < 2; i++ )
 			{
-				verteies[i].Pos.X = verteies[i].Pos.X * s.X;
+			verteies[i].Pos.X = verteies[i].Pos.X * s.X;
 			}
-	
+
 			::Effekseer::Vector3D F;
 			::Effekseer::Vector3D R;
 			::Effekseer::Vector3D U;
-	
+
 			U = ::Effekseer::Vector3D( r.Value[1][0], r.Value[1][1], r.Value[1][2] );
-	
+
 			::Effekseer::Vector3D::Normal( F, ::Effekseer::Vector3D( - camera.Values[0][2], - camera.Values[1][2], - camera.Values[2][2] ) );
-	
+
 			::Effekseer::Vector3D::Normal( R, ::Effekseer::Vector3D::Cross( R, U, F ) );
 			::Effekseer::Vector3D::Normal( F, ::Effekseer::Vector3D::Cross( F, R, U ) );
-			
+
 			::Effekseer::Matrix43 mat_rot;
-	
+
 			mat_rot.Value[0][0] = - R.X;
 			mat_rot.Value[0][1] = - R.Y;
 			mat_rot.Value[0][2] = - R.Z;
@@ -1526,203 +1967,174 @@ protected:
 			mat_rot.Value[3][0] = t.X;
 			mat_rot.Value[3][1] = t.Y;
 			mat_rot.Value[3][2] = t.Z;
-	
+
 			for( int i = 0; i < 2; i++ )
 			{
-				::Effekseer::Vector3D::Transform(
-					verteies[i].Pos,
-					verteies[i].Pos,
-					mat_rot );
+			::Effekseer::Vector3D::Transform(
+			verteies[i].Pos,
+			verteies[i].Pos,
+			mat_rot );
 			}
-		}
-		else
-		{
+			}
+			else
+			{
 			for( int i = 0; i < 2; i++ )
 			{
-				::Effekseer::Vector3D::Transform(
-					verteies[i].Pos,
-					verteies[i].Pos,
-					instanceParameter.SRTMatrix43 );
+			::Effekseer::Vector3D::Transform(
+			verteies[i].Pos,
+			verteies[i].Pos,
+			instanceParameter.SRTMatrix43 );
 			}
-		}
-	
-		if( isFirst || isLast )
-		{
+			}
+
+			if( isFirst || isLast )
+			{
 			m_ringBufferData += sizeof(VERTEX) * 2;
-		}
-		else
-		{
+			}
+			else
+			{
 			verteies[2] = verteies[0];
 			verteies[3] = verteies[1];
 			m_ringBufferData += sizeof(VERTEX) * 4;
-		}
-	
-		if( !isFirst )
-		{
-			m_ribbonCount++;
-		}
+			}
 
-		/* 歪みを適用 */
-		if (isLast && sizeof(VERTEX) == sizeof(VERTEX_DISTORTION))
-		{
+			if( !isFirst )
+			{
+			m_ribbonCount++;
+			}
+
+			// Apply distortion
+			if (isLast && sizeof(VERTEX) == sizeof(VERTEX_DISTORTION))
+			{
 			VERTEX_DISTORTION* vs_ = (VERTEX_DISTORTION*) (m_ringBufferData - sizeof(VERTEX_DISTORTION) * (instanceParameter.InstanceCount - 1) * 4);
 
 			Effekseer::Vector3D axisBefore;
 
 			for (int32_t i = 0; i < instanceParameter.InstanceCount; i++)
 			{
-				bool isFirst_ = (i == 0);
-				bool isLast_ = (i == (instanceParameter.InstanceCount - 1));
-		
-				Effekseer::Vector3D axis;
-				Effekseer::Vector3D pos;
+			bool isFirst_ = (i == 0);
+			bool isLast_ = (i == (instanceParameter.InstanceCount - 1));
 
-				if (isFirst_)
+			Effekseer::Vector3D axis;
+			Effekseer::Vector3D pos;
+
+			if (isFirst_)
+			{
+			axis = (vs_[3].Pos - vs_[1].Pos);
+			Effekseer::Vector3D::Normal(axis, axis);
+			axisBefore = axis;
+			}
+			else if (isLast_)
+			{
+			axis = axisBefore;
+			}
+			else
+			{
+			Effekseer::Vector3D axisOld = axisBefore;
+			axis = (vs_[5].Pos - vs_[3].Pos);
+			Effekseer::Vector3D::Normal(axis, axis);
+			axisBefore = axis;
+
+			axis = (axisBefore + axisOld) / 2.0f;
+			Effekseer::Vector3D::Normal(axis, axis);
+			}
+
+			auto tangent = vs_[1].Pos - vs_[0].Pos;
+			Effekseer::Vector3D::Normal(tangent, tangent);
+
+			if (isFirst_)
+			{
+			vs_[0].Binormal = axis;
+			vs_[1].Binormal = axis;
+
+			vs_[0].Tangent = tangent;
+			vs_[1].Tangent = tangent;
+
+			vs_ += 2;
+
+			}
+			else if (isLast_)
+			{
+			vs_[0].Binormal = axis;
+			vs_[1].Binormal = axis;
+
+			vs_[0].Tangent = tangent;
+			vs_[1].Tangent = tangent;
+
+			vs_ += 2;
+			}
+			else
+			{
+			vs_[0].Binormal = axis;
+			vs_[1].Binormal = axis;
+			vs_[2].Binormal = axis;
+			vs_[3].Binormal = axis;
+
+			vs_[0].Tangent = tangent;
+			vs_[1].Tangent = tangent;
+			vs_[2].Tangent = tangent;
+			vs_[3].Tangent = tangent;
+
+			vs_ += 4;
+			}
+			}
+			}
+			*/
+		}
+
+	public:
+
+		void BeginRenderingGroup(const efkRibbonNodeParam& param, int32_t count, void* userData) override
+		{
+			m_ribbonCount = 0;
+			int32_t vertexCount = ((count - 1) * param.SplineDivision) * 4;
+			if (vertexCount <= 0) return;
+
+			EffekseerRenderer::StandardRendererState state;
+			state.AlphaBlend = param.AlphaBlend;
+			state.CullingType = ::Effekseer::CullingType::Double;
+			state.DepthTest = param.ZTest;
+			state.DepthWrite = param.ZWrite;
+			state.TextureFilterType = param.TextureFilter;
+			state.TextureWrapType = param.TextureWrap;
+
+			state.Distortion = param.Distortion;
+			state.DistortionIntensity = param.DistortionIntensity;
+
+			if (param.ColorTextureIndex >= 0)
+			{
+				if (state.Distortion)
 				{
-					axis = (vs_[3].Pos - vs_[1].Pos);
-					Effekseer::Vector3D::Normal(axis, axis);
-					axisBefore = axis;
-				}
-				else if (isLast_)
-				{
-					axis = axisBefore;
+					state.TexturePtr = param.EffectPointer->GetDistortionImage(param.ColorTextureIndex);
 				}
 				else
 				{
-					Effekseer::Vector3D axisOld = axisBefore;
-					axis = (vs_[5].Pos - vs_[3].Pos);
-					Effekseer::Vector3D::Normal(axis, axis);
-					axisBefore = axis;
-
-					axis = (axisBefore + axisOld) / 2.0f;
-					Effekseer::Vector3D::Normal(axis, axis);
-				}
-
-				auto tangent = vs_[1].Pos - vs_[0].Pos;
-				Effekseer::Vector3D::Normal(tangent, tangent);
-
-				if (isFirst_)
-				{
-					vs_[0].Binormal = axis;
-					vs_[1].Binormal = axis;
-
-					vs_[0].Tangent = tangent;
-					vs_[1].Tangent = tangent;
-
-					vs_ += 2;
-
-				}
-				else if (isLast_)
-				{
-					vs_[0].Binormal = axis;
-					vs_[1].Binormal = axis;
-
-					vs_[0].Tangent = tangent;
-					vs_[1].Tangent = tangent;
-
-					vs_ += 2;
-				}
-				else
-				{
-					vs_[0].Binormal = axis;
-					vs_[1].Binormal = axis;
-					vs_[2].Binormal = axis;
-					vs_[3].Binormal = axis;
-
-					vs_[0].Tangent = tangent;
-					vs_[1].Tangent = tangent;
-					vs_[2].Tangent = tangent;
-					vs_[3].Tangent = tangent;
-
-					vs_ += 4;
+					state.TexturePtr = param.EffectPointer->GetColorImage(param.ColorTextureIndex);
 				}
 			}
+			else
+			{
+				state.TexturePtr = nullptr;
+			}
+
+			m_renderer->GetStandardRenderer()->UpdateStateAndRenderingIfRequired(state);
+
+			m_renderer->GetStandardRenderer()->BeginRenderingAndRenderingIfRequired(vertexCount, m_ringBufferOffset, (void*&)m_ringBufferData);
 		}
-	}
 
-	void EndRendering_(RENDERER* renderer, const efkRibbonNodeParam& param)
-	{
-		/*
-		RenderStateBase::State& state = renderer->GetRenderState()->Push();
-		state.DepthTest = param.ZTest;
-		state.DepthWrite = param.ZWrite;
-		state.CullingType = ::Effekseer::CullingType::Double;
-
-		SHADER* shader_ = NULL;
-		if (param.ColorTextureIndex >= 0)
+		void Rendering(const efkRibbonNodeParam& parameter, const efkRibbonInstanceParam& instanceParameter, void* userData) override
 		{
-			shader_ = shader;
+			Rendering_(parameter, instanceParameter, userData, m_renderer->GetCameraMatrix());
 		}
-		else
-		{
-			shader_ = shader_no_texture;
-		}
-
-		renderer->BeginShader(shader_);
-
-		if (param.ColorTextureIndex >= 0)
-		{
-			TEXTURE texture = TexturePointerToTexture<TEXTURE>(param.EffectPointer->GetColorImage(param.ColorTextureIndex));
-			renderer->SetTextures(shader_, &texture, 1);
-		}
-		else
-		{
-			TEXTURE texture = (TEXTURE)NULL;
-			renderer->SetTextures(shader_, &texture, 1);
-		}
-
-		((Effekseer::Matrix44*)(shader_->GetVertexConstantBuffer()))[0] = renderer->GetCameraProjectionMatrix();
-		shader_->SetConstantBuffer();
-
-
-		state.AlphaBlend = param.AlphaBlend;
-		state.TextureFilterTypes[0] = param.TextureFilter;
-		state.TextureWrapTypes[0] = param.TextureWrap;
-
-		renderer->GetRenderState()->Update(false);
-
-		renderer->SetVertexBuffer(renderer->GetVertexBuffer(), sizeof(VERTEX));
-		renderer->SetIndexBuffer(renderer->GetIndexBuffer());
-		renderer->SetLayout(shader_);
-		renderer->DrawSprites(m_ribbonCount, m_ringBufferOffset / sizeof(VERTEX));
-
-		renderer->EndShader(shader_);
-
-		renderer->GetRenderState()->Pop();
-		*/
-	}
-
-public:
-
-	void BeginRendering(const efkRibbonNodeParam& parameter, int32_t count, void* userData) override
-	{
-		BeginRendering_(m_renderer, count, parameter);
-	}
-
-	void Rendering(const efkRibbonNodeParam& parameter, const efkRibbonInstanceParam& instanceParameter, void* userData) override
-	{
-		Rendering_(parameter, instanceParameter, userData, m_renderer->GetCameraMatrix());
-	}
-
-	void EndRendering(const efkRibbonNodeParam& parameter, void* userData) override
-	{
-		if (m_ringBufferData == NULL) return;
-
-		if (m_ribbonCount <= 1) return;
-
-		EndRendering_(m_renderer, parameter);
-	}
-
-};
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
+	};
+	//----------------------------------------------------------------------------------
+	//
+	//----------------------------------------------------------------------------------
 }
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
 #endif	// __EFFEKSEERRENDERER_RIBBON_RENDERER_H__
-
 #ifndef	__EFFEKSEERRENDERER_RING_RENDERER_BASE_H__
 #define	__EFFEKSEERRENDERER_RING_RENDERER_BASE_H__
 
@@ -2175,6 +2587,7 @@ public:
 #include <assert.h>
 #include <string.h>
 #include <math.h>
+#include <algorithm>
 
 
 //-----------------------------------------------------------------------------------
@@ -2198,6 +2611,14 @@ protected:
 	int32_t							m_spriteCount;
 	int32_t							m_ringBufferOffset;
 	uint8_t*						m_ringBufferData;
+
+	struct KeyValue
+	{
+		float Key;
+		efkSpriteInstanceParam	Value;
+	};
+
+	std::vector<KeyValue>				instances;
 
 public:
 
@@ -2248,17 +2669,28 @@ protected:
 
 		renderer->GetStandardRenderer()->BeginRenderingAndRenderingIfRequired(count * 4, m_ringBufferOffset, (void*&) m_ringBufferData);
 		m_spriteCount = 0;
+
+		instances.clear();
 	}
 
 	void Rendering_(const efkSpriteNodeParam& parameter, const efkSpriteInstanceParam& instanceParameter, void* userData, const ::Effekseer::Matrix44& camera)
 	{
-		if (parameter.Distortion)
+		if (parameter.ZSort == Effekseer::ZSortType::None)
 		{
-			Rendering_Internal<VERTEX_DISTORTION>(parameter, instanceParameter, userData, camera);
+			if (parameter.Distortion)
+			{
+				Rendering_Internal<VERTEX_DISTORTION>(parameter, instanceParameter, userData, camera);
+			}
+			else
+			{
+				Rendering_Internal<VERTEX_NORMAL>(parameter, instanceParameter, userData, camera);
+			}
 		}
 		else
 		{
-			Rendering_Internal<VERTEX_NORMAL>(parameter, instanceParameter, userData, camera);
+			KeyValue kv;
+			kv.Value = instanceParameter;
+			instances.push_back(kv);
 		}
 	}
 
@@ -2447,53 +2879,48 @@ protected:
 
 	void EndRendering_(RENDERER* renderer, const efkSpriteNodeParam& param)
 	{
-		/*
-		SHADER* shader_ = NULL;
-		if (param.ColorTextureIndex >= 0)
+		if (param.ZSort != Effekseer::ZSortType::None)
 		{
-			shader_ = shader;
+			auto mat = m_renderer->GetCameraMatrix();
+			for (auto& kv : instances)
+			{
+				efkVector3D t;
+				t.X = kv.Value.SRTMatrix43.Value[3][0];
+				t.Y = kv.Value.SRTMatrix43.Value[3][1];
+				t.Z = kv.Value.SRTMatrix43.Value[3][2];
+
+				::Effekseer::Vector3D::Transform(
+					t,
+					t,
+					mat);
+
+				kv.Key = t.Z;
+			}
+
+			if (param.ZSort == Effekseer::ZSortType::NormalOrder)
+			{
+				std::sort(instances.begin(), instances.end(), [](const KeyValue& a, const KeyValue& b) -> bool { return a.Key < b.Key; });
+			}
+			else
+			{
+				std::sort(instances.begin(), instances.end(), [](const KeyValue& a, const KeyValue& b) -> bool { return a.Key > b.Key; });
+			}
+			
+
+			for (auto& kv : instances)
+			{
+				auto camera = m_renderer->GetCameraMatrix();
+
+				if (param.Distortion)
+				{
+					Rendering_Internal<VERTEX_DISTORTION>(param, kv.Value, nullptr, camera);
+				}
+				else
+				{
+					Rendering_Internal<VERTEX_NORMAL>(param, kv.Value, nullptr, camera);
+				}
+			}
 		}
-		else
-		{
-			shader_ = shader_no_texture;
-		}
-
-		renderer->BeginShader(shader_);
-
-		RenderStateBase::State& state = renderer->GetRenderState()->Push();
-		state.DepthTest = param.ZTest;
-		state.DepthWrite = param.ZWrite;
-		state.CullingType = ::Effekseer::CullingType::Double;
-
-		if (param.ColorTextureIndex >= 0)
-		{
-			TEXTURE texture = TexturePointerToTexture<TEXTURE>(param.EffectPointer->GetColorImage(param.ColorTextureIndex));
-			renderer->SetTextures(shader_, &texture, 1);
-		}
-		else
-		{
-			TEXTURE texture = 0;
-			renderer->SetTextures(shader_, &texture, 1);
-		}
-
-		((Effekseer::Matrix44*)(shader_->GetVertexConstantBuffer()))[0] = renderer->GetCameraProjectionMatrix();
-		shader_->SetConstantBuffer();
-
-		state.AlphaBlend = param.AlphaBlend;
-		state.TextureFilterTypes[0] = param.TextureFilter;
-		state.TextureWrapTypes[0] = param.TextureWrap;
-
-		renderer->GetRenderState()->Update(false);
-
-		renderer->SetVertexBuffer(renderer->GetVertexBuffer(), sizeof(VERTEX));
-		renderer->SetIndexBuffer(renderer->GetIndexBuffer());
-		renderer->SetLayout(shader_);
-		renderer->DrawSprites(m_spriteCount, m_ringBufferOffset / sizeof(VERTEX));
-
-		renderer->EndShader(shader_);
-
-		renderer->GetRenderState()->Pop();
-		*/
 	}
 
 public:
@@ -2510,11 +2937,7 @@ public:
 
 	void EndRendering(const efkSpriteNodeParam& parameter, void* userData) override
 	{
-		//if( m_ringBufferData == NULL ) return;
-		//
-		//if( m_spriteCount == 0 ) return;
-		//
-		//EndRendering_<RendererImplemented, Shader, GLuint, Vertex>(m_renderer, parameter);
+		EndRendering_(m_renderer, parameter);
 	}
 };
 //----------------------------------------------------------------------------------
@@ -2525,6 +2948,7 @@ public:
 //
 //----------------------------------------------------------------------------------
 #endif	// __EFFEKSEERRENDERER_SPRITE_RENDERER_H__
+
 #ifndef	__EFFEKSEERRENDERER_TRACK_RENDERER_BASE_H__
 #define	__EFFEKSEERRENDERER_TRACK_RENDERER_BASE_H__
 
@@ -2541,129 +2965,498 @@ public:
 //-----------------------------------------------------------------------------------
 namespace EffekseerRenderer
 {
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
-typedef ::Effekseer::TrackRenderer::NodeParameter efkTrackNodeParam;
-typedef ::Effekseer::TrackRenderer::InstanceParameter efkTrackInstanceParam;
-typedef ::Effekseer::Vector3D efkVector3D;
+	//----------------------------------------------------------------------------------
+	//
+	//----------------------------------------------------------------------------------
+	typedef ::Effekseer::TrackRenderer::NodeParameter efkTrackNodeParam;
+	typedef ::Effekseer::TrackRenderer::InstanceParameter efkTrackInstanceParam;
+	typedef ::Effekseer::Vector3D efkVector3D;
 
-template<typename RENDERER, typename VERTEX_NORMAL, typename VERTEX_DISTORTION>
-class TrackRendererBase
-	: public ::Effekseer::TrackRenderer
-{
-protected:
-	RENDERER*						m_renderer;
-	int32_t							m_ribbonCount;
-
-	int32_t							m_ringBufferOffset;
-	uint8_t*						m_ringBufferData;
-
-public:
-
-	TrackRendererBase(RENDERER* renderer)
-		: m_renderer(renderer)
-		, m_ribbonCount(0)
-		, m_ringBufferOffset(0)
-		, m_ringBufferData(NULL)
+	template<typename RENDERER, typename VERTEX_NORMAL, typename VERTEX_DISTORTION>
+	class TrackRendererBase
+		: public ::Effekseer::TrackRenderer
 	{
-	}
+	private:
 
-	virtual ~TrackRendererBase()
-	{
-	}
-
-
-protected:
-
-	void BeginRendering_( RENDERER* renderer, const efkTrackNodeParam& param, int32_t count, void* userData )
-	{
-		/*
-		m_ribbonCount = 0;
-		
-		int32_t vertexCount = (count - 1) * 8;
-	
-		if( ! renderer->GetVertexBuffer()->RingBufferLock( sizeof(VERTEX) * vertexCount, m_ringBufferOffset, (void*&)m_ringBufferData ) )
-		{
-			m_ringBufferOffset = 0;
-			m_ringBufferData = NULL;
-		}
+		/**
+		@brief Spline generator
+		@note
+		Reference https://qiita.com/edo_m18/items/f2f0c6bf9032b0ec12d4
 		*/
-
-		m_ribbonCount = 0;
-		int32_t vertexCount = (count - 1) * 8;
-		if (vertexCount <= 0) return;
-
-		EffekseerRenderer::StandardRendererState state;
-		state.AlphaBlend = param.AlphaBlend;
-		state.CullingType = ::Effekseer::CullingType::Double;
-		state.DepthTest = param.ZTest;
-		state.DepthWrite = param.ZWrite;
-		state.TextureFilterType = param.TextureFilter;
-		state.TextureWrapType = param.TextureWrap;
-
-		state.Distortion = param.Distortion;
-		state.DistortionIntensity = param.DistortionIntensity;
-
-		if (param.ColorTextureIndex >= 0)
+		class Spline
 		{
-			if (state.Distortion)
+			std::vector<efkVector3D>	a;
+			std::vector<efkVector3D>	b;
+			std::vector<efkVector3D>	c;
+			std::vector<efkVector3D>	d;
+			std::vector<efkVector3D>	w;
+			std::vector<bool>			isSame;
+
+		public:
+
+			void AddVertex(const efkVector3D& v)
 			{
-				state.TexturePtr = param.EffectPointer->GetDistortionImage(param.ColorTextureIndex);
+				a.push_back(v);
+				if (a.size() >= 2)
+				{
+					isSame.push_back(a[a.size() - 1] == a[a.size() - 2]);
+				}
+			}
+
+			void Calculate()
+			{
+				b.resize(a.size());
+				c.resize(a.size());
+				d.resize(a.size());
+				w.resize(a.size());
+
+				for (auto i = 1; i < a.size() - 1; i++)
+				{
+					c[i] = (a[i - 1] + a[i] * (-2.0) + a[i + 1]) * 3.0;
+				}
+
+				for (auto i = 1; i < a.size() - 1; i++)
+				{
+					auto tmp = efkVector3D(4.0, 4.0, 4.0) - w[i - 1];
+					c[i] = (c[i] - c[i - 1]) / tmp;
+					w[i] = efkVector3D(1.0, 1.0, 1.0) / tmp;
+				}
+
+				for (auto i = (a.size() - 1) - 1; i > 0; i--)
+				{
+					c[i] = c[i] - c[i + 1] * w[i];
+				}
+
+				for (auto i = 0; i < a.size() - 1; i++)
+				{
+					d[i] = (c[i + 1] - c[i]) / 3.0;
+					b[i] = a[i + 1] - a[i] - c[i] - d[i];
+				}
+			}
+
+			void Reset()
+			{
+				a.clear();
+				b.clear();
+				c.clear();
+				d.clear();
+				w.clear();
+				isSame.clear();
+			}
+
+			efkVector3D GetValue(float t)
+			{
+				auto j = floorf(t);
+
+				if (j < 0)
+				{
+					j = 0;
+				}
+
+				if (j > a.size())
+				{
+					j = a.size() - 1;
+				}
+
+				auto dt = t - j;
+
+				if (j < isSame.size() && isSame[j]) return a[j];
+
+				return a[j] + (b[j] + (c[j] + d[j] * dt) * dt) * dt;
+			}
+		};
+
+	protected:
+		RENDERER*						m_renderer;
+		int32_t							m_ribbonCount;
+
+		int32_t							m_ringBufferOffset;
+		uint8_t*						m_ringBufferData;
+
+		efkTrackNodeParam					innstancesNodeParam;
+		std::vector<efkTrackInstanceParam>	instances;
+		Spline								spline;
+
+		template<typename VERTEX>
+		void RenderSplines(const ::Effekseer::Matrix44& camera)
+		{
+			auto& parameter = innstancesNodeParam;
+
+			VERTEX* v_origin = (VERTEX*)m_ringBufferData;
+
+			// Calculate spline
+			if (parameter.SplineDivision > 1)
+			{
+				spline.Reset();
+
+				for (auto loop = 0; loop < instances.size(); loop++)
+				{
+					auto p = efkVector3D();
+					auto& param = instances[loop];
+
+					p.X = param.SRTMatrix43.Value[3][0];
+					p.Y = param.SRTMatrix43.Value[3][1];
+					p.Z = param.SRTMatrix43.Value[3][2];
+
+					spline.AddVertex(p);
+				}
+
+				spline.Calculate();
+			}
+
+			for (auto loop = 0; loop < instances.size(); loop++)
+			{
+				auto& param = instances[loop];
+
+				for (auto sploop = 0; sploop < parameter.SplineDivision; sploop++)
+				{
+					bool isFirst = param.InstanceIndex == 0 && sploop == 0;
+					bool isLast = param.InstanceIndex == (param.InstanceCount - 1);
+
+					VERTEX* verteies = (VERTEX*)m_ringBufferData;
+
+					float size = 0.0f;
+					::Effekseer::Color leftColor;
+					::Effekseer::Color centerColor;
+					::Effekseer::Color rightColor;
+
+					float percent = (float)(param.InstanceIndex  * parameter.SplineDivision + sploop) / (float)((param.InstanceCount - 1) * parameter.SplineDivision);
+
+					if (param.InstanceIndex < param.InstanceCount / 2)
+					{
+						float l = percent;
+						l = l * 2.0f;
+						size = param.SizeFor + (param.SizeMiddle - param.SizeFor) * l;
+
+						leftColor.R = (uint8_t)Effekseer::Clamp(param.ColorLeft.R + (param.ColorLeftMiddle.R - param.ColorLeft.R) * l, 255, 0);
+						leftColor.G = (uint8_t)Effekseer::Clamp(param.ColorLeft.G + (param.ColorLeftMiddle.G - param.ColorLeft.G) * l, 255, 0);
+						leftColor.B = (uint8_t)Effekseer::Clamp(param.ColorLeft.B + (param.ColorLeftMiddle.B - param.ColorLeft.B) * l, 255, 0);
+						leftColor.A = (uint8_t)Effekseer::Clamp(param.ColorLeft.A + (param.ColorLeftMiddle.A - param.ColorLeft.A) * l, 255, 0);
+
+						centerColor.R = (uint8_t)Effekseer::Clamp(param.ColorCenter.R + (param.ColorCenterMiddle.R - param.ColorCenter.R) * l, 255, 0);
+						centerColor.G = (uint8_t)Effekseer::Clamp(param.ColorCenter.G + (param.ColorCenterMiddle.G - param.ColorCenter.G) * l, 255, 0);
+						centerColor.B = (uint8_t)Effekseer::Clamp(param.ColorCenter.B + (param.ColorCenterMiddle.B - param.ColorCenter.B) * l, 255, 0);
+						centerColor.A = (uint8_t)Effekseer::Clamp(param.ColorCenter.A + (param.ColorCenterMiddle.A - param.ColorCenter.A) * l, 255, 0);
+
+						rightColor.R = (uint8_t)Effekseer::Clamp(param.ColorRight.R + (param.ColorRightMiddle.R - param.ColorRight.R) * l, 255, 0);
+						rightColor.G = (uint8_t)Effekseer::Clamp(param.ColorRight.G + (param.ColorRightMiddle.G - param.ColorRight.G) * l, 255, 0);
+						rightColor.B = (uint8_t)Effekseer::Clamp(param.ColorRight.B + (param.ColorRightMiddle.B - param.ColorRight.B) * l, 255, 0);
+						rightColor.A = (uint8_t)Effekseer::Clamp(param.ColorRight.A + (param.ColorRightMiddle.A - param.ColorRight.A) * l, 255, 0);
+					}
+					else
+					{
+						float l = percent;
+						l = 1.0f - (l * 2.0f - 1.0f);
+						size = param.SizeBack + (param.SizeMiddle - param.SizeBack) * l;
+
+						leftColor.R = (uint8_t)Effekseer::Clamp(param.ColorLeft.R + (param.ColorLeftMiddle.R - param.ColorLeft.R) * l, 255, 0);
+						leftColor.G = (uint8_t)Effekseer::Clamp(param.ColorLeft.G + (param.ColorLeftMiddle.G - param.ColorLeft.G) * l, 255, 0);
+						leftColor.B = (uint8_t)Effekseer::Clamp(param.ColorLeft.B + (param.ColorLeftMiddle.B - param.ColorLeft.B) * l, 255, 0);
+						leftColor.A = (uint8_t)Effekseer::Clamp(param.ColorLeft.A + (param.ColorLeftMiddle.A - param.ColorLeft.A) * l, 255, 0);
+
+						centerColor.R = (uint8_t)Effekseer::Clamp(param.ColorCenter.R + (param.ColorCenterMiddle.R - param.ColorCenter.R) * l, 255, 0);
+						centerColor.G = (uint8_t)Effekseer::Clamp(param.ColorCenter.G + (param.ColorCenterMiddle.G - param.ColorCenter.G) * l, 255, 0);
+						centerColor.B = (uint8_t)Effekseer::Clamp(param.ColorCenter.B + (param.ColorCenterMiddle.B - param.ColorCenter.B) * l, 255, 0);
+						centerColor.A = (uint8_t)Effekseer::Clamp(param.ColorCenter.A + (param.ColorCenterMiddle.A - param.ColorCenter.A) * l, 255, 0);
+
+						rightColor.R = (uint8_t)Effekseer::Clamp(param.ColorRight.R + (param.ColorRightMiddle.R - param.ColorRight.R) * l, 255, 0);
+						rightColor.G = (uint8_t)Effekseer::Clamp(param.ColorRight.G + (param.ColorRightMiddle.G - param.ColorRight.G) * l, 255, 0);
+						rightColor.B = (uint8_t)Effekseer::Clamp(param.ColorRight.B + (param.ColorRightMiddle.B - param.ColorRight.B) * l, 255, 0);
+						rightColor.A = (uint8_t)Effekseer::Clamp(param.ColorRight.A + (param.ColorRightMiddle.A - param.ColorRight.A) * l, 255, 0);
+					}
+
+					const ::Effekseer::Matrix43& mat = param.SRTMatrix43;
+					::Effekseer::Vector3D s;
+					::Effekseer::Matrix43 r;
+					::Effekseer::Vector3D t;
+					mat.GetSRT(s, r, t);
+
+					VERTEX v[3];
+
+					v[0].Pos.X = (-size / 2.0f) * s.X;
+					v[0].Pos.Y = 0.0f;
+					v[0].Pos.Z = 0.0f;
+					v[0].SetColor(leftColor);
+
+					v[1].Pos.X = 0.0f;
+					v[1].Pos.Y = 0.0f;
+					v[1].Pos.Z = 0.0f;
+					v[1].SetColor(centerColor);
+
+					v[2].Pos.X = (size / 2.0f) * s.X;
+					v[2].Pos.Y = 0.0f;
+					v[2].Pos.Z = 0.0f;
+					v[2].SetColor(rightColor);
+
+					v[0].UV[0] = param.UV.X;
+					v[0].UV[1] = param.UV.Y + percent * param.UV.Height;
+
+					v[1].UV[0] = param.UV.X + param.UV.Width * 0.5f;
+					v[1].UV[1] = param.UV.Y + percent * param.UV.Height;
+
+					v[2].UV[0] = param.UV.X + param.UV.Width;
+					v[2].UV[1] = param.UV.Y + percent * param.UV.Height;
+
+					if (parameter.SplineDivision > 1)
+					{
+						v[1].Pos = spline.GetValue(param.InstanceIndex + sploop / (float)parameter.SplineDivision);
+					}
+					else
+					{
+						v[1].Pos.X = param.SRTMatrix43.Value[3][0];
+						v[1].Pos.Y = param.SRTMatrix43.Value[3][1];
+						v[1].Pos.Z = param.SRTMatrix43.Value[3][2];
+					}
+
+					if (isFirst)
+					{
+						verteies[0] = v[0];
+						verteies[1] = v[1];
+						verteies[4] = v[1];
+						verteies[5] = v[2];
+						m_ringBufferData += sizeof(VERTEX) * 2;
+
+					}
+					else if (isLast)
+					{
+						verteies[0] = v[0];
+						verteies[1] = v[1];
+						verteies[4] = v[1];
+						verteies[5] = v[2];
+						m_ringBufferData += sizeof(VERTEX) * 6;
+						m_ribbonCount += 2;
+					}
+					else
+					{
+						verteies[0] = v[0];
+						verteies[1] = v[1];
+						verteies[4] = v[1];
+						verteies[5] = v[2];
+
+						verteies[6] = v[0];
+						verteies[7] = v[1];
+						verteies[10] = v[1];
+						verteies[11] = v[2];
+
+						m_ringBufferData += sizeof(VERTEX) * 8;
+						m_ribbonCount += 2;
+					}
+
+					if (isLast)
+					{
+						break;
+					}
+				}
+			}
+
+			// transform all vertecies
+			{
+				VERTEX* vs_ = v_origin;
+
+				Effekseer::Vector3D axisBefore;
+
+				for (int32_t i = 0; i < (instances.size() - 1) * parameter.SplineDivision + 1; i++)
+				{
+					bool isFirst_ = (i == 0);
+					bool isLast_ = (i == ((instances.size() - 1) * parameter.SplineDivision));
+					Effekseer::Vector3D axis;
+					Effekseer::Vector3D pos;
+
+					if (isFirst_)
+					{
+						axis = (vs_[3].Pos - vs_[1].Pos);
+						Effekseer::Vector3D::Normal(axis, axis);
+						axisBefore = axis;
+					}
+					else if (isLast_)
+					{
+						axis = axisBefore;
+					}
+					else
+					{
+						Effekseer::Vector3D axisOld = axisBefore;
+						axis = vs_[9].Pos - vs_[7].Pos;
+						Effekseer::Vector3D::Normal(axis, axis);
+						axisBefore = axis;
+
+						axis = (axisBefore + axisOld) / 2.0f;
+					}
+
+					pos = vs_[1].Pos;
+
+					VERTEX vl = vs_[0];
+					VERTEX vm = vs_[1];
+					VERTEX vr = vs_[5];
+
+					vm.Pos.X = 0.0f;
+					vm.Pos.Y = 0.0f;
+					vm.Pos.Z = 0.0f;
+
+					::Effekseer::Vector3D F;
+					::Effekseer::Vector3D R;
+					::Effekseer::Vector3D U;
+
+					U = axis;
+
+					::Effekseer::Vector3D::Normal(F, ::Effekseer::Vector3D(-camera.Values[0][2], -camera.Values[1][2], -camera.Values[2][2]));
+
+					::Effekseer::Vector3D::Normal(R, ::Effekseer::Vector3D::Cross(R, U, F));
+					::Effekseer::Vector3D::Normal(F, ::Effekseer::Vector3D::Cross(F, R, U));
+
+					::Effekseer::Matrix43 mat_rot;
+
+					mat_rot.Value[0][0] = -R.X;
+					mat_rot.Value[0][1] = -R.Y;
+					mat_rot.Value[0][2] = -R.Z;
+					mat_rot.Value[1][0] = U.X;
+					mat_rot.Value[1][1] = U.Y;
+					mat_rot.Value[1][2] = U.Z;
+					mat_rot.Value[2][0] = F.X;
+					mat_rot.Value[2][1] = F.Y;
+					mat_rot.Value[2][2] = F.Z;
+					mat_rot.Value[3][0] = pos.X;
+					mat_rot.Value[3][1] = pos.Y;
+					mat_rot.Value[3][2] = pos.Z;
+
+					::Effekseer::Vector3D::Transform(
+						vl.Pos,
+						vl.Pos,
+						mat_rot);
+
+					::Effekseer::Vector3D::Transform(
+						vm.Pos,
+						vm.Pos,
+						mat_rot);
+
+					::Effekseer::Vector3D::Transform(
+						vr.Pos,
+						vr.Pos,
+						mat_rot);
+
+
+					if (sizeof(VERTEX) == sizeof(VERTEX_DISTORTION))
+					{
+						auto vl_ = (VERTEX_DISTORTION*)(&vl);
+						auto vm_ = (VERTEX_DISTORTION*)(&vm);
+						auto vr_ = (VERTEX_DISTORTION*)(&vr);
+
+						vl_->Binormal = axis;
+						vm_->Binormal = axis;
+						vr_->Binormal = axis;
+
+						::Effekseer::Vector3D tangent;
+						::Effekseer::Vector3D::Normal(tangent, vr_->Pos - vl_->Pos);
+
+						vl_->Tangent = tangent;
+						vm_->Tangent = tangent;
+						vr_->Tangent = tangent;
+					}
+
+					if (isFirst_)
+					{
+						vs_[0] = vl;
+						vs_[1] = vm;
+						vs_[4] = vm;
+						vs_[5] = vr;
+						vs_ += 2;
+
+					}
+					else if (isLast_)
+					{
+						vs_[0] = vl;
+						vs_[1] = vm;
+						vs_[4] = vm;
+						vs_[5] = vr;
+						vs_ += 6;
+					}
+					else
+					{
+						vs_[0] = vl;
+						vs_[1] = vm;
+						vs_[4] = vm;
+						vs_[5] = vr;
+
+						vs_[6] = vl;
+						vs_[7] = vm;
+						vs_[10] = vm;
+						vs_[11] = vr;
+
+						vs_ += 8;
+					}
+				}
+			}
+		}
+
+	public:
+
+		TrackRendererBase(RENDERER* renderer)
+			: m_renderer(renderer)
+			, m_ribbonCount(0)
+			, m_ringBufferOffset(0)
+			, m_ringBufferData(NULL)
+		{
+		}
+
+		virtual ~TrackRendererBase()
+		{
+		}
+
+
+	protected:
+
+		void Rendering_(const efkTrackNodeParam& parameter, const efkTrackInstanceParam& instanceParameter, void* userData, const ::Effekseer::Matrix44& camera)
+		{
+			if (parameter.Distortion)
+			{
+				Rendering_Internal<VERTEX_DISTORTION>(parameter, instanceParameter, userData, camera);
 			}
 			else
 			{
-				state.TexturePtr = param.EffectPointer->GetColorImage(param.ColorTextureIndex);
+				Rendering_Internal<VERTEX_NORMAL>(parameter, instanceParameter, userData, camera);
 			}
 		}
-		else
+
+		template<typename VERTEX>
+		void Rendering_Internal(const efkTrackNodeParam& parameter, const efkTrackInstanceParam& instanceParameter, void* userData, const ::Effekseer::Matrix44& camera)
 		{
-			state.TexturePtr = nullptr;
-		}
+			if (m_ringBufferData == NULL) return;
+			if (instanceParameter.InstanceCount < 2) return;
 
-		renderer->GetStandardRenderer()->UpdateStateAndRenderingIfRequired(state);
+			const efkTrackInstanceParam& param = instanceParameter;
 
-		renderer->GetStandardRenderer()->BeginRenderingAndRenderingIfRequired(vertexCount, m_ringBufferOffset, (void*&) m_ringBufferData);
-	}
+			bool isFirst = param.InstanceIndex == 0;
+			bool isLast = param.InstanceIndex == (param.InstanceCount - 1);
 
-	void Rendering_(const efkTrackNodeParam& parameter, const efkTrackInstanceParam& instanceParameter, void* userData, const ::Effekseer::Matrix44& camera)
-	{
-		if (parameter.Distortion)
-		{
-			Rendering_Internal<VERTEX_DISTORTION>(parameter, instanceParameter, userData, camera);
-		}
-		else
-		{
-			Rendering_Internal<VERTEX_NORMAL>(parameter, instanceParameter, userData, camera);
-		}
-	}
+			if (isFirst)
+			{
+				instances.reserve(param.InstanceCount);
+				instances.resize(0);
+				innstancesNodeParam = parameter;
+			}
 
-	template<typename VERTEX>
-	void Rendering_Internal( const efkTrackNodeParam& parameter, const efkTrackInstanceParam& instanceParameter, void* userData, const ::Effekseer::Matrix44& camera )
-	{
-		if( m_ringBufferData == NULL ) return;
-		if( instanceParameter.InstanceCount < 2 ) return;
+			instances.push_back(param);
 
-		const efkTrackInstanceParam& param = instanceParameter;
-		
-		bool isFirst = param.InstanceIndex == 0;
-		bool isLast = param.InstanceIndex == (param.InstanceCount - 1);
+			if (isLast)
+			{
+				RenderSplines<VERTEX>(camera);
+			}
 
-		VERTEX* verteies = (VERTEX*)m_ringBufferData;
+			/*
+			VERTEX* verteies = (VERTEX*)m_ringBufferData;
 
-		float size = 0.0f;
-		::Effekseer::Color leftColor;
-		::Effekseer::Color centerColor;
-		::Effekseer::Color rightColor;
+			float size = 0.0f;
+			::Effekseer::Color leftColor;
+			::Effekseer::Color centerColor;
+			::Effekseer::Color rightColor;
 
-		float percent = (float) param.InstanceIndex / (float) (param.InstanceCount - 1);
+			float percent = (float) param.InstanceIndex / (float) (param.InstanceCount - 1);
 
-		if( param.InstanceIndex < param.InstanceCount / 2 )
-		{
+			if( param.InstanceIndex < param.InstanceCount / 2 )
+			{
 			float l = percent;
 			l = l * 2.0f;
 			size = param.SizeFor + (param.SizeMiddle-param.SizeFor) * l;
-			
+
 			leftColor.R = (uint8_t)Effekseer::Clamp( param.ColorLeft.R + (param.ColorLeftMiddle.R-param.ColorLeft.R) * l, 255, 0 );
 			leftColor.G = (uint8_t)Effekseer::Clamp( param.ColorLeft.G + (param.ColorLeftMiddle.G-param.ColorLeft.G) * l, 255, 0 );
 			leftColor.B = (uint8_t)Effekseer::Clamp( param.ColorLeft.B + (param.ColorLeftMiddle.B-param.ColorLeft.B) * l, 255, 0 );
@@ -2678,13 +3471,13 @@ protected:
 			rightColor.G = (uint8_t)Effekseer::Clamp( param.ColorRight.G + (param.ColorRightMiddle.G-param.ColorRight.G) * l, 255, 0 );
 			rightColor.B = (uint8_t)Effekseer::Clamp( param.ColorRight.B + (param.ColorRightMiddle.B-param.ColorRight.B) * l, 255, 0 );
 			rightColor.A = (uint8_t)Effekseer::Clamp( param.ColorRight.A + (param.ColorRightMiddle.A-param.ColorRight.A) * l, 255, 0 );
-		}
-		else
-		{
+			}
+			else
+			{
 			float l = percent;
 			l = 1.0f - (l * 2.0f - 1.0f);
 			size = param.SizeBack + (param.SizeMiddle-param.SizeBack) * l;
-			
+
 			leftColor.R = (uint8_t)Effekseer::Clamp( param.ColorLeft.R + (param.ColorLeftMiddle.R-param.ColorLeft.R) * l, 255, 0 );
 			leftColor.G = (uint8_t)Effekseer::Clamp( param.ColorLeft.G + (param.ColorLeftMiddle.G-param.ColorLeft.G) * l, 255, 0 );
 			leftColor.B = (uint8_t)Effekseer::Clamp( param.ColorLeft.B + (param.ColorLeftMiddle.B-param.ColorLeft.B) * l, 255, 0 );
@@ -2699,64 +3492,64 @@ protected:
 			rightColor.G = (uint8_t)Effekseer::Clamp( param.ColorRight.G + (param.ColorRightMiddle.G-param.ColorRight.G) * l, 255, 0 );
 			rightColor.B = (uint8_t)Effekseer::Clamp( param.ColorRight.B + (param.ColorRightMiddle.B-param.ColorRight.B) * l, 255, 0 );
 			rightColor.A = (uint8_t)Effekseer::Clamp( param.ColorRight.A + (param.ColorRightMiddle.A-param.ColorRight.A) * l, 255, 0 );
-		}
+			}
 
-		const ::Effekseer::Matrix43& mat = instanceParameter.SRTMatrix43;
-		::Effekseer::Vector3D s;
-		::Effekseer::Matrix43 r;
-		::Effekseer::Vector3D t;
-		mat.GetSRT(s, r, t);
+			const ::Effekseer::Matrix43& mat = instanceParameter.SRTMatrix43;
+			::Effekseer::Vector3D s;
+			::Effekseer::Matrix43 r;
+			::Effekseer::Vector3D t;
+			mat.GetSRT(s, r, t);
 
-		VERTEX v[3];
+			VERTEX v[3];
 
-		v[0].Pos.X = (- size / 2.0f) * s.X;
-		v[0].Pos.Y = 0.0f;
-		v[0].Pos.Z = 0.0f;
-		v[0].SetColor( leftColor );
+			v[0].Pos.X = (- size / 2.0f) * s.X;
+			v[0].Pos.Y = 0.0f;
+			v[0].Pos.Z = 0.0f;
+			v[0].SetColor( leftColor );
 
-		v[1].Pos.X = 0.0f;
-		v[1].Pos.Y = 0.0f;
-		v[1].Pos.Z = 0.0f;
-		v[1].SetColor( centerColor );
+			v[1].Pos.X = 0.0f;
+			v[1].Pos.Y = 0.0f;
+			v[1].Pos.Z = 0.0f;
+			v[1].SetColor( centerColor );
 
-		v[2].Pos.X = (size / 2.0f) * s.X;
-		v[2].Pos.Y = 0.0f;
-		v[2].Pos.Z = 0.0f;
-		v[2].SetColor( rightColor );
+			v[2].Pos.X = (size / 2.0f) * s.X;
+			v[2].Pos.Y = 0.0f;
+			v[2].Pos.Z = 0.0f;
+			v[2].SetColor( rightColor );
 
-		v[0].UV[0] = instanceParameter.UV.X;
-		v[0].UV[1] = instanceParameter.UV.Y + percent * instanceParameter.UV.Height;
+			v[0].UV[0] = instanceParameter.UV.X;
+			v[0].UV[1] = instanceParameter.UV.Y + percent * instanceParameter.UV.Height;
 
-		v[1].UV[0] = instanceParameter.UV.X + instanceParameter.UV.Width * 0.5f;
-		v[1].UV[1] = instanceParameter.UV.Y + percent * instanceParameter.UV.Height;
+			v[1].UV[0] = instanceParameter.UV.X + instanceParameter.UV.Width * 0.5f;
+			v[1].UV[1] = instanceParameter.UV.Y + percent * instanceParameter.UV.Height;
 
-		v[2].UV[0] = instanceParameter.UV.X + instanceParameter.UV.Width;
-		v[2].UV[1] = instanceParameter.UV.Y + percent * instanceParameter.UV.Height;
+			v[2].UV[0] = instanceParameter.UV.X + instanceParameter.UV.Width;
+			v[2].UV[1] = instanceParameter.UV.Y + percent * instanceParameter.UV.Height;
 
-		v[1].Pos.X = param.SRTMatrix43.Value[3][0];
-		v[1].Pos.Y = param.SRTMatrix43.Value[3][1];
-		v[1].Pos.Z = param.SRTMatrix43.Value[3][2];
+			v[1].Pos.X = param.SRTMatrix43.Value[3][0];
+			v[1].Pos.Y = param.SRTMatrix43.Value[3][1];
+			v[1].Pos.Z = param.SRTMatrix43.Value[3][2];
 
-		if( isFirst )
-		{
+			if( isFirst )
+			{
 			verteies[0] = v[0];
 			verteies[1] = v[1];
 			verteies[4] = v[1];
 			verteies[5] = v[2];
 			m_ringBufferData += sizeof(VERTEX) * 2;
-			
-		}
-		else if( isLast )
-		{
+
+			}
+			else if( isLast )
+			{
 			verteies[0] = v[0];
 			verteies[1] = v[1];
 			verteies[4] = v[1];
 			verteies[5] = v[2];
 			m_ringBufferData += sizeof(VERTEX) * 6;
 			m_ribbonCount += 2;
-		}
-		else
-		{
+			}
+			else
+			{
 			verteies[0] = v[0];
 			verteies[1] = v[1];
 			verteies[4] = v[1];
@@ -2769,224 +3562,196 @@ protected:
 
 			m_ringBufferData += sizeof(VERTEX) * 8;
 			m_ribbonCount += 2;
-		}
+			}
 
-		/* 全ての頂点の座標を変換 */
-		if( isLast )
-		{
+			if( isLast )
+			{
 			VERTEX* vs_ = (VERTEX*)(m_ringBufferData - sizeof(VERTEX) * 8 * (param.InstanceCount-1) );
-			
+
 			Effekseer::Vector3D axisBefore;
 
 			for( int32_t i = 0; i < param.InstanceCount; i++ )
 			{
-				bool isFirst_ = (i == 0);
-				bool isLast_ = (i == (param.InstanceCount-1));
-				Effekseer::Vector3D axis;
-				Effekseer::Vector3D pos;
+			bool isFirst_ = (i == 0);
+			bool isLast_ = (i == (param.InstanceCount-1));
+			Effekseer::Vector3D axis;
+			Effekseer::Vector3D pos;
 
-				if( isFirst_ )
+			if( isFirst_ )
+			{
+			axis = (vs_[3].Pos - vs_[1].Pos);
+			Effekseer::Vector3D::Normal( axis, axis );
+			axisBefore = axis;
+			}
+			else if( isLast_ )
+			{
+			axis = axisBefore;
+			}
+			else
+			{
+			Effekseer::Vector3D axisOld = axisBefore;
+			axis = vs_[9].Pos - vs_[7].Pos;
+			Effekseer::Vector3D::Normal( axis, axis );
+			axisBefore = axis;
+
+			axis = (axisBefore + axisOld) / 2.0f;
+			}
+
+			pos = vs_[1].Pos;
+
+			VERTEX vl = vs_[0];
+			VERTEX vm = vs_[1];
+			VERTEX vr = vs_[5];
+
+			vm.Pos.X = 0.0f;
+			vm.Pos.Y = 0.0f;
+			vm.Pos.Z = 0.0f;
+
+			::Effekseer::Vector3D F;
+			::Effekseer::Vector3D R;
+			::Effekseer::Vector3D U;
+
+			U = axis;
+
+			::Effekseer::Vector3D::Normal( F, ::Effekseer::Vector3D( - camera.Values[0][2], - camera.Values[1][2], - camera.Values[2][2] ) );
+
+			::Effekseer::Vector3D::Normal( R, ::Effekseer::Vector3D::Cross( R, U, F ) );
+			::Effekseer::Vector3D::Normal( F, ::Effekseer::Vector3D::Cross( F, R, U ) );
+
+			::Effekseer::Matrix43 mat_rot;
+
+			mat_rot.Value[0][0] = - R.X;
+			mat_rot.Value[0][1] = - R.Y;
+			mat_rot.Value[0][2] = - R.Z;
+			mat_rot.Value[1][0] = U.X;
+			mat_rot.Value[1][1] = U.Y;
+			mat_rot.Value[1][2] = U.Z;
+			mat_rot.Value[2][0] = F.X;
+			mat_rot.Value[2][1] = F.Y;
+			mat_rot.Value[2][2] = F.Z;
+			mat_rot.Value[3][0] = pos.X;
+			mat_rot.Value[3][1] = pos.Y;
+			mat_rot.Value[3][2] = pos.Z;
+
+			::Effekseer::Vector3D::Transform(
+			vl.Pos,
+			vl.Pos,
+			mat_rot );
+
+			::Effekseer::Vector3D::Transform(
+			vm.Pos,
+			vm.Pos,
+			mat_rot );
+
+			::Effekseer::Vector3D::Transform(
+			vr.Pos,
+			vr.Pos,
+			mat_rot );
+
+
+			if (sizeof(VERTEX) == sizeof(VERTEX_DISTORTION))
+			{
+			auto vl_ = (VERTEX_DISTORTION*) (&vl);
+			auto vm_ = (VERTEX_DISTORTION*) (&vm);
+			auto vr_ = (VERTEX_DISTORTION*) (&vr);
+
+			vl_->Binormal = axis;
+			vm_->Binormal = axis;
+			vr_->Binormal = axis;
+
+			::Effekseer::Vector3D tangent;
+			::Effekseer::Vector3D::Normal(tangent, vr_->Pos - vl_->Pos);
+
+			vl_->Tangent = tangent;
+			vm_->Tangent = tangent;
+			vr_->Tangent = tangent;
+			}
+
+			if( isFirst_ )
+			{
+			vs_[0] = vl;
+			vs_[1] = vm;
+			vs_[4] = vm;
+			vs_[5] = vr;
+			vs_ += 2;
+
+			}
+			else if( isLast_ )
+			{
+			vs_[0] = vl;
+			vs_[1] = vm;
+			vs_[4] = vm;
+			vs_[5] = vr;
+			vs_ += 6;
+			}
+			else
+			{
+			vs_[0] = vl;
+			vs_[1] = vm;
+			vs_[4] = vm;
+			vs_[5] = vr;
+
+			vs_[6] = vl;
+			vs_[7] = vm;
+			vs_[10] = vm;
+			vs_[11] = vr;
+
+			vs_ += 8;
+			}
+			}
+			}
+			*/
+		}
+
+	public:
+
+		void Rendering(const efkTrackNodeParam& parameter, const efkTrackInstanceParam& instanceParameter, void* userData) override
+		{
+			Rendering_(parameter, instanceParameter, userData, m_renderer->GetCameraMatrix());
+		}
+
+		void BeginRenderingGroup(const efkTrackNodeParam& param, int32_t count, void* userData) override
+		{
+			m_ribbonCount = 0;
+			int32_t vertexCount = ((count - 1) * param.SplineDivision) * 8;
+			if (vertexCount <= 0) return;
+
+			EffekseerRenderer::StandardRendererState state;
+			state.AlphaBlend = param.AlphaBlend;
+			state.CullingType = ::Effekseer::CullingType::Double;
+			state.DepthTest = param.ZTest;
+			state.DepthWrite = param.ZWrite;
+			state.TextureFilterType = param.TextureFilter;
+			state.TextureWrapType = param.TextureWrap;
+
+			state.Distortion = param.Distortion;
+			state.DistortionIntensity = param.DistortionIntensity;
+
+			if (param.ColorTextureIndex >= 0)
+			{
+				if (state.Distortion)
 				{
-					axis = (vs_[3].Pos - vs_[1].Pos);
-					Effekseer::Vector3D::Normal( axis, axis );
-					axisBefore = axis;
-				}
-				else if( isLast_ )
-				{
-					 axis = axisBefore;
+					state.TexturePtr = param.EffectPointer->GetDistortionImage(param.ColorTextureIndex);
 				}
 				else
 				{
-					Effekseer::Vector3D axisOld = axisBefore;
-					axis = vs_[9].Pos - vs_[7].Pos;
-					Effekseer::Vector3D::Normal( axis, axis );
-					axisBefore = axis;
-
-					axis = (axisBefore + axisOld) / 2.0f;
-				}
-
-				pos = vs_[1].Pos;
-
-				VERTEX vl = vs_[0];
-				VERTEX vm = vs_[1];
-				VERTEX vr = vs_[5];
-
-				vm.Pos.X = 0.0f;
-				vm.Pos.Y = 0.0f;
-				vm.Pos.Z = 0.0f;
-
-				::Effekseer::Vector3D F;
-				::Effekseer::Vector3D R;
-				::Effekseer::Vector3D U;
-
-				U = axis;
-
-				::Effekseer::Vector3D::Normal( F, ::Effekseer::Vector3D( - camera.Values[0][2], - camera.Values[1][2], - camera.Values[2][2] ) );
-
-				::Effekseer::Vector3D::Normal( R, ::Effekseer::Vector3D::Cross( R, U, F ) );
-				::Effekseer::Vector3D::Normal( F, ::Effekseer::Vector3D::Cross( F, R, U ) );
-				
-				::Effekseer::Matrix43 mat_rot;
-
-				mat_rot.Value[0][0] = - R.X;
-				mat_rot.Value[0][1] = - R.Y;
-				mat_rot.Value[0][2] = - R.Z;
-				mat_rot.Value[1][0] = U.X;
-				mat_rot.Value[1][1] = U.Y;
-				mat_rot.Value[1][2] = U.Z;
-				mat_rot.Value[2][0] = F.X;
-				mat_rot.Value[2][1] = F.Y;
-				mat_rot.Value[2][2] = F.Z;
-				mat_rot.Value[3][0] = pos.X;
-				mat_rot.Value[3][1] = pos.Y;
-				mat_rot.Value[3][2] = pos.Z;
-
-				::Effekseer::Vector3D::Transform(
-					vl.Pos,
-					vl.Pos,
-					mat_rot );
-
-				::Effekseer::Vector3D::Transform(
-					vm.Pos,
-					vm.Pos,
-					mat_rot );
-
-				::Effekseer::Vector3D::Transform(
-					vr.Pos,
-					vr.Pos,
-					mat_rot );
-
-
-				if (sizeof(VERTEX) == sizeof(VERTEX_DISTORTION))
-				{
-					auto vl_ = (VERTEX_DISTORTION*) (&vl);
-					auto vm_ = (VERTEX_DISTORTION*) (&vm);
-					auto vr_ = (VERTEX_DISTORTION*) (&vr);
-
-					vl_->Binormal = axis;
-					vm_->Binormal = axis;
-					vr_->Binormal = axis;
-
-					::Effekseer::Vector3D tangent;
-					::Effekseer::Vector3D::Normal(tangent, vr_->Pos - vl_->Pos);
-
-					vl_->Tangent = tangent;
-					vm_->Tangent = tangent;
-					vr_->Tangent = tangent;
-				}
-
-				if( isFirst_ )
-				{
-					vs_[0] = vl;
-					vs_[1] = vm;
-					vs_[4] = vm;
-					vs_[5] = vr;
-					vs_ += 2;
-					
-				}
-				else if( isLast_ )
-				{
-					vs_[0] = vl;
-					vs_[1] = vm;
-					vs_[4] = vm;
-					vs_[5] = vr;
-					vs_ += 6;
-				}
-				else
-				{
-					vs_[0] = vl;
-					vs_[1] = vm;
-					vs_[4] = vm;
-					vs_[5] = vr;
-					
-					vs_[6] = vl;
-					vs_[7] = vm;
-					vs_[10] = vm;
-					vs_[11] = vr;
-
-					vs_ += 8;
+					state.TexturePtr = param.EffectPointer->GetColorImage(param.ColorTextureIndex);
 				}
 			}
+			else
+			{
+				state.TexturePtr = nullptr;
+			}
+
+			m_renderer->GetStandardRenderer()->UpdateStateAndRenderingIfRequired(state);
+
+			m_renderer->GetStandardRenderer()->BeginRenderingAndRenderingIfRequired(vertexCount, m_ringBufferOffset, (void*&)m_ringBufferData);
 		}
-	}
+	};
 
-	void EndRendering_(RENDERER* renderer, const efkTrackNodeParam& param)
-	{
-		/*
-		RenderStateBase::State& state = renderer->GetRenderState()->Push();
-		state.DepthTest = param.ZTest;
-		state.DepthWrite = param.ZWrite;
-		state.CullingType = ::Effekseer::CullingType::Double;
-
-		SHADER* shader_ = NULL;
-		if (param.ColorTextureIndex >= 0)
-		{
-			shader_ = shader;
-		}
-		else
-		{
-			shader_ = shader_no_texture;
-		}
-
-		renderer->BeginShader(shader_);
-
-		if (param.ColorTextureIndex >= 0)
-		{
-			TEXTURE texture = TexturePointerToTexture<TEXTURE>(param.EffectPointer->GetColorImage(param.ColorTextureIndex));
-			renderer->SetTextures(shader_, &texture, 1);
-		}
-		else
-		{
-			TEXTURE texture = (TEXTURE)NULL;
-			renderer->SetTextures(shader_, &texture, 1);
-		}
-
-		((Effekseer::Matrix44*)(shader_->GetVertexConstantBuffer()))[0] = renderer->GetCameraProjectionMatrix();
-		shader_->SetConstantBuffer();
-
-
-		state.AlphaBlend = param.AlphaBlend;
-		state.TextureFilterTypes[0] = param.TextureFilter;
-		state.TextureWrapTypes[0] = param.TextureWrap;
-
-		renderer->GetRenderState()->Update(false);
-
-		renderer->SetVertexBuffer(renderer->GetVertexBuffer(), sizeof(VERTEX));
-		renderer->SetIndexBuffer(renderer->GetIndexBuffer());
-		renderer->SetLayout(shader_);
-		renderer->DrawSprites(m_ribbonCount, m_ringBufferOffset / sizeof(VERTEX));
-
-		renderer->EndShader(shader_);
-
-		renderer->GetRenderState()->Pop();
-		*/
-	}
-
-public:
-
-	void BeginRendering(const efkTrackNodeParam& parameter, int32_t count, void* userData) override
-	{
-		BeginRendering_(m_renderer, parameter, count, userData);
-	}
-
-	void Rendering(const efkTrackNodeParam& parameter, const efkTrackInstanceParam& instanceParameter, void* userData) override
-	{
-		Rendering_(parameter, instanceParameter, userData, m_renderer->GetCameraMatrix());
-	}
-
-	void EndRendering(const efkTrackNodeParam& parameter, void* userData) override
-	{
-		if (m_ringBufferData == NULL) return;
-
-		if (m_ribbonCount <= 1) return;
-
-		EndRendering_(m_renderer, parameter);
-	}
-};
-
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
+	//----------------------------------------------------------------------------------
+	//
+	//----------------------------------------------------------------------------------
 }
 //----------------------------------------------------------------------------------
 //

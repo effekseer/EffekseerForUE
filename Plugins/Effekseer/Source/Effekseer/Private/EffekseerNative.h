@@ -38,7 +38,7 @@
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-typedef uint16_t			EFK_CHAR;
+typedef char16_t			EFK_CHAR;
 
 //----------------------------------------------------------------------------------
 //
@@ -191,6 +191,22 @@ enum class TextureFormatType : int32_t
 	BC1,
 	BC2,
 	BC3,
+};
+
+enum class ZSortType : int32_t
+{
+	None,
+	NormalOrder,
+	ReverseOrder,
+};
+
+//-----------------------------------------------------------------------------------
+// 
+//-----------------------------------------------------------------------------------
+enum class RenderMode : int32_t
+{
+	Normal,				// 通常描画
+	Wireframe,			// ワイヤーフレーム描画
 };
 
 //----------------------------------------------------------------------------------
@@ -582,6 +598,10 @@ public:
 
 	Vector3D operator / ( const float& o ) const;
 
+	Vector3D operator * (const Vector3D& o) const;
+
+	Vector3D operator / (const Vector3D& o) const;
+
 	Vector3D& operator += ( const Vector3D& o );
 
 	Vector3D& operator -= ( const Vector3D& o );
@@ -589,6 +609,8 @@ public:
 	Vector3D& operator *= ( const float& o );
 
 	Vector3D& operator /= ( const float& o );
+
+	bool operator == (const Vector3D& o);
 
 	/**
 		@brief	加算
@@ -693,7 +715,7 @@ struct Color
 	/**
 		@brief	コンストラクタ
 	*/
-	Color();
+	Color() = default;
 
 	/**
 		@brief	コンストラクタ
@@ -703,7 +725,13 @@ struct Color
 	/**
 		@brief	乗算
 	*/
-	static void Mul( Color& o, const Color& in1, const Color& in2 );
+	static Color Mul( Color in1, Color in2 );
+	static Color Mul( Color in1, float in2 );
+	
+	/**
+		@brief	線形補間
+	*/
+	static Color Lerp( const Color in1, const Color in2, float t );
 };
 #pragma pack(pop)
 //----------------------------------------------------------------------------------
@@ -1974,14 +2002,46 @@ public:
 	virtual void UpdateHandle( Handle handle, float deltaFrame = 1.0f ) = 0;
 
 	/**
-		@brief	描画処理を行う。
+	@brief	
+	\~English	Draw particles.
+	\~Japanese	描画処理を行う。
 	*/
 	virtual void Draw() = 0;
 	
 	/**
-		@brief	ハンドル単位の描画処理を行う。
+	@brief
+	\~English	Draw particles in the back of priority 0.
+	\~Japanese	背面の描画処理を行う。
+	*/
+	virtual void DrawBack() = 0;
+
+	/**
+	@brief
+	\~English	Draw particles in the front of priority 0.
+	\~Japanese	前面の描画処理を行う。
+	*/
+	virtual void DrawFront() = 0;
+
+	/**
+	@brief
+	\~English	Draw particles with a handle.
+	\~Japanese	ハンドル単位の描画処理を行う。
 	*/
 	virtual void DrawHandle( Handle handle ) = 0;
+
+	/**
+	@brief
+	\~English	Draw particles in the back of priority 0.
+	\~Japanese	背面のハンドル単位の描画処理を行う。
+	*/
+	virtual void DrawHandleBack(Handle handle) = 0;
+	
+	/**
+	@brief
+	\~English	Draw particles in the front of priority 0.
+	\~Japanese	前面のハンドル単位の描画処理を行う。
+	*/
+	virtual void DrawHandleFront(Handle handle) = 0;
 
 	/**
 		@brief	再生する。
@@ -2076,6 +2136,8 @@ public:
 		float				DepthOffset;
 		bool				IsDepthOffsetScaledWithCamera;
 		bool				IsDepthOffsetScaledWithParticleScale;
+
+		ZSortType			ZSort;
 	};
 
 	struct InstanceParameter
@@ -2083,7 +2145,7 @@ public:
 		Matrix43		SRTMatrix43;
 		Color		AllColor;
 
-		// 左下、右下、左上、右上
+		// Lower left, Lower right, Upper left, Upper right
 		Color		Colors[4];
 
 		Vector2D	Positions[4];
@@ -2124,65 +2186,70 @@ public:
 //----------------------------------------------------------------------------------
 namespace Effekseer
 {
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
+	//----------------------------------------------------------------------------------
+	//
+	//----------------------------------------------------------------------------------
 
-class RibbonRenderer
-{
-public:
-
-	struct NodeParameter
+	class RibbonRenderer
 	{
-		Effect*				EffectPointer;
-		int32_t				ColorTextureIndex;
-		AlphaBlendType			AlphaBlend;
-		TextureFilterType	TextureFilter;
-		TextureWrapType	TextureWrap;
-		bool				ZTest;
-		bool				ZWrite;
-		bool				ViewpointDependent;
+	public:
 
-		bool				Distortion;
-		float				DistortionIntensity;
+		struct NodeParameter
+		{
+			Effect*				EffectPointer;
+			int32_t				ColorTextureIndex;
+			AlphaBlendType			AlphaBlend;
+			TextureFilterType	TextureFilter;
+			TextureWrapType	TextureWrap;
+			bool				ZTest;
+			bool				ZWrite;
+			bool				ViewpointDependent;
+
+			bool				Distortion;
+			float				DistortionIntensity;
+
+			int32_t				SplineDivision;
+		};
+
+		struct InstanceParameter
+		{
+			int32_t			InstanceCount;
+			int32_t			InstanceIndex;
+			Matrix43		SRTMatrix43;
+			Color		AllColor;
+
+			// Lower left, Lower right, Upper left, Upper right
+			Color	Colors[4];
+
+			float	Positions[4];
+
+			RectF	UV;
+		};
+
+	public:
+		RibbonRenderer() {}
+
+		virtual ~RibbonRenderer() {}
+
+		virtual void BeginRendering(const NodeParameter& parameter, int32_t count, void* userData) {}
+
+		virtual void Rendering(const NodeParameter& parameter, const InstanceParameter& instanceParameter, void* userData) {}
+
+		virtual void EndRendering(const NodeParameter& parameter, void* userData) {}
+
+		virtual void BeginRenderingGroup(const NodeParameter& parameter, int32_t count, void* userData) {}
+
+		virtual void EndRenderingGroup(const NodeParameter& parameter, int32_t count, void* userData) {}
 	};
 
-	struct InstanceParameter
-	{
-		int32_t			InstanceCount;
-		int32_t			InstanceIndex;
-		Matrix43		SRTMatrix43;
-		Color		AllColor;
-
-		// 左、右
-		Color		Colors[2];
-
-		float	Positions[2];
-
-		RectF	UV;
-	};
-
-public:
-	RibbonRenderer() {}
-
-	virtual ~RibbonRenderer() {}
-
-	virtual void BeginRendering( const NodeParameter& parameter, int32_t count, void* userData ) {}
-
-	virtual void Rendering( const NodeParameter& parameter, const InstanceParameter& instanceParameter, void* userData ) {}
-
-	virtual void EndRendering( const NodeParameter& parameter, void* userData ) {}
-};
-
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
+	//----------------------------------------------------------------------------------
+	//
+	//----------------------------------------------------------------------------------
 }
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
 #endif	// __EFFEKSEER_RIBBON_RENDERER_H__
-
 #ifndef	__EFFEKSEER_RING_RENDERER_H__
 #define	__EFFEKSEER_RING_RENDERER_H__
 
@@ -2346,75 +2413,80 @@ public:
 //----------------------------------------------------------------------------------
 namespace Effekseer
 {
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
+	//----------------------------------------------------------------------------------
+	//
+	//----------------------------------------------------------------------------------
 
-class TrackRenderer
-{
-public:
-
-	struct NodeParameter
+	class TrackRenderer
 	{
-		Effect*				EffectPointer;
-		int32_t				ColorTextureIndex;
-		AlphaBlendType			AlphaBlend;
-		TextureFilterType	TextureFilter;
-		TextureWrapType		TextureWrap;
-		bool				ZTest;
-		bool				ZWrite;
+	public:
 
-		bool				Distortion;
-		float				DistortionIntensity;
+		struct NodeParameter
+		{
+			Effect*				EffectPointer;
+			int32_t				ColorTextureIndex;
+			AlphaBlendType			AlphaBlend;
+			TextureFilterType	TextureFilter;
+			TextureWrapType		TextureWrap;
+			bool				ZTest;
+			bool				ZWrite;
+
+			bool				Distortion;
+			float				DistortionIntensity;
+
+			int32_t				SplineDivision;
+		};
+
+		struct InstanceGroupParameter
+		{
+
+		};
+
+		struct InstanceParameter
+		{
+			int32_t			InstanceCount;
+			int32_t			InstanceIndex;
+			Matrix43		SRTMatrix43;
+
+			Color	ColorLeft;
+			Color	ColorCenter;
+			Color	ColorRight;
+
+			Color	ColorLeftMiddle;
+			Color	ColorCenterMiddle;
+			Color	ColorRightMiddle;
+
+			float	SizeFor;
+			float	SizeMiddle;
+			float	SizeBack;
+
+			RectF	UV;
+		};
+
+	public:
+		TrackRenderer() {}
+
+		virtual ~TrackRenderer() {}
+
+		virtual void BeginRendering(const NodeParameter& parameter, int32_t count, void* userData) {}
+
+		virtual void Rendering(const NodeParameter& parameter, const InstanceParameter& instanceParameter, void* userData) {}
+
+		virtual void EndRendering(const NodeParameter& parameter, void* userData) {}
+
+		virtual void BeginRenderingGroup(const NodeParameter& parameter, int32_t count, void* userData) {}
+
+		virtual void EndRenderingGroup(const NodeParameter& parameter, int32_t count, void* userData) {}
 	};
 
-	struct InstanceGroupParameter
-	{
-		
-	};
-
-	struct InstanceParameter
-	{
-		int32_t			InstanceCount;
-		int32_t			InstanceIndex;
-		Matrix43		SRTMatrix43;
-
-		Color	ColorLeft;
-		Color	ColorCenter;
-		Color	ColorRight;
-
-		Color	ColorLeftMiddle;
-		Color	ColorCenterMiddle;
-		Color	ColorRightMiddle;
-
-		float	SizeFor;
-		float	SizeMiddle;
-		float	SizeBack;
-
-		RectF	UV;
-	};
-
-public:
-	TrackRenderer() {}
-
-	virtual ~TrackRenderer() {}
-
-	virtual void BeginRendering( const NodeParameter& parameter, int32_t count, void* userData ) {}
-
-	virtual void Rendering( const NodeParameter& parameter, const InstanceParameter& instanceParameter, void* userData ) {}
-
-	virtual void EndRendering( const NodeParameter& parameter, void* userData ) {}
-};
-
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
+	//----------------------------------------------------------------------------------
+	//
+	//----------------------------------------------------------------------------------
 }
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
 #endif	// __EFFEKSEER_TRACK_RENDERER_H__
-
 #ifndef	__EFFEKSEER_EFFECTLOADER_H__
 #define	__EFFEKSEER_EFFECTLOADER_H__
 
