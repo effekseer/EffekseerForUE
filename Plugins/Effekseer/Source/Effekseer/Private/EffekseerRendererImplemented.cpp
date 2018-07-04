@@ -5,6 +5,7 @@
 #include "EffekseerRendererIndexBuffer.h"
 #include "EffekseerRendererShader.h"
 
+#include "Runtime/Launch/Resources/Version.h"
 #include "DynamicMeshBuilder.h"
 #include "EffekseerInternalModel.h"
 #include "Runtime/Engine/Public/StaticMeshResources.h"
@@ -27,10 +28,17 @@ namespace EffekseerRendererUE4
 		{}
 
 		// FMaterialRenderProxy interface.
-		virtual const class FMaterial* GetMaterial(ERHIFeatureLevel::Type InFeatureLevel) const;
-		virtual bool GetVectorValue(const FName ParameterName, FLinearColor* OutValue, const FMaterialRenderContext& Context) const;
-		virtual bool GetScalarValue(const FName ParameterName, float* OutValue, const FMaterialRenderContext& Context) const;
-		virtual bool GetTextureValue(const FName ParameterName, const UTexture** OutValue, const FMaterialRenderContext& Context) const;
+		virtual const class FMaterial* GetMaterial(ERHIFeatureLevel::Type InFeatureLevel) const override;
+
+#if ENGINE_MINOR_VERSION < 19
+		virtual bool GetVectorValue(const FName ParameterName, FLinearColor* OutValue, const FMaterialRenderContext& Context) const override;
+		virtual bool GetScalarValue(const FName ParameterName, float* OutValue, const FMaterialRenderContext& Context) const override;
+		virtual bool GetTextureValue(const FName ParameterName, const UTexture** OutValue, const FMaterialRenderContext& Context) const override;
+#else
+		virtual bool GetVectorValue(const FMaterialParameterInfo& ParameterInfo, FLinearColor* OutValue, const FMaterialRenderContext& Context) const override;
+		virtual bool GetScalarValue(const FMaterialParameterInfo& ParameterInfo, float* OutValue, const FMaterialRenderContext& Context) const override;
+		virtual bool GetTextureValue(const FMaterialParameterInfo& ParameterInfo, const UTexture** OutValue, const FMaterialRenderContext& Context) const override;
+#endif
 	};
 
 	const FMaterial* FDistortionMaterialRenderProxy::GetMaterial(ERHIFeatureLevel::Type InFeatureLevel) const
@@ -38,6 +46,7 @@ namespace EffekseerRendererUE4
 		return Parent->GetMaterial(InFeatureLevel);
 	}
 
+#if ENGINE_MINOR_VERSION < 19
 	bool FDistortionMaterialRenderProxy::GetVectorValue(const FName ParameterName, FLinearColor* OutValue, const FMaterialRenderContext& Context) const
 	{
 		return Parent->GetVectorValue(ParameterName, OutValue, Context);
@@ -58,6 +67,28 @@ namespace EffekseerRendererUE4
 	{
 		return Parent->GetTextureValue(ParameterName, OutValue, Context);
 	}
+#else
+	bool FDistortionMaterialRenderProxy::GetVectorValue(const FMaterialParameterInfo& ParameterInfo, FLinearColor* OutValue, const FMaterialRenderContext& Context) const
+	{
+		return Parent->GetVectorValue(ParameterInfo, OutValue, Context);
+	}
+
+	bool FDistortionMaterialRenderProxy::GetScalarValue(const FMaterialParameterInfo& ParameterInfo, float* OutValue, const FMaterialRenderContext& Context) const
+	{
+		if (ParameterInfo.Name == FName(TEXT("DistortionIntensity")))
+		{
+			*OutValue = distortionIntensity;
+			return true;
+		}
+
+		return Parent->GetScalarValue(ParameterInfo, OutValue, Context);
+	}
+
+	bool FDistortionMaterialRenderProxy::GetTextureValue(const FMaterialParameterInfo& ParameterInfo, const UTexture** OutValue, const FMaterialRenderContext& Context) const
+	{
+		return Parent->GetTextureValue(ParameterInfo, OutValue, Context);
+	}
+#endif
 
 	class FModelMaterialRenderProxy : public FMaterialRenderProxy
 	{
@@ -78,9 +109,15 @@ namespace EffekseerRendererUE4
 
 		// FMaterialRenderProxy interface.
 		virtual const class FMaterial* GetMaterial(ERHIFeatureLevel::Type InFeatureLevel) const;
-		virtual bool GetVectorValue(const FName ParameterName, FLinearColor* OutValue, const FMaterialRenderContext& Context) const;
-		virtual bool GetScalarValue(const FName ParameterName, float* OutValue, const FMaterialRenderContext& Context) const;
-		virtual bool GetTextureValue(const FName ParameterName, const UTexture** OutValue, const FMaterialRenderContext& Context) const;
+#if ENGINE_MINOR_VERSION < 19
+		virtual bool GetVectorValue(const FName ParameterName, FLinearColor* OutValue, const FMaterialRenderContext& Context) const override;
+		virtual bool GetScalarValue(const FName ParameterName, float* OutValue, const FMaterialRenderContext& Context) const override;
+		virtual bool GetTextureValue(const FName ParameterName, const UTexture** OutValue, const FMaterialRenderContext& Context) const override;
+#else
+		virtual bool GetVectorValue(const FMaterialParameterInfo& ParameterInfo, FLinearColor* OutValue, const FMaterialRenderContext& Context) const override;
+		virtual bool GetScalarValue(const FMaterialParameterInfo& ParameterInfo, float* OutValue, const FMaterialRenderContext& Context) const override;
+		virtual bool GetTextureValue(const FMaterialParameterInfo& ParameterInfo, const UTexture** OutValue, const FMaterialRenderContext& Context) const override;
+#endif
 	};
 
 	const FMaterial* FModelMaterialRenderProxy::GetMaterial(ERHIFeatureLevel::Type InFeatureLevel) const
@@ -88,6 +125,7 @@ namespace EffekseerRendererUE4
 		return Parent->GetMaterial(InFeatureLevel);
 	}
 
+#if ENGINE_MINOR_VERSION < 19
 	bool FModelMaterialRenderProxy::GetVectorValue(const FName ParameterName, FLinearColor* OutValue, const FMaterialRenderContext& Context) const
 	{
 		if (ParameterName == FName(TEXT("UserUV")))
@@ -120,6 +158,40 @@ namespace EffekseerRendererUE4
 	{
 		return Parent->GetTextureValue(ParameterName, OutValue, Context);
 	}
+#else
+	bool FModelMaterialRenderProxy::GetVectorValue(const FMaterialParameterInfo& ParameterInfo, FLinearColor* OutValue, const FMaterialRenderContext& Context) const
+	{
+		if (ParameterInfo.Name == FName(TEXT("UserUV")))
+		{
+			*OutValue = uv;
+			return true;
+		}
+
+		if (ParameterInfo.Name == FName(TEXT("UserColor")))
+		{
+			*OutValue = color;
+			return true;
+		}
+
+		return Parent->GetVectorValue(ParameterInfo, OutValue, Context);
+	}
+
+	bool FModelMaterialRenderProxy::GetScalarValue(const FMaterialParameterInfo& ParameterInfo, float* OutValue, const FMaterialRenderContext& Context) const
+	{
+		if (ParameterInfo.Name == FName(TEXT("DistortionIntensity")))
+		{
+			*OutValue = distortionIntensity;
+			return true;
+		}
+
+		return Parent->GetScalarValue(ParameterInfo, OutValue, Context);
+	}
+
+	bool FModelMaterialRenderProxy::GetTextureValue(const FMaterialParameterInfo& ParameterInfo, const UTexture** OutValue, const FMaterialRenderContext& Context) const
+	{
+		return Parent->GetTextureValue(ParameterInfo, OutValue, Context);
+	}
+#endif
 
 	ModelRenderer::ModelRenderer(RendererImplemented* renderer)
 		: m_renderer(renderer)
@@ -512,8 +584,11 @@ namespace EffekseerRendererUE4
 
 			VertexDistortion* vs = (VertexDistortion*)m_vertexBuffer->GetResource();
 
+#if ENGINE_MINOR_VERSION < 19
 			FDynamicMeshBuilder meshBuilder;
-
+#else
+			FDynamicMeshBuilder meshBuilder(m_meshElementCollector->GetFeatureLevel());
+#endif
 			for (int32_t vi = vertexOffset; vi < vertexOffset + spriteCount * 4; vi++)
 			{
 				auto& v = vs[vi];
@@ -562,7 +637,11 @@ namespace EffekseerRendererUE4
 		{
 			Vertex* vs = (Vertex*)m_vertexBuffer->GetResource();
 
+#if ENGINE_MINOR_VERSION < 19
 			FDynamicMeshBuilder meshBuilder;
+#else
+			FDynamicMeshBuilder meshBuilder(m_meshElementCollector->GetFeatureLevel());
+#endif
 
 			for (int32_t vi = vertexOffset; vi < vertexOffset + spriteCount * 4; vi++)
 			{
@@ -653,21 +732,33 @@ namespace EffekseerRendererUE4
 				m_meshElementCollector->RegisterOneFrameMaterialProxy(proxy);
 
 				meshElement.MaterialRenderProxy = proxy;
+#if ENGINE_MINOR_VERSION < 19
 				meshElement.VertexFactory = &lodResource.VertexFactory;
+#else
+				meshElement.VertexFactory = &renderData->LODVertexFactories[0].VertexFactory;
+#endif
 				meshElement.Type = PT_TriangleList;
 
 
 				element.IndexBuffer = &(lodResource.IndexBuffer);
 				element.FirstIndex = section.FirstIndex;
 				element.NumPrimitives = section.NumTriangles;
+#if ENGINE_MINOR_VERSION < 19
 				meshElement.DynamicVertexData = NULL;
+#else
+				//meshElement.DynamicVertexData = NULL;
+#endif
 				//meshElement.LCI = &ProxyLODInfo;
 
 				element.MinVertexIndex = section.MinVertexIndex;
 				element.MaxVertexIndex = section.MaxVertexIndex;
 				meshElement.LODIndex = 0;
-				meshElement.UseDynamicData = false;
 
+#if ENGINE_MINOR_VERSION < 19
+				meshElement.UseDynamicData = false;
+#else
+				//meshElement.UseDynamicData = false;
+#endif
 				element.MaxScreenSize = 0.0f;
 				element.MinScreenSize = -1.0f;
 
