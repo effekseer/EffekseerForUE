@@ -16,7 +16,7 @@ UnrealEngine4.16以降
 #### コンパイラ
 
 環境に合わせたコンパイラをインストールする必要があります。
-例えば、WindowsではVisualStudio2015をインストールする必要があります。
+例えば、WindowsではVisualStudio2015、もしくはVisualStudio2017をインストールする必要があります。
 
 #### プラットフォーム
 

@@ -16,7 +16,7 @@ UnrealEngine4.16 or later
 #### Compiler
 
 It is necessary to install a compiler suitable for the environment.
-For example, you need to install VisualStudio 2015 on Windows.
+For example, you need to install VisualStudio 2015 or 2017 on Windows.
 
 #### Platform
 
