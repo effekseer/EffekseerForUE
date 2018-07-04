@@ -192,6 +192,8 @@ EffekseerEmitterコンポーネントのAuto ActivateをOnにします。
 
 モデルへの法線マップは適用されません。
 
+モデルを大量に描画すると速度が低下しやすくなります。
+
 ## Todo
 
 - 減算、歪みのEffekseerとUnrealEngine4の表示の一致
@@ -201,6 +203,12 @@ EffekseerEmitterコンポーネントのAuto ActivateをOnにします。
 - 使いやすさの向上
 
 ## 更新履歴
+
+### 1.40 (2018/xx/xx) 
+
+- 4.19に対応
+
+- 関数の追加(再生速度、色の設定)
 
 ### 1.31 (2017/11/20) 
 

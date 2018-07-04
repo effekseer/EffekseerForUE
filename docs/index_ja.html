@@ -1,11 +1,16 @@
 <!DOCTYPE html>
-<html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
 <head>
-  <meta charset="utf-8">
-  <meta name="generator" content="pandoc">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>EffekseerForUnrealEngine4</title>
-  <style type="text/css">code{white-space: pre;}</style>
+  <style type="text/css">
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  </style>
   <link rel="stylesheet" href="base.css">
   <!--[if lt IE 9]>
     <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
@@ -35,88 +40,88 @@
 <h2>サンプル</h2>
 <p><code>EffekseerForUE4.uproject</code> にサンプルのレベルが収録されています。</p>
 <p>これを見るとEffekseerのエフェクトが再生されていることがわかります。</p>
-<div align="center">
+<div data-align="center">
 <p><img src="img/ss.png"></p>
 </div>
 <h2>インストール・使用方法</h2>
 <p>ここでは、サンプル以外のプロジェクトでEffekseerForUE4をインストール・使用する方法について説明します。</p>
 <h3>1.1. ディレクトリのコピー</h3>
 <p><code>Plugins</code> のディレクトリをあなたが作成したuprojectと同じディレクトリにコピーします。</p>
-<div align="center">
+<div data-align="center">
 <p><img src="img/copyFiles.png"></p>
 </div>
 <h3>1.2. C++のコードの追加</h3>
 <p>中身は空で問題ないので、何かしらのC++のコードをプロジェクトに追加します。</p>
-<div align="center">
+<div data-align="center">
 <p><img src="img/newCpp.png"></p>
 </div>
-<div align="center">
+<div data-align="center">
 <p><img src="img/classNone.png"></p>
 </div>
 <h3>1.3. Plugin の有効化</h3>
 <p>UnrealEngine4からPluginを有効化します。再起動を求められる場合があるので、UnrealEngine4を再起動します。</p>
-<div align="center">
+<div data-align="center">
 <p><img src="img/enabledPlugin.png"></p>
 </div>
 <p>再起動した後にコンパイルを求められることがあります。プロジェクトをコンパイルします。</p>
-<div align="center">
+<div data-align="center">
 <p><img src="img/recompile.png"></p>
 </div>
 <h3>1.4. ブループリントの追加</h3>
 <p><code>BP_EffekseerSystem</code> と <code>BP_EffekseerEmitter</code> をレベルに追加します。</p>
 <p>これらはプラグインのコンテンツにあるので、プラグインのコンテンツを表示できるようにします。</p>
-<div align="center">
+<div data-align="center">
 <p><img src="img/showPluginContent.png"></p>
 </div>
 <p>プラグインのコンテンツのディレクトリに移動します。</p>
-<div align="center">
+<div data-align="center">
 <p><img src="img/moveDirectory.png"></p>
 </div>
 <p>ブループリントをレベルに追加します。</p>
-<div align="center">
+<div data-align="center">
 <p><img src="img/blueprints.png"></p>
 </div>
 <p>現在、BP_EffekseerSystemは必ず、(0,0,0)の位置に配置する必要があります。</p>
-<div align="center">
+<div data-align="center">
 <p><img src="img/effekseerSystem.png"></p>
 </div>
 <p>BP_EffekseerEmitterはエフェクトを表示したい位置に配置します。</p>
-<div align="center">
+<div data-align="center">
 <p><img src="img/effekseerEmitter.png"></p>
 </div>
 <h3>1.5. アセットの追加</h3>
 <p>Effekseerから出力されたefkファイルとテクスチャをコンテンツに追加します。</p>
-<div align="center">
+<div data-align="center">
 <p><img src="img/addAssets.png"></p>
 </div>
 <p>EffekseerEffectアセットにテクスチャを割り当てます。 EffekseerEffectアセットを右クリックした後、AssignResourcesを実行します。</p>
-<div align="center">
+<div data-align="center">
 <p><img src="img/assignResource.png"></p>
 </div>
 <p>エフェクトが小さいことが多いので、EffekseerEffectアセットをダブルクリックしてスケールを設定します。 大きい数字を入力してエフェクトを見やすくしましょう。</p>
-<div align="center">
+<div data-align="center">
 <p><img src="img/changeScale.png"></p>
 </div>
 <p>BP_EffekseerEmitterを選択して、コンポーネントを表示させます。 EffekseerEmitterコンポーネントのエフェクトに、先ほど読み込んだEffekseerEffectアセットを設定します。</p>
-<div align="center">
+<div data-align="center">
 <p><img src="img/setEffect.png"></p>
 </div>
 <p>EffekseerEmitterコンポーネントのAuto ActivateをOnにします。</p>
-<div align="center">
+<div data-align="center">
 <p><img src="img/activate.png"></p>
 </div>
 <p>実行すると、エフェクトが表示されるのがわかります。</p>
-<div align="center">
+<div data-align="center">
 <p><img src="img/play.png"></p>
 </div>
 <h3>2.1. Effekseerのコンポーネント</h3>
 <p>他のアクターにEffekseerのコンポーネントを追加することもできます。 ただし、EffekseerSystemは複雑なので、EffekseerEmitterのコンポーネントのみ使用することをお勧めします。</p>
-<div align="center">
+<div data-align="center">
 <p><img src="img/addComponent.png"></p>
 </div>
 <h3>3.1. アニメーション通知</h3>
 <p>アニメーション通知でも使用できます。アニメーションシーケンス内で指定した時間にエフェクトを再生できます。</p>
-<div align="center">
+<div data-align="center">
 <p><img src="img/animNotify.png"></p>
 </div>
 <h2>注意</h2>
@@ -124,6 +129,7 @@
 <h2>制限</h2>
 <p>減算、歪みはEffekseerでの表示と異なります。</p>
 <p>モデルへの法線マップは適用されません。</p>
+<p>モデルを大量に描画すると速度が低下しやすくなります。</p>
 <h2>Todo</h2>
 <ul>
 <li><p>減算、歪みのEffekseerとUnrealEngine4の表示の一致</p></li>
@@ -131,6 +137,11 @@
 <li><p>使いやすさの向上</p></li>
 </ul>
 <h2>更新履歴</h2>
+<h3>1.40 (2018/xx/xx)</h3>
+<ul>
+<li><p>4.19に対応</p></li>
+<li><p>関数の追加(再生速度、色の設定)</p></li>
+</ul>
 <h3>1.31 (2017/11/20)</h3>
 <p>-複数の不具合を修正</p>
 <p>-アニメーション通知に対応</p>

@@ -1,11 +1,16 @@
 <!DOCTYPE html>
-<html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="" xml:lang="">
 <head>
-  <meta charset="utf-8">
-  <meta name="generator" content="pandoc">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+  <meta charset="utf-8" />
+  <meta name="generator" content="pandoc" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>EffekseerForUnrealEngine4</title>
-  <style type="text/css">code{white-space: pre;}</style>
+  <style type="text/css">
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  </style>
   <link rel="stylesheet" href="base.css">
   <!--[if lt IE 9]>
     <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
@@ -30,93 +35,93 @@
 <p>It is <code>EffekseerSystemComponent</code> and <code>EffekseerEmitterComponent</code>.</p>
 <p>EffekseerSystem draws effects. Therefore, one component is absolutely necessary within the level.</p>
 <p>EffekseerEmitterComponent creates and manipulates effects. It is necessary for each effect.</p>
-<p>Besides these, theare are <code>EffekseerEffect</code> asset corresponding to Effekseer's efk file and <code>EffekseerModel</code> asset corresponding to the Effekseer's efkmdl file.</p>
+<p>Besides these, theare are <code>EffekseerEffect</code> asset corresponding to Effekseer’s efk file and <code>EffekseerModel</code> asset corresponding to the Effekseer’s efkmdl file.</p>
 <p>There are also <code>BP_EffekseerSystem</code> and <code>BP_EffekseerEmitter</code> blueprints that makes it easier to use components.</p>
 <h2>Sample</h2>
 <p><code>EffekseerForUE4.uproject</code> contains sample levels.</p>
-<p>You can see that Effekseer's effect is being played.</p>
-<div align="center">
+<p>You can see that Effekseer’s effect is being played.</p>
+<div data-align="center">
 <p><img src="img/ss.png"></p>
 </div>
 <h2>Installation and usage</h2>
 <p>This section explains how to install and use EffekseerForUE 4 in your project.</p>
 <h3>1.1. Copying directories</h3>
 <p>You copy the <code>Plugins</code> directory to the same directory as the uproject you created.</p>
-<div align="center">
+<div data-align="center">
 <p><img src="img/copyFiles.png"></p>
 </div>
 <h3>1.2. Adding C ++ code</h3>
 <p>You add some C ++ code to the project. It is no problem even if contents are empty.</p>
-<div align="center">
+<div data-align="center">
 <p><img src="img/newCpp.png"></p>
 </div>
-<div align="center">
+<div data-align="center">
 <p><img src="img/classNone.png"></p>
 </div>
 <h3>1.3. Enabling Plugin</h3>
 <p>You activate Plugin from UnrealEngine4. If it may be required to restart, you restart UnrealEngine 4.</p>
-<div align="center">
+<div data-align="center">
 <p><img src="img/enabledPlugin.png"></p>
 </div>
 <p>You may be asked to compile after rebooting. You compile the project.</p>
-<div align="center">
+<div data-align="center">
 <p><img src="img/recompile.png"></p>
 </div>
 <h3>1.4. Adding a blueprint</h3>
 <p>You add <code>BP_EffekseerSystem</code> and <code>BP_EffekseerEmitter</code> to the level.</p>
 <p>Since these are in the contents of the plugin, you make the contents of the plugin shown.</p>
-<div align="center">
+<div data-align="center">
 <p><img src="img/showPluginContent.png"></p>
 </div>
 <p>You move to the directory of the contents of the plugin.</p>
-<div align="center">
+<div data-align="center">
 <p><img src="img/moveDirectory.png"></p>
 </div>
 <p>You add blueprints to the level.</p>
-<div align="center">
+<div data-align="center">
 <p><img src="img/blueprints.png"></p>
 </div>
 <p>Currently, BP_EffekseerSystem must be located at position (0, 0, 0).</p>
-<div align="center">
+<div data-align="center">
 <p><img src="img/effekseerSystem.png"></p>
 </div>
 <p>BP_EffekseerEmitter be located at the position where you want to display an effect.</p>
-<div align="center">
+<div data-align="center">
 <p><img src="img/effekseerEmitter.png"></p>
 </div>
 <h3>1.5. Adding assets</h3>
 <p>You add the efk files and textures output from Effekseer to the content.</p>
-<div align="center">
+<div data-align="center">
 <p><img src="img/addAssets.png"></p>
 </div>
 <p>You assigns textures to the EffekseerEffect asset. Right-click the EffekseerEffect asset, and then run AssignResources.</p>
-<div align="center">
+<div data-align="center">
 <p><img src="img/assignResource.png"></p>
 </div>
-<p>Since the effect is often small, double-click the EffekseerEffect asset to set the scale. Let's enter a large number to make the effect easier to see.</p>
-<div align="center">
+<p>Since the effect is often small, double-click the EffekseerEffect asset to set the scale. Let’s enter a large number to make the effect easier to see.</p>
+<div data-align="center">
 <p><img src="img/changeScale.png"></p>
 </div>
 <p>You select BP_EffekseerEmitter to display the component. You set the EffekseerEffect asset you just read into the EffekseerEmitter component.</p>
-<div align="center">
+<div data-align="center">
 <p><img src="img/setEffect.png"></p>
 </div>
 <p>You turn on Auto Activate of the EffekseerEmitter component.</p>
-<div align="center">
+<div data-align="center">
 <p><img src="img/activate.png"></p>
 </div>
 <p>If you play it, you will see that the effect is displayed.</p>
-<div align="center">
+<div data-align="center">
 <p><img src="img/play.png"></p>
 </div>
 <h3>2.1. Components of Effekseer</h3>
 <p>You can also add Effekseer components to other actors. However, since EffekseerSystem is complicated, we recommend that you only use the EffekseerEmitter component.</p>
-<div align="center">
+<div data-align="center">
 <p><img src="img/addComponent.png"></p>
 </div>
 <h3>3.1. Animation Notifications</h3>
 <p>Effects can be played using Animation Notifications. Effects can be played at indicated time in Animation Sequence.</p>
-<div align="center">
+<div data-align="center">
 <p><img src="img/animNotify.png"></p>
 </div>
 <h2>Caution</h2>
@@ -124,6 +129,7 @@
 <h2>Limitation</h2>
 <p>Subtraction, and distortion are different from Effekseer.</p>
 <p>The normal map to the model does not apply.</p>
+<p>If a large number of models are drawn, the speed tends to decrease.</p>
 <h2>Todo</h2>
 <ul>
 <li><p>Match of display of Effekseer and UnrealEngine4 of subtraction, distortion</p></li>
@@ -131,6 +137,11 @@
 <li><p>Improved ease of use</p></li>
 </ul>
 <h2>Release note</h2>
+<h3>1.40 (2018/xx/xx)</h3>
+<ul>
+<li><p>Supported 4.19</p></li>
+<li><p>Add functions(Playback speed and color settings)</p></li>
+</ul>
 <h3>1.31 (2017/11/20)</h3>
 <ul>
 <li><p>Supported Animation Notifications</p></li>

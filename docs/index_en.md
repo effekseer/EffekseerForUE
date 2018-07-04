@@ -195,6 +195,8 @@ Subtraction, and distortion are different from Effekseer.
 
 The normal map to the model does not apply.
 
+If a large number of models are drawn, the speed tends to decrease.
+
 ## Todo
 
 - Match of display of Effekseer and UnrealEngine4 of subtraction, distortion
@@ -204,6 +206,12 @@ The normal map to the model does not apply.
 - Improved ease of use
 
 ## Release note
+
+### 1.40 (2018/xx/xx) 
+
+- Supported 4.19
+
+- Add functions(Playback speed and color settings)
 
 ### 1.31 (2017/11/20) 
 
