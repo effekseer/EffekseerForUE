@@ -255,6 +255,9 @@ namespace EffekseerRendererUE4
 		::Effekseer::Matrix44	m_camera;
 		::Effekseer::Matrix44	m_cameraProj;
 
+		::Effekseer::Vector3D	m_cameraPosition;
+		::Effekseer::Vector3D	m_cameraFrontDirection;
+
 		VertexBuffer*			m_vertexBuffer = nullptr;
 		Shader*					m_stanShader = nullptr;
 		Shader*					m_distortionShader = nullptr;
@@ -368,6 +371,21 @@ namespace EffekseerRendererUE4
 		@brief	カメラプロジェクション行列を取得する。
 		*/
 		::Effekseer::Matrix44& GetCameraProjectionMatrix()  override;
+
+		::Effekseer::Vector3D GetCameraFrontDirection() const  override;
+
+		/**
+		@brief	Get a position of camera
+		*/
+		::Effekseer::Vector3D GetCameraPosition() const  override;
+
+		/**
+		@brief	Set a front direction and position of camera manually
+		@note
+		These are set based on camera matrix automatically.
+		It is failed on some platform.
+		*/
+		void SetCameraParameter(const ::Effekseer::Vector3D& front, const ::Effekseer::Vector3D& position)  override;
 
 		/**
 		@brief	スプライトレンダラーを生成する。

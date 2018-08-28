@@ -28,7 +28,11 @@ namespace EffekseerRendererUE4
 		{}
 
 		// FMaterialRenderProxy interface.
+#if ENGINE_MINOR_VERSION < 20
 		virtual const class FMaterial* GetMaterial(ERHIFeatureLevel::Type InFeatureLevel) const override;
+#else
+		virtual void GetMaterialWithFallback(ERHIFeatureLevel::Type InFeatureLevel, const FMaterialRenderProxy*& OutMaterialRenderProxy, const class FMaterial*& OutMaterial) const override;
+#endif
 
 #if ENGINE_MINOR_VERSION < 19
 		virtual bool GetVectorValue(const FName ParameterName, FLinearColor* OutValue, const FMaterialRenderContext& Context) const override;
@@ -41,10 +45,17 @@ namespace EffekseerRendererUE4
 #endif
 	};
 
+#if ENGINE_MINOR_VERSION < 20
 	const FMaterial* FDistortionMaterialRenderProxy::GetMaterial(ERHIFeatureLevel::Type InFeatureLevel) const
 	{
 		return Parent->GetMaterial(InFeatureLevel);
 	}
+#else
+	void FDistortionMaterialRenderProxy::GetMaterialWithFallback(ERHIFeatureLevel::Type InFeatureLevel, const FMaterialRenderProxy*& OutMaterialRenderProxy, const class FMaterial*& OutMaterial) const
+	{
+		OutMaterial = Parent->GetMaterial(InFeatureLevel);
+	}
+#endif
 
 #if ENGINE_MINOR_VERSION < 19
 	bool FDistortionMaterialRenderProxy::GetVectorValue(const FName ParameterName, FLinearColor* OutValue, const FMaterialRenderContext& Context) const
@@ -107,8 +118,13 @@ namespace EffekseerRendererUE4
 			distortionIntensity(distortionIntensity)
 		{}
 
+#if ENGINE_MINOR_VERSION < 20
 		// FMaterialRenderProxy interface.
 		virtual const class FMaterial* GetMaterial(ERHIFeatureLevel::Type InFeatureLevel) const;
+#else
+		virtual void GetMaterialWithFallback(ERHIFeatureLevel::Type InFeatureLevel, const FMaterialRenderProxy*& OutMaterialRenderProxy, const class FMaterial*& OutMaterial) const override;
+#endif
+
 #if ENGINE_MINOR_VERSION < 19
 		virtual bool GetVectorValue(const FName ParameterName, FLinearColor* OutValue, const FMaterialRenderContext& Context) const override;
 		virtual bool GetScalarValue(const FName ParameterName, float* OutValue, const FMaterialRenderContext& Context) const override;
@@ -120,10 +136,17 @@ namespace EffekseerRendererUE4
 #endif
 	};
 
+#if ENGINE_MINOR_VERSION < 20
 	const FMaterial* FModelMaterialRenderProxy::GetMaterial(ERHIFeatureLevel::Type InFeatureLevel) const
 	{
 		return Parent->GetMaterial(InFeatureLevel);
 	}
+#else
+	void FModelMaterialRenderProxy::GetMaterialWithFallback(ERHIFeatureLevel::Type InFeatureLevel, const FMaterialRenderProxy*& OutMaterialRenderProxy, const class FMaterial*& OutMaterial) const
+	{
+		OutMaterial = Parent->GetMaterial(InFeatureLevel);
+	}
+#endif
 
 #if ENGINE_MINOR_VERSION < 19
 	bool FModelMaterialRenderProxy::GetVectorValue(const FName ParameterName, FLinearColor* OutValue, const FMaterialRenderContext& Context) const
@@ -447,12 +470,37 @@ namespace EffekseerRendererUE4
 
 	void RendererImplemented::SetCameraMatrix(const ::Effekseer::Matrix44& mat)
 	{
+		m_cameraFrontDirection = ::Effekseer::Vector3D(mat.Values[0][2], mat.Values[1][2], mat.Values[2][2]);
+
+		auto localPos = ::Effekseer::Vector3D(-mat.Values[3][0], -mat.Values[3][1], -mat.Values[3][2]);
+		auto f = m_cameraFrontDirection;
+		auto r = ::Effekseer::Vector3D(mat.Values[0][0], mat.Values[1][0], mat.Values[2][0]);
+		auto u = ::Effekseer::Vector3D(mat.Values[0][1], mat.Values[1][1], mat.Values[2][1]);
+
+		m_cameraPosition = r * localPos.X + u * localPos.Y + f * localPos.Z;
+
 		m_camera = mat;
 	}
 
 	::Effekseer::Matrix44& RendererImplemented::GetCameraProjectionMatrix()
 	{
 		return m_cameraProj;
+	}
+
+	::Effekseer::Vector3D RendererImplemented::GetCameraFrontDirection() const
+	{
+		return m_cameraFrontDirection;
+	}
+
+	::Effekseer::Vector3D RendererImplemented::GetCameraPosition() const
+	{
+		return m_cameraPosition;
+	}
+
+	void RendererImplemented::SetCameraParameter(const ::Effekseer::Vector3D& front, const ::Effekseer::Vector3D& position)
+	{
+		m_cameraFrontDirection = front;
+		m_cameraPosition = position;
 	}
 
 	::Effekseer::SpriteRenderer* RendererImplemented::CreateSpriteRenderer()

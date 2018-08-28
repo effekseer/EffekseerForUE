@@ -6,6 +6,8 @@
 #include "EffekseerNative.h"
 #include "EffekseerRendererImplemented.h"
 
+#include <mutex>
+
 EffekseerUpdateData::EffekseerUpdateData()
 {
 
@@ -44,7 +46,7 @@ private:
 	TMap<int, int>	internalHandle2EfkHandle;
 
 	// is it safe?
-	::Effekseer::CriticalSection criticalSection;
+	std::mutex criticalSection;
 	TArray<int32_t> removedHandles;
 
 public:
@@ -254,7 +256,7 @@ public:
 		
 		// Check existence.
 		{
-			criticalSection.Enter();
+			criticalSection.lock();
 
 			TArray<int32_t> removingHandle;
 			for (auto& kv : internalHandle2EfkHandle)
@@ -271,7 +273,7 @@ public:
 				internalHandle2EfkHandle.Remove(k);
 			}
 
-			criticalSection.Leave();
+			criticalSection.unlock();
 		}
 
 		delete updateData;
@@ -292,10 +294,10 @@ public:
 
 	TArray<int32_t> PopRemovedHandles()
 	{
-		criticalSection.Enter();
+		criticalSection.lock();
 		auto ret = removedHandles;
 		removedHandles.Reset();
-		criticalSection.Leave();
+		criticalSection.unlock();
 		return ret;
 	}
 };

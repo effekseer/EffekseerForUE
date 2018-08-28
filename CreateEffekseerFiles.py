@@ -95,10 +95,6 @@ effekseerHeader.readLines(rootEDir + 'Effekseer.Client.h')
 effekseerHeader.addLine('#endif')
 effekseerHeader.addLine('')
 
-effekseerHeader.readLines(rootEDir + 'Effekseer.CriticalSection.h')
-effekseerHeader.readLines(rootEDir + 'Effekseer.Thread.h')
-
-#effekseerHeader.output('test/test/EffekseerNative.h')
 effekseerHeader.output('Plugins/Effekseer/Source/Effekseer/Private/EffekseerNative.h')
 
 effekseerCPP = CreateCPP()
@@ -118,6 +114,8 @@ effekseerCPP.addLine('#include <set>')
 effekseerCPP.addLine('#include <queue>')
 effekseerCPP.addLine('#include <fstream>')
 effekseerCPP.addLine('#include <memory>')
+effekseerCPP.addLine('#include <thread>')
+effekseerCPP.addLine('#include <mutex>')
 
 effekseerCPP.addLine('#ifdef _WIN32')
 effekseerCPP.addLine('#include "AllowWindowsPlatformTypes.h"  // UE4')
@@ -157,9 +155,6 @@ effekseerCPP.readLines(rootEDir + 'Effekseer.Matrix43.cpp')
 effekseerCPP.readLines(rootEDir + 'Effekseer.Matrix44.cpp')
 
 effekseerCPP.readLines(rootEDir + 'Effekseer.InternalStruct.h')
-
-effekseerCPP.readLines(rootEDir + 'Effekseer.CriticalSection.cpp')
-effekseerCPP.readLines(rootEDir + 'Effekseer.Thread.cpp')
 
 effekseerCPP.readLines(rootEDir + 'Effekseer.DefaultEffectLoader.h')
 effekseerCPP.readLines(rootEDir + 'Effekseer.DefaultEffectLoader.cpp')
