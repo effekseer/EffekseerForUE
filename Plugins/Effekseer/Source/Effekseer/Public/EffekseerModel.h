@@ -11,6 +11,7 @@ struct FEffekseerModelMesh
 	TArray<FVector>	Binormal;
 	TArray<FVector>	Tangent;
 	TArray<FVector2D>	UV;
+	TArray<FColor>	Colors;
 
 	TArray<int>		Indexes;
 };
@@ -31,6 +32,12 @@ public:
 	UPROPERTY(EditAnywhere)
 	UStaticMesh*	Mesh = nullptr;
 
+	UPROPERTY(EditAnywhere)
+	TArray<int> AnimationFaceOffsets;
+
+	UPROPERTY(EditAnywhere)
+	TArray<int> AnimationFaceCounts;
+
 #if WITH_EDITORONLY_DATA
 	UPROPERTY(Category = ImportSettings, VisibleAnywhere)
 	UAssetImportData* AssetImportData = nullptr;
@@ -39,6 +46,10 @@ public:
 	void AssignInternalPtr();
 
 	FEffekseerModelMesh GetMesh();
+
+	TArray<int> GetAnimationFaceCounts();
+
+	TArray<int> GetAnimationFaceOffsets();
 
 	void* GetNativePtr() { return modelPtr; }
 

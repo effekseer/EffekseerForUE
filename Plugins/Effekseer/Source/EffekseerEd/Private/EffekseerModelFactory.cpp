@@ -88,21 +88,30 @@ UObject* UEffekseerModelFactory::FactoryCreateBinary(
 			rawMesh.WedgeTangentZ.Add(mesh.Normal[ind]);
 			rawMesh.WedgeTexCoords[0].Add(FVector2D(mesh.UV[ind]));
 			rawMesh.WedgeTexCoords[1].Add(FVector2D(mesh.UV[ind]));
+			rawMesh.WedgeColors.Add(mesh.Colors[ind]);
 		}
 
+		int faceInd = 0;
+		auto faceOffsets = assetEfkMdl->GetAnimationFaceOffsets();
 		for (auto i = 0; i < mesh.Indexes.Num() / 3; i++)
 		{
-			rawMesh.FaceMaterialIndices.Add(0);
-			rawMesh.FaceSmoothingMasks.Add(0);
+			if (faceInd < faceOffsets.Num() - 1 && faceOffsets[faceInd + 1] <= i) faceInd++;
+
+			rawMesh.FaceMaterialIndices.Add(faceInd);
+			rawMesh.FaceSmoothingMasks.Add(faceInd);
 		}
 
 		FStaticMeshSourceModel* lodModel = new (assetSM->SourceModels) FStaticMeshSourceModel();
+		lodModel->BuildSettings.bUseMikkTSpace = false;
 		lodModel->BuildSettings.bRecomputeNormals = false;
 		lodModel->BuildSettings.bRecomputeTangents = false;
-		lodModel->BuildSettings.bRemoveDegenerates = true;
+		lodModel->BuildSettings.bRemoveDegenerates = false;
+		lodModel->BuildSettings.bBuildAdjacencyBuffer = false;
+		lodModel->BuildSettings.bBuildReversedIndexBuffer = false;
 		lodModel->BuildSettings.bUseHighPrecisionTangentBasis = false;
 		lodModel->BuildSettings.bUseFullPrecisionUVs = false;
 		lodModel->BuildSettings.bGenerateLightmapUVs = false;
+
 		lodModel->ScreenSize = 0.1f / FMath::Pow(2.0f, assetSM->SourceModels.Num() - 1);
 		lodModel->RawMeshBulkData->SaveRawMesh(rawMesh);
 
@@ -122,6 +131,9 @@ UObject* UEffekseerModelFactory::FactoryCreateBinary(
 	}
 
 	assetEfkMdl->Mesh = assetSM;
+	assetEfkMdl->AnimationFaceOffsets = assetEfkMdl->GetAnimationFaceOffsets();
+	assetEfkMdl->AnimationFaceCounts = assetEfkMdl->GetAnimationFaceCounts();
+
 	assetEfkMdl->AssignInternalPtr();
 
 	retAssets.Add(assetSM);

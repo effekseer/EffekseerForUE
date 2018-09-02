@@ -277,7 +277,7 @@ namespace EffekseerRendererUE4
 
 		m_renderer->SetTextures(nullptr, textures, 1);
 
-		m_renderer->DrawModel(model, m_matrixes, m_uv, m_colors);
+		m_renderer->DrawModel(model, m_matrixes, m_uv, m_colors, m_times);
 
 		m_renderer->GetRenderState()->Pop();
 	}
@@ -727,12 +727,13 @@ namespace EffekseerRendererUE4
 		}
 	}
 
-	void RendererImplemented::DrawModel(void* model, std::vector<Effekseer::Matrix44>& matrixes, std::vector<Effekseer::RectF>& uvs, std::vector<Effekseer::Color>& colors)
+	void RendererImplemented::DrawModel(void* model, std::vector<Effekseer::Matrix44>& matrixes, std::vector<Effekseer::RectF>& uvs, std::vector<Effekseer::Color>& colors, std::vector<int32_t>& times)
 	{
 		// StaticMesh
 		if (model == nullptr) return;
 		auto mdl = (EffekseerInternalModel*)model;
-		UStaticMesh* sm = (UStaticMesh*)mdl->UserData;
+		auto efkmdl = ((UEffekseerModel*)mdl->UserData);
+		UStaticMesh* sm = efkmdl->Mesh;
 		if (sm == nullptr) return;
 
 		auto& renderData = sm->RenderData;
@@ -759,11 +760,18 @@ namespace EffekseerRendererUE4
 
 			FLinearColor uv = FLinearColor(uvOrigin.X, uvOrigin.Y, uvOrigin.Width, uvOrigin.Height);
 			FLinearColor color = FLinearColor(colorOrigin.R / 255.0f, colorOrigin.G / 255.0f, colorOrigin.B / 255.0f, colorOrigin.A / 255.0f);
+			int frameTime = times[objectIndex] % mdl->GetFrameCount();
 
 			for (int32 sectionIndex = 0; sectionIndex < lodResource.Sections.Num(); sectionIndex++)
 			{
 				auto& section = lodResource.Sections[sectionIndex];
 				if (section.NumTriangles <= 0) continue;
+
+				// Is it no problem?
+				if (efkmdl->AnimationFaceOffsets.Num() > 0)
+				{
+					if (sectionIndex != frameTime) continue;
+				}
 
 				FMeshBatch& meshElement = m_meshElementCollector->AllocateMesh();
 				auto& element = meshElement.Elements[0];
@@ -787,10 +795,22 @@ namespace EffekseerRendererUE4
 #endif
 				meshElement.Type = PT_TriangleList;
 
+				if (efkmdl->AnimationFaceOffsets.Num() > 0)
+				{
+					//element.IndexBuffer = &(lodResource.IndexBuffer);
+					//element.FirstIndex = efkmdl->AnimationFaceOffsets[0] + section.FirstIndex;
+					//element.NumPrimitives = efkmdl->AnimationFaceCounts[0];
+					element.IndexBuffer = &(lodResource.IndexBuffer);
+					element.FirstIndex = section.FirstIndex;
+					element.NumPrimitives = section.NumTriangles;
+				}
+				else
+				{
+					element.IndexBuffer = &(lodResource.IndexBuffer);
+					element.FirstIndex = section.FirstIndex;
+					element.NumPrimitives = section.NumTriangles;
+				}
 
-				element.IndexBuffer = &(lodResource.IndexBuffer);
-				element.FirstIndex = section.FirstIndex;
-				element.NumPrimitives = section.NumTriangles;
 #if ENGINE_MINOR_VERSION < 19
 				meshElement.DynamicVertexData = NULL;
 #else

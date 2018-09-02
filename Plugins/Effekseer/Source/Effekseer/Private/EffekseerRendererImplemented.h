@@ -465,7 +465,7 @@ namespace EffekseerRendererUE4
 		void SetLayout(Shader* shader);
 		void DrawSprites(int32_t spriteCount, int32_t vertexOffset);
 		
-		void DrawModel(void* model, std::vector<Effekseer::Matrix44>& matrixes, std::vector<Effekseer::RectF>& uvs, std::vector<Effekseer::Color>& colors);
+		void DrawModel(void* model, std::vector<Effekseer::Matrix44>& matrixes, std::vector<Effekseer::RectF>& uvs, std::vector<Effekseer::Color>& colors, std::vector<int32_t>& times);
 
 		UMaterialInstanceDynamic* FindMaterial();
 

@@ -30,7 +30,7 @@ void UEffekseerModel::AssignInternalPtr()
 	auto p = (EffekseerInternalModel*)modelPtr;
 	if (p == nullptr) return;
 
-	p->UserData = Mesh;
+	p->UserData = this;
 }
 
 FEffekseerModelMesh UEffekseerModel::GetMesh()
@@ -40,32 +40,78 @@ FEffekseerModelMesh UEffekseerModel::GetMesh()
 	auto p = (EffekseerInternalModel*)modelPtr;
 	if (p == nullptr) return mesh;
 
-	for (auto i = 0; i < p->GetVertexCount(); i++)
-	{
-		auto v = p->GetVertexes()[i];
+	int vertexOffset = 0;
 
-		mesh.Positions.Add(FVector(v.Position.X, v.Position.Z, v.Position.Y));
-		mesh.Normal.Add(FVector(v.Normal.X, v.Normal.Z, v.Normal.Y));
-		mesh.Binormal.Add(FVector(v.Binormal.X, v.Binormal.Z, v.Binormal.Y));
-		mesh.Tangent.Add(FVector(v.Tangent.X, v.Tangent.Z, v.Tangent.Y));
-		mesh.UV.Add(FVector2D(v.UV.X, v.UV.Y));
-	}
-
-	for (auto i = 0; i < p->GetFaceCount(); i++)
+	for (int f = 0; f < p->GetFrameCount(); f++)
 	{
-		auto f = p->GetFaces()[i];
-		mesh.Indexes.Add(f.Indexes[0]);
-		mesh.Indexes.Add(f.Indexes[1]);
-		mesh.Indexes.Add(f.Indexes[2]);
+		for (auto i = 0; i < p->GetVertexCount(f); i++)
+		{
+			auto v = p->GetVertexes(f)[i];
+
+			mesh.Positions.Add(FVector(v.Position.X, v.Position.Z, v.Position.Y));
+			mesh.Normal.Add(FVector(v.Normal.X, v.Normal.Z, v.Normal.Y));
+			mesh.Binormal.Add(FVector(v.Binormal.X, v.Binormal.Z, v.Binormal.Y));
+			mesh.Tangent.Add(FVector(v.Tangent.X, v.Tangent.Z, v.Tangent.Y));
+			mesh.UV.Add(FVector2D(v.UV.X, v.UV.Y));
+			mesh.Colors.Add(FColor(v.VColor.R, v.VColor.G, v.VColor.B, v.VColor.A));
+		}
+
+		for (auto i = 0; i < p->GetFaceCount(f); i++)
+		{
+			auto face = p->GetFaces(f)[i];
+			mesh.Indexes.Add(face.Indexes[0] + vertexOffset);
+			mesh.Indexes.Add(face.Indexes[1] + vertexOffset);
+			mesh.Indexes.Add(face.Indexes[2] + vertexOffset);
+		}
+
+		vertexOffset += p->GetVertexCount(f);
+		//break;
 	}
 
 	return mesh;
 }
 
+TArray<int> UEffekseerModel::GetAnimationFaceCounts()
+{
+	auto p = (EffekseerInternalModel*)modelPtr;
+	if (p == nullptr) return TArray<int>();
+
+	TArray<int> ret;
+
+	for (int i = 0; i < p->GetFrameCount(); i++)
+	{
+		auto vc = p->GetFaceCount(i);
+		ret.Add(vc);
+		//break;
+	}
+
+	return ret;
+}
+
+TArray<int> UEffekseerModel::GetAnimationFaceOffsets()
+{
+	auto p = (EffekseerInternalModel*)modelPtr;
+	if (p == nullptr) return TArray<int>();
+
+	TArray<int> ret;
+
+	int offset = 0;
+
+	for (int i = 0; i < p->GetFrameCount(); i++)
+	{
+		auto vc = p->GetFaceCount(i);
+		ret.Add(offset);
+		offset += vc;
+		//break;
+	}
+
+	return ret;
+}
+
 void UEffekseerModel::Serialize(FArchive& Ar)
 {
 	Super::Serialize(Ar);
-
+	
 	Ar.UsingCustomVersion(FEffekseerCustomVersion::GUID);
 
 	/*
