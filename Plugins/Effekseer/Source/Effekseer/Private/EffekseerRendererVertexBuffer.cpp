@@ -1,5 +1,3 @@
-#include "EffekseerPrivatePCH.h"  // UE4
-
 #include "EffekseerRendererVertexBuffer.h"
 
 namespace EffekseerRendererUE4

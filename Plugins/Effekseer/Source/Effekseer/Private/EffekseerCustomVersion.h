@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include "CoreMinimal.h"
 #include "Misc/Guid.h"
 
 struct FEffekseerCustomVersion

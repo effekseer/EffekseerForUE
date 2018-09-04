@@ -1,7 +1,9 @@
 
 #pragma once
 
+#include "CoreMinimal.h"
 #include "Components/PrimitiveComponent.h"
+#include "Engine/Classes/Materials/MaterialInstanceConstant.h"
 #include "Runtime/Launch/Resources/Version.h"
 
 #include "EffekseerEffect.h"

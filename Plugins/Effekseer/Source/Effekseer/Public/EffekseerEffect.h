@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include "CoreMinimal.h"
 #include "Object.h"
 #include "EffekseerModel.h"
 #include "EffekseerEffect.generated.h"

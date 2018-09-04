@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include "CoreMinimal.h"
 #include "EffekseerRendererNative.h"
 
 #include <EffekseerEffect.h>

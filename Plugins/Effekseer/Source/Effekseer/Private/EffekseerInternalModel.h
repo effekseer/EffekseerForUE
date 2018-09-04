@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include "CoreMinimal.h"
 #include "EffekseerNative.h"
 
 class EffekseerInternalModel

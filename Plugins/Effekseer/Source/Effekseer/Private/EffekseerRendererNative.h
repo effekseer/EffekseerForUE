@@ -1,4 +1,8 @@
 ﻿
+#pragma once
+#include "CoreMinimal.h"
+
+
 #ifndef	__EFFEKSEERRENDERER_COMMON_UTILS_H__
 #define	__EFFEKSEERRENDERER_COMMON_UTILS_H__
 

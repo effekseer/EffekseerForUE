@@ -1,4 +1,3 @@
-#include "EffekseerPrivatePCH.h"
 #include "EffekseerSystemComponent.h"
 
 #include "DynamicMeshBuilder.h"
@@ -304,7 +303,7 @@ public:
 
 UEffekseerSystemComponent::UEffekseerSystemComponent()
 {
-	bWantsBeginPlay = true;
+	//bWantsBeginPlay = true;
 	bTickInEditor = true;
 	PrimaryComponentTick.bCanEverTick = true;
 	currentUpdateData = new EffekseerUpdateData();

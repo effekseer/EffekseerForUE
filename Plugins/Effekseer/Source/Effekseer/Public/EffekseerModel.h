@@ -1,7 +1,10 @@
 
 #pragma once
 
+#include "CoreMinimal.h"
 #include "Object.h"
+#include "Engine/StaticMesh.h"
+#include "EditorFramework/AssetImportData.h"
 #include "EffekseerModel.generated.h"
 
 struct FEffekseerModelMesh

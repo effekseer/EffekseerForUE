@@ -7,6 +7,8 @@ namespace UnrealBuildTool.Rules
 		public Effekseer(ReadOnlyTargetRules Target)
 			: base(Target)
 		{
+			PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
+
 			PublicIncludePaths.AddRange(
 				new string[] {
 					// ... add public include paths required here ...

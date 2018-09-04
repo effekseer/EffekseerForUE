@@ -58,6 +58,12 @@ rootEDir = rootDir + 'Effekseer/Effekseer/'
 rootRDir = rootDir + 'EffekseerRendererCommon/'
 
 effekseerHeader = CreateHeader()
+
+effekseerHeader.addLine('')
+effekseerHeader.addLine(r'#pragma once')
+effekseerHeader.addLine(r'#include "CoreMinimal.h"')
+effekseerHeader.addLine('')
+
 effekseerHeader.readLines(rootEDir + 'Effekseer.Base.Pre.h')
 effekseerHeader.readLines(rootEDir + 'Effekseer.Vector2D.h')
 effekseerHeader.readLines(rootEDir + 'Effekseer.Vector3D.h')
@@ -98,7 +104,7 @@ effekseerHeader.addLine('')
 effekseerHeader.output('Plugins/Effekseer/Source/Effekseer/Private/EffekseerNative.h')
 
 effekseerCPP = CreateCPP()
-effekseerCPP.addLine('#include "EffekseerPrivatePCH.h"  // UE4')
+effekseerCPP.addLine('#include "EffekseerNative.h"  // UE4')
 effekseerCPP.addLine('#define _WINSOCK_DEPRECATED_NO_WARNINGS')
 effekseerCPP.addLine('#define _WINSOCKAPI_')
 effekseerCPP.addLine('#include "EffekseerNative.h"')
@@ -215,6 +221,12 @@ effekseerCPP.addLine('')
 effekseerCPP.output('Plugins/Effekseer/Source/Effekseer/Private/EffekseerNative.cpp')
 
 rendererHeader = CreateHeader()
+
+rendererHeader.addLine('')
+rendererHeader.addLine(r'#pragma once')
+rendererHeader.addLine(r'#include "CoreMinimal.h"')
+rendererHeader.addLine('')
+
 rendererHeader.readLines(rootRDir + 'EffekseerRenderer.CommonUtils.h')
 rendererHeader.readLines(rootRDir + 'EffekseerRenderer.Renderer.h')
 rendererHeader.readLines(rootRDir + 'EffekseerRenderer.VertexBufferBase.h')
@@ -231,7 +243,6 @@ rendererHeader.replace('#include <Effekseer.h>','#include "EffekseerNative.h"')
 rendererHeader.output('Plugins/Effekseer/Source/Effekseer/Private/EffekseerRendererNative.h')
 
 rendererCPP = CreateCPP()
-rendererCPP.addLine('#include "EffekseerPrivatePCH.h"  // UE4')
 rendererCPP.addLine('#include "EffekseerRendererNative.h"')
 rendererCPP.readLines(rootRDir + 'EffekseerRenderer.IndexBufferBase.cpp')
 rendererCPP.readLines(rootRDir + 'EffekseerRenderer.ModelRendererBase.cpp')

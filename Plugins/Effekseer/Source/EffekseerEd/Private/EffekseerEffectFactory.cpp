@@ -1,7 +1,7 @@
 
-#include "EffekseerEdPrivatePCH.h"
 #include "EffekseerEffectFactory.h"
 #include "EffekseerEffect.h"
+#include "Core/Public/HAL/FileManager.h"
 
 #include "Runtime/Launch/Resources/Version.h"
 

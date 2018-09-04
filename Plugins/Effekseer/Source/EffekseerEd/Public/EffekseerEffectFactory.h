@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include "CoreMinimal.h"
 #include "Factories/Factory.h"
 
 #if WITH_EDITOR

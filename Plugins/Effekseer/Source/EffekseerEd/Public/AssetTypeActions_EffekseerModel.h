@@ -1,5 +1,6 @@
 
 #pragma once
+#include "CoreMinimal.h"
 #include "UnrealEd.h"
 #include "AssetTypeActions_Base.h"
 #include "EffekseerModel.h"

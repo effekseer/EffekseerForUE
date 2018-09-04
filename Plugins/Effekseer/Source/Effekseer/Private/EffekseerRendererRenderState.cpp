@@ -1,5 +1,4 @@
 
-#include "EffekseerPrivatePCH.h"
 #include "EffekseerRendererRenderState.h"
 
 namespace EffekseerRendererUE4

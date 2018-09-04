@@ -1,4 +1,3 @@
-#include "EffekseerPrivatePCH.h"  // UE4
 #include "EffekseerRendererShader.h"
 
 namespace EffekseerRendererUE4

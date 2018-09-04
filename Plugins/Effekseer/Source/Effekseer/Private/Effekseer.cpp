@@ -1,6 +1,6 @@
 // Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
 
-#include "EffekseerPrivatePCH.h"
+#include "Effekseer.h"
 
 
 class FEffekseer : public IEffekseer

@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include "CoreMinimal.h"
 #include "Animation/AnimNotifies/AnimNotify.h"
 #include "AnimNotify_PlayEffekseerEffect.generated.h"
 

@@ -1,5 +1,4 @@
-﻿#include "EffekseerPrivatePCH.h"  // UE4
-#include "EffekseerRendererNative.h"
+﻿#include "EffekseerRendererNative.h"
 
 //-----------------------------------------------------------------------------------
 //

@@ -1,4 +1,8 @@
 ﻿
+#pragma once
+#include "CoreMinimal.h"
+
+
 #ifndef	__EFFEKSEER_BASE_PRE_H__
 #define	__EFFEKSEER_BASE_PRE_H__
 
