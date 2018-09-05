@@ -26,7 +26,7 @@ EffekseerUpdateData::~EffekseerUpdateData()
 class FEffekseerSystemSceneProxy : public FPrimitiveSceneProxy
 {
 private:
-	static const int32_t	particleMax = 10000;
+	int32_t	maxSprite_ = 10000;
 	::Effekseer::Manager*	effekseerManager = nullptr;
 	::EffekseerRendererUE4::RendererImplemented*	effekseerRenderer = nullptr;
 	
@@ -49,12 +49,13 @@ private:
 	TArray<int32_t> removedHandles;
 
 public:
-	FEffekseerSystemSceneProxy(const UEffekseerSystemComponent* InComponent)
+	FEffekseerSystemSceneProxy(const UEffekseerSystemComponent* InComponent, int32_t maxSprite)
 		: FPrimitiveSceneProxy(InComponent)
+		, maxSprite_(maxSprite)
 	{
-		effekseerManager = ::Effekseer::Manager::Create(particleMax);
+		effekseerManager = ::Effekseer::Manager::Create(maxSprite_);
 		effekseerRenderer = ::EffekseerRendererUE4::RendererImplemented::Create();
-		effekseerRenderer->Initialize(particleMax);
+		effekseerRenderer->Initialize(maxSprite_);
 
 		effekseerManager->SetSpriteRenderer(effekseerRenderer->CreateSpriteRenderer());
 		effekseerManager->SetRibbonRenderer(effekseerRenderer->CreateRibbonRenderer());
@@ -364,7 +365,7 @@ void UEffekseerSystemComponent::TickComponent(float DeltaTime, ELevelTick TickTy
 
 FPrimitiveSceneProxy* UEffekseerSystemComponent::CreateSceneProxy()
 {
-	auto sp = new FEffekseerSystemSceneProxy(this);
+	auto sp = new FEffekseerSystemSceneProxy(this, MaxSprite);
 	sceneProxy = sp;
 	return sp;
 }

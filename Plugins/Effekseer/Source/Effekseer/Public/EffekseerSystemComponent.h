@@ -4,6 +4,7 @@
 #include "CoreMinimal.h"
 #include "Components/PrimitiveComponent.h"
 #include "Runtime/Engine/Classes/Materials/MaterialInstanceConstant.h"
+#include "Runtime/Engine/Classes/Materials/MaterialInstanceDynamic.h"
 #include "Runtime/Launch/Resources/Version.h"
 
 #include "EffekseerEffect.h"
@@ -95,6 +96,9 @@ public:
 	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
 
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Property)
+	int MaxSprite = 10000;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Material)
 	UMaterialInstanceConstant* OpaqueMaterial = nullptr;
