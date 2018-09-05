@@ -3,7 +3,7 @@
 #include "EffekseerModel.h"
 
 #include "Editor/UnrealEd/Public/Editor.h"
-#include "Core/Public/HAL/FileManager.h"
+#include "Runtime/Core/Public/HAL/FileManager.h"
 #include "Developer/RawMesh/Public/RawMesh.h"
 
 #include "Runtime/Launch/Resources/Version.h"
