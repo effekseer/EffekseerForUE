@@ -207,9 +207,9 @@ If a large number of models are drawn, the speed tends to decrease.
 
 ## Release note
 
-### 1.40 (2018/xx/xx) 
+### 1.40 (2018/09/10) 
 
-- Supported 4.19
+- Supported 4.20
 
 - Add functions(Playback speed and color settings)
 
