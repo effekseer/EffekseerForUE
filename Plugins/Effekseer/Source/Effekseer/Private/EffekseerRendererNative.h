@@ -1371,7 +1371,7 @@ public:
 			auto& imodel = model->InternalModels[stTime0];
 
 			// Invalid unless layout is set after buffer
-			renderer->SetVertexBuffer(imodel.VertexBuffer, sizeof(Effekseer::Model::VertexWithIndex));
+			renderer->SetVertexBuffer(imodel.VertexBuffer, model->GetVertexSize());
 			renderer->SetIndexBuffer(imodel.IndexBuffer);
 			renderer->SetLayout(shader_);
 
@@ -1409,7 +1409,7 @@ public:
 				auto& imodel = model->InternalModels[stTime];
 
 				// Invalid unless layout is set after buffer
-				renderer->SetVertexBuffer(imodel.VertexBuffer, sizeof(Effekseer::Model::Vertex));
+				renderer->SetVertexBuffer(imodel.VertexBuffer, model->GetVertexSize());
 				renderer->SetIndexBuffer(imodel.IndexBuffer);
 				renderer->SetLayout(shader_);
 
