@@ -1,6 +1,7 @@
 ﻿#include "EffekseerNative.h"  // UE4
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
 #define _WINSOCKAPI_
+#define NOMINMAX
 #include "EffekseerNative.h"
 #include <math.h>
 #include <cmath>
