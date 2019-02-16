@@ -3,8 +3,49 @@
 
 #include <string>
 #include <functional>
+#include <vector>
 
 #include "EffekseerCustomVersion.h"
+
+template <size_t size_>
+struct tStr
+{
+	enum { size = size_ };
+	TCHAR data[size];
+	tStr(const char16_t* u16str)
+	{
+		data[size - 1] = 0;
+		for (int i = 0; i < size - 1; i++)
+		{
+			data[i] = (TCHAR)u16str[i];
+			if (data[i] == 0) break;
+		}
+	}
+	const TCHAR* c_str() const
+	{
+		return data;
+	}
+};
+
+template <size_t size_>
+struct uStr
+{
+	enum { size = size_ };
+	char16_t data[size];
+	uStr(const TCHAR* u16str)
+	{
+		data[size - 1] = 0;
+		for (int i = 0; i < size - 1; i++)
+		{
+			data[i] = (char16_t)u16str[i];
+			if (data[i] == 0) break;
+		}
+	}
+	const char16_t* c_str() const
+	{
+		return data;
+	}
+};
 
 static void GetParentDir(EFK_CHAR* dst, const EFK_CHAR* src)
 {
@@ -34,6 +75,38 @@ static std::basic_string<EFK_CHAR> GetFileNameWithoutExtension(const EFK_CHAR* f
 		return (path.substr(0, i));
 	}
 	return std::basic_string<EFK_CHAR>();
+}
+
+static std::u16string getFilenameWithoutExt(const char16_t* path)
+{
+	int start = 0;
+	int end = 0;
+
+	for (int i = 0; path[i] != 0; i++)
+	{
+		if (path[i] == u'/' || path[i] == u'\\')
+		{
+			start = i;
+		}
+	}
+
+	for (int i = start; path[i] != 0; i++)
+	{
+		if (path[i] == u'.')
+		{
+			end = i;
+		}
+	}
+
+	std::vector<char16_t> ret;
+
+	for (int i = start; i < end; i++)
+	{
+		ret.push_back(path[i]);
+	}
+	ret.push_back(0);
+
+	return std::u16string(ret.data());
 }
 
 class TextureLoader
@@ -269,6 +342,8 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 	if (effect != nullptr)
 	{
 		Version = effect->GetVersion();
+
+		effect->SetName(getFilenameWithoutExt(uStr<260>(path).c_str()).c_str());
 	}
 
 	std::function<void(::Effekseer::EffectNode*,bool)> renode;

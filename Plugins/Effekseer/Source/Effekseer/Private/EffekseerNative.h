@@ -213,6 +213,17 @@ enum class RenderMode : int32_t
 	Wireframe,			// ワイヤーフレーム描画
 };
 
+/**
+	@brief
+	\~English	A thread where reload function is called
+	\~Japanese	リロードの関数が呼ばれるスレッド
+*/
+enum class ReloadingThreadType
+{
+	Main,
+	Render,
+};
+
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
@@ -812,6 +823,8 @@ namespace Effekseer {
 //
 //----------------------------------------------------------------------------------
 
+struct Matrix44;
+
 /**
 	@brief	4x3行列
 	@note
@@ -936,6 +949,11 @@ public:
 		@param	t	[in]	位置
 	*/
 	void SetSRT( const Vector3D& s, const Matrix43& r, const Vector3D& t );
+
+	/**
+		@brief	convert into matrix44
+	*/
+	void ToMatrix44(Matrix44& dst);
 
 	/**
 		@brief	行列同士の乗算を行う。
@@ -1341,6 +1359,19 @@ public:
 	static ::Effekseer::EffectLoader* CreateEffectLoader(::Effekseer::FileInterface* fileInterface = NULL);
 
 	/**
+	@brief	
+	\~English	Get this effect's name. If this effect is loaded from file, default name is file name without extention.
+	\~Japanese	エフェクトの名前を取得する。もしファイルからエフェクトを読み込んだ場合、名前は拡張子を除いたファイル名である。
+	*/
+	virtual const char16_t* GetName() const = 0;
+
+	/**
+		\~English	Set this effect's name
+	\~Japanese	エフェクトの名前を設定する。
+	*/
+	virtual void SetName(const char16_t* name) = 0;
+
+	/**
 	@brief	設定を取得する。
 	@return	設定
 	*/
@@ -1414,44 +1445,127 @@ public:
 	virtual int32_t GetModelCount() const = 0;
 
 	/**
-		@brief	エフェクトのリロードを行う。
-	*/
-	virtual bool Reload( void* data, int32_t size, const EFK_CHAR* materialPath = NULL ) = 0;
-
-	/**
-		@brief	エフェクトのリロードを行う。
-	*/
-	virtual bool Reload( const EFK_CHAR* path, const EFK_CHAR* materialPath = NULL ) = 0;
-
-	/**
-		@brief	エフェクトのリロードを行う。
-		@param	managers	[in]	マネージャーの配列
-		@param	managersCount	[in]	マネージャーの個数
-		@param	data	[in]	エフェクトのデータ
-		@param	size	[in]	エフェクトのデータサイズ
-		@param	materialPath	[in]	リソースの読み込み元
-		@return	成否
+		@brief
+		\~English	Reload this effect
+		\~Japanese	エフェクトのリロードを行う。
+		@param	data
+		\~English	An effect's data
+		\~Japanese	エフェクトのデータ
+		@param	size
+		\~English	An effect's size
+		\~Japanese	エフェクトのデータサイズ
+		@param	materialPath
+		\~English	A path where reaources are loaded
+		\~Japanese	リソースの読み込み元
+		@param	reloadingThreadType
+		\~English	A thread where reload function is called
+		\~Japanese	リロードの関数が呼ばれるスレッド
+		@return
+		\~English	Result
+		\~Japanese	結果
 		@note
-		Settingを用いてエフェクトを生成したときに、Managerを指定することで対象のManager内のエフェクトのリロードを行う。
+		\~English
+		If reloadingThreadType is RenderThread, new resources aren't loaded and old resources aren't disposed.
+		\~Japanese
+		もし、reloadingThreadType が RenderThreadの場合、新規のリソースは読み込まれず、古いリソースは破棄されない。
 	*/
-	virtual bool Reload( Manager* managers, int32_t managersCount, void* data, int32_t size, const EFK_CHAR* materialPath = NULL ) = 0;
+	virtual bool Reload( void* data, int32_t size, const EFK_CHAR* materialPath = nullptr, ReloadingThreadType reloadingThreadType = ReloadingThreadType::Main) = 0;
 
 	/**
-	@brief	エフェクトのリロードを行う。
-	@param	managers	[in]	マネージャーの配列
-	@param	managersCount	[in]	マネージャーの個数
-	@param	path	[in]	エフェクトの読み込み元
-	@param	materialPath	[in]	リソースの読み込み元
-	@return	成否
-	@note
-	Settingを用いてエフェクトを生成したときに、Managerを指定することで対象のManager内のエフェクトのリロードを行う。
+		@brief
+		\~English	Reload this effect
+		\~Japanese	エフェクトのリロードを行う。
+		@param	path
+		\~English	An effect's path
+		\~Japanese	エフェクトのパス
+		@param	materialPath
+		\~English	A path where reaources are loaded
+		\~Japanese	リソースの読み込み元
+		@param	reloadingThreadType
+		\~English	A thread where reload function is called
+		\~Japanese	リロードの関数が呼ばれるスレッド
+		@return
+		\~English	Result
+		\~Japanese	結果
+		@note
+		\~English
+		If reloadingThreadType is RenderThread, new resources aren't loaded and old resources aren't disposed.
+		\~Japanese
+		もし、reloadingThreadType が RenderThreadの場合、新規のリソースは読み込まれず、古いリソースは破棄されない。
 	*/
-	virtual bool Reload( Manager* managers, int32_t managersCount,const EFK_CHAR* path, const EFK_CHAR* materialPath = NULL ) = 0;
+	virtual bool Reload( const EFK_CHAR* path, const EFK_CHAR* materialPath = nullptr, ReloadingThreadType reloadingThreadType = ReloadingThreadType::Main) = 0;
+
+	/**
+		@brief
+		\~English	Reload this effect
+		\~Japanese	エフェクトのリロードを行う。
+		@param	managers
+		\~English	An array of manager instances
+		\~Japanese	マネージャーの配列
+		@param	managersCount
+		\~English	Length of array
+		\~Japanese	マネージャーの個数
+		@param	data
+		\~English	An effect's data
+		\~Japanese	エフェクトのデータ
+		@param	size
+		\~English	An effect's size
+		\~Japanese	エフェクトのデータサイズ
+		@param	materialPath
+		\~English	A path where reaources are loaded
+		\~Japanese	リソースの読み込み元
+		@param	reloadingThreadType
+		\~English	A thread where reload function is called
+		\~Japanese	リロードの関数が呼ばれるスレッド
+		@return
+		\~English	Result
+		\~Japanese	結果
+		@note
+		\~English
+		If an effect is generated with Setting, the effect in managers is reloaded with managers
+		If reloadingThreadType is RenderThread, new resources aren't loaded and old resources aren't disposed.
+		\~Japanese
+		Settingを用いてエフェクトを生成したときに、Managerを指定することで対象のManager内のエフェクトのリロードを行う。
+		もし、reloadingThreadType が RenderThreadの場合、新規のリソースは読み込まれず、古いリソースは破棄されない。
+	*/
+	virtual bool Reload( Manager** managers, int32_t managersCount, void* data, int32_t size, const EFK_CHAR* materialPath = nullptr, ReloadingThreadType reloadingThreadType = ReloadingThreadType::Main) = 0;
+
+	/**
+		@brief
+		\~English	Reload this effect
+		\~Japanese	エフェクトのリロードを行う。
+		@param	managers
+		\~English	An array of manager instances
+		\~Japanese	マネージャーの配列
+		@param	managersCount
+		\~English	Length of array
+		\~Japanese	マネージャーの個数
+		@param	path
+		\~English	An effect's path
+		\~Japanese	エフェクトのパス
+		@param	materialPath
+		\~English	A path where reaources are loaded
+		\~Japanese	リソースの読み込み元
+		@param	reloadingThreadType
+		\~English	A thread where reload function is called
+		\~Japanese	リロードの関数が呼ばれるスレッド
+		@return
+		\~English	Result
+		\~Japanese	結果
+		@note
+		\~English
+		If an effect is generated with Setting, the effect in managers is reloaded with managers
+		If reloadingThreadType is RenderThread, new resources aren't loaded and old resources aren't disposed.
+		\~Japanese
+		Settingを用いてエフェクトを生成したときに、Managerを指定することで対象のManager内のエフェクトのリロードを行う。
+		もし、reloadingThreadType が RenderThreadの場合、新規のリソースは読み込まれず、古いリソースは破棄されない。
+	*/
+	virtual bool Reload( Manager** managers, int32_t managersCount,const EFK_CHAR* path, const EFK_CHAR* materialPath = nullptr, ReloadingThreadType reloadingThreadType = ReloadingThreadType::Main) = 0;
 
 	/**
 		@brief	画像等リソースの再読み込みを行う。
 	*/
-	virtual void ReloadResources( const EFK_CHAR* materialPath = NULL ) = 0;
+	virtual void ReloadResources( const EFK_CHAR* materialPath = nullptr ) = 0;
 
 	/**
 		@brief	画像等リソースの破棄を行う。
@@ -2059,6 +2173,22 @@ public:
 	*/
 	virtual Handle Play( Effect* effect, float x, float y, float z ) = 0;
 	
+	/**
+		@brief
+		\~English	Play an effect.
+		\~Japanese	エフェクトを再生する。
+		@param	effect
+		\~English	Played effect
+		\~Japanese	再生されるエフェクト
+		@param	position
+		\~English	Initial position
+		\~Japanese	初期位置
+		@param	startFrame
+		\~English	A time to play from middle
+		\~Japanese	途中から再生するための時間
+	*/
+	virtual Handle Play(Effect* effect, const Vector3D& position, int32_t startFrame = 0) = 0;
+
 	/**
 		@brief	Update処理時間を取得。
 	*/
@@ -2814,7 +2944,7 @@ public:
 
 				for (int32_t i = 0; i < models[f].m_vertexCount; i++)
 				{
-					memcpy(&models[f].m_vertexes[i], p, sizeof(Vertex) - sizeof(Color));
+					memcpy((void*)&models[f].m_vertexes[i], p, sizeof(Vertex) - sizeof(Color));
 					models[f].m_vertexes[i].VColor = Color(255, 255, 255, 255);
 
 					p += sizeof(Vertex) - sizeof(Color);
@@ -3269,7 +3399,7 @@ namespace Effekseer {
 #ifndef	__EFFEKSEER_SERVER_H__
 #define	__EFFEKSEER_SERVER_H__
 
-#if !( defined(_PSVITA) || defined(_PS4) || defined(_SWITCH) || defined(_XBOXONE) )
+#if !( defined(_PSVITA) || defined(_XBOXONE) )
 
 //----------------------------------------------------------------------------------
 // Include
@@ -3282,6 +3412,11 @@ namespace Effekseer {
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
+/**
+	@brief
+	\~English	A server to edit effect from client such an editor
+	\~Japanese	エディタといったクライアントからエフェクトを編集するためのサーバー
+*/
 class Server
 {
 public:
@@ -3289,37 +3424,84 @@ public:
 	Server() {}
 	virtual ~Server() {}
 
+	/**
+		@brief
+		\~English	create a server instance
+		\~Japanese	サーバーのインスタンスを生成する。
+	*/
 	static Server* Create();
 
 	/**
-		@brief	サーバーを開始する。
+		@brief
+		\~English	start a server
+		\~Japanese	サーバーを開始する。
 	*/
 	virtual bool Start( uint16_t port ) = 0;
 
+	/**
+		@brief
+		\~English	stop a server
+		\~Japanese	サーバーを終了する。
+	*/
 	virtual void Stop() = 0;
 
 	/**
-		@brief	エフェクトをリロードの対象として登録する。
-		@param	key	[in]	検索用キー
-		@param	effect	[in]	リロードする対象のエフェクト
+		@brief
+		\~English	register an effect as a target to edit.
+		\~Japanese	エフェクトを編集の対象として登録する。
+		@param	key	
+		\~English	a key to search an effect
+		\~Japanese	検索用キー
+		@param	effect
+		\~English	an effect to be edit
+		\~Japanese	編集される対象のエフェクト
 	*/
-	virtual void Regist( const EFK_CHAR* key, Effect* effect ) = 0;
+	virtual void Register(const EFK_CHAR* key, Effect* effect) = 0;
 
 	/**
-		@brief	エフェクトをリロードの対象から外す。
-		@param	effect	[in]	リロードから外すエフェクト
+		@brief
+		\~English	unregister an effect
+		\~Japanese	エフェクトを対象から外す。
+		@param	effect
+		\~English	an effect registered
+		\~Japanese	登録されているエフェクト
 	*/
-	virtual void Unregist( Effect* effect ) = 0;
+	virtual void Unregister(Effect* effect) = 0;
 
 	/**
-		@brief	サーバーを更新し、エフェクトのリロードを行う。
+		@brief	
+		\~English	update a server and reload effects
+		\~Japanese	サーバーを更新し、エフェクトのリロードを行う。
+		@brief	managers
+		\~English	all managers which is playing effects.
+		\~Japanese	エフェクトを再生している全てのマネージャー
+		@brief	managerCount
+		\~English	the number of manager
+		\~Japanese	マネージャーの個数
+
 	*/
-	virtual void Update() = 0;
+	virtual void Update(Manager** managers = nullptr, int32_t managerCount = 0, ReloadingThreadType reloadingThreadType = ReloadingThreadType::Main) = 0;
 
 	/**
-		@brief	素材パスを設定する。
+		@brief
+		\~English	Specify root path to load materials
+		\~Japanese	素材のルートパスを設定する。
 	*/
 	virtual void SetMaterialPath( const EFK_CHAR* materialPath ) = 0;
+
+	/**
+		@brief
+		\~English	deprecated
+		\~Japanese	非推奨
+	*/
+	virtual void Regist(const EFK_CHAR* key, Effect* effect) = 0;
+
+	/**
+		@brief
+		\~English	deprecated
+		\~Japanese	非推奨
+	*/
+	virtual void Unregist(Effect* effect) = 0;
 };
 
 //----------------------------------------------------------------------------------
@@ -3330,7 +3512,7 @@ public:
 //
 //----------------------------------------------------------------------------------
 
-#endif	// #if !( defined(_PSVITA) || defined(_PS4) || defined(_SWITCH) || defined(_XBOXONE) )
+#endif	// #if !( defined(_PSVITA) || defined(_XBOXONE) )
 
 #endif	// __EFFEKSEER_SERVER_H__
 

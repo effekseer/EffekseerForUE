@@ -17,6 +17,8 @@
 #include <memory>
 #include <thread>
 #include <mutex>
+#include <iostream>
+#include <array>
 #ifdef _WIN32
 #include "AllowWindowsPlatformTypes.h"  // UE4
 #include <winsock2.h>
@@ -299,7 +301,7 @@ namespace Culling3D
 		*/
 		float GetLength() const
 		{
-			return sqrt(GetSquaredLength());
+			return sqrtf(GetSquaredLength());
 		}
 
 		/**
@@ -640,7 +642,7 @@ namespace Culling3D
 				radius = 0.0f;
 				if (Type == OBJECT_SHAPE_TYPE_NONE) radius = 0.0f;
 				if (Type == OBJECT_SHAPE_TYPE_SPHERE) radius = Data.Sphere.Radius;
-				if (Type == OBJECT_SHAPE_TYPE_CUBOID) radius = sqrt(Data.Cuboid.X * Data.Cuboid.X + Data.Cuboid.Y * Data.Cuboid.Y + Data.Cuboid.Z * Data.Cuboid.Z) / 2.0f;
+				if (Type == OBJECT_SHAPE_TYPE_CUBOID) radius = sqrtf(Data.Cuboid.X * Data.Cuboid.X + Data.Cuboid.Y * Data.Cuboid.Y + Data.Cuboid.Z * Data.Cuboid.Z) / 2.0f;
 			}
 
 			float GetRadius()
@@ -679,11 +681,12 @@ namespace Culling3D
 
 		int32_t ObjectIndex;
 
-		virtual int32_t GetRef() { return ReferenceObject::GetRef(); }
-		virtual int32_t AddRef() { return ReferenceObject::AddRef(); }
-		virtual int32_t Release() { return ReferenceObject::Release(); }
+		virtual int32_t GetRef() override { return ReferenceObject::GetRef(); }
+		virtual int32_t AddRef() override { return ReferenceObject::AddRef(); }
+		virtual int32_t Release() override { return ReferenceObject::Release(); }
 	};
 }
+
 
 
 
@@ -718,28 +721,29 @@ namespace Culling3D
 		WorldInternal(float xSize, float ySize, float zSize, int32_t layerCount);
 		virtual ~WorldInternal();
 
-		void AddObject(Object* o);
-		void RemoveObject(Object* o);
+		void AddObject(Object* o) override;
+		void RemoveObject(Object* o) override;
 
 		void AddObjectInternal(Object* o);
 		void RemoveObjectInternal(Object* o);
 
 		void CastRay(Vector3DF from, Vector3DF to) override;
 
-		void Culling(const Matrix44& cameraProjMat, bool isOpenGL);
+		void Culling(const Matrix44& cameraProjMat, bool isOpenGL) override;
 
 		bool Reassign() override;
 
-		void Dump(const char* path, const Matrix44& cameraProjMat, bool isOpenGL);
+		void Dump(const char* path, const Matrix44& cameraProjMat, bool isOpenGL) override;
 
-		int32_t GetObjectCount() { return objs.size(); }
-		Object* GetObject(int32_t index) { return objs[index]; }
+		int32_t GetObjectCount() override { return (int32_t)objs.size(); }
+		Object* GetObject(int32_t index) override { return objs[index]; }
 
-		virtual int32_t GetRef() { return ReferenceObject::GetRef(); }
-		virtual int32_t AddRef() { return ReferenceObject::AddRef(); }
-		virtual int32_t Release() { return ReferenceObject::Release(); }
+		virtual int32_t GetRef() override { return ReferenceObject::GetRef(); }
+		virtual int32_t AddRef() override { return ReferenceObject::AddRef(); }
+		virtual int32_t Release() override { return ReferenceObject::Release(); }
 	};
 }
+
 
 namespace Culling3D
 {
@@ -756,7 +760,7 @@ namespace Culling3D
 		assert(o_->ObjectIndex == -1);
 
 		objects.push_back(o_);
-		o_->ObjectIndex = objects.size() - 1;
+		o_->ObjectIndex = (int32_t)objects.size() - 1;
 	}
 
 	void Grid::RemoveObject(Object* o)
@@ -785,6 +789,7 @@ namespace Culling3D
 		o_->ObjectIndex = -1;
 	}
 }
+
 
 namespace Culling3D
 {
@@ -1496,7 +1501,7 @@ namespace Culling3D
 		float dx = v1.X - v2.X;
 		float dy = v1.Y - v2.Y;
 		float dz = v1.Z - v2.Z;
-		return sqrt(dx * dx + dy * dy + dz * dz);
+		return sqrtf(dx * dx + dy * dy + dz * dz);
 	}
 }
 
@@ -1919,7 +1924,7 @@ namespace Culling3D
 
 						for (int32_t e = 0; e < 8; e++)
 						{
-							float x_, y_, z_;
+							float x_ = 0.0f, y_ = 0.0f, z_ = 0.0f;
 							if (e == 0){ x_ = xsize * x; y_ = ysize * y; z_ = zsize * z; }
 							if (e == 1){ x_ = xsize * (x + 1); y_ = ysize * y; z_ = zsize * z; }
 							if (e == 2){ x_ = xsize * x; y_ = ysize * (y + 1); z_ = zsize * z; }
@@ -2142,7 +2147,7 @@ namespace Culling3D
 
 					for (int32_t e = 0; e < 8; e++)
 					{
-						float x_, y_, z_;
+						float x_ = 0.0f, y_ = 0.0f, z_ = 0.0f;
 						if (e == 0){ x_ = xsize * x; y_ = ysize * y; z_ = zsize * z; }
 						if (e == 1){ x_ = xsize * (x + 1); y_ = ysize * y; z_ = zsize * z; }
 						if (e == 2){ x_ = xsize * x; y_ = ysize * (y + 1); z_ = zsize * z; }
@@ -2218,6 +2223,7 @@ namespace Culling3D
 
 	}
 }
+
 
 //----------------------------------------------------------------------------------
 //
@@ -2912,12 +2918,33 @@ void Matrix43::RotationXYZ( float rx, float ry, float rz )
 {
 	float cx, sx, cy, sy, cz, sz;
 	
-	if( rx != 0.0f )	::Effekseer::SinCos( rx, sx, cx );
-	else				sx = 0.0f, cx = 1.0f;
-	if( ry != 0.0f )	::Effekseer::SinCos( ry, sy, cy );
-	else				sy = 0.0f, cy = 1.0f;
-	if( rz != 0.0f )	::Effekseer::SinCos( rz, sz, cz );
-	else				sz = 0.0f, cz = 1.0f;
+	if( rx != 0.0f )
+	{
+		::Effekseer::SinCos( rx, sx, cx );
+	}
+	else
+	{
+		sx = 0.0f;
+		cx = 1.0f;
+	}
+	if( ry != 0.0f )
+	{
+		::Effekseer::SinCos( ry, sy, cy );
+	}
+	else
+	{
+		sy = 0.0f;
+		cy = 1.0f;
+	}
+	if( rz != 0.0f )
+	{
+		::Effekseer::SinCos( rz, sz, cz );
+	}
+	else
+	{
+		sz = 0.0f;
+		cz = 1.0f;
+	}
 
 	Value[0][0] = cy * cz;
 	Value[0][1] = cy * sz;
@@ -2943,12 +2970,33 @@ void Matrix43::RotationZXY( float rz, float rx, float ry )
 {
 	float cx, sx, cy, sy, cz, sz;
 
-	if( rx != 0.0f )	::Effekseer::SinCos( rx, sx, cx );
-	else				sx = 0.0f, cx = 1.0f;
-	if( ry != 0.0f )	::Effekseer::SinCos( ry, sy, cy );
-	else				sy = 0.0f, cy = 1.0f;
-	if( rz != 0.0f )	::Effekseer::SinCos( rz, sz, cz );
-	else				sz = 0.0f, cz = 1.0f;
+	if( rx != 0.0f )
+	{
+		::Effekseer::SinCos( rx, sx, cx );
+	}
+	else
+	{
+		sx = 0.0f;
+		cx = 1.0f;
+	}
+	if( ry != 0.0f )
+	{
+		::Effekseer::SinCos( ry, sy, cy );
+	}
+	else
+	{
+		sy = 0.0f;
+		cy = 1.0f;
+	}
+	if( rz != 0.0f )
+	{
+		::Effekseer::SinCos( rz, sz, cz );
+	}
+	else
+	{
+		sz = 0.0f;
+		cz = 1.0f;
+	}
 	
 	Value[0][0] = cz * cy + sz * sx * sy;
 	Value[0][1] = sz * cx;
@@ -3263,6 +3311,20 @@ void Matrix43::SetSRT( const Vector3D& s, const Matrix43& r, const Vector3D& t )
 	Value[3][2] = t.Z;
 }
 
+void Matrix43::ToMatrix44(Matrix44& dst)
+{
+	for (int m = 0; m < 4; m++)
+	{
+		for (int n = 0; n < 3; n++)
+		{
+			dst.Values[m][n] = Value[m][n];
+		}
+		dst.Values[m][3] = 0.0f;
+	}
+
+	dst.Values[3][3] = 1.0f;
+}
+
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
@@ -3415,6 +3477,7 @@ void Matrix43::Multiple( Matrix43& out, const Matrix43& in1, const Matrix43& in2
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
+
 
 //----------------------------------------------------------------------------------
 //
@@ -4006,11 +4069,10 @@ namespace Effekseer
 {
 
 template <typename T>
-T ReadData( unsigned char*& pos )
+void ReadData( T& dst, unsigned char*& pos )
 {
-	T result = *(T*)pos;
+	memcpy(&dst, pos, sizeof(T));
 	pos += sizeof(T);
-	return result;
 }
 
 //----------------------------------------------------------------------------------
@@ -4050,7 +4112,7 @@ struct random_int
 	float getValue(IRandObject& g) const
 	{
 		float r;
-		r = (int32_t)g.GetRand(min, max);
+		r = g.GetRand((float)min, (float)max);
 		return r;
 	}
 };
@@ -4426,15 +4488,17 @@ struct random_color
 	{
 		if( version >= 4 )
 		{
-			mode = (ColorMode)ReadData<uint8_t>( pos );
+			uint8_t mode_ = 0;
+			ReadData<uint8_t>(mode_, pos);
+			mode = static_cast<ColorMode>(mode_);
 			pos++;	// reserved
 		}
 		else
 		{
 			mode = COLOR_MODE_RGBA;
 		}
-		max = ReadData<Color>( pos );
-		min = ReadData<Color>( pos );
+		ReadData<Color>(max, pos );
+		ReadData<Color>(min, pos );
 	}
 };
 
@@ -4474,9 +4538,9 @@ struct easing_color
 	{
 		start.load( version, pos );
 		end.load( version, pos );
-		easingA = ReadData<float>( pos );
-		easingB = ReadData<float>( pos );
-		easingC = ReadData<float>( pos );
+		ReadData<float>(easingA, pos );
+		ReadData<float>(easingB, pos );
+		ReadData<float>(easingC, pos );
 	}
 };
 
@@ -4572,7 +4636,7 @@ bool DefaultEffectLoader::Load( const EFK_CHAR* path, void*& data, int32_t& size
 		reader( m_fileInterface->OpenRead( path ) );
 	if( reader.get() == NULL ) return false;
 
-	size = reader->GetLength();
+	size = (int32_t)reader->GetLength();
 	data = new uint8_t[size];
 	reader->Read( data, size );
 
@@ -5976,19 +6040,19 @@ public:
 	{
 	}
 
-	void LoadRendererParameter(unsigned char*& pos, Setting* setting);
+	void LoadRendererParameter(unsigned char*& pos, Setting* setting) override;
 
-	void BeginRendering(int32_t count, Manager* manager);
+	void BeginRendering(int32_t count, Manager* manager) override;
 
 	void Rendering(const Instance& instance, const Instance* next_instance, Manager* manager) override;
 
-	void EndRendering(Manager* manager);
+	void EndRendering(Manager* manager) override;
 
-	void InitializeRenderedInstance(Instance& instance, Manager* manager);
+	void InitializeRenderedInstance(Instance& instance, Manager* manager) override;
 
-	void UpdateRenderedInstance(Instance& instance, Manager* manager);
+	void UpdateRenderedInstance(Instance& instance, Manager* manager) override;
 
-	eEffectNodeType GetType() const { return EFFECT_NODE_TYPE_MODEL; }
+	eEffectNodeType GetType() const override { return EFFECT_NODE_TYPE_MODEL; }
 };
 
 //----------------------------------------------------------------------------------
@@ -6167,9 +6231,9 @@ public:
 	{
 	}
 
-	void LoadRendererParameter(unsigned char*& pos, Setting* setting);
+	void LoadRendererParameter(unsigned char*& pos, Setting* setting) override;
 
-	void BeginRendering(int32_t count, Manager* manager);
+	void BeginRendering(int32_t count, Manager* manager) override;
 
 	void BeginRenderingGroup(InstanceGroup* group, Manager* manager) override;
 
@@ -6177,13 +6241,13 @@ public:
 
 	void Rendering(const Instance& instance, const Instance* next_instance, Manager* manager) override;
 
-	void EndRendering(Manager* manager);
+	void EndRendering(Manager* manager) override;
 
-	void InitializeRenderedInstance(Instance& instance, Manager* manager);
+	void InitializeRenderedInstance(Instance& instance, Manager* manager) override;
 
-	void UpdateRenderedInstance(Instance& instance, Manager* manager);
+	void UpdateRenderedInstance(Instance& instance, Manager* manager) override;
 
-	eEffectNodeType GetType() const { return EFFECT_NODE_TYPE_RIBBON; }
+	eEffectNodeType GetType() const override { return EFFECT_NODE_TYPE_RIBBON; }
 };
 
 //----------------------------------------------------------------------------------
@@ -6194,6 +6258,7 @@ public:
 //
 //----------------------------------------------------------------------------------
 #endif	// __EFFEKSEER_ParameterNODE_RIBBON_H__
+
 #ifndef	__EFFEKSEER_ParameterNODE_RING_H__
 #define	__EFFEKSEER_ParameterNODE_RING_H__
 
@@ -6416,19 +6481,19 @@ public:
 	{
 	}
 
-	void LoadRendererParameter(unsigned char*& pos, Setting* setting);
+	void LoadRendererParameter(unsigned char*& pos, Setting* setting) override;
 
-	void BeginRendering(int32_t count, Manager* manager);
+	void BeginRendering(int32_t count, Manager* manager) override;
 
 	void Rendering(const Instance& instance, const Instance* next_instance, Manager* manager) override;
 
-	void EndRendering(Manager* manager);
+	void EndRendering(Manager* manager) override;
 
-	void InitializeRenderedInstance(Instance& instance, Manager* manager);
+	void InitializeRenderedInstance(Instance& instance, Manager* manager) override;
 
-	void UpdateRenderedInstance(Instance& instance, Manager* manager);
+	void UpdateRenderedInstance(Instance& instance, Manager* manager) override;
 
-	eEffectNodeType GetType() const { return EFFECT_NODE_TYPE_RING; }
+	eEffectNodeType GetType() const override { return EFFECT_NODE_TYPE_RING; }
 
 private:
 	void LoadSingleParameter( unsigned char*& pos, RingSingleParameter& param );
@@ -6648,19 +6713,19 @@ public:
 	{
 	}
 
-	void LoadRendererParameter(unsigned char*& pos, Setting* setting);
+	void LoadRendererParameter(unsigned char*& pos, Setting* setting) override;
 
-	void BeginRendering(int32_t count, Manager* manager);
+	void BeginRendering(int32_t count, Manager* manager) override;
 
 	void Rendering(const Instance& instance, const Instance* next_instance, Manager* manager) override;
 
-	void EndRendering(Manager* manager);
+	void EndRendering(Manager* manager) override;
 
-	void InitializeRenderedInstance(Instance& instance, Manager* manager);
+	void InitializeRenderedInstance(Instance& instance, Manager* manager) override;
 
-	void UpdateRenderedInstance(Instance& instance, Manager* manager);
+	void UpdateRenderedInstance(Instance& instance, Manager* manager) override;
 
-	eEffectNodeType GetType() const { return EFFECT_NODE_TYPE_SPRITE; }
+	eEffectNodeType GetType() const override { return EFFECT_NODE_TYPE_SPRITE; }
 };
 
 //----------------------------------------------------------------------------------
@@ -6826,9 +6891,9 @@ public:
 	{
 	}
 
-	void LoadRendererParameter(unsigned char*& pos, Setting* setting);
+	void LoadRendererParameter(unsigned char*& pos, Setting* setting) override;
 
-	void BeginRendering(int32_t count, Manager* manager);
+	void BeginRendering(int32_t count, Manager* manager) override;
 
 	void BeginRenderingGroup(InstanceGroup* group, Manager* manager) override;
 
@@ -6836,15 +6901,15 @@ public:
 
 	void Rendering(const Instance& instance, const Instance* next_instance, Manager* manager) override;
 
-	void EndRendering(Manager* manager);
+	void EndRendering(Manager* manager) override;
 
-	void InitializeRenderedInstanceGroup(InstanceGroup& instanceGroup, Manager* manager);
+	void InitializeRenderedInstanceGroup(InstanceGroup& instanceGroup, Manager* manager) override;
 
-	void InitializeRenderedInstance(Instance& instance, Manager* manager);
+	void InitializeRenderedInstance(Instance& instance, Manager* manager) override;
 
-	void UpdateRenderedInstance(Instance& instance, Manager* manager);
+	void UpdateRenderedInstance(Instance& instance, Manager* manager) override;
 
-	eEffectNodeType GetType() const { return EFFECT_NODE_TYPE_TRACK; }
+	eEffectNodeType GetType() const override { return EFFECT_NODE_TYPE_TRACK; }
 
 	void InitializeValues(InstanceGroupValues::Color& value, StandardColorParameter& param, InstanceGlobal* instanceGlobal);
 	void InitializeValues(InstanceGroupValues::Size& value, TrackSizeParameter& param, Manager* manager);
@@ -6861,6 +6926,7 @@ public:
 //
 //----------------------------------------------------------------------------------
 #endif	// __EFFEKSEER_ParameterNODE_TRACK_H__
+
 #ifndef	__EFFEKSEER_EFFECT_IMPLEMENTED_H__
 #define	__EFFEKSEER_EFFECT_IMPLEMENTED_H__
 
@@ -6873,9 +6939,77 @@ public:
 //----------------------------------------------------------------------------------
 namespace Effekseer
 {
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
+
+/**
+	@brief	A class to backup resorces when effect is reloaded
+*/
+class EffectReloadingBackup
+{
+public:
+	template<class T> 
+	class Holder
+	{
+	public:
+		T value;
+		int counter = 0;
+	};
+
+	template<class T>
+	class HolderCollection
+	{
+		std::map<std::u16string, Holder<T>> collection;
+
+	public:
+		void Push(const char16_t* key, T value)
+		{
+			auto key_ = std::u16string(key);
+			auto it = collection.find(key_);
+			
+			if (it == collection.end())
+			{
+				collection[key_].value = value;
+				collection[key_].counter = 1;
+			}
+			else
+			{
+				assert(it->second.value == value);
+				it->second.counter++;
+			}
+		}
+
+		bool Pop(const char16_t* key, T& value)
+		{
+			auto key_ = std::u16string(key);
+			auto it = collection.find(key_);
+
+			if (it == collection.end())
+			{
+				return false;
+			}
+			else
+			{
+				it->second.counter--;
+				value = it->second.value;
+				if (it->second.counter == 0)
+				{
+					collection.erase(it);
+				}
+				return true;
+			}
+		}
+
+		std::map<std::u16string, Holder<T>>& GetCollection()
+		{
+			return collection;
+		}
+	};
+
+	HolderCollection<TextureData*> images;
+	HolderCollection<TextureData*> normalImages;
+	HolderCollection<TextureData*> distortionImages;
+	HolderCollection<void*> sounds;
+	HolderCollection<void*> models;
+};
 
 /**
 	@brief	エフェクトパラメーター
@@ -6918,6 +7052,7 @@ private:
 	EFK_CHAR**		m_modelPaths;
 	void**			m_pModels;
 
+	std::u16string name_;
 	std::basic_string<EFK_CHAR>		m_materialPath;
 
 	int32_t			renderingNodesCount = 0;
@@ -6954,6 +7089,14 @@ private:
 
 	} Culling;
 
+	//! a flag to reload
+	bool isReloadingOnRenderingThread = false;
+
+	//! backup to reload on rendering thread
+	std::unique_ptr<EffectReloadingBackup> reloadingBackup;
+
+	void ResetReloadingBackup();
+
 public:
 	/**
 		@brief	生成
@@ -6975,14 +7118,11 @@ public:
 	virtual ~EffectImplemented();
 
 	// Rootの取得
-	EffectNode* GetRoot() const;
+	EffectNode* GetRoot() const override;
 
 	float GetMaginification() const override;
 
-	/**
-		@brief	読み込む。
-	*/
-	bool Load( void* pData, int size, float mag, const EFK_CHAR* materialPath );
+	bool Load( void* pData, int size, float mag, const EFK_CHAR* materialPath, ReloadingThreadType reloadingThreadType);
 
 	/**
 		@breif	何も読み込まれていない状態に戻す
@@ -7001,15 +7141,19 @@ private:
 	Manager* GetManager() const;
 
 public:
+	const char16_t* GetName() const override;
+
+	void SetName(const char16_t* name) override;
+
 	/**
 	@brief	設定取得
 	*/
-	Setting* GetSetting() const;
+	Setting* GetSetting() const override;
 	
 	/**
 		@brief	エフェクトデータのバージョン取得
 	*/
-	int GetVersion() const;
+	int GetVersion() const override;
 
 	/**
 		@brief	格納されている画像のポインタを取得する。
@@ -7019,66 +7163,65 @@ public:
 	/**
 		@brief	格納されている画像のポインタの個数を取得する。
 	*/
-	int32_t GetColorImageCount() const;
+	int32_t GetColorImageCount() const override;
 
 	/**
 	@brief	格納されている画像のポインタを取得する。
 	*/
 	TextureData* GetNormalImage(int n) const override;
 
-	int32_t GetNormalImageCount() const;
+	int32_t GetNormalImageCount() const override;
 
 	TextureData* GetDistortionImage(int n) const override;
 
-	int32_t GetDistortionImageCount() const;
+	int32_t GetDistortionImageCount() const override;
 
 	/**
 		@brief	格納されている音波形のポインタを取得する。
 	*/
-	void* GetWave( int n ) const;
+	void* GetWave( int n ) const override;
 
-	int32_t GetWaveCount() const;
+	int32_t GetWaveCount() const override;
 
 	/**
 		@brief	格納されているモデルのポインタを取得する。
 	*/
-	void* GetModel( int n ) const;
+	void* GetModel( int n ) const override;
 
-	int32_t GetModelCount() const;
-
-	/**
-		@brief	エフェクトのリロードを行う。
-	*/
-	bool Reload( void* data, int32_t size, const EFK_CHAR* materialPath = NULL );
+	int32_t GetModelCount() const override;
 
 	/**
 		@brief	エフェクトのリロードを行う。
 	*/
-	bool Reload( const EFK_CHAR* path, const EFK_CHAR* materialPath = NULL );
+	bool Reload( void* data, int32_t size, const EFK_CHAR* materialPath, ReloadingThreadType reloadingThreadType) override;
 
 	/**
 		@brief	エフェクトのリロードを行う。
 	*/
-	bool Reload( Manager* managers, int32_t managersCount, void* data, int32_t size, const EFK_CHAR* materialPath = NULL );
+	bool Reload( const EFK_CHAR* path, const EFK_CHAR* materialPath, ReloadingThreadType reloadingThreadType) override;
 
 	/**
 		@brief	エフェクトのリロードを行う。
 	*/
-	bool Reload( Manager* managers, int32_t managersCount, const EFK_CHAR* path, const EFK_CHAR* materialPath = NULL );
+	bool Reload( Manager** managers, int32_t managersCount, void* data, int32_t size, const EFK_CHAR* materialPath, ReloadingThreadType reloadingThreadType) override;
+
+	/**
+		@brief	エフェクトのリロードを行う。
+	*/
+	bool Reload( Manager** managers, int32_t managersCount, const EFK_CHAR* path, const EFK_CHAR* materialPath, ReloadingThreadType reloadingThreadType) override;
 
 	/**
 		@brief	画像等リソースの再読み込みを行う。
 	*/
-	void ReloadResources( const EFK_CHAR* materialPath );
+	void ReloadResources( const EFK_CHAR* materialPath ) override;
 
-	/**
-		@brief	画像等リソースの破棄を行う。
-	*/
-	void UnloadResources();
+	void UnloadResources(const EFK_CHAR* materialPath);
 
-	virtual int GetRef() { return ReferenceObject::GetRef(); }
-	virtual int AddRef() { return ReferenceObject::AddRef(); }
-	virtual int Release() { return ReferenceObject::Release(); }
+	void UnloadResources() override;
+
+	virtual int GetRef() override { return ReferenceObject::GetRef(); }
+	virtual int AddRef() override { return ReferenceObject::AddRef(); }
+	virtual int Release() override { return ReferenceObject::Release(); }
 };
 //----------------------------------------------------------------------------------
 //
@@ -7147,6 +7290,9 @@ private:
 
 		Handle				Self;
 
+		bool				IsPreupdated = false;
+		int32_t				StartFrame = 0;
+
 		DrawSet( Effect* effect, InstanceContainer* pContainer, InstanceGlobal* pGlobal )
 			: ParameterPointer			( effect )
 			, InstanceContainerPointer	( pContainer )
@@ -7183,6 +7329,10 @@ private:
 		{
 		
 		}
+
+		Matrix43* GetEnabledGlobalMatrix();
+
+		void CopyMatrixFromInstanceToRoot();
 	};
 
 	struct CullingParameter
@@ -7230,6 +7380,7 @@ private:
 
 	// mutex for rendering
 	std::mutex					m_renderingMutex;
+	bool						m_isLockedWithRenderingMutex = false;
 
 	/* 設定インスタンス */
 	Setting*					m_setting;
@@ -7285,7 +7436,7 @@ private:
 	void GCDrawSet( bool isRemovingManager );
 
 	// インスタンスコンテナ生成
-	InstanceContainer* CreateInstanceContainer( EffectNode* pEffectNode, InstanceGlobal* pGlobal, bool isRoot = false, Instance* pParent = NULL );
+	InstanceContainer* CreateInstanceContainer( EffectNode* pEffectNode, InstanceGlobal* pGlobal, bool isRoot, const Matrix43& rootMatrix, Instance* pParent);
 
 	// メモリ確保関数
 	static void* EFK_STDCALL Malloc( unsigned int size );
@@ -7298,6 +7449,8 @@ private:
 
 	// 破棄等のイベントを実際に実行
 	void ExecuteEvents();
+
+	void ShowErrorAndExit(const char* message);
 public:
 
 	// コンストラクタ
@@ -7317,7 +7470,7 @@ public:
 		@note
 		このマネージャーから生成されたエフェクトは全て強制的に破棄されます。
 	*/
-	void Destroy();
+	void Destroy() override;
 
 	/**
 		@brief	更新番号を取得する。
@@ -7327,216 +7480,216 @@ public:
 	/**
 		@brief	メモリ確保関数取得
 	*/
-	MallocFunc GetMallocFunc() const;
+	MallocFunc GetMallocFunc() const override;
 
 	/**
 		@brief	メモリ確保関数設定
 	*/
-	void SetMallocFunc( MallocFunc func );
+	void SetMallocFunc( MallocFunc func ) override;
 
 	/**
 		@brief	メモリ破棄関数取得
 	*/
-	FreeFunc GetFreeFunc() const;
+	FreeFunc GetFreeFunc() const override;
 
 	/**
 		@brief	メモリ破棄関数設定
 	*/
-	void SetFreeFunc( FreeFunc func );
+	void SetFreeFunc( FreeFunc func ) override;
 
 	/**
 		@brief	ランダム関数取得
 	*/
-	RandFunc GetRandFunc() const;
+	RandFunc GetRandFunc() const override;
 
 	/**
 		@brief	ランダム関数設定
 	*/
-	void SetRandFunc( RandFunc func );
+	void SetRandFunc( RandFunc func ) override;
 
 	/**
 		@brief	ランダム最大値取得
 	*/
-	int GetRandMax() const;
+	int GetRandMax() const override;
 
 	/**
 		@brief	ランダム関数設定
 	*/
-	void SetRandMax( int max_ );
+	void SetRandMax( int max_ ) override;
 
 	/**
 		@brief	座標系を取得する。
 	*/
-	CoordinateSystem GetCoordinateSystem() const;
+	CoordinateSystem GetCoordinateSystem() const override;
 
 	/**
 		@brief	座標系を設定する。
 	*/
-	void SetCoordinateSystem( CoordinateSystem coordinateSystem );
+	void SetCoordinateSystem( CoordinateSystem coordinateSystem ) override;
 
 	/**
 		@brief	スプライト描画機能取得
 	*/
-	SpriteRenderer* GetSpriteRenderer();
+	SpriteRenderer* GetSpriteRenderer() override;
 
 	/**
 		@brief	スプライト描画機能設定
 	*/
-	void SetSpriteRenderer( SpriteRenderer* renderer );
+	void SetSpriteRenderer( SpriteRenderer* renderer ) override;
 
 	/**
 		@brief	リボン描画機能取得
 	*/
-	RibbonRenderer* GetRibbonRenderer();
+	RibbonRenderer* GetRibbonRenderer() override;
 
 	/**
 		@brief	リボン描画機能設定
 	*/
-	void SetRibbonRenderer( RibbonRenderer* renderer );
+	void SetRibbonRenderer( RibbonRenderer* renderer ) override;
 
 	/**
 		@brief	リング描画機能取得
 	*/
-	RingRenderer* GetRingRenderer();
+	RingRenderer* GetRingRenderer() override;
 
 	/**
 		@brief	リング描画機能設定
 	*/
-	void SetRingRenderer( RingRenderer* renderer );
+	void SetRingRenderer( RingRenderer* renderer ) override;
 
 	/**
 		@brief	モデル描画機能取得
 	*/
-	ModelRenderer* GetModelRenderer();
+	ModelRenderer* GetModelRenderer() override;
 
 	/**
 		@brief	モデル描画機能設定
 	*/
-	void SetModelRenderer( ModelRenderer* renderer );
+	void SetModelRenderer( ModelRenderer* renderer ) override;
 
 	/**
 		@brief	軌跡描画機能取得
 	*/
-	TrackRenderer* GetTrackRenderer();
+	TrackRenderer* GetTrackRenderer() override;
 
 	/**
 		@brief	軌跡描画機能設定
 	*/
-	void SetTrackRenderer( TrackRenderer* renderer );
+	void SetTrackRenderer( TrackRenderer* renderer ) override;
 
 	/**
 		@brief	設定クラスを取得する。
 	*/
-	Setting* GetSetting();
+	Setting* GetSetting() override;
 
 	/**
 		@brief	設定クラスを設定する。
 		@param	setting	[in]	設定
 	*/
-	void SetSetting(Setting* setting);
+	void SetSetting(Setting* setting) override;
 
 	/**
 		@brief	エフェクト読込クラスを取得する。
 	*/
-	EffectLoader* GetEffectLoader();
+	EffectLoader* GetEffectLoader() override;
 
 	/**
 		@brief	エフェクト読込クラスを設定する。
 	*/
-	void SetEffectLoader( EffectLoader* effectLoader );
+	void SetEffectLoader( EffectLoader* effectLoader ) override;
 
 	/**
 		@brief	テクスチャ読込クラスを取得する。
 	*/
-	TextureLoader* GetTextureLoader();
+	TextureLoader* GetTextureLoader() override;
 
 	/**
 		@brief	テクスチャ読込クラスを設定する。
 	*/
-	void SetTextureLoader( TextureLoader* textureLoader );
+	void SetTextureLoader( TextureLoader* textureLoader ) override;
 	
 	/**
 		@brief	サウンド再生取得
 	*/
-	SoundPlayer* GetSoundPlayer();
+	SoundPlayer* GetSoundPlayer() override;
 
 	/**
 		@brief	サウンド再生機能設定
 	*/
-	void SetSoundPlayer( SoundPlayer* soundPlayer );
+	void SetSoundPlayer( SoundPlayer* soundPlayer ) override;
 	
 	/**
 		@brief	サウンド再生取得
 	*/
-	SoundLoader* GetSoundLoader();
+	SoundLoader* GetSoundLoader() override;
 
 	/**
 		@brief	サウンド再生機能設定
 	*/
-	void SetSoundLoader( SoundLoader* soundLoader );
+	void SetSoundLoader( SoundLoader* soundLoader ) override;
 
 	/**
 		@brief	モデル読込クラスを取得する。
 	*/
-	ModelLoader* GetModelLoader();
+	ModelLoader* GetModelLoader() override;
 
 	/**
 		@brief	モデル読込クラスを設定する。
 	*/
-	void SetModelLoader( ModelLoader* modelLoader );
+	void SetModelLoader( ModelLoader* modelLoader ) override;
 	
 	/**
 		@brief	エフェクト停止
 	*/
-	void StopEffect( Handle handle );
+	void StopEffect( Handle handle ) override;
 
 	/**
 		@brief	全てのエフェクト停止
 	*/
-	void StopAllEffects();
+	void StopAllEffects() override;
 
 	/**
 		@brief	エフェクト停止
 	*/
-	void StopRoot( Handle handle );
+	void StopRoot( Handle handle ) override;
 
 	/**
 		@brief	エフェクト停止
 	*/
-	void StopRoot( Effect* effect );
+	void StopRoot( Effect* effect ) override;
 
 	/**
 		@brief	エフェクトのインスタンスが存在しているか取得する。
 		@param	handle	[in]	インスタンスのハンドル
 		@return	存在してるか?
 	*/
-	bool Exists( Handle handle );
+	bool Exists( Handle handle ) override;
 
-	int32_t GetInstanceCount( Handle handle );
+	int32_t GetInstanceCount( Handle handle ) override;
 
 	/**
 		@brief	エフェクトのインスタンスに設定されている行列を取得する。
 		@param	handle	[in]	インスタンスのハンドル
 		@return	行列
 	*/
-	Matrix43 GetMatrix( Handle handle );
+	Matrix43 GetMatrix( Handle handle ) override;
 
 	/**
 		@brief	エフェクトのインスタンスに変換行列を設定する。
 		@param	handle	[in]	インスタンスのハンドル
 		@param	mat		[in]	変換行列
 	*/
-	void SetMatrix( Handle handle, const Matrix43& mat );
+	void SetMatrix( Handle handle, const Matrix43& mat ) override;
 
-	Vector3D GetLocation( Handle handle );
-	void SetLocation( Handle handle, float x, float y, float z );
-	void SetLocation( Handle handle, const Vector3D& location );
-	void AddLocation( Handle handle, const Vector3D& location );
+	Vector3D GetLocation( Handle handle ) override;
+	void SetLocation( Handle handle, float x, float y, float z ) override;
+	void SetLocation( Handle handle, const Vector3D& location ) override;
+	void AddLocation( Handle handle, const Vector3D& location ) override;
 
 	/**
 		@brief	エフェクトのインスタンスの回転角度を指定する。(ラジアン)
 	*/
-	void SetRotation( Handle handle, float x, float y, float z );
+	void SetRotation( Handle handle, float x, float y, float z ) override;
 
 	/**
 		@brief	エフェクトのインスタンスの任意軸周りの反時計周りの回転角度を指定する。
@@ -7544,7 +7697,7 @@ public:
 		@param	axis	[in]	軸
 		@param	angle	[in]	角度(ラジアン)
 	*/
-	void SetRotation( Handle handle, const Vector3D& axis, float angle );
+	void SetRotation( Handle handle, const Vector3D& axis, float angle ) override;
 
 	/**
 		@brief	エフェクトのインスタンスの拡大率を指定する。
@@ -7553,61 +7706,61 @@ public:
 		@param	y		[in]	Y方向拡大率
 		@param	z		[in]	Z方向拡大率
 	*/
-	void SetScale( Handle handle, float x, float y, float z );
+	void SetScale( Handle handle, float x, float y, float z ) override;
 
 	void SetAllColor(Handle handle, Color color) override;
 
 	// エフェクトのターゲット位置を指定する。
-	void SetTargetLocation( Handle handle, float x, float y, float z );
-	void SetTargetLocation( Handle handle, const Vector3D& location );
+	void SetTargetLocation( Handle handle, float x, float y, float z ) override;
+	void SetTargetLocation( Handle handle, const Vector3D& location ) override;
 
-	Matrix43 GetBaseMatrix( Handle handle );
+	Matrix43 GetBaseMatrix( Handle handle ) override;
 
-	void SetBaseMatrix( Handle handle, const Matrix43& mat );
+	void SetBaseMatrix( Handle handle, const Matrix43& mat ) override;
 
 	/**
 		@brief	エフェクトのインスタンスに廃棄時のコールバックを設定する。
 		@param	handle	[in]	インスタンスのハンドル
 		@param	callback	[in]	コールバック
 	*/
-	void SetRemovingCallback( Handle handle, EffectInstanceRemovingCallback callback );
+	void SetRemovingCallback( Handle handle, EffectInstanceRemovingCallback callback ) override;
 
-	bool GetShown(Handle handle);
+	bool GetShown(Handle handle) override;
 
-	void SetShown( Handle handle, bool shown );
+	void SetShown( Handle handle, bool shown ) override;
 	
-	bool GetPaused(Handle handle);
+	bool GetPaused(Handle handle) override;
 
-	void SetPaused( Handle handle, bool paused );
+	void SetPaused( Handle handle, bool paused ) override;
 
-	void SetPausedToAllEffects(bool paused);
+	void SetPausedToAllEffects(bool paused) override;
 
 	float GetSpeed(Handle handle) const override;
 
-	void SetSpeed( Handle handle, float speed );
+	void SetSpeed( Handle handle, float speed ) override;
 	
-	void SetAutoDrawing( Handle handle, bool autoDraw );
+	void SetAutoDrawing( Handle handle, bool autoDraw ) override;
 	
-	void Flip();
+	void Flip() override;
 
 	/**
 		@brief	更新処理
 	*/
-	void Update( float deltaFrame );
+	void Update( float deltaFrame ) override;
 
 	/**
 		@brief	更新処理を開始する。
 		@note
 		Updateを実行する際は、実行する必要はない。
 	*/
-	void BeginUpdate();
+	void BeginUpdate() override;
 
 	/**
 		@brief	更新処理を終了する。
 		@note
 		Updateを実行する際は、実行する必要はない。
 	*/
-	void EndUpdate();
+	void EndUpdate() override;
 
 	/**
 		@brief	ハンドル単位の更新を行う。
@@ -7616,11 +7769,12 @@ public:
 		@note
 		更新する前にBeginUpdate、更新し終わった後にEndUpdateを実行する必要がある。
 	*/
-	void UpdateHandle( Handle handle, float deltaFrame = 1.0f );
+	void UpdateHandle( Handle handle, float deltaFrame = 1.0f ) override;
 
 private:
 	void UpdateHandle( DrawSet& drawSet, float deltaFrame );
 
+	void Preupdate(DrawSet& drawSet);
 public:
 
 	/**
@@ -7638,25 +7792,24 @@ public:
 
 	void DrawHandleFront(Handle handle) override;
 
-	/**
-		@brief	再生
-	*/
-	Handle Play( Effect* effect, float x, float y, float z );
+	Handle Play( Effect* effect, float x, float y, float z ) override;
+
+	Handle Play(Effect* effect, const Vector3D& position, int32_t startFrame) override;
 	
 	/**
 		@brief	Update処理時間を取得。
 	*/
-	int GetUpdateTime() const {return m_updateTime;};
+	int GetUpdateTime() const override {return m_updateTime;};
 	
 	/**
 		@brief	Draw処理時間を取得。
 	*/
-	int GetDrawTime() const {return m_drawTime;};
+	int GetDrawTime() const override {return m_drawTime;};
 
 	/**
 		@brief	残りの確保したインスタンス数を取得する。
 	*/
-	virtual int32_t GetRestInstancesCount() const { return m_reserved_instances.size(); }
+	virtual int32_t GetRestInstancesCount() const override { return (int32_t)m_reserved_instances.size(); }
 
 	/**
 		@brief	リロードを開始する。
@@ -7675,23 +7828,23 @@ public:
 		@param	zsize	Z方向幅
 		@param	layerCount	層数(大きいほどカリングの効率は上がるがメモリも大量に使用する)
 	*/
-	void CreateCullingWorld( float xsize, float ysize, float zsize, int32_t layerCount);
+	void CreateCullingWorld( float xsize, float ysize, float zsize, int32_t layerCount) override;
 
 	/**
 		@brief	カリングを行い、カリングされたオブジェクトのみを描画するようにする。
 		@param	cameraProjMat	カメラプロジェクション行列
 		@param	isOpenGL		OpenGLによる描画か?
 	*/
-	void CalcCulling(const Matrix44& cameraProjMat, bool isOpenGL);
+	void CalcCulling(const Matrix44& cameraProjMat, bool isOpenGL) override;
 
 	/**
 		@brief	現在存在するエフェクトのハンドルからカリングの空間を配置しなおす。
 	*/
 	void RessignCulling() override;
 
-	virtual int GetRef() { return ReferenceObject::GetRef(); }
-	virtual int AddRef() { return ReferenceObject::AddRef(); }
-	virtual int Release() { return ReferenceObject::Release(); }
+	virtual int GetRef() override { return ReferenceObject::GetRef(); }
+	virtual int AddRef() override { return ReferenceObject::AddRef(); }
+	virtual int Release() override { return ReferenceObject::Release(); }
 };
 //----------------------------------------------------------------------------------
 //
@@ -8264,7 +8417,7 @@ public:
 	// 音
 	union
 	{
-		int		delay;
+		int32_t		delay;
 	} soundValues;
 
 	// 状態
@@ -8346,7 +8499,7 @@ public:
 	/**
 		@brief	初期化
 	*/
-	void Initialize( Instance* parent, int32_t instanceNumber, int32_t parentTime );
+	void Initialize( Instance* parent, int32_t instanceNumber, int32_t parentTime, const Matrix43& globalMatrix);
 
 	/**
 		@brief	更新
@@ -9717,8 +9870,6 @@ namespace Effekseer
 	assert( type == GetType() );
 	EffekseerPrintDebug("Renderer : Model\n");
 
-	int32_t size = 0;
-
 	AlphaBlend = RendererCommon.AlphaBlend;
 
 	if( m_effect->GetVersion() >= 7 )
@@ -9827,7 +9978,7 @@ void EffectNodeModel::Rendering(const Instance& instance, const Instance* next_i
 
 		ModelRenderer::InstanceParameter instanceParameter;
 		instanceParameter.SRTMatrix43 = instance.GetGlobalMatrix43();
-		instanceParameter.Time = instance.m_LivingTime;
+		instanceParameter.Time = (int32_t)instance.m_LivingTime;
 
 		instanceParameter.UV = instance.GetUV();
 		
@@ -10026,8 +10177,6 @@ void EffectNodeRibbon::LoadRendererParameter(unsigned char*& pos, Setting* setti
 	pos += sizeof(int);
 	assert(type == GetType());
 	EffekseerPrintDebug("Renderer : Ribbon\n");
-
-	int32_t size = 0;
 
 	if (m_effect->GetVersion() >= 3)
 	{
@@ -10365,6 +10514,7 @@ void EffectNodeRibbon::UpdateRenderedInstance(Instance& instance, Manager* manag
 //
 //----------------------------------------------------------------------------------
 
+
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
@@ -10389,8 +10539,6 @@ void EffectNodeRing::LoadRendererParameter(unsigned char*& pos, Setting* setting
 	pos += sizeof(int);
 	assert( type == GetType() );
 	EffekseerPrintDebug("Renderer : Ring\n");
-
-	int32_t size = 0;
 
 	memcpy( &RenderingOrder, pos, sizeof(int) );
 	pos += sizeof(int);
@@ -11007,7 +11155,6 @@ namespace Effekseer
 	EffekseerPrintDebug("Renderer : Sprite\n");
 
 	auto ef = (EffectImplemented*) m_effect;
-	int32_t size = 0;
 
 	memcpy(&RenderingOrder, pos, sizeof(int));
 	pos += sizeof(int);
@@ -11411,9 +11558,6 @@ void EffectNodeTrack::LoadRendererParameter(unsigned char*& pos, Setting* settin
 	assert(type == GetType());
 	EffekseerPrintDebug("Renderer : Track\n");
 
-	int32_t size = 0;
-
-
 	LoadValues(TrackSizeFor, pos);
 	LoadValues(TrackSizeMiddle, pos);
 	LoadValues(TrackSizeBack, pos);
@@ -11490,7 +11634,6 @@ void EffectNodeTrack::BeginRenderingGroup(InstanceGroup* group, Manager* manager
 	TrackRenderer* renderer = manager->GetTrackRenderer();
 	if (renderer != nullptr)
 	{
-		InstanceGroupValues& instValues = group->rendererValues.track;
 		m_currentGroupValues = group->rendererValues.track;
 
 		m_instanceParameter.InstanceCount = group->GetInstanceCount();
@@ -11529,14 +11672,12 @@ void EffectNodeTrack::EndRenderingGroup(InstanceGroup* group, Manager* manager)
 
 void EffectNodeTrack::Rendering(const Instance& instance, const Instance* next_instance, Manager* manager)
 {
-	const InstanceValues& instValues = instance.rendererValues.track;
-
 	TrackRenderer* renderer = manager->GetTrackRenderer();
 	if (renderer != NULL)
 	{
 		float t = (float)instance.m_LivingTime / (float)instance.m_LivedTime;
-		int32_t time = instance.m_LivingTime;
-		int32_t livedTime = instance.m_LivedTime;
+		int32_t time = (int32_t)instance.m_LivingTime;
+		int32_t livedTime = (int32_t)instance.m_LivedTime;
 
 		SetValues(m_instanceParameter.ColorLeft, instance, m_currentGroupValues.ColorLeft, TrackColorLeft, time, livedTime);
 		SetValues(m_instanceParameter.ColorCenter, instance, m_currentGroupValues.ColorCenter, TrackColorCenter, time, livedTime);
@@ -11595,12 +11736,9 @@ void EffectNodeTrack::InitializeRenderedInstanceGroup(InstanceGroup& instanceGro
 //----------------------------------------------------------------------------------
 void EffectNodeTrack::InitializeRenderedInstance(Instance& instance, Manager* manager)
 {
-	InstanceValues& instValues = instance.rendererValues.track;
-
 	// Calculate only center
-	float t = (float)instance.m_LivingTime / (float)instance.m_LivedTime;
-	int32_t time = instance.m_LivingTime;
-	int32_t livedTime = instance.m_LivedTime;
+	int32_t time = (int32_t)instance.m_LivingTime;
+	int32_t livedTime = (int32_t)instance.m_LivedTime;
 
 	Color c;
 	SetValues(c, instance, m_currentGroupValues.ColorCenterMiddle, TrackColorCenterMiddle, time, livedTime);
@@ -11618,12 +11756,9 @@ void EffectNodeTrack::InitializeRenderedInstance(Instance& instance, Manager* ma
 //----------------------------------------------------------------------------------
 void EffectNodeTrack::UpdateRenderedInstance(Instance& instance, Manager* manager)
 {
-	InstanceValues& instValues = instance.rendererValues.track;
-
 	// Calculate only center
-	float t = (float)instance.m_LivingTime / (float)instance.m_LivedTime;
-	int32_t time = instance.m_LivingTime;
-	int32_t livedTime = instance.m_LivedTime;
+	int32_t time = (int32_t)instance.m_LivingTime;
+	int32_t livedTime = (int32_t)instance.m_LivedTime;
 
 	Color c;
 	SetValues(c, instance, m_currentGroupValues.ColorCenterMiddle, TrackColorCenterMiddle, time, livedTime);
@@ -11752,9 +11887,11 @@ void EffectNodeTrack::LoadValues(TrackSizeParameter& param, unsigned char*& pos)
 //
 //----------------------------------------------------------------------------------
 
+
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
+
 
 
 //----------------------------------------------------------------------------------
@@ -11802,6 +11939,38 @@ static void GetParentDir(EFK_CHAR* dst, const EFK_CHAR* src)
 	}
 }
 
+static std::u16string getFilenameWithoutExt(const char16_t* path)
+{
+	int start = 0;
+	int end = 0;
+
+	for (int i = 0; path[i] != 0; i++)
+	{
+		if (path[i] == u'/' || path[i] == u'\\')
+		{
+			start = i;
+		}
+	}
+
+	for (int i = start; path[i] != 0; i++)
+	{
+		if (path[i] == u'.')
+		{
+			end = i;
+		}
+	}
+
+	std::vector<char16_t> ret;
+
+	for (int i = start; i < end; i++)
+	{
+		ret.push_back(path[i]);
+	}
+	ret.push_back(0);
+
+	return std::u16string(ret.data());
+}
+
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
@@ -11837,15 +12006,66 @@ Effect* Effect::Create(Manager* manager, const EFK_CHAR* path, float magnificati
 
 	eLoader->Unload(data, size);
 
+	effect->SetName(getFilenameWithoutExt(path).c_str());
+
 	return effect;
 }
+
+void EffectImplemented::ResetReloadingBackup()
+{
+	if(reloadingBackup == nullptr) return;
+
+	Setting* loader = GetSetting();
+
+	TextureLoader* textureLoader = loader->GetTextureLoader();
+	if (textureLoader != NULL)
+	{
+		for (auto it: reloadingBackup->images.GetCollection())
+		{
+			textureLoader->Unload(it.second.value);
+		}
+	
+		for (auto it : reloadingBackup->normalImages.GetCollection())
+		{
+			textureLoader->Unload(it.second.value);
+		}
+
+		for (auto it : reloadingBackup->distortionImages.GetCollection())
+		{
+			textureLoader->Unload(it.second.value);
+		}
+	}
+
+	SoundLoader* soundLoader = loader->GetSoundLoader();
+	if (soundLoader != NULL)
+	{
+		for (auto it : reloadingBackup->sounds.GetCollection())
+		{
+			soundLoader->Unload(it.second.value);
+		}
+	}
+
+	{
+		ModelLoader* modelLoader = loader->GetModelLoader();
+		if (modelLoader != NULL)
+		{
+			for (auto it : reloadingBackup->models.GetCollection())
+			{
+				modelLoader->Unload(it.second.value);
+			}
+		}
+	}
+
+	reloadingBackup.reset();
+}
+
 
 Effect* EffectImplemented::Create( Manager* pManager, void* pData, int size, float magnification, const EFK_CHAR* materialPath )
 {
 	if( pData == NULL || size == 0 ) return NULL;
 
 	EffectImplemented* effect = new EffectImplemented( pManager, pData, size );
-	if ( !effect->Load( pData, size, magnification, materialPath ) )
+	if ( !effect->Load( pData, size, magnification, materialPath, ReloadingThreadType::Main) )
 	{
 		effect->Release();
 		effect = NULL;
@@ -11887,6 +12107,8 @@ Effect* Effect::Create( Setting* setting, const EFK_CHAR* path, float magnificat
 
 	eLoader->Unload(data, size);
 
+	effect->SetName(getFilenameWithoutExt(path).c_str());
+
 	return effect;
 }
 
@@ -11898,7 +12120,7 @@ Effect* EffectImplemented::Create( Setting* setting, void* pData, int size, floa
 	if( pData == NULL || size == 0 ) return NULL;
 
 	EffectImplemented* effect = new EffectImplemented( setting, pData, size );
-	if ( !effect->Load( pData, size, magnification, materialPath ) )
+	if ( !effect->Load( pData, size, magnification, materialPath, ReloadingThreadType::Main) )
 	{
 		effect->Release();
 		effect = NULL;
@@ -11987,6 +12209,7 @@ EffectImplemented::EffectImplemented( Setting* setting, void* pData, int size )
 //----------------------------------------------------------------------------------
 EffectImplemented::~EffectImplemented()
 {
+	ResetReloadingBackup();
 	Reset();
 
 	ES_SAFE_RELEASE( m_setting );
@@ -12012,8 +12235,10 @@ float EffectImplemented::GetMaginification() const
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-bool EffectImplemented::Load( void* pData, int size, float mag, const EFK_CHAR* materialPath )
+bool EffectImplemented::Load( void* pData, int size, float mag, const EFK_CHAR* materialPath, ReloadingThreadType reloadingThreadType)
 {
+	// if reladingThreadType == ReloadingThreadType::Main, this function was regarded as loading function actually
+
 	EffekseerPrintDebug("** Create : Effect\n");
 
 	uint8_t* pos = (uint8_t*)pData;
@@ -12216,10 +12441,6 @@ void EffectImplemented::Reset()
 {
 	UnloadResources();
 
-	Setting* loader = GetSetting();
-
-	TextureLoader* textureLoader = loader->GetTextureLoader();
-
 	for( int i = 0; i < m_ImageCount; i++ )
 	{
 		if( m_ImagePaths[i] != NULL ) delete [] m_ImagePaths[i];
@@ -12288,9 +12509,16 @@ Manager* EffectImplemented::GetManager() const
 	return m_pManager;	
 }
 
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
+const char16_t* EffectImplemented::GetName() const
+{
+	return name_.c_str();
+}
+
+void EffectImplemented::SetName(const char16_t* name)
+{
+	name_ = name;
+}
+
 Setting* EffectImplemented::GetSetting() const
 {
 	if(m_setting != NULL) return m_setting;
@@ -12378,43 +12606,59 @@ int32_t EffectImplemented::GetModelCount() const
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-bool EffectImplemented::Reload( void* data, int32_t size, const EFK_CHAR* materialPath )
+bool EffectImplemented::Reload( void* data, int32_t size, const EFK_CHAR* materialPath, ReloadingThreadType reloadingThreadType)
 {
 	if(m_pManager == NULL ) return false;
 
-	return Reload( m_pManager, 1, data, size, materialPath );
+	std::array<Manager*, 1> managers;
+	managers[0] = m_pManager;
+
+	return Reload( managers.data(), managers.size(), data, size, materialPath, reloadingThreadType);
 }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-bool EffectImplemented::Reload( const EFK_CHAR* path, const EFK_CHAR* materialPath )
+bool EffectImplemented::Reload( const EFK_CHAR* path, const EFK_CHAR* materialPath, ReloadingThreadType reloadingThreadType)
 {
 	if(m_pManager == NULL ) return false;
 
-	return Reload( m_pManager, 1, path, materialPath );
+	std::array<Manager*, 1> managers;
+	managers[0] = m_pManager;
+
+	return Reload(managers.data(), managers.size(), path, materialPath, reloadingThreadType);
 }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-bool EffectImplemented::Reload( Manager* managers, int32_t managersCount, void* data, int32_t size, const EFK_CHAR* materialPath )
+bool EffectImplemented::Reload( Manager** managers, int32_t managersCount, void* data, int32_t size, const EFK_CHAR* materialPath, ReloadingThreadType reloadingThreadType)
 {
-	if(m_pManager == NULL ) return false;
-
 	const EFK_CHAR* matPath = materialPath != NULL ? materialPath : m_materialPath.c_str();
 	
-	for( int32_t i = 0; i < managersCount; i++)
+	if (m_pManager != nullptr)
 	{
-		((ManagerImplemented*)&(managers[i]))->BeginReloadEffect( this );
+		m_pManager->BeginReloadEffect(this);
 	}
 
+	for( int32_t i = 0; i < managersCount; i++)
+	{
+		((ManagerImplemented*)managers[i])->BeginReloadEffect( this );
+	}
+
+	isReloadingOnRenderingThread = true;
 	Reset();
-	Load( data, size, m_maginificationExternal, matPath );
+	Load( data, size, m_maginificationExternal, matPath, reloadingThreadType);
+	isReloadingOnRenderingThread = false;
+
+	if (m_pManager != nullptr)
+	{
+		m_pManager->EndReloadEffect(this);
+	}
 
 	for( int32_t i = 0; i < managersCount; i++)
 	{
-		((ManagerImplemented*)&(managers[i]))->EndReloadEffect( this );
+		((ManagerImplemented*)managers[i])->EndReloadEffect( this );
 	}
 
 	return false;
@@ -12423,10 +12667,8 @@ bool EffectImplemented::Reload( Manager* managers, int32_t managersCount, void* 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-bool EffectImplemented::Reload( Manager* managers, int32_t managersCount, const EFK_CHAR* path, const EFK_CHAR* materialPath )
+bool EffectImplemented::Reload( Manager** managers, int32_t managersCount, const EFK_CHAR* path, const EFK_CHAR* materialPath, ReloadingThreadType reloadingThreadType)
 {
-	if(m_pManager == NULL ) return false;
-
 	Setting* loader = GetSetting();
 	
 	EffectLoader* eLoader = loader->GetEffectLoader();
@@ -12444,16 +12686,26 @@ bool EffectImplemented::Reload( Manager* managers, int32_t managersCount, const 
 		materialPath = parentDir;
 	}
 
+	if (m_pManager != nullptr)
+	{
+		m_pManager->BeginReloadEffect(this);
+	}
+
 	for( int32_t i = 0; i < managersCount; i++)
 	{
 		((ManagerImplemented*)&(managers[i]))->BeginReloadEffect( this );
 	}
 
+	isReloadingOnRenderingThread = true;
 	Reset();
-	Load( data, size, m_maginificationExternal, materialPath );
+	Load( data, size, m_maginificationExternal, materialPath, reloadingThreadType);
+	isReloadingOnRenderingThread = false;
 
-	m_pManager->EndReloadEffect( this );
-
+	if (m_pManager != nullptr)
+	{
+		m_pManager->EndReloadEffect(this);
+	}
+	
 	for( int32_t i = 0; i < managersCount; i++)
 	{
 		((ManagerImplemented*)&(managers[i]))->EndReloadEffect( this );
@@ -12472,6 +12724,76 @@ void EffectImplemented::ReloadResources( const EFK_CHAR* materialPath )
 	const EFK_CHAR* matPath = materialPath != NULL ? materialPath : m_materialPath.c_str();
 	
 	Setting* loader = GetSetting();
+
+	// reloading on render thread
+	if (isReloadingOnRenderingThread)
+	{
+		assert(reloadingBackup != nullptr);
+
+		for (int32_t ind = 0; ind < m_ImageCount; ind++)
+		{
+			EFK_CHAR fullPath[512];
+			PathCombine(fullPath, matPath, m_ImagePaths[ind]);
+
+			TextureData* value = nullptr;
+			if (reloadingBackup->images.Pop(fullPath, value))
+			{
+				m_pImages[ind] = value;
+			}
+		}
+	
+		for (int32_t ind = 0; ind < m_normalImageCount; ind++)
+		{
+			EFK_CHAR fullPath[512];
+			PathCombine(fullPath, matPath, m_normalImagePaths[ind]);
+			
+			TextureData* value = nullptr;
+			if (reloadingBackup->normalImages.Pop(fullPath, value))
+			{
+				m_normalImages[ind] = value;
+			}
+		}
+				
+		for (int32_t ind = 0; ind < m_distortionImageCount; ind++)
+		{
+			EFK_CHAR fullPath[512];
+			PathCombine(fullPath, matPath, m_distortionImagePaths[ind]);
+			
+			TextureData* value = nullptr;
+			if (reloadingBackup->distortionImages.Pop(fullPath, value))
+			{
+				m_distortionImages[ind] = value;
+			}
+		}
+				
+		for (int32_t ind = 0; ind < m_WaveCount; ind++)
+		{
+			EFK_CHAR fullPath[512];
+			PathCombine(fullPath, matPath, m_WavePaths[ind]);
+
+			void* value = nullptr;
+			if (reloadingBackup->sounds.Pop(fullPath, value))
+			{
+				m_pWaves[ind] = value;
+			}
+		}
+		
+		
+		
+		for (int32_t ind = 0; ind < m_modelCount; ind++)
+		{
+			EFK_CHAR fullPath[512];
+			PathCombine(fullPath, matPath, m_modelPaths[ind]);
+			
+			void* value = nullptr;
+			if (reloadingBackup->models.Pop(fullPath, value))
+			{
+				m_pModels[ind] = value;
+			}
+		}
+			
+		return;
+	}
 
 	{
 		TextureLoader* textureLoader = loader->GetTextureLoader();
@@ -12542,19 +12864,70 @@ void EffectImplemented::ReloadResources( const EFK_CHAR* materialPath )
 	}
 }
 
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
-void EffectImplemented::UnloadResources()
+void EffectImplemented::UnloadResources(const EFK_CHAR* materialPath)
 {
 	Setting* loader = GetSetting();
-	
-	TextureLoader* textureLoader = loader->GetTextureLoader();
-	if( textureLoader != NULL )
+
+	// reloading on render thread
+	if (isReloadingOnRenderingThread)
 	{
-		for( int32_t ind = 0; ind < m_ImageCount; ind++ )
+		assert(materialPath != nullptr);
+
+		if (reloadingBackup == nullptr)
 		{
-			textureLoader->Unload( m_pImages[ind] );
+			reloadingBackup = std::unique_ptr<EffectReloadingBackup>(new EffectReloadingBackup());
+		}
+
+		const EFK_CHAR* matPath = materialPath != nullptr ? materialPath : m_materialPath.c_str();
+
+		for (int32_t ind = 0; ind < m_ImageCount; ind++)
+		{
+			EFK_CHAR fullPath[512];
+			PathCombine(fullPath, matPath, m_ImagePaths[ind]);
+			reloadingBackup->images.Push(fullPath, m_pImages[ind]);
+		}
+
+		for (int32_t ind = 0; ind < m_normalImageCount; ind++)
+		{
+			EFK_CHAR fullPath[512];
+			PathCombine(fullPath, matPath, m_normalImagePaths[ind]);
+			reloadingBackup->normalImages.Push(fullPath, m_normalImages[ind]);
+		}
+
+		for (int32_t ind = 0; ind < m_distortionImageCount; ind++)
+		{
+			EFK_CHAR fullPath[512];
+			PathCombine(fullPath, matPath, m_distortionImagePaths[ind]);
+			reloadingBackup->distortionImages.Push(fullPath, m_distortionImages[ind]);
+		}
+
+		for (int32_t ind = 0; ind < m_WaveCount; ind++)
+		{
+			EFK_CHAR fullPath[512];
+			PathCombine(fullPath, matPath, m_WavePaths[ind]);
+			reloadingBackup->sounds.Push(fullPath, m_pWaves[ind]);
+		}
+
+		for (int32_t ind = 0; ind < m_modelCount; ind++)
+		{
+			EFK_CHAR fullPath[512];
+			PathCombine(fullPath, matPath, m_modelPaths[ind]);
+			reloadingBackup->models.Push(fullPath, m_pModels[ind]);
+		}
+
+		return;
+	}
+	else
+	{
+		ResetReloadingBackup();
+	}
+
+	TextureLoader* textureLoader = loader->GetTextureLoader();
+	if (textureLoader != NULL)
+	{
+		for (int32_t ind = 0; ind < m_ImageCount; ind++)
+		{
+			textureLoader->Unload(m_pImages[ind]);
 			m_pImages[ind] = NULL;
 		}
 
@@ -12572,28 +12945,33 @@ void EffectImplemented::UnloadResources()
 	}
 
 	SoundLoader* soundLoader = loader->GetSoundLoader();
-	if( soundLoader != NULL )
+	if (soundLoader != NULL)
 	{
-		for( int32_t ind = 0; ind < m_WaveCount; ind++ )
+		for (int32_t ind = 0; ind < m_WaveCount; ind++)
 		{
-			soundLoader->Unload( m_pWaves[ind] );
+			soundLoader->Unload(m_pWaves[ind]);
 			m_pWaves[ind] = NULL;
 		}
 	}
 
 	{
 		ModelLoader* modelLoader = loader->GetModelLoader();
-		if( modelLoader != NULL )
+		if (modelLoader != NULL)
 		{
-			for( int32_t ind = 0; ind < m_modelCount; ind++ )
+			for (int32_t ind = 0; ind < m_modelCount; ind++)
 			{
-				modelLoader->Unload( m_pModels[ind] );
+				modelLoader->Unload(m_pModels[ind]);
 				m_pModels[ind] = NULL;
 			}
 		}
 	}
 }
 
+void EffectImplemented::UnloadResources()
+{
+	UnloadResources(nullptr);
+}
+
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
@@ -12607,6 +12985,7 @@ void EffectImplemented::UnloadResources()
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
+
 
 
 
@@ -12634,6 +13013,45 @@ static int64_t GetTime(void)
 Manager* Manager::Create( int instance_max, bool autoFlip )
 {
 	return new ManagerImplemented( instance_max, autoFlip );
+}
+
+Matrix43* ManagerImplemented::DrawSet::GetEnabledGlobalMatrix()
+{
+	if (IsPreupdated)
+	{
+		InstanceContainer* pContainer = InstanceContainerPointer;
+		if (pContainer == nullptr) return nullptr;
+
+		auto firstGroup = pContainer->GetFirstGroup();
+		if (firstGroup == nullptr) return nullptr;
+
+		Instance* pInstance = pContainer->GetFirstGroup()->GetFirst();
+		if (pInstance == nullptr) return nullptr;
+
+		return &(pInstance->m_GlobalMatrix43);
+	}
+	else
+	{
+		return &(GlobalMatrix);
+	}
+}
+
+
+void ManagerImplemented::DrawSet::CopyMatrixFromInstanceToRoot()
+{
+	if (IsPreupdated)
+	{
+		InstanceContainer* pContainer = InstanceContainerPointer;
+		if (pContainer == nullptr) return;
+
+		auto firstGroup = pContainer->GetFirstGroup();
+		if (firstGroup == nullptr) return;
+
+		Instance* pInstance = pContainer->GetFirstGroup()->GetFirst();
+		if (pInstance == nullptr) return;
+
+		GlobalMatrix = pInstance->m_GlobalMatrix43;
+	}
 }
 
 //----------------------------------------------------------------------------------
@@ -12671,10 +13089,14 @@ void ManagerImplemented::GCDrawSet( bool isRemovingManager )
 		{
 			DrawSet& drawset = (*it).second;
 
-			// 全破棄処理
-			drawset.InstanceContainerPointer->RemoveForcibly( true );
-			drawset.InstanceContainerPointer->~InstanceContainer();
-			InstanceContainer::operator delete( drawset.InstanceContainerPointer, this );
+			// dispose all instances
+			if (drawset.InstanceContainerPointer != nullptr)
+			{
+				drawset.InstanceContainerPointer->RemoveForcibly(true);
+				drawset.InstanceContainerPointer->~InstanceContainer();
+				InstanceContainer::operator delete(drawset.InstanceContainerPointer, this);
+			}
+
 			ES_SAFE_RELEASE( drawset.ParameterPointer );
 			ES_SAFE_DELETE( drawset.GlobalPointer );
 
@@ -12693,7 +13115,6 @@ void ManagerImplemented::GCDrawSet( bool isRemovingManager )
 		std::map<Handle,DrawSet>::iterator it = m_RemovingDrawSets[0].begin();
 		while( it != m_RemovingDrawSets[0].end() )
 		{
-			DrawSet& drawset = (*it).second;
 			m_RemovingDrawSets[1][ (*it).first ] = (*it).second;
 			m_RemovingDrawSets[0].erase( it++ );
 		}
@@ -12784,7 +13205,7 @@ void ManagerImplemented::GCDrawSet( bool isRemovingManager )
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-InstanceContainer* ManagerImplemented::CreateInstanceContainer( EffectNode* pEffectNode, InstanceGlobal* pGlobal, bool isRoot, Instance* pParent )
+InstanceContainer* ManagerImplemented::CreateInstanceContainer( EffectNode* pEffectNode, InstanceGlobal* pGlobal, bool isRoot, const Matrix43& rootMatrix, Instance* pParent )
 {
 	InstanceContainer* pContainer = new(this) InstanceContainer(
 		this,
@@ -12792,9 +13213,9 @@ InstanceContainer* ManagerImplemented::CreateInstanceContainer( EffectNode* pEff
 		pGlobal,
 		pEffectNode->GetChildrenCount() );
 	
-	for( int i = 0; i < pEffectNode->GetChildrenCount(); i++ )
+	for (int i = 0; i < pEffectNode->GetChildrenCount(); i++)
 	{
-		pContainer->SetChild( i, CreateInstanceContainer( pEffectNode->GetChild(i), pGlobal ) );
+		pContainer->SetChild(i, CreateInstanceContainer(pEffectNode->GetChild(i), pGlobal, false, Matrix43(), nullptr));
 	}
 
 	if( isRoot )
@@ -12803,9 +13224,9 @@ InstanceContainer* ManagerImplemented::CreateInstanceContainer( EffectNode* pEff
 
 		InstanceGroup* group = pContainer->CreateGroup();
 		Instance* instance = group->CreateInstance();
-		instance->Initialize( NULL, 0, 0 );
+		instance->Initialize( NULL, 0, 0, rootMatrix);
 
-		/* インスタンスが生成したわけではないためfalseに変更 */
+		// This group is not generated by an instance, so changed a flag
 		group->IsReferencedFromInstance = false;
 	}
 
@@ -12842,30 +13263,40 @@ int EFK_STDCALL ManagerImplemented::Rand()
 //----------------------------------------------------------------------------------
 void ManagerImplemented::ExecuteEvents()
 {	
-	std::map<Handle,DrawSet>::iterator it = m_DrawSets.begin();
-	std::map<Handle,DrawSet>::iterator it_end = m_DrawSets.end();
-
-	while( it != it_end )
+	for (auto& ds : m_DrawSets)
 	{
-		if( (*it).second.GoingToStop )
+		if( ds.second.GoingToStop )
 		{
-			InstanceContainer* pContainer = (*it).second.InstanceContainerPointer;
-			pContainer->KillAllInstances( true );
-			(*it).second.IsRemoving = true;
+			InstanceContainer* pContainer = ds.second.InstanceContainerPointer;
+
+			if (pContainer != nullptr)
+			{
+				pContainer->KillAllInstances(true);
+			}
+
+			ds.second.IsRemoving = true;
 			if (GetSoundPlayer() != NULL)
 			{
-				GetSoundPlayer()->StopTag((*it).second.GlobalPointer);
+				GetSoundPlayer()->StopTag(ds.second.GlobalPointer);
 			}
 		}
 
-		if( (*it).second.GoingToStopRoot )
+		if(ds.second.GoingToStopRoot )
 		{
-			InstanceContainer* pContainer = (*it).second.InstanceContainerPointer;
-			pContainer->KillAllInstances( false );
-		}
+			InstanceContainer* pContainer = ds.second.InstanceContainerPointer;
 
-		++it;
+			if (pContainer != nullptr)
+			{
+				pContainer->KillAllInstances(false);
+			}
+		}
 	}
+}
+
+void ManagerImplemented::ShowErrorAndExit(const char* message)
+{
+	std::cerr << "EffekseerError : " << message << std::endl;
+	abort();
 }
 
 //----------------------------------------------------------------------------------
@@ -13321,6 +13752,9 @@ bool ManagerImplemented::Exists( Handle handle )
 {
 	if( m_DrawSets.count( handle ) > 0 )
 	{
+		// always exists before update
+		if (!m_DrawSets[handle].IsPreupdated) return true;
+
 		if( m_DrawSets[handle].IsRemoving ) return false;
 		return true;
 	}
@@ -13348,20 +13782,12 @@ Matrix43 ManagerImplemented::GetMatrix( Handle handle )
 	{
 		DrawSet& drawSet = m_DrawSets[handle];
 
-		InstanceContainer* pContainer = drawSet.InstanceContainerPointer;
-		
-		InstanceGroup* pGroup = pContainer->GetFirstGroup();
+		auto mat = drawSet.GetEnabledGlobalMatrix();
 
-		if( pGroup != NULL )
+		if (mat != nullptr)
 		{
-			Instance* instance = pGroup->GetFirst();
-			if( instance != NULL )
-			{
-				return instance->m_GlobalMatrix43;
-			}
+			return *mat;
 		}
-
-		return Matrix43();
 	}
 
 	return Matrix43();
@@ -13375,21 +13801,13 @@ void ManagerImplemented::SetMatrix( Handle handle, const Matrix43& mat )
 	if( m_DrawSets.count( handle ) > 0 )
 	{
 		DrawSet& drawSet = m_DrawSets[handle];
+		auto mat_ = drawSet.GetEnabledGlobalMatrix();
 
-		InstanceContainer* pContainer = drawSet.InstanceContainerPointer;
-		
-		InstanceGroup* pGroup = pContainer->GetFirstGroup();
-
-		if( pGroup != NULL )
+		if (mat_ != nullptr)
 		{
-			Instance* instance = pGroup->GetFirst();
-			if( instance != NULL )
-			{
-				instance->m_GlobalMatrix43 = mat;
-
-				drawSet.GlobalMatrix = instance->m_GlobalMatrix43;
-				drawSet.IsParameterChanged = true;
-			}
+			(*mat_) = mat;
+			drawSet.CopyMatrixFromInstanceToRoot();
+			drawSet.IsParameterChanged = true;
 		}
 	}
 }
@@ -13404,14 +13822,14 @@ Vector3D ManagerImplemented::GetLocation( Handle handle )
 	if( m_DrawSets.count( handle ) > 0 )
 	{
 		DrawSet& drawSet = m_DrawSets[handle];
+		auto mat_ = drawSet.GetEnabledGlobalMatrix();
 
-		InstanceContainer* pContainer = drawSet.InstanceContainerPointer;
-		
-		Instance* pInstance = pContainer->GetFirstGroup()->GetFirst();
-
-		location.X = pInstance->m_GlobalMatrix43.Value[3][0];
-		location.Y = pInstance->m_GlobalMatrix43.Value[3][1];
-		location.Z = pInstance->m_GlobalMatrix43.Value[3][2];
+		if (mat_ != nullptr)
+		{
+			location.X = mat_->Value[3][0];
+			location.Y = mat_->Value[3][1];
+			location.Z = mat_->Value[3][2];
+		}
 	}
 
 	return location;
@@ -13425,17 +13843,17 @@ void ManagerImplemented::SetLocation( Handle handle, float x, float y, float z )
 	if( m_DrawSets.count( handle ) > 0 )
 	{
 		DrawSet& drawSet = m_DrawSets[handle];
+		auto mat_ = drawSet.GetEnabledGlobalMatrix();
 
-		InstanceContainer* pContainer = drawSet.InstanceContainerPointer;
-		
-		Instance* pInstance = pContainer->GetFirstGroup()->GetFirst();
+		if (mat_ != nullptr)
+		{
+			mat_->Value[3][0] = x;
+			mat_->Value[3][1] = y;
+			mat_->Value[3][2] = z;
 
-		pInstance->m_GlobalMatrix43.Value[3][0] = x;
-		pInstance->m_GlobalMatrix43.Value[3][1] = y;
-		pInstance->m_GlobalMatrix43.Value[3][2] = z;
-
-		drawSet.GlobalMatrix = pInstance->m_GlobalMatrix43;
-		drawSet.IsParameterChanged = true;
+			drawSet.CopyMatrixFromInstanceToRoot();
+			drawSet.IsParameterChanged = true;
+		}
 	}
 }
 
@@ -13455,17 +13873,16 @@ void ManagerImplemented::AddLocation( Handle handle, const Vector3D& location )
 	if( m_DrawSets.count( handle ) > 0 )
 	{
 		DrawSet& drawSet = m_DrawSets[handle];
+		auto mat_ = drawSet.GetEnabledGlobalMatrix();
 
-		InstanceContainer* pContainer = drawSet.InstanceContainerPointer;
-		
-		Instance* pInstance = pContainer->GetFirstGroup()->GetFirst();
-
-		pInstance->m_GlobalMatrix43.Value[3][0] += location.X;
-		pInstance->m_GlobalMatrix43.Value[3][1] += location.Y;
-		pInstance->m_GlobalMatrix43.Value[3][2] += location.Z;
-
-		drawSet.GlobalMatrix = pInstance->m_GlobalMatrix43;
-		drawSet.IsParameterChanged = true;
+		if (mat_ != nullptr)
+		{
+			mat_->Value[3][0] += location.X;
+			mat_->Value[3][1] += location.Y;
+			mat_->Value[3][2] += location.Z;
+			drawSet.CopyMatrixFromInstanceToRoot();
+			drawSet.IsParameterChanged = true;
+		}
 	}
 }
 
@@ -13478,34 +13895,31 @@ void ManagerImplemented::SetRotation( Handle handle, float x, float y, float z )
 	{
 		DrawSet& drawSet = m_DrawSets[handle];
 
-		InstanceContainer* pContainer = drawSet.InstanceContainerPointer;
+		auto mat_ = drawSet.GetEnabledGlobalMatrix();
 
-		if( pContainer == NULL ) return;
-		if( pContainer->GetFirstGroup() == NULL ) return;
-		if( pContainer->GetFirstGroup()->GetFirst() == NULL ) return;
+		if (mat_ != nullptr)
+		{
+			Matrix43 MatRotX, MatRotY, MatRotZ;
 
-		Instance* pInstance = pContainer->GetFirstGroup()->GetFirst();
-		
-		Matrix43 MatRotX,MatRotY,MatRotZ;
+			MatRotX.RotationX(x);
+			MatRotY.RotationY(y);
+			MatRotZ.RotationZ(z);
 
-		MatRotX.RotationX( x );
-		MatRotY.RotationY( y );
-		MatRotZ.RotationZ( z );
-		
-		Matrix43 r;
-		Vector3D s, t;
+			Matrix43 r;
+			Vector3D s, t;
 
-		pInstance->m_GlobalMatrix43.GetSRT( s, r, t );
+			mat_->GetSRT(s, r, t);
 
-		r.Indentity();
-		Matrix43::Multiple( r, r, MatRotZ );
-		Matrix43::Multiple( r, r, MatRotX );
-		Matrix43::Multiple( r, r, MatRotY );
+			r.Indentity();
+			Matrix43::Multiple(r, r, MatRotZ);
+			Matrix43::Multiple(r, r, MatRotX);
+			Matrix43::Multiple(r, r, MatRotY);
 
-		pInstance->m_GlobalMatrix43.SetSRT( s, r, t );
-		
-		drawSet.GlobalMatrix = pInstance->m_GlobalMatrix43;
-		drawSet.IsParameterChanged = true;
+			mat_->SetSRT(s, r, t);
+
+			drawSet.CopyMatrixFromInstanceToRoot();
+			drawSet.IsParameterChanged = true;
+		}		
 	}
 }
 
@@ -13518,25 +13932,22 @@ void ManagerImplemented::SetRotation( Handle handle, const Vector3D& axis, float
 	{
 		DrawSet& drawSet = m_DrawSets[handle];
 
-		InstanceContainer* pContainer = drawSet.InstanceContainerPointer;
-		
-		if( pContainer == NULL ) return;
-		if( pContainer->GetFirstGroup() == NULL ) return;
-		if( pContainer->GetFirstGroup()->GetFirst() == NULL ) return;
+		auto mat_ = drawSet.GetEnabledGlobalMatrix();
 
-		Instance* pInstance = pContainer->GetFirstGroup()->GetFirst();
+		if (mat_ != nullptr)
+		{
+			Matrix43 r;
+			Vector3D s, t;
 
-		Matrix43 r;
-		Vector3D s, t;
+			mat_->GetSRT(s, r, t);
 
-		pInstance->m_GlobalMatrix43.GetSRT( s, r, t );
+			r.RotationAxis(axis, angle);
 
-		r.RotationAxis( axis, angle );
+			mat_->SetSRT(s, r, t);
 
-		pInstance->m_GlobalMatrix43.SetSRT( s, r, t );
-		
-		drawSet.GlobalMatrix = pInstance->m_GlobalMatrix43;
-		drawSet.IsParameterChanged = true;
+			drawSet.CopyMatrixFromInstanceToRoot();
+			drawSet.IsParameterChanged = true;
+		}
 	}
 }
 
@@ -13549,27 +13960,24 @@ void ManagerImplemented::SetScale( Handle handle, float x, float y, float z )
 	{
 		DrawSet& drawSet = m_DrawSets[handle];
 
-		InstanceContainer* pContainer = drawSet.InstanceContainerPointer;
-		
-		if( pContainer == NULL ) return;
-		if( pContainer->GetFirstGroup() == NULL ) return;
-		if( pContainer->GetFirstGroup()->GetFirst() == NULL ) return;
+		auto mat_ = drawSet.GetEnabledGlobalMatrix();
 
-		Instance* pInstance = pContainer->GetFirstGroup()->GetFirst();
+		if (mat_ != nullptr)
+		{
+			Matrix43 r;
+			Vector3D s, t;
 
-		Matrix43 r;
-		Vector3D s, t;
+			mat_->GetSRT(s, r, t);
 
-		pInstance->m_GlobalMatrix43.GetSRT( s, r, t );
+			s.X = x;
+			s.Y = y;
+			s.Z = z;
 
-		s.X = x;
-		s.Y = y;
-		s.Z = z;
+			mat_->SetSRT(s, r, t);
 
-		pInstance->m_GlobalMatrix43.SetSRT( s, r, t );
-
-		drawSet.GlobalMatrix = pInstance->m_GlobalMatrix43;
-		drawSet.IsParameterChanged = true;
+			drawSet.CopyMatrixFromInstanceToRoot();
+			drawSet.IsParameterChanged = true;
+		}
 	}
 }
 
@@ -13601,11 +14009,7 @@ void ManagerImplemented::SetTargetLocation( Handle handle, const Vector3D& locat
 	{
 		DrawSet& drawSet = m_DrawSets[handle];
 
-		InstanceContainer* pContainer = drawSet.InstanceContainerPointer;
-		
-		if( pContainer == NULL ) return;
-		
-		InstanceGlobal* instanceGlobal = pContainer->GetRootInstance();
+		InstanceGlobal* instanceGlobal = drawSet.GlobalPointer;
 		instanceGlobal->SetTargetLocation( location );
 
 		drawSet.IsParameterChanged = true;
@@ -13733,7 +14137,18 @@ void ManagerImplemented::Flip()
 {
 	if( !m_autoFlip )
 	{
+		if (m_isLockedWithRenderingMutex)
+		{
+			ShowErrorAndExit("Rendering thread is locked.");
+		}
+
 		m_renderingMutex.lock();
+	}
+
+	// execute preupdate
+	for (auto& drawSet : m_DrawSets)
+	{
+		Preupdate(drawSet.second);
 	}
 
 	ExecuteEvents();
@@ -13879,17 +14294,15 @@ void ManagerImplemented::Update( float deltaFrame )
 {
 	BeginUpdate();
 
-	// 開始時間を記録
+	// start to measure time
 	int64_t beginTime = ::Effekseer::GetTime();
 
-	for( size_t i = 0; i < m_renderingDrawSets.size(); i++ )
+	for (auto& drawSet : m_DrawSets)
 	{
-		DrawSet& drawSet = m_renderingDrawSets[i];
-		
-		UpdateHandle( drawSet, deltaFrame );
+		UpdateHandle(drawSet.second, deltaFrame);
 	}
 
-	// 経過時間を計算
+	// end to measure time
 	m_updateTime = (int)(Effekseer::GetTime() - beginTime);
 
 	EndUpdate();
@@ -13900,7 +14313,13 @@ void ManagerImplemented::Update( float deltaFrame )
 //----------------------------------------------------------------------------------
 void ManagerImplemented::BeginUpdate()
 {
+	if (m_isLockedWithRenderingMutex)
+	{
+		ShowErrorAndExit("Rendering thread is locked.");
+	}
+
 	m_renderingMutex.lock();
+	m_isLockedWithRenderingMutex = true;
 
 	if( m_autoFlip )
 	{
@@ -13916,6 +14335,7 @@ void ManagerImplemented::BeginUpdate()
 void ManagerImplemented::EndUpdate()
 {
 	m_renderingMutex.unlock();
+	m_isLockedWithRenderingMutex = false;
 }
 
 //----------------------------------------------------------------------------------
@@ -13937,6 +14357,11 @@ void ManagerImplemented::UpdateHandle( Handle handle, float deltaFrame )
 //----------------------------------------------------------------------------------
 void ManagerImplemented::UpdateHandle( DrawSet& drawSet, float deltaFrame )
 {
+	if (!drawSet.IsPreupdated)
+	{
+		Preupdate(drawSet);
+	}
+
 	float df = drawSet.IsPaused ? 0 : deltaFrame * drawSet.Speed;
 
 	drawSet.InstanceContainerPointer->Update( true, df, drawSet.IsShown );
@@ -13949,12 +14374,34 @@ void ManagerImplemented::UpdateHandle( DrawSet& drawSet, float deltaFrame )
 	drawSet.GlobalPointer->AddUpdatedFrame( df );
 }
 
+
+void ManagerImplemented::Preupdate(DrawSet& drawSet)
+{
+	if (drawSet.IsPreupdated) return;
+
+	// Create an instance through a container
+	InstanceContainer* pContainer = CreateInstanceContainer(drawSet.ParameterPointer->GetRoot(), drawSet.GlobalPointer, true, drawSet.GlobalMatrix, NULL);
+
+	drawSet.InstanceContainerPointer = pContainer;
+
+	for (int32_t frame = 0; frame < drawSet.StartFrame; frame++)
+	{
+		UpdateHandle(drawSet, 1);
+	}
+
+	drawSet.IsPreupdated = true;
+}
+
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
 void ManagerImplemented::Draw()
 {
-	m_renderingMutex.lock();
+	if (m_isLockedWithRenderingMutex)
+	{
+		ShowErrorAndExit("Rendering thread is locked.");
+	}
+	std::lock_guard<std::mutex> lock(m_renderingMutex);
 
 	// 開始時間を記録
 	int64_t beginTime = ::Effekseer::GetTime();
@@ -14006,12 +14453,14 @@ void ManagerImplemented::Draw()
 
 	// 経過時間を計算
 	m_drawTime = (int)(Effekseer::GetTime() - beginTime);
-
-	m_renderingMutex.unlock();
 }
 
 void ManagerImplemented::DrawBack()
 {
+	if (m_isLockedWithRenderingMutex)
+	{
+		ShowErrorAndExit("Rendering thread is locked.");
+	}
 	std::lock_guard<std::mutex> lock(m_renderingMutex);
 	
 	// 開始時間を記録
@@ -14056,6 +14505,10 @@ void ManagerImplemented::DrawBack()
 
 void ManagerImplemented::DrawFront()
 {
+	if (m_isLockedWithRenderingMutex)
+	{
+		ShowErrorAndExit("Rendering thread is locked.");
+	}
 	std::lock_guard<std::mutex> lock(m_renderingMutex);
 
 	// 開始時間を記録
@@ -14072,7 +14525,7 @@ void ManagerImplemented::DrawFront()
 				if (drawSet.GlobalPointer->RenderedInstanceContainers.size() > 0)
 				{
 					auto e = (EffectImplemented*)drawSet.ParameterPointer;
-					for (int32_t j = e->renderingNodesThreshold; j < drawSet.GlobalPointer->RenderedInstanceContainers.size(); j++)
+					for (size_t j = e->renderingNodesThreshold; j < drawSet.GlobalPointer->RenderedInstanceContainers.size(); j++)
 					{
 						drawSet.GlobalPointer->RenderedInstanceContainers[j]->Draw(false);
 					}
@@ -14095,7 +14548,7 @@ void ManagerImplemented::DrawFront()
 				if (drawSet.GlobalPointer->RenderedInstanceContainers.size() > 0)
 				{
 					auto e = (EffectImplemented*)drawSet.ParameterPointer;
-					for (int32_t j = e->renderingNodesThreshold; j < drawSet.GlobalPointer->RenderedInstanceContainers.size(); j++)
+					for (size_t j = e->renderingNodesThreshold; j < drawSet.GlobalPointer->RenderedInstanceContainers.size(); j++)
 					{
 						drawSet.GlobalPointer->RenderedInstanceContainers[j]->Draw(false);
 					}
@@ -14112,14 +14565,16 @@ void ManagerImplemented::DrawFront()
 	m_drawTime = (int)(Effekseer::GetTime() - beginTime);
 }
 
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
 Handle ManagerImplemented::Play( Effect* effect, float x, float y, float z )
 {
-	if( effect == NULL ) return -1;
-	
-	auto e = (EffectImplemented*) effect;
+	return Play(effect, Vector3D(x, y, z), 0);
+}
+
+Handle ManagerImplemented::Play(Effect* effect, const Vector3D& position, int32_t startFrame)
+{
+	if (effect == nullptr) return -1;
+
+	auto e = (EffectImplemented*)effect;
 
 	// Create root
 	InstanceGlobal* pGlobal = new InstanceGlobal();
@@ -14134,33 +14589,34 @@ Handle ManagerImplemented::Play( Effect* effect, float x, float y, float z )
 	}
 
 	pGlobal->RenderedInstanceContainers.resize(e->renderingNodesCount);
-	for (auto i = 0; i < pGlobal->RenderedInstanceContainers.size(); i++)
+	for (size_t i = 0; i < pGlobal->RenderedInstanceContainers.size(); i++)
 	{
 		pGlobal->RenderedInstanceContainers[i] = nullptr;
 	}
 
-	// Create an instance through a container
-	InstanceContainer* pContainer = CreateInstanceContainer( ((EffectImplemented*)effect)->GetRoot(), pGlobal, true, NULL );
-	
-	Instance* pInstance = pContainer->GetFirstGroup()->GetFirst();
+	// create a dateSet without an instance
+	// an instance is created in Preupdate because effects need to show instances without update(0 frame)
+	Handle handle = AddDrawSet(effect, nullptr, pGlobal);
 
-	pInstance->m_GlobalMatrix43.Value[3][0] = x;
-	pInstance->m_GlobalMatrix43.Value[3][1] = y;
-	pInstance->m_GlobalMatrix43.Value[3][2] = z;
+	auto& drawSet = m_DrawSets[handle];
 
-	Handle handle = AddDrawSet( effect, pContainer, pGlobal );
+	drawSet.GlobalMatrix.Indentity();
+	drawSet.GlobalMatrix.Value[3][0] = position.X;
+	drawSet.GlobalMatrix.Value[3][1] = position.Y;
+	drawSet.GlobalMatrix.Value[3][2] = position.Z;
 
-	m_DrawSets[handle].GlobalMatrix = pInstance->m_GlobalMatrix43;
-	m_DrawSets[handle].IsParameterChanged = true;
+	drawSet.IsParameterChanged = true;
+	drawSet.StartFrame = startFrame;
 
 	return handle;
 }
 
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
 void ManagerImplemented::DrawHandle( Handle handle )
 {
+	if (m_isLockedWithRenderingMutex)
+	{
+		ShowErrorAndExit("Rendering thread is locked.");
+	}
 	std::lock_guard<std::mutex> lock(m_renderingMutex);
 
 	std::map<Handle,DrawSet>::iterator it = m_renderingDrawSetMaps.find( handle );
@@ -14210,6 +14666,10 @@ void ManagerImplemented::DrawHandle( Handle handle )
 
 void ManagerImplemented::DrawHandleBack(Handle handle)
 {
+	if (m_isLockedWithRenderingMutex)
+	{
+		ShowErrorAndExit("Rendering thread is locked.");
+	}
 	std::lock_guard<std::mutex> lock(m_renderingMutex);
 
 	std::map<Handle, DrawSet>::iterator it = m_renderingDrawSetMaps.find(handle);
@@ -14247,6 +14707,10 @@ void ManagerImplemented::DrawHandleBack(Handle handle)
 
 void ManagerImplemented::DrawHandleFront(Handle handle)
 {
+	if (m_isLockedWithRenderingMutex)
+	{
+		ShowErrorAndExit("Rendering thread is locked.");
+	}
 	std::lock_guard<std::mutex> lock(m_renderingMutex);
 
 	std::map<Handle, DrawSet>::iterator it = m_renderingDrawSetMaps.find(handle);
@@ -14263,7 +14727,7 @@ void ManagerImplemented::DrawHandleFront(Handle handle)
 					if (drawSet.GlobalPointer->RenderedInstanceContainers.size() > 0)
 					{
 						auto e = (EffectImplemented*)drawSet.ParameterPointer;
-						for (int32_t i = e->renderingNodesThreshold; i < drawSet.GlobalPointer->RenderedInstanceContainers.size(); i++)
+						for (size_t i = e->renderingNodesThreshold; i < drawSet.GlobalPointer->RenderedInstanceContainers.size(); i++)
 						{
 							drawSet.GlobalPointer->RenderedInstanceContainers[i]->Draw(false);
 						}
@@ -14282,7 +14746,7 @@ void ManagerImplemented::DrawHandleFront(Handle handle)
 				if (drawSet.GlobalPointer->RenderedInstanceContainers.size() > 0)
 				{
 					auto e = (EffectImplemented*)drawSet.ParameterPointer;
-					for (int32_t i = e->renderingNodesThreshold; i < drawSet.GlobalPointer->RenderedInstanceContainers.size(); i++)
+					for (size_t i = e->renderingNodesThreshold; i < drawSet.GlobalPointer->RenderedInstanceContainers.size(); i++)
 					{
 						drawSet.GlobalPointer->RenderedInstanceContainers[i]->Draw(false);
 					}
@@ -14301,7 +14765,12 @@ void ManagerImplemented::DrawHandleFront(Handle handle)
 //----------------------------------------------------------------------------------
 void ManagerImplemented::BeginReloadEffect( Effect* effect )
 {
+	if (m_isLockedWithRenderingMutex)
+	{
+		ShowErrorAndExit("Rendering thread is locked.");
+	}
 	m_renderingMutex.lock();
+	m_isLockedWithRenderingMutex = true;
 
 	std::map<Handle,DrawSet>::iterator it = m_DrawSets.begin();
 	std::map<Handle,DrawSet>::iterator it_end = m_DrawSets.end();
@@ -14330,14 +14799,29 @@ void ManagerImplemented::EndReloadEffect( Effect* effect )
 	{
 		if( (*it).second.ParameterPointer != effect ) continue;
 
+		auto e = (EffectImplemented*)effect;
+		auto pGlobal = (*it).second.GlobalPointer;
+
+		// reallocate
+		if (e->m_defaultRandomSeed >= 0)
+		{
+			pGlobal->SetSeed(e->m_defaultRandomSeed);
+		}
+		else
+		{
+			pGlobal->SetSeed(GetRandFunc()());
+		}
+
+		pGlobal->RenderedInstanceContainers.resize(e->renderingNodesCount);
+		for (size_t i = 0; i < pGlobal->RenderedInstanceContainers.size(); i++)
+		{
+			pGlobal->RenderedInstanceContainers[i] = nullptr;
+		}
+
 		// Create an instance through a container
-		(*it).second.InstanceContainerPointer = CreateInstanceContainer( ((EffectImplemented*)effect)->GetRoot(), (*it).second.GlobalPointer, true, NULL );
+		(*it).second.InstanceContainerPointer = CreateInstanceContainer( ((EffectImplemented*)effect)->GetRoot(), (*it).second.GlobalPointer, true, (*it).second.GlobalMatrix, NULL );
 		
-		/* 行列設定 */
-		(*it).second.InstanceContainerPointer->GetFirstGroup()->GetFirst()->m_GlobalMatrix43 = 
-			(*it).second.GlobalMatrix;
-		
-		/* スキップ */
+		// skip
 		for( float f = 0; f < (*it).second.GlobalPointer->GetUpdatedFrame() - 1; f+= 1.0f )
 		{
 			(*it).second.InstanceContainerPointer->Update( true, 1.0f, false );
@@ -14347,6 +14831,7 @@ void ManagerImplemented::EndReloadEffect( Effect* effect )
 	}
 
 	m_renderingMutex.unlock();
+	m_isLockedWithRenderingMutex = false;
 }
 
 //----------------------------------------------------------------------------------
@@ -14443,7 +14928,7 @@ namespace Effekseer
 //----------------------------------------------------------------------------------
 void* InstanceContainer::operator new(size_t size, Manager* pManager)
 {
-	return pManager->GetMallocFunc()(size);
+	return pManager->GetMallocFunc()((uint32_t)size);
 }
 
 //----------------------------------------------------------------------------------
@@ -14789,6 +15274,7 @@ InstanceGlobal* InstanceContainer::GetRootInstance()
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
+
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
@@ -14874,7 +15360,6 @@ void Instance::GenerateChildrenInRequired(float currentTime)
 	for (int32_t i = 0; i < parameter->GetChildrenCount(); i++, group = group->NextUsedByInstance)
 	{
 		auto node = (EffectNodeImplemented*)parameter->GetChild(i);
-		auto container = m_pContainer->GetChild(i);
 		assert(group != NULL);
 
 		while (true)
@@ -14888,7 +15373,10 @@ void Instance::GenerateChildrenInRequired(float currentTime)
 				auto newInstance = group->CreateInstance();
 				if (newInstance != nullptr)
 				{
-					newInstance->Initialize(this, m_generatedChildrenCount[i], std::max(0.0f, this->m_LivingTime));
+					Matrix43 rootMatrix;
+					rootMatrix.Indentity();
+
+					newInstance->Initialize(this, m_generatedChildrenCount[i], (int32_t)std::max(0.0f, this->m_LivingTime), rootMatrix);
 				}
 
 				m_generatedChildrenCount[i]++;
@@ -14921,7 +15409,7 @@ const Matrix43& Instance::GetGlobalMatrix43() const
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void Instance::Initialize( Instance* parent, int32_t instanceNumber, int32_t parentTime)
+void Instance::Initialize( Instance* parent, int32_t instanceNumber, int32_t parentTime, const Matrix43& globalMatrix)
 {
 	assert(this->m_pContainer != nullptr);
 	
@@ -14968,7 +15456,7 @@ void Instance::Initialize( Instance* parent, int32_t instanceNumber, int32_t par
 
 		// SRTの初期化
 		m_GenerationLocation.Indentity();
-		m_GlobalMatrix43.Indentity();
+		m_GlobalMatrix43 = globalMatrix;
 		m_ParentMatrix43.Indentity();
 
 		// 親の初期化
@@ -14995,7 +15483,7 @@ void Instance::Initialize( Instance* parent, int32_t instanceNumber, int32_t par
 	m_GlobalRevisionLocation = Vector3D(0.0f, 0.0f, 0.0f);
 	m_GlobalRevisionVelocity = Vector3D(0.0f, 0.0f, 0.0f);
 	m_GenerationLocation.Indentity();
-	m_GlobalMatrix43.Indentity();
+	m_GlobalMatrix43 = globalMatrix;
 	m_ParentMatrix43.Indentity();
 
 	// 親の初期化
@@ -15401,13 +15889,13 @@ void Instance::Initialize( Instance* parent, int32_t instanceNumber, int32_t par
 
 	if( m_pEffectNode->SoundType == ParameterSoundType_Use )
 	{
-		soundValues.delay = m_pEffectNode->Sound.Delay.getValue( *instanceGlobal );
+		soundValues.delay = (int32_t)m_pEffectNode->Sound.Delay.getValue( *instanceGlobal );
 	}
 
 	// UV
 	if (m_pEffectNode->RendererCommon.UVType == ParameterRendererCommon::UV_ANIMATION)
 	{
-		uvTimeOffset = m_pEffectNode->RendererCommon.UV.Animation.StartFrame.getValue(*instanceGlobal);
+		uvTimeOffset = (int32_t)m_pEffectNode->RendererCommon.UV.Animation.StartFrame.getValue(*instanceGlobal);
 		uvTimeOffset *= m_pEffectNode->RendererCommon.UV.Animation.FrameLength;
 	}
 	
@@ -15448,8 +15936,6 @@ void Instance::Update( float deltaFrame, bool shown )
 	// Invalidate matrix
 	m_GlobalMatrix43Calculated = false;
 	m_ParentMatrix43Calculated = false;
-
-	auto instanceGlobal = this->m_pContainer->GetRootInstance();
 
 	if (m_stepTime && m_pEffectNode->GetType() != EFFECT_NODE_TYPE_ROOT)
 	{
@@ -16125,7 +16611,7 @@ RectF Instance::GetUV() const
 	}
 	else if( m_pEffectNode->RendererCommon.UVType == ParameterRendererCommon::UV_SCROLL )
 	{
-		auto time = m_LivingTime + uvTimeOffset;
+		auto time = (int32_t)m_LivingTime + uvTimeOffset;
 
 		return RectF(
 			uvAreaOffset.X + uvScrollSpeed.X * time,
@@ -16135,7 +16621,7 @@ RectF Instance::GetUV() const
 	}
 	else if (m_pEffectNode->RendererCommon.UVType == ParameterRendererCommon::UV_FCURVE)
 	{
-		auto time = m_LivingTime + uvTimeOffset;
+		auto time = (int32_t)m_LivingTime + uvTimeOffset;
 
 		return RectF(
 			uvAreaOffset.X + m_pEffectNode->RendererCommon.UV.FCurve.Position->X.GetValue(time),
@@ -16156,6 +16642,7 @@ RectF Instance::GetUV() const
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
+
 
 //----------------------------------------------------------------------------------
 //
@@ -16638,14 +17125,18 @@ void Setting::SetSoundLoader(SoundLoader* loader)
 #ifndef	__EFFEKSEER_SOCKET_H__
 #define	__EFFEKSEER_SOCKET_H__
 
-#if !( defined(_PSVITA) || defined(_PS4) || defined(_SWITCH) || defined(_XBOXONE) )
+#if !( defined(_PSVITA) || defined(_XBOXONE) )
 
 //----------------------------------------------------------------------------------
 // Include
 //----------------------------------------------------------------------------------
 
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(_PS4) 
 #else
+
+#if !defined(_PS4) 
+#endif
+
 #endif
 
 //----------------------------------------------------------------------------------
@@ -16656,7 +17147,7 @@ namespace Effekseer {
 //
 //----------------------------------------------------------------------------------
 
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(_PS4) 
 
 typedef SOCKET	EfkSocket;
 typedef int		SOCKLEN;
@@ -16679,7 +17170,7 @@ typedef struct sockaddr SOCKADDR;
 
 #endif
 
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(_PS4) 
 static void Sleep_(int32_t ms)
 {
 	Sleep(ms);
@@ -16716,16 +17207,16 @@ public:
 //
 //----------------------------------------------------------------------------------
 
-#endif	// #if !( defined(_PSVITA) || defined(_PS4) || defined(_SWITCH) || defined(_XBOXONE) )
+#endif	// #if !( defined(_PSVITA) || defined(_XBOXONE) )
 
 #endif	// __EFFEKSEER_SOCKET_H__
 
-#if !( defined(_PSVITA) || defined(_PS4) || defined(_SWITCH) || defined(_XBOXONE) )
+#if !( defined(_PSVITA) || defined(_XBOXONE) )
 
 //----------------------------------------------------------------------------------
 // Include
 //----------------------------------------------------------------------------------
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(_PS4) 
 #pragma comment( lib, "ws2_32.lib" )
 #else
 #endif
@@ -16740,8 +17231,8 @@ namespace Effekseer {
 //----------------------------------------------------------------------------------
 void Socket::Initialize()
 {
-#ifdef _WIN32
-	/* Winsock初期化 */
+#if defined(_WIN32) && !defined(_PS4) 
+	// Initialize  Winsock
 	WSADATA m_WsaData;
 	::WSAStartup( MAKEWORD(2,0), &m_WsaData );
 #endif
@@ -16752,8 +17243,8 @@ void Socket::Initialize()
 //----------------------------------------------------------------------------------
 void Socket::Finalize()
 {
-#ifdef _WIN32
-	/* Winsock参照カウンタ減少+破棄 */
+#if defined(_WIN32) && !defined(_PS4) 
+	// Dispose winsock or decrease a counter
 	WSACleanup();
 #endif
 }
@@ -16771,7 +17262,7 @@ EfkSocket Socket::GenSocket()
 //----------------------------------------------------------------------------------
 void Socket::Close( EfkSocket s )
 {
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(_PS4) 
 	::closesocket( s );
 #else
 	::close( s );
@@ -16783,7 +17274,7 @@ void Socket::Close( EfkSocket s )
 //----------------------------------------------------------------------------------
 void Socket::Shutsown( EfkSocket s )
 {
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(_PS4) 
 	::shutdown( s, SD_BOTH );
 #else
 	::shutdown( s, SHUT_RDWR );
@@ -16795,7 +17286,7 @@ void Socket::Shutsown( EfkSocket s )
 //----------------------------------------------------------------------------------
 bool Socket::Listen( EfkSocket s, int32_t backlog )
 {
-#ifdef _WIN32
+#if defined(_WIN32) && !defined(_PS4) 
 	return ::listen( s, backlog ) != SocketError;
 #else
 	return listen( s, backlog ) >= 0;
@@ -16810,13 +17301,13 @@ bool Socket::Listen( EfkSocket s, int32_t backlog )
 //
 //----------------------------------------------------------------------------------
 
-#endif	// #if !( defined(_PSVITA) || defined(_PS4) || defined(_SWITCH) || defined(_XBOXONE) )
+#endif	// #if !( defined(_PSVITA) || defined(_XBOXONE) )
 
 
 #ifndef	__EFFEKSEER_SERVER_IMPLEMENTED_H__
 #define	__EFFEKSEER_SERVER_IMPLEMENTED_H__
 
-#if !( defined(_PSVITA) || defined(_PS4) || defined(_SWITCH) || defined(_XBOXONE) )
+#if !( defined(_PSVITA) || defined(_SWITCH) || defined(_XBOXONE) )
 
 //----------------------------------------------------------------------------------
 // Include
@@ -16883,22 +17374,22 @@ public:
 	ServerImplemented();
 	virtual ~ServerImplemented();
 
-	/**
-	@brief
-	\~Japanese	サーバーを開始する。
-	\~English	Start a server
-	*/
-	bool Start( uint16_t port );
+	bool Start( uint16_t port ) override;
 
-	void Stop();
+	void Stop() override;
 
-	void Regist( const EFK_CHAR* key, Effect* effect );
+	void Register(const EFK_CHAR* key, Effect* effect) override;
 
-	void Unregist( Effect* effect );
+	void Unregister(Effect* effect) override;
 
-	void Update();
+	void Update(Manager** managers, int32_t managerCount, ReloadingThreadType reloadingThreadType) override;
 
-	void SetMaterialPath( const EFK_CHAR* materialPath );
+	void SetMaterialPath( const EFK_CHAR* materialPath ) override;
+
+	void Regist(const EFK_CHAR* key, Effect* effect) override;
+
+	void Unregist(Effect* effect) override;
+
 };
 
 //----------------------------------------------------------------------------------
@@ -16909,20 +17400,20 @@ public:
 //
 //----------------------------------------------------------------------------------
 
-#endif	// #if !( defined(_PSVITA) || defined(_PS4) || defined(_SWITCH) || defined(_XBOXONE) )
+#endif	// #if !( defined(_PSVITA) || defined(_SWITCH) || defined(_XBOXONE) )
 
 #endif	// __EFFEKSEER_SERVER_IMPLEMENTED_H__
 
-#if !( defined(_PSVITA) || defined(_PS4) || defined(_SWITCH) || defined(_XBOXONE) )
+#if !( defined(_PSVITA) || defined(_XBOXONE) )
 
 //----------------------------------------------------------------------------------
 // Include
 //----------------------------------------------------------------------------------
 
-#ifdef _WIN32
+
+#if defined(_WIN32) && !defined(_PS4) 
 #else
 #endif
-
 
 //----------------------------------------------------------------------------------
 //
@@ -16945,12 +17436,12 @@ void ServerImplemented::InternalClient::RecvAsync( void* data )
 		restSize = 4;
 		while(restSize > 0)
 		{
-			int32_t recvSize = ::recv( client->m_socket, (char*)(&size), restSize, 0 );
+			auto recvSize = ::recv( client->m_socket, (char*)(&size), restSize, 0 );
 			restSize -= recvSize;
 
 			if( recvSize == 0 || recvSize == -1 )
 			{
-				/* 失敗 */
+				// Failed
 				client->m_server->RemoveClient( client );
 				client->ShutDown();
 				return;
@@ -16962,12 +17453,12 @@ void ServerImplemented::InternalClient::RecvAsync( void* data )
 		{
 			uint8_t buf[256];
 
-			int32_t recvSize = ::recv( client->m_socket, (char*)(buf), Min(restSize,256), 0 );
+			auto recvSize = ::recv( client->m_socket, (char*)(buf), Min(restSize,256), 0 );
 			restSize -= recvSize;
 
 			if( recvSize == 0 || recvSize == -1 )
 			{
-				/* 失敗 */
+				// Failed
 				client->m_server->RemoveClient( client );
 				client->ShutDown();
 				return;
@@ -16979,7 +17470,7 @@ void ServerImplemented::InternalClient::RecvAsync( void* data )
 			}
 		}
 
-		/* 受信処理 */
+		// recieve buffer
 		client->m_ctrlRecvBuffers.lock();
 		client->m_recvBuffers.push_back(client->m_recvBuffer);
 		client->m_ctrlRecvBuffers.unlock();
@@ -17094,7 +17585,7 @@ void ServerImplemented::AcceptAsync( void* data )
 			break;
 		}
 
-		/* 接続追加 */
+		// Accept and add an internal client
 		server->AddClient( new InternalClient( socket_, server ) );
 
 		EffekseerPrintDebug("Server : AcceptClient\n");
@@ -17122,12 +17613,10 @@ bool ServerImplemented::Start( uint16_t port )
 		return false;
 	}
 
-	/* 接続用データ生成 */
 	memset( &sockAddr, 0, sizeof(SOCKADDR_IN));
 	sockAddr.sin_family	= AF_INET;
 	sockAddr.sin_port	= htons( port );
 
-	/* 関連付け */
 	returnCode = ::bind( socket_, (sockaddr*)&sockAddr, sizeof(sockaddr_in) );
 	if ( returnCode == SocketError )
 	{
@@ -17138,7 +17627,7 @@ bool ServerImplemented::Start( uint16_t port )
 		return false;
 	}
 
-	/* 接続 */
+	// Connect
 	if ( !Socket::Listen( socket_, 30 ) )
 	{
 		if ( socket_ != InvalidSocket )
@@ -17178,7 +17667,7 @@ void ServerImplemented::Stop()
 
 	m_thread.join();
 
-	/* クライアント停止 */
+	// Stop clients
 	m_ctrlClients.lock();
 	for( std::set<InternalClient*>::iterator it = m_clients.begin(); it != m_clients.end(); ++it )
 	{
@@ -17187,24 +17676,24 @@ void ServerImplemented::Stop()
 	m_ctrlClients.unlock();
 	
 
-	/* クライアントの消滅待ち */
+	// Wait clients to be removed
 	while(true)
 	{
 		m_ctrlClients.lock();
-		int32_t size = m_clients.size();
+		int32_t size = (int32_t)m_clients.size();
 		m_ctrlClients.unlock();
 	
 		if( size == 0 ) break;
 
-		Sleep_(1);
+		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	}
 
-	/* 破棄 */
+	// Delete clients
 	for( std::set<InternalClient*>::iterator it = m_removedClients.begin(); it != m_removedClients.end(); ++it )
 	{
 		while( (*it)->m_active )
 		{
-			Sleep_(1);
+			std::this_thread::sleep_for(std::chrono::milliseconds(1));
 		}
 		delete (*it);
 	}
@@ -17213,7 +17702,7 @@ void ServerImplemented::Stop()
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void ServerImplemented::Regist( const EFK_CHAR* key, Effect* effect )
+void ServerImplemented::Register( const EFK_CHAR* key, Effect* effect )
 {
 	if( effect == NULL ) return;
 
@@ -17231,11 +17720,11 @@ void ServerImplemented::Regist( const EFK_CHAR* key, Effect* effect )
 	{
 		if( m_materialPath.size() > 1 )
 		{
-			m_effects[key_]->Reload( &(m_data[key_][0]), m_data.size(), &(m_materialPath[0]) );
+			m_effects[key_]->Reload( &(m_data[key_][0]), (int32_t)m_data.size(), &(m_materialPath[0]) );
 		}
 		else
 		{
-			m_effects[key_]->Reload( &(m_data[key_][0]), m_data.size() );
+			m_effects[key_]->Reload( &(m_data[key_][0]), (int32_t)m_data.size() );
 		}
 	}
 }
@@ -17243,7 +17732,7 @@ void ServerImplemented::Regist( const EFK_CHAR* key, Effect* effect )
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void ServerImplemented::Unregist( Effect* effect )
+void ServerImplemented::Unregister( Effect* effect )
 {
 	if( effect == NULL ) return;
 
@@ -17266,7 +17755,7 @@ void ServerImplemented::Unregist( Effect* effect )
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void ServerImplemented::Update()
+void ServerImplemented::Update(Manager** managers, int32_t managerCount, ReloadingThreadType reloadingThreadType)
 {
 	m_ctrlClients.lock();
 
@@ -17274,7 +17763,7 @@ void ServerImplemented::Update()
 	{
 		while( (*it)->m_active )
 		{
-			Sleep_(1);
+			std::this_thread::sleep_for(std::chrono::milliseconds(1));
 		}
 		delete (*it);
 	}
@@ -17302,7 +17791,7 @@ void ServerImplemented::Update()
 			}
 
 			uint8_t* data = p;
-			int32_t datasize = buf.size() - (p-&(buf[0]));
+			auto datasize = (int32_t)buf.size() - (p-&(buf[0]));
 		
 			if( m_data.count( key ) > 0 )
 			{
@@ -17316,14 +17805,29 @@ void ServerImplemented::Update()
 
 			if( m_effects.count( key ) > 0 )
 			{
-				if( m_materialPath.size() > 1 )
+				if (managers != nullptr)
 				{
-					m_effects[key]->Reload( &(m_data[key][0]), m_data.size(), &(m_materialPath[0]) );
+					if (m_materialPath.size() > 1)
+					{
+						m_effects[key]->Reload(managers, managerCount, m_data[key].data(), (int32_t)m_data.size(), &(m_materialPath[0]), reloadingThreadType);
+					}
+					else
+					{
+						m_effects[key]->Reload(managers, managerCount, m_data[key].data(), (int32_t)m_data.size(), nullptr, reloadingThreadType);
+					}
 				}
 				else
 				{
-					m_effects[key]->Reload( &(m_data[key][0]), m_data.size() );
+					if (m_materialPath.size() > 1)
+					{
+						m_effects[key]->Reload(m_data[key].data(), (int32_t)m_data.size(), &(m_materialPath[0]), reloadingThreadType);
+					}
+					else
+					{
+						m_effects[key]->Reload(m_data[key].data(), (int32_t)m_data.size(), nullptr, reloadingThreadType);
+					}
 				}
+				
 			}
 		}
 
@@ -17351,6 +17855,16 @@ void ServerImplemented::SetMaterialPath( const EFK_CHAR* materialPath )
 	m_materialPath.push_back(0);
 }
 
+void ServerImplemented::Regist(const EFK_CHAR* key, Effect* effect)
+{
+	Register(key, effect);
+}
+
+void ServerImplemented::Unregist(Effect* effect)
+{
+	Unregister(effect);
+}
+
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
@@ -17359,7 +17873,7 @@ void ServerImplemented::SetMaterialPath( const EFK_CHAR* materialPath )
 //
 //----------------------------------------------------------------------------------
 
-#endif	// #if !( defined(_PSVITA) || defined(_PS4) || defined(_SWITCH) || defined(_XBOXONE) )
+#endif	// #if !( defined(_PSVITA) || defined(_XBOXONE) )
 #ifndef	__EFFEKSEER_CLIENT_IMPLEMENTED_H__
 #define	__EFFEKSEER_CLIENT_IMPLEMENTED_H__
 
@@ -17380,6 +17894,7 @@ namespace Effekseer {
 class ClientImplemented : public Client
 {
 private:
+	bool isThreadRunning = false;
 	std::thread	m_threadRecv;
 
 	EfkSocket	m_socket;
@@ -17387,10 +17902,12 @@ private:
 	std::vector<uint8_t>	m_sendBuffer;
 
 	bool		m_running;
+	std::mutex	mutexStop;
 
 	HOSTENT* GetHostEntry( const char* host );
 
 	static void RecvAsync( void* data );
+	void StopInternal();
 public:
 	ClientImplemented();
 	~ClientImplemented();
@@ -17420,21 +17937,13 @@ public:
 
 #if !( defined(_PSVITA) || defined(_PS4) || defined(_SWITCH) || defined(_XBOXONE) )
 
-//----------------------------------------------------------------------------------
-// Include
-//----------------------------------------------------------------------------------
 
 
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
 namespace Effekseer {
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
+
 void ClientImplemented::RecvAsync( void* data )
 {
-	ClientImplemented* client = (ClientImplemented*)data;
+	auto client = (ClientImplemented*)data;
 
 	while(true)
 	{
@@ -17444,30 +17953,37 @@ void ClientImplemented::RecvAsync( void* data )
 		restSize = 4;
 		while(restSize > 0)
 		{
-			int32_t recvSize = ::recv( client->m_socket, (char*)(&size), restSize, 0 );
+			auto recvSize = ::recv( client->m_socket, (char*)(&size), restSize, 0 );
 			restSize -= recvSize;
 
 			if( recvSize == 0 || recvSize == -1 )
 			{
-				/* 失敗 */
-				client->Stop();
+				client->StopInternal();
 				return;
 			}
 		}
 	}
 }
 
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
+void ClientImplemented::StopInternal()
+{
+	std::lock_guard<std::mutex> lock(mutexStop);
+
+	if (!m_running) return;
+	m_running = false;
+
+	Socket::Shutsown(m_socket);
+	Socket::Close(m_socket);
+
+	EffekseerPrintDebug("Client : Stop(Internal)\n");
+}
+
 ClientImplemented::ClientImplemented()
 	: m_running		( false )
 {
 	Socket::Initialize();
 }
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
+
 ClientImplemented::~ClientImplemented()
 {
 	Stop();
@@ -17475,49 +17991,40 @@ ClientImplemented::~ClientImplemented()
 	Socket::Finalize();
 }
 
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
 Client* Client::Create()
 {
 	return new ClientImplemented();
 }
 
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
 HOSTENT* ClientImplemented::GetHostEntry( const char* host )
 {
-	HOSTENT* hostEntry = NULL;
+	HOSTENT* hostEntry = nullptr;
 	IN_ADDR InAddrHost;
 
-	/* IPアドレスかDNSか調べる */
+	// check ip adress or DNS
 	InAddrHost.s_addr = ::inet_addr( host );
 	if ( InAddrHost.s_addr == InaddrNone )
 	{
-		/* DNS */
+		// DNS
 		hostEntry = ::gethostbyname( host );
-		if ( hostEntry == NULL )
+		if ( hostEntry == nullptr)
 		{
-			return NULL;
+			return nullptr;
 		}
 	}
 	else
 	{
-		/* IPアドレス */
+		// Ip address
 		hostEntry = ::gethostbyaddr( (const char*)(&InAddrHost), sizeof(IN_ADDR), AF_INET );
-		if ( hostEntry == NULL )
+		if ( hostEntry == nullptr)
 		{
-			return NULL;
+			return nullptr;
 		}
 	}
 
 	return hostEntry;
 }
 
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
 bool ClientImplemented::Start( char* host, uint16_t port )
 {
 	if( m_running ) return false;
@@ -17525,14 +18032,14 @@ bool ClientImplemented::Start( char* host, uint16_t port )
 	SOCKADDR_IN sockAddr;
 	HOSTENT* hostEntry= NULL;
 	
-	// Create a socket
+	// create a socket
 	EfkSocket socket_ = Socket::GenSocket();
 	if ( socket_ == InvalidSocket )
 	{
 		return false;
 	}
 
-	/* ホスト情報取得 */
+	// Get host entry
 	hostEntry = GetHostEntry( host );
 	if ( hostEntry == NULL )
 	{
@@ -17540,13 +18047,13 @@ bool ClientImplemented::Start( char* host, uint16_t port )
 		return false;
 	}
 
-	/* 接続用データ生成 */
+	// generate data to connect
 	memset( &sockAddr, 0, sizeof(SOCKADDR_IN) );
 	sockAddr.sin_family	= AF_INET;
 	sockAddr.sin_port	= htons( port );
 	sockAddr.sin_addr	= *(IN_ADDR*)(hostEntry->h_addr_list[0]);
 
-	/* 接続 */
+	// connect
 	int32_t ret = ::connect( socket_, (SOCKADDR*)(&sockAddr), sizeof(SOCKADDR_IN) );
 	if ( ret == SocketError )
 	{
@@ -17559,6 +18066,7 @@ bool ClientImplemented::Start( char* host, uint16_t port )
 
 	m_running = true;
 
+	isThreadRunning = true;
 	m_threadRecv = std::thread(
 		[this](){
 		RecvAsync(this);
@@ -17569,24 +18077,19 @@ bool ClientImplemented::Start( char* host, uint16_t port )
 	return true;
 }
 
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
 void ClientImplemented::Stop()
 {
-	if( !m_running ) return;
+	StopInternal();
 
-	Socket::Shutsown( m_socket );
-	Socket::Close( m_socket );
-	m_running = false;
-	m_threadRecv.join();
+	if (isThreadRunning)
+	{
+		m_threadRecv.join();
+		isThreadRunning = false;
+	}
 
 	EffekseerPrintDebug("Client : Stop\n");
 }
 
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
 bool ClientImplemented::Send( void* data, int32_t datasize )
 {
 	if( !m_running ) return false;
@@ -17602,10 +18105,10 @@ bool ClientImplemented::Send( void* data, int32_t datasize )
 		m_sendBuffer.push_back( ((uint8_t*)(data))[i] );
 	}
 
-	int32_t size = m_sendBuffer.size();
+	int32_t size = (int32_t)m_sendBuffer.size();
 	while( size > 0 )
 	{
-		int32_t ret = ::send( m_socket, (const char*)(&(m_sendBuffer[m_sendBuffer.size()-size])), size, 0 );
+		auto ret = ::send( m_socket, (const char*)(&(m_sendBuffer[m_sendBuffer.size()-size])), size, 0 );
 		if( ret == 0 || ret < 0 )
 		{
 			Stop();
@@ -17617,9 +18120,6 @@ bool ClientImplemented::Send( void* data, int32_t datasize )
 	return true;
 }
 
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
 void ClientImplemented::Reload( const EFK_CHAR* key, void* data, int32_t size )
 {
 	int32_t keylen = 0;
@@ -17645,7 +18145,7 @@ void ClientImplemented::Reload( const EFK_CHAR* key, void* data, int32_t size )
 		buf.push_back( ((uint8_t*)(data))[i] );
 	}
 
-	Send( &(buf[0]), buf.size() );
+	Send( &(buf[0]), (int32_t)buf.size() );
 }
 
 //----------------------------------------------------------------------------------

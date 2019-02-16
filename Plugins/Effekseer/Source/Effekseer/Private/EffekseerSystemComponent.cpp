@@ -30,6 +30,9 @@ private:
 	::Effekseer::Manager*	effekseerManager = nullptr;
 	::EffekseerRendererUE4::RendererImplemented*	effekseerRenderer = nullptr;
 	
+	::Effekseer::Server*	server = nullptr;
+	std::map<std::u16string, ::Effekseer::Effect*> registeredEffects;
+
 	TMap<UTexture2D*, UMaterialInstanceDynamic*> OpaqueDynamicMaterials;
 	TMap<UTexture2D*, UMaterialInstanceDynamic*> TranslucentDynamicMaterials;
 	TMap<UTexture2D*, UMaterialInstanceDynamic*> AdditiveDynamicMaterials;
@@ -69,6 +72,12 @@ public:
 
 	virtual ~FEffekseerSystemSceneProxy()
 	{
+		if (server != nullptr)
+		{
+			ES_SAFE_DELETE(server);
+			server = nullptr;
+		}
+
 		if (effekseerManager != nullptr)
 		{
 			effekseerManager->Destroy();
@@ -168,6 +177,15 @@ public:
 
 				auto eid = effekseerManager->Play(effect, position.X, position.Z, position.Y);
 				internalHandle2EfkHandle.Add(cmd.ID, eid);
+
+				if (server != nullptr)
+				{
+					if (registeredEffects.count(effect->GetName()) == 0)
+					{
+						registeredEffects[effect->GetName()] = effect;
+						server->Register(effect->GetName(), effect);
+					}
+				}
 			}
 
 			if (cmd.Type == EffekseerUpdateData_CommandType::SetP)
@@ -239,6 +257,31 @@ public:
 					effekseerManager->SetSpeed(eid, cmd.Speed);
 				}
 			}
+
+			if (cmd.Type == EffekseerUpdateData_CommandType::StartNetwork)
+			{
+				if (server != nullptr)
+				{
+					server = Effekseer::Server::Create();
+					if (server->Start(cmd.ID))
+					{
+					}
+					else
+					{
+						ES_SAFE_DELETE(server);
+					}
+				}
+			}
+
+			if (cmd.Type == EffekseerUpdateData_CommandType::StopNetwork)
+			{
+				if (server != nullptr)
+				{
+					server->Stop();
+					ES_SAFE_DELETE(server);
+					registeredEffects.clear();
+				}
+			}
 		}
 
 		// Update effects.
@@ -248,6 +291,11 @@ public:
 		Time -= frame * (1.0f / 60.0f);
 
 		{
+			if (server != nullptr)
+			{
+				server->Update(&effekseerManager, 1, Effekseer::ReloadingThreadType::Render);
+			}
+
 			if (effekseerManager != nullptr)
 			{
 				effekseerManager->Update(frame);
@@ -322,6 +370,11 @@ void UEffekseerSystemComponent::BeginPlay()
 	EffekseerUpdateData_Command cmd;
 	cmd.Type = EffekseerUpdateData_CommandType::StopAll;
 	currentUpdateData->Commands.Add(cmd);
+
+	if (IsNetworkAutomatically)
+	{
+		StartNetwork();
+	}
 }
 
 void UEffekseerSystemComponent::EndPlay(const EEndPlayReason::Type EndPlayReason)
@@ -329,6 +382,8 @@ void UEffekseerSystemComponent::EndPlay(const EEndPlayReason::Type EndPlayReason
 	EffekseerUpdateData_Command cmd;
 	cmd.Type = EffekseerUpdateData_CommandType::StopAll;
 	currentUpdateData->Commands.Add(cmd);
+
+	StopNetwork();
 
 	Super::EndPlay(EndPlayReason);
 }
@@ -650,5 +705,20 @@ void UEffekseerSystemComponent::SetEffectAllColor(FEffekseerHandle handle, FColo
 	cmd.Type = EffekseerUpdateData_CommandType::SetAllColor;
 	cmd.ID = handle.ID;
 	cmd.AllColor = color;
+	currentUpdateData->Commands.Add(cmd);
+}
+
+void UEffekseerSystemComponent::StartNetwork()
+{
+	EffekseerUpdateData_Command cmd;
+	cmd.Type = EffekseerUpdateData_CommandType::StartNetwork;
+	cmd.ID = NetworkPort;
+	currentUpdateData->Commands.Add(cmd);
+}
+
+void UEffekseerSystemComponent::StopNetwork()
+{
+	EffekseerUpdateData_Command cmd;
+	cmd.Type = EffekseerUpdateData_CommandType::StopNetwork;
 	currentUpdateData->Commands.Add(cmd);
 }

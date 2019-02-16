@@ -26,12 +26,15 @@ enum class EffekseerUpdateData_CommandType
 	StopAll,
 	SetSpeed,
 	SetAllColor,
+	StartNetwork,
+	StopNetwork,
 };
 
 
 class EffekseerUpdateData_Command
 {
 public:
+	//! ID or port
 	int32_t	ID = -1;
 	void*	Effect = nullptr;
 	FVector	Position;
@@ -200,4 +203,16 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Control")
 	void SetEffectAllColor(FEffekseerHandle handle, FColor color);
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Network")
+	int NetworkPort = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Network")
+	bool IsNetworkAutomatically = false;
+
+	UFUNCTION(BlueprintCallable, Category = "Network")
+	void StartNetwork();
+
+	UFUNCTION(BlueprintCallable, Category = "Network")
+	void StopNetwork();
 };

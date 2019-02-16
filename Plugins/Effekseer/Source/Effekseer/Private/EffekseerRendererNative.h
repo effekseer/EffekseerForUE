@@ -6,224 +6,213 @@
 #ifndef	__EFFEKSEERRENDERER_COMMON_UTILS_H__
 #define	__EFFEKSEERRENDERER_COMMON_UTILS_H__
 
-//----------------------------------------------------------------------------------
-// Include
-//----------------------------------------------------------------------------------
 #include "EffekseerNative.h"
 #include <assert.h>
 #include <string.h>
 #include <math.h>
 #include <array>
 
-//-----------------------------------------------------------------------------------
-//
-//-----------------------------------------------------------------------------------
+#if defined(_M_IX86) || defined(__x86__)
+#define EFK_SSE2
+#include <emmintrin.h>
+#elif defined(__ARM_NEON__)
+#define EFK_NEON
+#include <arm_neon.h>
+#endif
+
+#ifdef _MSC_VER
+#include <xmmintrin.h>
+#endif
+
 namespace EffekseerRenderer
 {
-//-----------------------------------------------------------------------------------
-//
-//-----------------------------------------------------------------------------------
 
-	static void ApplyDepthOffset(::Effekseer::Matrix43& mat, const ::Effekseer::Vector3D& cameraFront, const ::Effekseer::Vector3D& cameraPos, float depthOffset, bool isDepthOffsetScaledWithCamera, bool isDepthOffsetScaledWithEffect, bool isRightHand)
+void ApplyDepthOffset(::Effekseer::Matrix43& mat, const ::Effekseer::Vector3D& cameraFront, const ::Effekseer::Vector3D& cameraPos, float depthOffset, bool isDepthOffsetScaledWithCamera, bool isDepthOffsetScaledWithEffect, bool isRightHand);
+
+void ApplyDepthOffset(::Effekseer::Matrix43& mat, const ::Effekseer::Vector3D& cameraFront, const ::Effekseer::Vector3D& cameraPos, ::Effekseer::Vector3D& scaleValues, float depthOffset, bool isDepthOffsetScaledWithCamera, bool isDepthOffsetScaledWithEffect, bool isRightHand);
+
+void ApplyDepthOffset(::Effekseer::Matrix44& mat, const ::Effekseer::Vector3D& cameraFront, const ::Effekseer::Vector3D& cameraPos, float depthOffset, bool isDepthOffsetScaledWithCamera, bool isDepthOffsetScaledWithEffect, bool isRightHand);
+
+template <typename Vertex>
+inline void TransformStandardVertexes( Vertex* vertexes, int32_t count, const ::Effekseer::Matrix43& mat )
+{
+	alignas(16) float Value3[4] = {mat.Value[3][0], mat.Value[3][1], mat.Value[3][2], 0.0f};
+#if defined(EFK_SSE2)
+	__m128 r0 = _mm_loadu_ps( mat.Value[0] );
+	__m128 r1 = _mm_loadu_ps( mat.Value[1] );
+	__m128 r2 = _mm_loadu_ps( mat.Value[2] );
+	__m128 r3 = _mm_load_ps( Value3 );
+
+	float tmp_out[4];
+	::Effekseer::Vector3D* inout_prev;
+
+	// 1st loop
 	{
-		if (depthOffset != 0)
-		{
-			auto f = cameraFront;
+		::Effekseer::Vector3D* inout_cur = &vertexes[0].Pos;
+		__m128 v = _mm_loadu_ps( (const float*)inout_cur );
 
-			auto offset = depthOffset;
+		__m128 x = _mm_shuffle_ps( v, v, _MM_SHUFFLE(0,0,0,0) );
+		__m128 a0 = _mm_mul_ps( r0, x );
+		__m128 y = _mm_shuffle_ps( v, v, _MM_SHUFFLE(1,1,1,1) );
+		__m128 a1 = _mm_mul_ps( r1, y );
+		__m128 z = _mm_shuffle_ps( v, v, _MM_SHUFFLE(2,2,2,2) );
+		__m128 a2 = _mm_mul_ps( r2, z );
 
-			if (isDepthOffsetScaledWithEffect)
-			{
-				std::array<float, 3> scales;
-				scales.fill(0.0);
+		__m128 a01 = _mm_add_ps( a0, a1 );
+		__m128 a23 = _mm_add_ps( a2, r3 );
+		__m128 a = _mm_add_ps( a01, a23 );
 
-				for (auto r = 0; r < 3; r++)
-				{
-					for (auto c = 0; c < 3; c++)
-					{
-						scales[c] += mat.Value[c][r] * mat.Value[c][r];
-					}
-				}
-
-				for (auto c = 0; c < 3; c++)
-				{
-					scales[c] = sqrt(scales[c]);
-				}
-
-				auto scale = (scales[0] + scales[1] + scales[2]) / 3.0f;
-
-				offset *= scale;
-			}
-
-			if (isDepthOffsetScaledWithCamera)
-			{
-				auto cx = mat.Value[3][0] + cameraPos.X;
-				auto cy = mat.Value[3][1] + cameraPos.Y;
-				auto cz = mat.Value[3][2] + cameraPos.Z;
-				auto cl = sqrt(cx * cx + cy * cy + cz * cz);
-
-				if (cl != 0.0)
-				{
-					auto scale = (cl - offset) / cl;
-
-					for (auto r = 0; r < 3; r++)
-					{
-						for (auto c = 0; c < 3; c++)
-						{
-							mat.Value[c][r] *= scale;
-						}
-					}
-				}
-			}
-
-			auto objPos = ::Effekseer::Vector3D(mat.Value[3][0], mat.Value[3][1], mat.Value[3][2]);
-			auto dir = cameraPos - objPos;
-			Effekseer::Vector3D::Normal(dir, dir);
-
-			if (isRightHand)
-			{
-				mat.Value[3][0] += dir.X * offset;
-				mat.Value[3][1] += dir.Y * offset;
-				mat.Value[3][2] += dir.Z * offset;
-			}
-			else
-			{
-				mat.Value[3][0] += dir.X * offset;
-				mat.Value[3][1] += dir.Y * offset;
-				mat.Value[3][2] += dir.Z * offset;
-			}
-		}
+		// store the result of 1st loop
+		_mm_storeu_ps( tmp_out, a );
+		inout_prev = inout_cur;
 	}
 
-	static void ApplyDepthOffset(::Effekseer::Matrix43& mat, const ::Effekseer::Vector3D& cameraFront, const ::Effekseer::Vector3D& cameraPos, ::Effekseer::Vector3D& scaleValues, float depthOffset, bool isDepthOffsetScaledWithCamera, bool isDepthOffsetScaledWithEffect, bool isRightHand)
-{
-	if (depthOffset != 0)
+	for( int i = 1; i < count; i++ )
 	{
-		auto f = cameraFront;
+		::Effekseer::Vector3D* inout_cur = &vertexes[i].Pos;
+		__m128 v = _mm_loadu_ps( (const float*)inout_cur );
 
-		auto offset = depthOffset;
-		
-		if (isDepthOffsetScaledWithEffect)
-		{
-			auto scale = (scaleValues.X + scaleValues.Y + scaleValues.Z) / 3.0f;
+		__m128 x = _mm_shuffle_ps( v, v, _MM_SHUFFLE(0,0,0,0) );
+		__m128 a0 = _mm_mul_ps( r0, x );
+		__m128 y = _mm_shuffle_ps( v, v, _MM_SHUFFLE(1,1,1,1) );
+		__m128 a1 = _mm_mul_ps( r1, y );
+		__m128 z = _mm_shuffle_ps( v, v, _MM_SHUFFLE(2,2,2,2) );
+		__m128 a2 = _mm_mul_ps( r2, z );
 
-			offset *= scale;
-		}
+		__m128 a01 = _mm_add_ps( a0, a1 );
+		__m128 a23 = _mm_add_ps( a2, r3 );
+		__m128 a = _mm_add_ps( a01, a23 );
 
-		if (isDepthOffsetScaledWithCamera)
-		{
-			auto cx = mat.Value[3][0] + cameraPos.X;
-			auto cy = mat.Value[3][1] + cameraPos.Y;
-			auto cz = mat.Value[3][2] + cameraPos.Z;
-			auto cl = sqrt(cx * cx + cy * cy + cz * cz);
+		// write the result of previous loop
+		inout_prev->X = tmp_out[0];
+		inout_prev->Y = tmp_out[1];
+		inout_prev->Z = tmp_out[2];
 
-			if (cl != 0.0)
-			{
-				auto scale = (cl - offset) / cl;
+		// store the result of current loop
+		_mm_storeu_ps( tmp_out, a );
+		inout_prev = inout_cur;
+	}
 
-				for (auto r = 0; r < 3; r++)
-				{
-					for (auto c = 0; c < 3; c++)
-					{
-						mat.Value[c][r] *= scale;
-					}
-				}
-			}
-		}
+	// write the result of last loop
+	{
+		inout_prev->X = tmp_out[0];
+		inout_prev->Y = tmp_out[1];
+		inout_prev->Z = tmp_out[2];
+	}
+#elif defined(EFK_NEON)
+	float32x4_t r0 = vld1q_f32( mat.Value[0] );
+	float32x4_t r1 = vld1q_f32( mat.Value[1] );
+	float32x4_t r2 = vld1q_f32( mat.Value[2] );
+	float32x4_t r3 = vld1q_f32( Value3 );
 
-		auto objPos = ::Effekseer::Vector3D(mat.Value[3][0], mat.Value[3][1], mat.Value[3][2]);
-		auto dir = cameraPos - objPos;
-		Effekseer::Vector3D::Normal(dir, dir);
+	float tmp_out[4];
+	::Effekseer::Vector3D* inout_prev;
 
-		if (isRightHand)
-		{
-			mat.Value[3][0] += dir.X * offset;
-			mat.Value[3][1] += dir.Y * offset;
-			mat.Value[3][2] += dir.Z * offset;
-		}
-		else
-		{
-			mat.Value[3][0] += dir.X * offset;
-			mat.Value[3][1] += dir.Y * offset;
-			mat.Value[3][2] += dir.Z * offset;
-		}
+	// 1st loop
+	{
+		::Effekseer::Vector3D* inout_cur = &vertexes[0].Pos;
+		float32x4_t v = vld1q_f32( (const float*)inout_cur );
+
+		float32x4_t a = vmlaq_lane_f32( r3, r0, vget_low_f32(v), 0 );
+		a = vmlaq_lane_f32( a, r1, vget_low_f32(v), 1 );
+		a = vmlaq_lane_f32( a, r2, vget_high_f32(v), 0 );
+
+		// store the result of 1st loop
+		vst1q_f32( tmp_out, a );
+		inout_prev = inout_cur;
+	}
+
+	for( int i = 1; i < count; i++ )
+	{
+		::Effekseer::Vector3D* inout_cur = &vertexes[i].Pos;
+		float32x4_t v = vld1q_f32( (const float*)inout_cur );
+
+		float32x4_t a = vmlaq_lane_f32( r3, r0, vget_low_f32(v), 0 );
+		a = vmlaq_lane_f32( a, r1, vget_low_f32(v), 1 );
+		a = vmlaq_lane_f32( a, r2, vget_high_f32(v), 0 );
+
+		// write the result of previous loop
+		inout_prev->X = tmp_out[0];
+		inout_prev->Y = tmp_out[1];
+		inout_prev->Z = tmp_out[2];
+
+		// store the result of current loop
+		vst1q_f32( tmp_out, a );
+		inout_prev = inout_cur;
+	}
+
+	// write the result of last loop
+	{
+		inout_prev->X = tmp_out[0];
+		inout_prev->Y = tmp_out[1];
+		inout_prev->Z = tmp_out[2];
+	}
+#else
+	for( int i = 0; i < count; i++ )
+	{
+		::Effekseer::Vector3D::Transform(
+			vertexes[i].Pos,
+			vertexes[i].Pos,
+			mat );
+	}
+#endif
+}
+
+template <typename VertexDistortion>
+inline void TransformDistortionVertexes(VertexDistortion* vertexes, int32_t count, const ::Effekseer::Matrix43& mat)
+{
+	TransformStandardVertexes( vertexes, count, mat );
+
+	for (int i = 0; i < count; i++)
+	{
+		auto vs = &vertexes[i];
+
+		::Effekseer::Vector3D::Transform(
+			vs->Tangent,
+			vs->Tangent,
+			mat);
+
+		::Effekseer::Vector3D::Transform(
+			vs->Binormal,
+			vs->Binormal,
+			mat);
+
+		Effekseer::Vector3D zero;
+		::Effekseer::Vector3D::Transform(
+			zero,
+			zero,
+			mat);
+
+		::Effekseer::Vector3D::Normal(vs->Tangent, vs->Tangent - zero);
+		::Effekseer::Vector3D::Normal(vs->Binormal, vs->Binormal - zero);
 	}
 }
 
-	static void ApplyDepthOffset(::Effekseer::Matrix44& mat, const ::Effekseer::Vector3D& cameraFront, const ::Effekseer::Vector3D& cameraPos, float depthOffset, bool isDepthOffsetScaledWithCamera, bool isDepthOffsetScaledWithEffect, bool isRightHand)
+template <typename T>
+struct HasDistortion
 {
-	if (depthOffset != 0)
-	{
-		auto f = cameraFront;
+private:
+	template <typename U>
+	static auto check_has_dist(U v) -> decltype(v.Normal, std::true_type{});
+	static std::false_type check_has_dist(...);
+public:
+	static bool const value = decltype(check_has_dist(std::declval<T>()))::value;
+};
 
-		auto offset = depthOffset;
-
-		if (isDepthOffsetScaledWithEffect)
-		{
-			std::array<float, 3> scales;
-			scales.fill(0.0);
-
-			for (auto r = 0; r < 3; r++)
-			{
-				for (auto c = 0; c < 3; c++)
-				{
-					scales[c] += mat.Values[c][r] * mat.Values[c][r];
-				}
-			}
-
-			for (auto c = 0; c < 3; c++)
-			{
-				scales[c] = sqrt(scales[c]);
-			}
-
-			auto scale = (scales[0] + scales[1] + scales[2]) / 3.0f;
-
-			offset *= scale;
-		}
-
-		if (isDepthOffsetScaledWithCamera)
-		{
-			auto cx = mat.Values[3][0] + cameraPos.X;
-			auto cy = mat.Values[3][1] + cameraPos.Y;
-			auto cz = mat.Values[3][2] + cameraPos.Z;
-			auto cl = sqrt(cx * cx + cy * cy + cz * cz);
-
-			if (cl != 0.0)
-			{
-				auto scale = (cl - offset) / cl;
-
-				for (auto r = 0; r < 3; r++)
-				{
-					for (auto c = 0; c < 3; c++)
-					{
-						mat.Values[c][r] *= scale;
-					}
-				}
-			}
-		}
-
-		auto objPos = ::Effekseer::Vector3D(mat.Values[3][0], mat.Values[3][1], mat.Values[3][2]);
-		auto dir = cameraPos - objPos;
-		Effekseer::Vector3D::Normal(dir, dir);
-
-		if (isRightHand)
-		{
-			mat.Values[3][0] += dir.X * offset;
-			mat.Values[3][1] += dir.Y * offset;
-			mat.Values[3][2] += dir.Z * offset;
-		}
-		else
-		{
-			mat.Values[3][0] += dir.X * offset;
-			mat.Values[3][1] += dir.Y * offset;
-			mat.Values[3][2] += dir.Z * offset;
-		}
-	}
+template <typename Vertex, 
+	typename std::enable_if<!HasDistortion<Vertex>::value>::type* = nullptr>
+void TransformVertexes(Vertex& v, int32_t count, const ::Effekseer::Matrix43& mat)
+{
+	TransformStandardVertexes(v, count, mat);
 }
 
-//-----------------------------------------------------------------------------------
-//
-//-----------------------------------------------------------------------------------
+template <typename Vertex, 
+	typename std::enable_if<HasDistortion<Vertex>::value>::type* = nullptr>
+void TransformVertexes(Vertex& v, int32_t count, const ::Effekseer::Matrix43& mat)
+{
+	TransformDistortionVertexes(v, count, mat);
+}
+
 }
 #endif // __EFFEKSEERRENDERER_COMMON_UTILS_H__
 #ifndef	__EFFEKSEERRENDERER_RENDERER_H__
@@ -257,12 +246,27 @@ public:
 //-----------------------------------------------------------------------------------
 //
 //-----------------------------------------------------------------------------------
+
+/**
+	@brief	
+	\~english A status of UV when particles are rendered.
+	\~japanese パーティクルを描画する時のUVの状態
+*/
+enum class UVStyle
+{
+	Normal,
+	VerticalFlipped,
+};
+
 class Renderer
 	: ::Effekseer::IReference
 {
 protected:
-	Renderer() {}
-	virtual ~Renderer() {}
+	Renderer();
+	virtual ~Renderer();
+
+	class Impl;
+	Impl* impl = nullptr;
 
 public:
 	/**
@@ -460,6 +464,34 @@ public:
 	@brief	描画モードを取得する。
 	*/
 	virtual Effekseer::RenderMode GetRenderMode() = 0;
+
+	/**
+	@brief
+	\~english Get an UV Style of texture when particles are rendered.
+	\~japanese パーティクルを描画するときのUVの状態を取得する。
+	*/
+	UVStyle GetTextureUVStyle() const;
+
+	/**
+	@brief
+	\~english Set an UV Style of texture when particles are rendered.
+	\~japanese パーティクルを描画するときのUVの状態を設定する。
+	*/
+	void SetTextureUVStyle(UVStyle style);
+
+	/**
+	@brief
+	\~english Get an UV Style of background when particles are rendered.
+	\~japanese パーティクルを描画するときの背景のUVの状態を取得する。
+	*/
+	UVStyle GetBackgroundTextureUVStyle() const;
+
+	/**
+	@brief
+	\~english Set an UV Style of background when particles are rendered.
+	\~japanese パーティクルを描画するときの背景のUVの状態を設定する。
+	*/
+	void SetBackgroundTextureUVStyle(UVStyle style);
 };
 
 //----------------------------------------------------------------------------------
@@ -470,6 +502,36 @@ public:
 //
 //----------------------------------------------------------------------------------
 #endif	// __EFFEKSEERRENDERER_RENDERER_H__
+#ifndef	__EFFEKSEERRENDERER_RENDERER_IMPL_H__
+#define	__EFFEKSEERRENDERER_RENDERER_IMPL_H__
+
+#include "EffekseerNative.h"
+
+
+namespace EffekseerRenderer
+{
+
+class Renderer::Impl
+{
+private:
+	UVStyle textureUVStyle = UVStyle::Normal;
+	UVStyle backgroundTextureUVStyle = UVStyle::Normal;
+
+public:
+
+	UVStyle GetTextureUVStyle() const;
+
+	void SetTextureUVStyle(UVStyle style);
+
+	UVStyle GetBackgroundTextureUVStyle() const;
+
+	void SetBackgroundTextureUVStyle(UVStyle style);
+
+};
+
+}
+
+#endif
 #ifndef	__EFFEKSEERRENDERER_VERTEXBUFFER_BASE_H__
 #define	__EFFEKSEERRENDERER_VERTEXBUFFER_BASE_H__
 
@@ -716,6 +778,19 @@ private:
 	int32_t						renderVertexMaxSize;
 
 	bool						m_isDistortionMode;
+
+	struct VertexConstantBuffer
+	{
+		Effekseer::Matrix44 constantVSBuffer[2];
+		float uvInversed[4];
+	};
+
+	struct DistortionPixelConstantBuffer
+	{
+		float scale[4];
+		float uvInversed[4];
+	};
+
 public:
 
 	StandardRenderer(RENDERER* renderer, SHADER* shader, SHADER* shader_no_texture, SHADER* shader_distortion, SHADER* shader_no_texture_distortion)
@@ -748,26 +823,26 @@ public:
 	{
 		if (m_isDistortionMode)
 		{
-			if (count * sizeof(VERTEX_DISTORTION) + vertexCaches.size() > renderVertexMaxSize)
+			if (count * (int32_t)sizeof(VERTEX_DISTORTION) + (int32_t)vertexCaches.size() > renderVertexMaxSize)
 			{
 				Rendering();
 			}
 
 			auto old = vertexCaches.size();
 			vertexCaches.resize(count * sizeof(VERTEX_DISTORTION) + vertexCaches.size());
-			offset = old;
+			offset = (int32_t)old;
 			data = (vertexCaches.data() + old);
 		}
 		else
 		{
-			if (count * sizeof(VERTEX) + vertexCaches.size() > renderVertexMaxSize)
+			if (count * (int32_t)sizeof(VERTEX) + (int32_t)vertexCaches.size() > renderVertexMaxSize)
 			{
 				Rendering();
 			}
 
 			auto old = vertexCaches.size();
 			vertexCaches.resize(count * sizeof(VERTEX) + vertexCaches.size());
-			offset = old;
+			offset = (int32_t)old;
 			data = (vertexCaches.data() + old);
 		}
 	}
@@ -799,14 +874,12 @@ public:
 
 		while (true)
 		{
-			auto renderBufferSize = 0;
-	
 			// only sprite
-			renderBufferSize = vertexCaches.size() - offset;
+			int32_t renderBufferSize = (int32_t)vertexCaches.size() - offset;
 
 			if (renderBufferSize > renderVertexMaxSize)
 			{
-				renderBufferSize = (int32_t)(Effekseer::Min(renderVertexMaxSize, vertexCaches.size() - offset) / (vsize * 4)) * (vsize * 4);
+				renderBufferSize = (Effekseer::Min(renderVertexMaxSize, (int32_t)vertexCaches.size() - offset) / (vsize * 4)) * (vsize * 4);
 			}
 
 			Rendering_(mCamera, mProj, offset, renderBufferSize);
@@ -904,23 +977,52 @@ public:
 			m_renderer->SetTextures(shader_, textures, 1);
 		}
 
-		Effekseer::Matrix44 constantVSBuffer[2];
-		constantVSBuffer[0] = mCamera;
-		constantVSBuffer[1] = mProj;
-		m_renderer->SetVertexBufferToShader(constantVSBuffer, sizeof(Effekseer::Matrix44) * 2);
+		VertexConstantBuffer vcb;
+		vcb.constantVSBuffer[0] = mCamera;
+		vcb.constantVSBuffer[1] = mProj;
+
+		if (m_renderer->GetTextureUVStyle() == UVStyle::VerticalFlipped)
+		{
+			vcb.uvInversed[0] = 1;
+			vcb.uvInversed[1] = -1;
+		}
+		else
+		{
+			vcb.uvInversed[0] = 0;
+			vcb.uvInversed[1] = 1;
+		}
+
+		m_renderer->SetVertexBufferToShader(&vcb, sizeof(VertexConstantBuffer));
 
 		if (distortion)
 		{
-			float constantPSBuffer[1];
-			constantPSBuffer[0] = m_state.DistortionIntensity;
+			DistortionPixelConstantBuffer pcb;
+			pcb.scale[0] = m_state.DistortionIntensity;
 
-			m_renderer->SetPixelBufferToShader(constantPSBuffer, sizeof(float));
+			if (m_renderer->GetBackgroundTextureUVStyle() == UVStyle::VerticalFlipped)
+			{
+				pcb.uvInversed[0] = 1.0f;
+				pcb.uvInversed[1] = -1.0f;
+			}
+			else
+			{
+				pcb.uvInversed[0] = 0.0f;
+				pcb.uvInversed[1] = 1.0f;
+			}
+	
+			m_renderer->SetPixelBufferToShader(&pcb, sizeof(DistortionPixelConstantBuffer));
 		}
 
 		shader_->SetConstantBuffer();
 
 		state.TextureFilterTypes[0] = m_state.TextureFilterType;
 		state.TextureWrapTypes[0] = m_state.TextureWrapType;
+
+		if (distortion)
+		{
+			state.TextureFilterTypes[1] = Effekseer::TextureFilterType::Nearest;
+			state.TextureWrapTypes[1] = Effekseer::TextureWrapType::Clamp;
+		}
 
 		m_renderer->GetRenderState()->Update(distortion);
 
@@ -959,6 +1061,7 @@ public:
 //
 //----------------------------------------------------------------------------------
 #endif	// __EFFEKSEERRENDERER_STANDARD_RENDERER_H__
+
 #ifndef	__EFFEKSEERRENDERER_MODEL_RENDERER_BASE_H__
 #define	__EFFEKSEERRENDERER_MODEL_RENDERER_BASE_H__
 
@@ -994,6 +1097,7 @@ struct ModelRendererVertexConstantBuffer
 	float	LightDirection[4];
 	float	LightColor[4];
 	float	LightAmbientColor[4];
+	float	UVInversed[4];
 };
 
 struct ModelRendererPixelConstantBuffer
@@ -1050,7 +1154,6 @@ public:
 	template<typename RENDERER>
 	void Rendering_(RENDERER* renderer, const efkModelNodeParam& parameter, const efkModelInstanceParam& instanceParameter, void* userData)
 	{
-		auto camera = renderer->GetCameraMatrix();
 		::Effekseer::BillboardType btype = parameter.Billboard;
 		Effekseer::Matrix44 mat44;
 
@@ -1202,8 +1305,6 @@ public:
 		if (m_matrixes.size() == 0) return;
 		if (param.ModelIndex < 0) return;
 
-		auto camera = renderer->GetCameraMatrix();
-
 		MODEL* model = (MODEL*) param.EffectPointer->GetModel(param.ModelIndex);
 		if (model == NULL) return;
 		
@@ -1312,17 +1413,48 @@ public:
 
 		state.TextureFilterTypes[0] = param.TextureFilter;
 		state.TextureWrapTypes[0] = param.TextureWrap;
-		state.TextureFilterTypes[1] = param.TextureFilter;
-		state.TextureWrapTypes[1] = param.TextureWrap;
+
+		if (distortion)
+		{
+			state.TextureFilterTypes[1] = Effekseer::TextureFilterType::Nearest;
+			state.TextureWrapTypes[1] = Effekseer::TextureWrapType::Clamp;
+		}
+		else
+		{
+			state.TextureFilterTypes[1] = param.TextureFilter;
+			state.TextureWrapTypes[1] = param.TextureWrap;
+		}
 
 		renderer->GetRenderState()->Update(distortion);
 
 		ModelRendererVertexConstantBuffer<InstanceCount>* vcb = (ModelRendererVertexConstantBuffer<InstanceCount>*)shader_->GetVertexConstantBuffer();
 
+		if (renderer->GetTextureUVStyle() == UVStyle::VerticalFlipped)
+		{
+			vcb->UVInversed[0] = 1;
+			vcb->UVInversed[1] = -1;
+		}
+		else
+		{
+			vcb->UVInversed[0] = 0;
+			vcb->UVInversed[1] = 1;
+		}
+
 		if (distortion)
 		{
 			float* pcb = (float*) shader_->GetPixelConstantBuffer();
-			pcb[0] = param.DistortionIntensity;
+			pcb[4 * 0 + 0] = param.DistortionIntensity;
+
+			if (renderer->GetBackgroundTextureUVStyle() == UVStyle::VerticalFlipped)
+			{
+				pcb[4 * 1 + 0] = 1;
+				pcb[4 * 1 + 1] = -1;
+			}
+			else
+			{
+				pcb[4 * 1 + 0] = 0;
+				pcb[4 * 1 + 1] = 1;
+			}
 		}
 		else
 		{
@@ -1443,6 +1575,7 @@ public:
 //
 //----------------------------------------------------------------------------------
 #endif	// __EFFEKSEERRENDERER_MODEL_RENDERER_H__
+
 #ifndef	__EFFEKSEERRENDERER_RIBBON_RENDERER_BASE_H__
 #define	__EFFEKSEERRENDERER_RIBBON_RENDERER_BASE_H__
 
@@ -1504,24 +1637,24 @@ namespace EffekseerRenderer
 				d.resize(a.size());
 				w.resize(a.size());
 
-				for (auto i = 1; i < a.size() - 1; i++)
+				for (size_t i = 1; i < a.size() - 1; i++)
 				{
 					c[i] = (a[i - 1] + a[i] * (-2.0) + a[i + 1]) * 3.0;
 				}
 
-				for (auto i = 1; i < a.size() - 1; i++)
+				for (size_t i = 1; i < a.size() - 1; i++)
 				{
 					auto tmp = efkVector3D(4.0, 4.0, 4.0) - w[i - 1];
 					c[i] = (c[i] - c[i - 1]) / tmp;
 					w[i] = efkVector3D(1.0, 1.0, 1.0) / tmp;
 				}
 
-				for (auto i = (a.size() - 1) - 1; i > 0; i--)
+				for (size_t i = (a.size() - 1) - 1; i > 0; i--)
 				{
 					c[i] = c[i] - c[i + 1] * w[i];
 				}
 
-				for (auto i = 0; i < a.size() - 1; i++)
+				for (size_t i = 0; i < a.size() - 1; i++)
 				{
 					d[i] = (c[i + 1] - c[i]) / 3.0;
 					b[i] = a[i + 1] - a[i] - c[i] - d[i];
@@ -1540,21 +1673,21 @@ namespace EffekseerRenderer
 
 			efkVector3D GetValue(float t)
 			{
-				auto j = floorf(t);
+				int32_t j = (int32_t)floorf(t);
 
 				if (j < 0)
 				{
 					j = 0;
 				}
 
-				if (j > a.size())
+				if (j > (int32_t)a.size())
 				{
-					j = a.size() - 1;
+					j = (int32_t)a.size() - 1;
 				}
 
 				auto dt = t - j;
 
-				if (j < isSame.size() && isSame[j]) return a[j];
+				if (j < (int32_t)isSame.size() && isSame[j]) return a[j];
 
 				return a[j] + (b[j] + (c[j] + d[j] * dt) * dt) * dt;
 			}
@@ -1585,7 +1718,7 @@ namespace EffekseerRenderer
 				spline_left.Reset();
 				spline_right.Reset();
 
-				for (auto loop = 0; loop < instances.size(); loop++)
+				for (size_t loop = 0; loop < instances.size(); loop++)
 				{
 					auto pl = efkVector3D();
 					auto pr = efkVector3D();
@@ -1674,7 +1807,7 @@ namespace EffekseerRenderer
 			}
 
 
-			for (auto loop = 0; loop < instances.size(); loop++)
+			for (size_t loop = 0; loop < instances.size(); loop++)
 			{
 				auto& param = instances[loop];
 
@@ -1815,7 +1948,7 @@ namespace EffekseerRenderer
 
 				Effekseer::Vector3D axisBefore;
 
-				for (int32_t i = 0; i < (instances.size() - 1) * parameter.SplineDivision + 1; i++)
+				for (size_t i = 0; i < (instances.size() - 1) * parameter.SplineDivision + 1; i++)
 				{
 					bool isFirst_ = (i == 0);
 					bool isLast_ = (i == ((instances.size() - 1) * parameter.SplineDivision));
@@ -2911,7 +3044,6 @@ protected:
 	{
 		if (param.ZSort != Effekseer::ZSortType::None)
 		{
-			auto mat = m_renderer->GetCameraMatrix();
 			for (auto& kv : instances)
 			{
 				efkVector3D t;
@@ -3041,24 +3173,24 @@ namespace EffekseerRenderer
 				d.resize(a.size());
 				w.resize(a.size());
 
-				for (auto i = 1; i < a.size() - 1; i++)
+				for (size_t i = 1; i < a.size() - 1; i++)
 				{
 					c[i] = (a[i - 1] + a[i] * (-2.0) + a[i + 1]) * 3.0;
 				}
 
-				for (auto i = 1; i < a.size() - 1; i++)
+				for (size_t i = 1; i < a.size() - 1; i++)
 				{
 					auto tmp = efkVector3D(4.0, 4.0, 4.0) - w[i - 1];
 					c[i] = (c[i] - c[i - 1]) / tmp;
 					w[i] = efkVector3D(1.0, 1.0, 1.0) / tmp;
 				}
 
-				for (auto i = (a.size() - 1) - 1; i > 0; i--)
+				for (size_t i = (a.size() - 1) - 1; i > 0; i--)
 				{
 					c[i] = c[i] - c[i + 1] * w[i];
 				}
 
-				for (auto i = 0; i < a.size() - 1; i++)
+				for (size_t i = 0; i < a.size() - 1; i++)
 				{
 					d[i] = (c[i + 1] - c[i]) / 3.0;
 					b[i] = a[i + 1] - a[i] - c[i] - d[i];
@@ -3077,21 +3209,21 @@ namespace EffekseerRenderer
 
 			efkVector3D GetValue(float t)
 			{
-				auto j = floorf(t);
+				int32_t j = (int32_t)floorf(t);
 
 				if (j < 0)
 				{
 					j = 0;
 				}
 
-				if (j > a.size())
+				if (j > (int32_t)a.size())
 				{
-					j = a.size() - 1;
+					j = (int32_t)a.size() - 1;
 				}
 
 				auto dt = t - j;
 
-				if (j < isSame.size() && isSame[j]) return a[j];
+				if (j < (int32_t)isSame.size() && isSame[j]) return a[j];
 
 				return a[j] + (b[j] + (c[j] + d[j] * dt) * dt) * dt;
 			}
@@ -3120,7 +3252,7 @@ namespace EffekseerRenderer
 			{
 				spline.Reset();
 
-				for (auto loop = 0; loop < instances.size(); loop++)
+				for (size_t loop = 0; loop < instances.size(); loop++)
 				{
 					auto p = efkVector3D();
 					auto& param = instances[loop];
@@ -3135,11 +3267,11 @@ namespace EffekseerRenderer
 				spline.Calculate();
 			}
 
-			for (auto loop = 0; loop < instances.size(); loop++)
+			for (size_t loop = 0; loop < instances.size(); loop++)
 			{
 				auto& param = instances[loop];
 
-				for (auto sploop = 0; sploop < parameter.SplineDivision; sploop++)
+				for (int32_t sploop = 0; sploop < parameter.SplineDivision; sploop++)
 				{
 					bool isFirst = param.InstanceIndex == 0 && sploop == 0;
 					bool isLast = param.InstanceIndex == (param.InstanceCount - 1);
@@ -3286,7 +3418,7 @@ namespace EffekseerRenderer
 
 				Effekseer::Vector3D axisBefore;
 
-				for (int32_t i = 0; i < (instances.size() - 1) * parameter.SplineDivision + 1; i++)
+				for (size_t i = 0; i < (instances.size() - 1) * parameter.SplineDivision + 1; i++)
 				{
 					bool isFirst_ = (i == 0);
 					bool isLast_ = (i == ((instances.size() - 1) * parameter.SplineDivision));
