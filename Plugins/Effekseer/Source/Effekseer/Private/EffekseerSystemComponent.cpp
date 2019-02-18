@@ -371,7 +371,7 @@ void UEffekseerSystemComponent::BeginPlay()
 	cmd.Type = EffekseerUpdateData_CommandType::StopAll;
 	currentUpdateData->Commands.Add(cmd);
 
-	if (IsNetworkAutomatically)
+	if (DoRunNetworkAutomatically)
 	{
 		StartNetwork();
 	}
