@@ -181,6 +181,21 @@ EffekseerEmitterコンポーネントのAuto ActivateをOnにします。
 <img src="img/animNotify.png">
 </div>
 
+### 4.1 ネットワーク機能
+
+ネットワーク経由でアプリケーション(ゲーム等)で再生しているエフェクトを外部からアプリケーションの起動中に編集することができます。
+
+<img src="img/network.png" width="800">
+
+EffekseerSystemコンポーネントにEffekseerから接続するためのポートを指定します。DoRunNetworkAutomaticallyをOnにするか、EffekseerSystemコンポーネントのStartNetworkを実行します。
+そうすると、Effekseerからエフェクトを編集できるようになります。他のコンピューターからエフェクトを編集するためにはファイヤーウォールの設定でポート開放する必要があります。
+
+<img src="img/network_ui.png">
+
+<pre>
+int Effkseer_InitServer(int port);
+</pre>
+
 
 ## 注意
 
