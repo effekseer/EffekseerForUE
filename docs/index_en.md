@@ -184,6 +184,16 @@ Effects can be played at indicated time in Animation Sequence.
 <img src="img/animNotify.png">
 </div>
 
+### 4.1 Network
+
+You can edit the playing effect in an application (game etc.) via the network from the outside when application is running.
+
+<img src="img/network.png" width="800">
+
+You specify the port to be connected from Effekseer fo EffekseerSystemComponent. Make DoStartNetworkAutomatically On or execute StartNetwork in EffekseerSystemComponent.
+Then you can edit the effect from Effekseer. In order to edit the effect from another computer, it is necessary to open the port with the setting of the firewall.
+<img src="img/network_ui.png">
+
 
 ## Caution
 

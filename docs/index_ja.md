@@ -187,14 +187,10 @@ EffekseerEmitterコンポーネントのAuto ActivateをOnにします。
 
 <img src="img/network.png" width="800">
 
-EffekseerSystemコンポーネントにEffekseerから接続するためのポートを指定します。DoRunNetworkAutomaticallyをOnにするか、EffekseerSystemコンポーネントのStartNetworkを実行します。
+EffekseerSystemコンポーネントにEffekseerから接続するためのポートを指定します。DoStartNetworkAutomaticallyをOnにするか、EffekseerSystemコンポーネントのStartNetworkを実行します。
 そうすると、Effekseerからエフェクトを編集できるようになります。他のコンピューターからエフェクトを編集するためにはファイヤーウォールの設定でポート開放する必要があります。
 
 <img src="img/network_ui.png">
-
-<pre>
-int Effkseer_InitServer(int port);
-</pre>
 
 
 ## 注意

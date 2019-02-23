@@ -208,7 +208,7 @@ public:
 	int NetworkPort = 60000;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Network")
-	bool DoRunNetworkAutomatically = false;
+	bool DoStartNetworkAutomatically = false;
 
 	UFUNCTION(BlueprintCallable, Category = "Network")
 	void StartNetwork();
