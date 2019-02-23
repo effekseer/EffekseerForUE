@@ -260,7 +260,7 @@ public:
 
 			if (cmd.Type == EffekseerUpdateData_CommandType::StartNetwork)
 			{
-				if (server != nullptr)
+				if (server == nullptr)
 				{
 					server = Effekseer::Server::Create();
 					if (server->Start(cmd.ID))

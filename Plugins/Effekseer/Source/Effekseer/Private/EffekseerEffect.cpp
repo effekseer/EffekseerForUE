@@ -86,7 +86,7 @@ static std::u16string getFilenameWithoutExt(const char16_t* path)
 	{
 		if (path[i] == u'/' || path[i] == u'\\')
 		{
-			start = i;
+			start = i + 1;
 		}
 	}
 

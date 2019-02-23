@@ -205,7 +205,7 @@ public:
 	void SetEffectAllColor(FEffekseerHandle handle, FColor color);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Network")
-	int NetworkPort = 0;
+	int NetworkPort = 60000;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Network")
 	bool DoRunNetworkAutomatically = false;
