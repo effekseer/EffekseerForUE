@@ -7812,14 +7812,14 @@ public:
 	virtual int32_t GetRestInstancesCount() const override { return (int32_t)m_reserved_instances.size(); }
 
 	/**
-		@brief	リロードを開始する。
+		@brief	start reload
 	*/
-	void BeginReloadEffect( Effect* effect );
+	void BeginReloadEffect( Effect* effect, bool doLockThread );
 
 	/**
-		@brief	リロードを停止する。
+		@brief	end reload
 	*/
-	void EndReloadEffect( Effect* effect );
+	void EndReloadEffect( Effect* effect, bool doLockThread);
 
 	/**
 		@brief	エフェクトをカリングし描画負荷を減らすための空間を生成する。
@@ -12636,14 +12636,12 @@ bool EffectImplemented::Reload( Manager** managers, int32_t managersCount, void*
 {
 	const EFK_CHAR* matPath = materialPath != NULL ? materialPath : m_materialPath.c_str();
 	
-	if (m_pManager != nullptr)
-	{
-		m_pManager->BeginReloadEffect(this);
-	}
+	int lockCount = 0;
 
 	for( int32_t i = 0; i < managersCount; i++)
 	{
-		((ManagerImplemented*)managers[i])->BeginReloadEffect( this );
+		((ManagerImplemented*)managers[i])->BeginReloadEffect( this, lockCount == 0);
+		lockCount++;
 	}
 
 	isReloadingOnRenderingThread = true;
@@ -12651,14 +12649,10 @@ bool EffectImplemented::Reload( Manager** managers, int32_t managersCount, void*
 	Load( data, size, m_maginificationExternal, matPath, reloadingThreadType);
 	isReloadingOnRenderingThread = false;
 
-	if (m_pManager != nullptr)
-	{
-		m_pManager->EndReloadEffect(this);
-	}
-
 	for( int32_t i = 0; i < managersCount; i++)
 	{
-		((ManagerImplemented*)managers[i])->EndReloadEffect( this );
+		lockCount--;
+		((ManagerImplemented*)managers[i])->EndReloadEffect( this, lockCount == 0);
 	}
 
 	return false;
@@ -12686,14 +12680,12 @@ bool EffectImplemented::Reload( Manager** managers, int32_t managersCount, const
 		materialPath = parentDir;
 	}
 
-	if (m_pManager != nullptr)
-	{
-		m_pManager->BeginReloadEffect(this);
-	}
+	int lockCount = 0;
 
 	for( int32_t i = 0; i < managersCount; i++)
 	{
-		((ManagerImplemented*)&(managers[i]))->BeginReloadEffect( this );
+		((ManagerImplemented*)&(managers[i]))->BeginReloadEffect( this, lockCount == 0);
+		lockCount++;
 	}
 
 	isReloadingOnRenderingThread = true;
@@ -12701,14 +12693,10 @@ bool EffectImplemented::Reload( Manager** managers, int32_t managersCount, const
 	Load( data, size, m_maginificationExternal, materialPath, reloadingThreadType);
 	isReloadingOnRenderingThread = false;
 
-	if (m_pManager != nullptr)
-	{
-		m_pManager->EndReloadEffect(this);
-	}
-	
 	for( int32_t i = 0; i < managersCount; i++)
 	{
-		((ManagerImplemented*)&(managers[i]))->EndReloadEffect( this );
+		lockCount--;
+		((ManagerImplemented*)&(managers[i]))->EndReloadEffect( this, lockCount == 0);
 	}
 
 	return false;
@@ -12871,8 +12859,6 @@ void EffectImplemented::UnloadResources(const EFK_CHAR* materialPath)
 	// reloading on render thread
 	if (isReloadingOnRenderingThread)
 	{
-		assert(materialPath != nullptr);
-
 		if (reloadingBackup == nullptr)
 		{
 			reloadingBackup = std::unique_ptr<EffectReloadingBackup>(new EffectReloadingBackup());
@@ -12882,6 +12868,8 @@ void EffectImplemented::UnloadResources(const EFK_CHAR* materialPath)
 
 		for (int32_t ind = 0; ind < m_ImageCount; ind++)
 		{
+			if (m_pImages[ind] == nullptr) continue;
+
 			EFK_CHAR fullPath[512];
 			PathCombine(fullPath, matPath, m_ImagePaths[ind]);
 			reloadingBackup->images.Push(fullPath, m_pImages[ind]);
@@ -12889,6 +12877,8 @@ void EffectImplemented::UnloadResources(const EFK_CHAR* materialPath)
 
 		for (int32_t ind = 0; ind < m_normalImageCount; ind++)
 		{
+			if (m_normalImages[ind] == nullptr) continue;
+
 			EFK_CHAR fullPath[512];
 			PathCombine(fullPath, matPath, m_normalImagePaths[ind]);
 			reloadingBackup->normalImages.Push(fullPath, m_normalImages[ind]);
@@ -12896,6 +12886,8 @@ void EffectImplemented::UnloadResources(const EFK_CHAR* materialPath)
 
 		for (int32_t ind = 0; ind < m_distortionImageCount; ind++)
 		{
+			if (m_distortionImagePaths[ind] == nullptr) continue;
+
 			EFK_CHAR fullPath[512];
 			PathCombine(fullPath, matPath, m_distortionImagePaths[ind]);
 			reloadingBackup->distortionImages.Push(fullPath, m_distortionImages[ind]);
@@ -12903,6 +12895,8 @@ void EffectImplemented::UnloadResources(const EFK_CHAR* materialPath)
 
 		for (int32_t ind = 0; ind < m_WaveCount; ind++)
 		{
+			if (m_pWaves[ind] == nullptr) continue;
+
 			EFK_CHAR fullPath[512];
 			PathCombine(fullPath, matPath, m_WavePaths[ind]);
 			reloadingBackup->sounds.Push(fullPath, m_pWaves[ind]);
@@ -12910,6 +12904,8 @@ void EffectImplemented::UnloadResources(const EFK_CHAR* materialPath)
 
 		for (int32_t ind = 0; ind < m_modelCount; ind++)
 		{
+			if (m_pModels[ind] == nullptr) continue;
+
 			EFK_CHAR fullPath[512];
 			PathCombine(fullPath, matPath, m_modelPaths[ind]);
 			reloadingBackup->models.Push(fullPath, m_pModels[ind]);
@@ -14763,14 +14759,17 @@ void ManagerImplemented::DrawHandleFront(Handle handle)
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void ManagerImplemented::BeginReloadEffect( Effect* effect )
+void ManagerImplemented::BeginReloadEffect( Effect* effect, bool doLockThread)
 {
-	if (m_isLockedWithRenderingMutex)
+	if (doLockThread)
 	{
-		ShowErrorAndExit("Rendering thread is locked.");
+		if (m_isLockedWithRenderingMutex)
+		{
+			ShowErrorAndExit("Rendering thread is locked.");
+		}
+		m_renderingMutex.lock();
+		m_isLockedWithRenderingMutex = true;
 	}
-	m_renderingMutex.lock();
-	m_isLockedWithRenderingMutex = true;
 
 	std::map<Handle,DrawSet>::iterator it = m_DrawSets.begin();
 	std::map<Handle,DrawSet>::iterator it_end = m_DrawSets.end();
@@ -14790,7 +14789,7 @@ void ManagerImplemented::BeginReloadEffect( Effect* effect )
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void ManagerImplemented::EndReloadEffect( Effect* effect )
+void ManagerImplemented::EndReloadEffect( Effect* effect, bool doLockThread)
 {
 	std::map<Handle,DrawSet>::iterator it = m_DrawSets.begin();
 	std::map<Handle,DrawSet>::iterator it_end = m_DrawSets.end();
@@ -14830,8 +14829,11 @@ void ManagerImplemented::EndReloadEffect( Effect* effect )
 		(*it).second.InstanceContainerPointer->Update( true, 1.0f, (*it).second.IsShown );
 	}
 
-	m_renderingMutex.unlock();
-	m_isLockedWithRenderingMutex = false;
+	if (doLockThread)
+	{
+		m_renderingMutex.unlock();
+		m_isLockedWithRenderingMutex = false;
+	}
 }
 
 //----------------------------------------------------------------------------------
@@ -17790,7 +17792,7 @@ void ServerImplemented::Update(Manager** managers, int32_t managerCount, Reloadi
 				p += sizeof(char16_t);
 			}
 
-			uint8_t* data = p;
+			uint8_t* recv_data = p;
 			auto datasize = (int32_t)buf.size() - (p-&(buf[0]));
 		
 			if( m_data.count( key ) > 0 )
@@ -17800,31 +17802,35 @@ void ServerImplemented::Update(Manager** managers, int32_t managerCount, Reloadi
 
 			for( int32_t d = 0; d < datasize; d++ )
 			{
-				m_data[key].push_back( data[d] );
+				m_data[key].push_back( recv_data[d] );
 			}
 
 			if( m_effects.count( key ) > 0 )
 			{
 				if (managers != nullptr)
 				{
+					auto& data_ = m_data[key];
+
 					if (m_materialPath.size() > 1)
 					{
-						m_effects[key]->Reload(managers, managerCount, m_data[key].data(), (int32_t)m_data.size(), &(m_materialPath[0]), reloadingThreadType);
+						m_effects[key]->Reload(managers, managerCount, data_.data(), (int32_t)data_.size(), &(m_materialPath[0]), reloadingThreadType);
 					}
 					else
 					{
-						m_effects[key]->Reload(managers, managerCount, m_data[key].data(), (int32_t)m_data.size(), nullptr, reloadingThreadType);
+						m_effects[key]->Reload(managers, managerCount, data_.data(), (int32_t)data_.size(), nullptr, reloadingThreadType);
 					}
 				}
 				else
 				{
+					auto& data_ = m_data[key];
+
 					if (m_materialPath.size() > 1)
 					{
-						m_effects[key]->Reload(m_data[key].data(), (int32_t)m_data.size(), &(m_materialPath[0]), reloadingThreadType);
+						m_effects[key]->Reload(data_.data(), (int32_t)data_.size(), &(m_materialPath[0]), reloadingThreadType);
 					}
 					else
 					{
-						m_effects[key]->Reload(m_data[key].data(), (int32_t)m_data.size(), nullptr, reloadingThreadType);
+						m_effects[key]->Reload(data_.data(), (int32_t)data_.size(), nullptr, reloadingThreadType);
 					}
 				}
 				
@@ -17904,7 +17910,7 @@ private:
 	bool		m_running;
 	std::mutex	mutexStop;
 
-	HOSTENT* GetHostEntry( const char* host );
+	bool GetAddr( const char* host, IN_ADDR* addr);
 
 	static void RecvAsync( void* data );
 	void StopInternal();
@@ -17996,6 +18002,7 @@ Client* Client::Create()
 	return new ClientImplemented();
 }
 
+/*
 HOSTENT* ClientImplemented::GetHostEntry( const char* host )
 {
 	HOSTENT* hostEntry = nullptr;
@@ -18024,14 +18031,38 @@ HOSTENT* ClientImplemented::GetHostEntry( const char* host )
 
 	return hostEntry;
 }
+*/
+
+bool ClientImplemented::GetAddr(const char* host, IN_ADDR* addr)
+{
+	HOSTENT* hostEntry = nullptr;
+
+	// check ip adress or DNS
+	addr->s_addr = ::inet_addr(host);
+	if (addr->s_addr == InaddrNone)
+	{
+		// DNS
+		hostEntry = ::gethostbyname(host);
+		if (hostEntry == nullptr)
+		{
+			return nullptr;
+		}
+
+		addr->s_addr = *(unsigned int *)hostEntry->h_addr_list[0];
+	}
+
+	return true;
+}
 
 bool ClientImplemented::Start( char* host, uint16_t port )
 {
 	if( m_running ) return false;
 
+	// to stop thread
+	Stop();
+
 	SOCKADDR_IN sockAddr;
-	HOSTENT* hostEntry= NULL;
-	
+
 	// create a socket
 	EfkSocket socket_ = Socket::GenSocket();
 	if ( socket_ == InvalidSocket )
@@ -18039,11 +18070,11 @@ bool ClientImplemented::Start( char* host, uint16_t port )
 		return false;
 	}
 
-	// Get host entry
-	hostEntry = GetHostEntry( host );
-	if ( hostEntry == NULL )
+	// get adder
+	IN_ADDR addr;
+	if (!GetAddr(host, &addr))
 	{
-		if ( socket_ != InvalidSocket ) Socket::Close( socket_ );
+		if (socket_ != InvalidSocket) Socket::Close(socket_);
 		return false;
 	}
 
@@ -18051,7 +18082,7 @@ bool ClientImplemented::Start( char* host, uint16_t port )
 	memset( &sockAddr, 0, sizeof(SOCKADDR_IN) );
 	sockAddr.sin_family	= AF_INET;
 	sockAddr.sin_port	= htons( port );
-	sockAddr.sin_addr	= *(IN_ADDR*)(hostEntry->h_addr_list[0]);
+	sockAddr.sin_addr	= addr;
 
 	// connect
 	int32_t ret = ::connect( socket_, (SOCKADDR*)(&sockAddr), sizeof(SOCKADDR_IN) );

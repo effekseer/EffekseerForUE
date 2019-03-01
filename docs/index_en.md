@@ -186,6 +186,8 @@ Effects can be played at indicated time in Animation Sequence.
 
 ### 4.1 Network
 
+* Only Windows
+
 You can edit the playing effect in an application (game etc.) via the network from the outside when application is running.
 
 <img src="img/network.png" width="800">
@@ -216,6 +218,12 @@ If a large number of models are drawn, the speed tends to decrease.
 - Improved ease of use
 
 ## Release note
+
+### 1.43 (2018/03/02) 
+
+- Supported 4.21
+
+- Add network functions
 
 ### 1.40 (2018/09/12) 
 

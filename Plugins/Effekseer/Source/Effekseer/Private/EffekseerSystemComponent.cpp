@@ -30,8 +30,10 @@ private:
 	::Effekseer::Manager*	effekseerManager = nullptr;
 	::EffekseerRendererUE4::RendererImplemented*	effekseerRenderer = nullptr;
 	
+#ifdef _WIN32
 	::Effekseer::Server*	server = nullptr;
 	std::map<std::u16string, ::Effekseer::Effect*> registeredEffects;
+#endif
 
 	TMap<UTexture2D*, UMaterialInstanceDynamic*> OpaqueDynamicMaterials;
 	TMap<UTexture2D*, UMaterialInstanceDynamic*> TranslucentDynamicMaterials;
@@ -72,11 +74,13 @@ public:
 
 	virtual ~FEffekseerSystemSceneProxy()
 	{
+#ifdef _WIN32
 		if (server != nullptr)
 		{
 			ES_SAFE_DELETE(server);
 			server = nullptr;
 		}
+#endif
 
 		if (effekseerManager != nullptr)
 		{
@@ -178,6 +182,7 @@ public:
 				auto eid = effekseerManager->Play(effect, position.X, position.Z, position.Y);
 				internalHandle2EfkHandle.Add(cmd.ID, eid);
 
+#ifdef _WIN32
 				if (server != nullptr)
 				{
 					if (registeredEffects.count(effect->GetName()) == 0)
@@ -186,6 +191,7 @@ public:
 						server->Register(effect->GetName(), effect);
 					}
 				}
+#endif
 			}
 
 			if (cmd.Type == EffekseerUpdateData_CommandType::SetP)
@@ -260,6 +266,7 @@ public:
 
 			if (cmd.Type == EffekseerUpdateData_CommandType::StartNetwork)
 			{
+#ifdef _WIN32
 				if (server == nullptr)
 				{
 					server = Effekseer::Server::Create();
@@ -271,16 +278,19 @@ public:
 						ES_SAFE_DELETE(server);
 					}
 				}
+#endif
 			}
 
 			if (cmd.Type == EffekseerUpdateData_CommandType::StopNetwork)
 			{
+#ifdef _WIN32
 				if (server != nullptr)
 				{
 					server->Stop();
 					ES_SAFE_DELETE(server);
 					registeredEffects.clear();
 				}
+#endif
 			}
 		}
 
@@ -291,10 +301,12 @@ public:
 		Time -= frame * (1.0f / 60.0f);
 
 		{
+#ifdef _WIN32
 			if (server != nullptr)
 			{
 				server->Update(&effekseerManager, 1, Effekseer::ReloadingThreadType::Render);
 			}
+#endif
 
 			if (effekseerManager != nullptr)
 			{
