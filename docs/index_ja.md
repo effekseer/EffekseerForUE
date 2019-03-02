@@ -194,6 +194,7 @@ EffekseerSystemコンポーネントにEffekseerから接続するためのポ�
 
 <img src="img/network_ui.png">
 
+制限として、ブレンドの変更や使用していない画像への変更は適用されません。
 
 ## 注意
 

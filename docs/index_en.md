@@ -196,6 +196,7 @@ You specify the port to be connected from Effekseer fo EffekseerSystemComponent.
 Then you can edit the effect from Effekseer. In order to edit the effect from another computer, it is necessary to open the port with the setting of the firewall.
 <img src="img/network_ui.png">
 
+As a limitation, changes to blends or changes to unused images are not applied.
 
 ## Caution
 
