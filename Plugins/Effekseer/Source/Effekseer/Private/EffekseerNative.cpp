@@ -12644,9 +12644,18 @@ bool EffectImplemented::Reload( Manager** managers, int32_t managersCount, void*
 		lockCount++;
 	}
 
+	// HACK for scale
+	auto originalMag = this->GetMaginification() / this->m_maginificationExternal;
+	auto originalMagExt = this->m_maginificationExternal;
+
 	isReloadingOnRenderingThread = true;
 	Reset();
-	Load( data, size, m_maginificationExternal, matPath, reloadingThreadType);
+	Load( data, size, originalMag * originalMagExt, matPath, reloadingThreadType);
+
+	// HACK for scale
+	m_maginification = originalMag * originalMagExt;
+	m_maginificationExternal = originalMagExt;
+
 	isReloadingOnRenderingThread = false;
 
 	for( int32_t i = 0; i < managersCount; i++)
@@ -18045,7 +18054,7 @@ bool ClientImplemented::GetAddr(const char* host, IN_ADDR* addr)
 		hostEntry = ::gethostbyname(host);
 		if (hostEntry == nullptr)
 		{
-			return nullptr;
+			return false;
 		}
 
 		addr->s_addr = *(unsigned int *)hostEntry->h_addr_list[0];
