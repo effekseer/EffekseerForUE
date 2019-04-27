@@ -29,8 +29,10 @@ namespace EffekseerRendererUE4
 		// FMaterialRenderProxy interface.
 #if ENGINE_MINOR_VERSION < 20
 		virtual const class FMaterial* GetMaterial(ERHIFeatureLevel::Type InFeatureLevel) const override;
-#else
+#elif  ENGINE_MINOR_VERSION < 22
 		virtual void GetMaterialWithFallback(ERHIFeatureLevel::Type InFeatureLevel, const FMaterialRenderProxy*& OutMaterialRenderProxy, const class FMaterial*& OutMaterial) const override;
+#else
+		virtual const FMaterial& GetMaterialWithFallback(ERHIFeatureLevel::Type InFeatureLevel, const FMaterialRenderProxy*& OutFallbackMaterialRenderProxy) const override;
 #endif
 
 #if ENGINE_MINOR_VERSION < 19
@@ -49,10 +51,15 @@ namespace EffekseerRendererUE4
 	{
 		return Parent->GetMaterial(InFeatureLevel);
 	}
-#else
+#elif ENGINE_MINOR_VERSION < 22
 	void FDistortionMaterialRenderProxy::GetMaterialWithFallback(ERHIFeatureLevel::Type InFeatureLevel, const FMaterialRenderProxy*& OutMaterialRenderProxy, const class FMaterial*& OutMaterial) const
 	{
 		OutMaterial = Parent->GetMaterial(InFeatureLevel);
+	}
+#else
+	const FMaterial& FDistortionMaterialRenderProxy::GetMaterialWithFallback(ERHIFeatureLevel::Type InFeatureLevel, const FMaterialRenderProxy*& OutFallbackMaterialRenderProxy) const
+	{
+		return *(Parent->GetMaterial(InFeatureLevel));
 	}
 #endif
 
@@ -120,8 +127,10 @@ namespace EffekseerRendererUE4
 #if ENGINE_MINOR_VERSION < 20
 		// FMaterialRenderProxy interface.
 		virtual const class FMaterial* GetMaterial(ERHIFeatureLevel::Type InFeatureLevel) const;
-#else
+#elif ENGINE_MINOR_VERSION < 22
 		virtual void GetMaterialWithFallback(ERHIFeatureLevel::Type InFeatureLevel, const FMaterialRenderProxy*& OutMaterialRenderProxy, const class FMaterial*& OutMaterial) const override;
+#else
+		virtual const FMaterial& GetMaterialWithFallback(ERHIFeatureLevel::Type InFeatureLevel, const FMaterialRenderProxy*& OutFallbackMaterialRenderProxy) const override;
 #endif
 
 #if ENGINE_MINOR_VERSION < 19
@@ -140,10 +149,15 @@ namespace EffekseerRendererUE4
 	{
 		return Parent->GetMaterial(InFeatureLevel);
 	}
-#else
+#elif ENGINE_MINOR_VERSION < 22
 	void FModelMaterialRenderProxy::GetMaterialWithFallback(ERHIFeatureLevel::Type InFeatureLevel, const FMaterialRenderProxy*& OutMaterialRenderProxy, const class FMaterial*& OutMaterial) const
 	{
 		OutMaterial = Parent->GetMaterial(InFeatureLevel);
+	}
+#else
+	const FMaterial& FModelMaterialRenderProxy::GetMaterialWithFallback(ERHIFeatureLevel::Type InFeatureLevel, const FMaterialRenderProxy*& OutFallbackMaterialRenderProxy) const
+	{
+		return *(Parent->GetMaterial(InFeatureLevel));
 	}
 #endif
 
@@ -673,8 +687,11 @@ namespace EffekseerRendererUE4
 					si * 4 + 3);
 			}
 
+#if ENGINE_MINOR_VERSION < 21
 			auto proxy = mat->GetRenderProxy(false);
-
+#else
+			auto proxy = mat->GetRenderProxy();
+#endif
 			proxy = new FDistortionMaterialRenderProxy(proxy, m_distortionIntensity);
 			m_meshElementCollector->RegisterOneFrameMaterialProxy(proxy);
 
@@ -720,7 +737,11 @@ namespace EffekseerRendererUE4
 					si * 4 + 3);
 			}
 
+#if ENGINE_MINOR_VERSION < 21
 			auto proxy = mat->GetRenderProxy(false);
+#else
+			auto proxy = mat->GetRenderProxy();
+#endif
 
 			meshBuilder.GetMesh(m_localToWorld, proxy, SDPG_World, false, false, m_viewIndex, *m_meshElementCollector);
 		}
@@ -782,7 +803,12 @@ namespace EffekseerRendererUE4
 					false, 
 					false);
 
+#if ENGINE_MINOR_VERSION < 21
 				auto proxy = mat->GetRenderProxy(false);
+#else
+				auto proxy = mat->GetRenderProxy();
+#endif
+
 				proxy = new FModelMaterialRenderProxy(proxy, uv, color, m_distortionIntensity);
 				m_meshElementCollector->RegisterOneFrameMaterialProxy(proxy);
 

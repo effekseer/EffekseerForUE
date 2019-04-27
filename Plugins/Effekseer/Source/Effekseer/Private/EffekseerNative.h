@@ -13,6 +13,8 @@
 #include <string.h>
 #include <atomic>
 #include <stdint.h>
+#include <climits>
+#include <vector>
 
 //----------------------------------------------------------------------------------
 //
@@ -1298,9 +1300,174 @@ namespace Effekseer
 //----------------------------------------------------------------------------------
 
 /**
-	@brief	エフェクトパラメータークラス
-	@note
-	エフェクトに設定されたパラメーター。
+@brief
+\~English	Terms where an effect exists
+\~Japanese	エフェクトが存在する期間
+*/
+struct EffectTerm
+{
+	/**
+@brief
+\~English	Minimum end time that the effect may exist
+\~Japanese	エフェクトが存在する可能性のある最小の終了時間
+*/
+	int32_t TermMin;
+
+	/**
+	@brief
+	\~English	Maximum end time that the effect may exist
+	\~Japanese	エフェクトが存在する可能性のある最大の終了時間
+	*/
+	int32_t TermMax;
+};
+
+	/**
+@brief
+\~English	Terms where instances exists
+\~Japanese	インスタンスが存在する期間
+*/
+struct EffectInstanceTerm
+{
+	/**
+	@brief
+	\~English	Minimum start time that the first instance may exist
+	\~Japanese	最初のインスタンスが存在する可能性のある最小の開始時間
+	*/
+	int32_t FirstInstanceStartMin = 0;
+
+	/**
+	@brief
+	\~English	Maximum start time that the first instance may exist
+	\~Japanese	最初のインスタンスが存在する可能性のある最大の開始時間
+	*/
+	int32_t FirstInstanceStartMax = 0;
+
+	/**
+	@brief
+	\~English	Minimum end time that the first instance may exist
+	\~Japanese	最初のインスタンスが存在する可能性のある最小の終了時間
+	*/
+	int32_t FirstInstanceEndMin = INT_MAX;
+
+	/**
+	@brief
+	\~English	Maximum end time that the first instance may exist
+	\~Japanese	最初のインスタンスが存在する可能性のある最大の終了時間
+	*/
+	int32_t FirstInstanceEndMax = INT_MAX;
+
+	/**
+	@brief
+	\~English	Minimum start time that the last instance may exist
+	\~Japanese	最後のインスタンスが存在する可能性のある最小の開始時間
+	*/
+	int32_t LastInstanceStartMin = 0;
+
+	/**
+	@brief
+	\~English	Maximum start time that the last instance may exist
+	\~Japanese	最後のインスタンスが存在する可能性のある最大の開始時間
+	*/
+	int32_t LastInstanceStartMax = 0;
+
+	/**
+	@brief
+	\~English	Minimum end time that the last instance may exist
+	\~Japanese	最後のインスタンスが存在する可能性のある最小の終了時間
+	*/
+	int32_t LastInstanceEndMin = INT_MAX;
+
+	/**
+	@brief
+	\~English	Maximum end time that the last instance may exist
+	\~Japanese	最後のインスタンスが存在する可能性のある最大の終了時間
+	*/
+	int32_t LastInstanceEndMax = INT_MAX;
+};
+
+/**
+	@brief
+	\~English A class to edit an instance of EffectParameter for supporting original format when a binary is loaded.
+	\~Japanese	独自フォーマットをサポートするための、バイナリが読み込まれた時にEffectParameterのインスタンスを編集するクラス
+*/
+class EffectFactory : public ReferenceObject
+{
+protected:
+	/**
+	@brief	
+	\~English load body data(parameters of effect) from a binary
+	\~Japanese	バイナリから本体(エフェクトのパラメーター)を読み込む。
+	*/
+	bool LoadBody(Effect* effect, const void* data, int32_t size, float magnification, const EFK_CHAR* materialPath); 
+
+	/**
+	@brief
+	\~English set texture data into specified index
+	\~Japanese	指定されたインデックスにテクスチャを設定する。
+	*/
+	void SetTexture(Effect* effect, int32_t index, TextureType type, TextureData* data);
+
+	/**
+	@brief
+	\~English set sound data into specified index
+	\~Japanese	指定されたインデックスに音を設定する。
+	*/
+
+	void SetSound(Effect* effect, int32_t index, void* data);
+
+	/**
+	@brief
+	\~English set model data into specified index
+	\~Japanese	指定されたインデックスにモデルを設定する。
+	*/
+	void SetModel(Effect* effect, int32_t index, void* data);
+
+
+public:
+	EffectFactory();
+
+	virtual ~EffectFactory();
+
+	/**
+		@brief
+		\~English this method is called to check whether loaded binary are supported. 
+		\~Japanese	バイナリがサポートされているか確認するためにこのメソッドが呼ばれる。
+	*/
+	virtual bool OnCheckIsBinarySupported(const void* data, int32_t size);
+
+	/**
+		@brief
+		\~English this method is called to check whether reloading are supported.
+		\~Japanese	リロードがサポートされているか確認するためにこのメソッドが呼ばれる。
+	*/
+	virtual bool OnCheckIsReloadSupported();
+
+	/**
+		@brief
+		\~English this method is called when load a effect from binary
+		\~Japanese	バイナリからエフェクトを読み込む時に、このメソッドが呼ばれる。
+	*/
+	virtual bool OnLoading(Effect* effect, const void* data, int32_t size, float magnification, const EFK_CHAR* materialPath);
+
+	/**
+		@brief
+		\~English this method is called when load resources
+		\~Japanese	リソースを読み込む時に、このメソッドが呼ばれる。
+	*/
+	virtual void OnLoadingResource(Effect* effect, const void* data, int32_t size, const EFK_CHAR* materialPath);
+
+	/**
+	@brief
+	\~English this method is called when unload resources
+	\~Japanese	リソースを廃棄される時に、このメソッドが呼ばれる。
+	*/
+	virtual void OnUnloadingResource(Effect* effect);
+};
+
+/**
+	@brief	
+	\~English	Effect parameters
+	\~Japanese	エフェクトパラメータークラス
 */
 class Effect
 	: public IReference
@@ -1401,6 +1568,12 @@ public:
 	virtual int32_t GetColorImageCount() const = 0;
 
 	/**
+	@brief	\~English	Get a color image's path
+	\~Japanese	色画像のパスを取得する。
+	*/
+	virtual const EFK_CHAR* GetColorImagePath(int n) const = 0;
+
+	/**
 	@brief	格納されている法線画像のポインタを取得する。
 	@param	n	[in]	画像のインデックス
 	@return	画像のポインタ
@@ -1412,6 +1585,12 @@ public:
 	*/
 	virtual int32_t GetNormalImageCount() const = 0;
 
+	/**
+	@brief	\~English	Get a normal image's path
+	\~Japanese	法線画像のパスを取得する。
+	*/
+	virtual const EFK_CHAR* GetNormalImagePath(int n) const = 0;
+	
 	/**
 	@brief	格納されている歪み画像のポインタを取得する。
 	@param	n	[in]	画像のインデックス
@@ -1425,6 +1604,12 @@ public:
 	virtual int32_t GetDistortionImageCount() const = 0;
 
 	/**
+	@brief	\~English	Get a distortion image's path
+	\~Japanese	歪み画像のパスを取得する。
+	*/
+	virtual const EFK_CHAR* GetDistortionImagePath(int n) const = 0;
+	
+	/**
 		@brief	格納されている音波形のポインタを取得する。
 	*/
 	virtual void* GetWave( int n ) const = 0;
@@ -1435,6 +1620,12 @@ public:
 	virtual int32_t GetWaveCount() const = 0;
 
 	/**
+	@brief	\~English	Get a wave's path
+	\~Japanese	音波形のパスを取得する。
+	*/
+	virtual const EFK_CHAR* GetWavePath(int n) const = 0;
+	
+	/**
 		@brief	格納されているモデルのポインタを取得する。
 	*/
 	virtual void* GetModel( int n ) const = 0;
@@ -1444,6 +1635,12 @@ public:
 	*/
 	virtual int32_t GetModelCount() const = 0;
 
+	/**
+	@brief	\~English	Get a model's path
+	\~Japanese	モデルのパスを取得する。
+	*/
+	virtual const EFK_CHAR* GetModelPath(int n) const = 0;
+	
 	/**
 		@brief
 		\~English	Reload this effect
@@ -1565,7 +1762,7 @@ public:
 	/**
 		@brief	画像等リソースの再読み込みを行う。
 	*/
-	virtual void ReloadResources( const EFK_CHAR* materialPath = nullptr ) = 0;
+	virtual void ReloadResources( const void* data = nullptr, int32_t size = 0, const EFK_CHAR* materialPath = nullptr ) = 0;
 
 	/**
 		@brief	画像等リソースの破棄を行う。
@@ -1576,6 +1773,13 @@ public:
 	@brief	Rootを取得する。
 	*/
 	virtual EffectNode* GetRoot() const = 0;
+
+	/**
+		@brief
+	\~English	Calculate a term of instances where the effect exists
+	\~Japanese	エフェクトが存在する期間を計算する。
+	*/
+	virtual EffectTerm CalculateTerm() const = 0;
 };
 
 /**
@@ -1651,6 +1855,13 @@ public:
 	\~Japanese	モデルパラメーターを取得する。
 	*/
 	virtual EffectModelParameter GetEffectModelParameter() = 0;
+
+	/**
+	@brief
+	\~English	Calculate a term of instances where instances exists
+	\~Japanese	インスタンスが存在する期間を計算する。
+	*/
+	virtual EffectInstanceTerm CalculateInstanceTerm(EffectInstanceTerm& parentTerm) const = 0;
 };
 
 //----------------------------------------------------------------------------------
@@ -2727,6 +2938,25 @@ public:
 	virtual TextureData* Load( const EFK_CHAR* path, TextureType textureType ) { return nullptr; }
 
 	/**
+		@brief
+		\~English	a function called when texture is loaded
+		\~Japanese	テクスチャが読み込まれるときに呼ばれる関数
+		@param	data
+		\~English	data pointer
+		\~Japanese	データのポインタ
+		@param	size
+		\~English	the size of data
+		\~Japanese	データの大きさ
+		@param	textureType
+		\~English	a kind of texture
+		\~Japanese	テクスチャの種類
+		@return
+		\~English	a pointer of loaded texture
+		\~Japanese	読み込まれたテクスチャのポインタ
+	*/
+	virtual TextureData* Load(const void* data, int32_t size, TextureType textureType) { return nullptr; }
+
+	/**
 		@brief	テクスチャを破棄する。
 		@param	data	[in]	テクスチャ
 		@note
@@ -2784,6 +3014,22 @@ public:
 		::Effekseer::Effect::Create実行時に使用される。
 	*/
 	virtual void* Load( const EFK_CHAR* path ) { return NULL; }
+
+	/**
+		@brief
+		\~English	a function called when model is loaded
+		\~Japanese	モデルが読み込まれるときに呼ばれる関数
+		@param	data
+		\~English	data pointer
+		\~Japanese	データのポインタ
+		@param	size
+		\~English	the size of data
+		\~Japanese	データの大きさ
+		@return
+		\~English	a pointer of loaded texture
+		\~Japanese	読み込まれたモデルのポインタ
+	*/
+	virtual void* Load(const void* data, int32_t size) { return nullptr; }
 
 	/**
 		@brief	モデルを破棄する。
@@ -3254,6 +3500,22 @@ public:
 	virtual void* Load( const EFK_CHAR* path ) { return NULL; }
 
 	/**
+		@brief
+		\~English	a function called when sound is loaded
+		\~Japanese	サウンドが読み込まれるときに呼ばれる関数
+		@param	data
+		\~English	data pointer
+		\~Japanese	データのポインタ
+		@param	size
+		\~English	the size of data
+		\~Japanese	データの大きさ
+		@return
+		\~English	a pointer of loaded texture
+		\~Japanese	読み込まれたサウンドのポインタ
+	*/
+	virtual void* Load(const void* data, int32_t size) { return nullptr; }
+
+	/**
 		@brief	サウンドを破棄する。
 		@param	data	[in]	サウンド
 		@note
@@ -3286,6 +3548,9 @@ namespace Effekseer {
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
+
+class EffectFactory;
+
 /**
 	@brief	設定クラス
 	@note
@@ -3296,13 +3561,15 @@ namespace Effekseer {
 		: public ReferenceObject
 	{
 	private:
-		/* 座標系 */
+		//! coordinate system
 		CoordinateSystem		m_coordinateSystem;
 
 		EffectLoader*	m_effectLoader;
 		TextureLoader*	m_textureLoader;
 		SoundLoader*	m_soundLoader;
 		ModelLoader*	m_modelLoader;
+
+		std::vector<EffectFactory*> effectFactories;
 
 	protected:
 		/**
@@ -3383,6 +3650,27 @@ namespace Effekseer {
 			@param	loader	[in]		ローダー
 			*/
 		void SetSoundLoader(SoundLoader* loader);
+
+		/**
+			@brief
+			\~English	Add effect factory
+			\~Japanese Add an effect factory
+		*/
+		void AddEffectFactory(EffectFactory* effectFactory);
+
+		/**
+			@brief
+			\~English	Get effect factory
+			\~Japanese Effect Factoryを取得する。
+		*/
+		EffectFactory* GetEffectFactory(int32_t ind) const;
+
+		/**
+			@brief
+			\~English	Get the number of effect factory
+			\~Japanese Effect Factoryの数を取得する。
+		*/
+		int32_t GetEffectFactoryCount() const;
 	};
 
 //----------------------------------------------------------------------------------

@@ -30,7 +30,7 @@ namespace UnrealBuildTool.Rules
 					"Engine",
 					"RHI",
 					"RenderCore",
-					"ShaderCore",
+					//"ShaderCore",
 				}
 				);
 
@@ -42,7 +42,7 @@ namespace UnrealBuildTool.Rules
 					"Engine",
 					"RHI",
 					"RenderCore",
-					"ShaderCore",
+					//"ShaderCore",
 					"Slate",
 				}
 				);

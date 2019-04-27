@@ -5134,16 +5134,26 @@ struct ParameterCommonValues_8
 
 struct ParameterCommonValues
 {
-	int MaxGeneration;
-	BindType TranslationBindType;
-	BindType RotationBindType;
-	BindType ScalingBindType;
-	int		RemoveWhenLifeIsExtinct;
-	int		RemoveWhenParentIsRemoved;
-	int		RemoveWhenChildrenIsExtinct;
+	int MaxGeneration = 1;
+	BindType TranslationBindType = BindType::Always;
+	BindType RotationBindType = BindType::Always;
+	BindType ScalingBindType = BindType::Always;
+	int RemoveWhenLifeIsExtinct = 1;
+	int RemoveWhenParentIsRemoved = 0;
+	int RemoveWhenChildrenIsExtinct = 0;
 	random_int	life;
 	random_float GenerationTime;
 	random_float GenerationTimeOffset;
+
+	ParameterCommonValues()
+	{
+		life.max = 1;
+		life.min = 1;
+		GenerationTime.max = 1;
+		GenerationTime.min = 1;
+		GenerationTimeOffset.max = 0;
+		GenerationTimeOffset.min = 0;
+	}
 };
 
 struct ParameterDepthValues
@@ -5787,9 +5797,6 @@ enum eRenderingOrder
 	RenderingOrder_DWORD = 0x7fffffff,
 };
 
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
 
 /**
 @brief	ノードインスタンス生成クラス
@@ -5940,6 +5947,8 @@ public:
 	@brief	サウンド再生
 	*/
 	virtual void PlaySound_(Instance& instance, SoundTag tag, Manager* manager);
+
+	EffectInstanceTerm CalculateInstanceTerm(EffectInstanceTerm& parentTerm) const override;
 
 	/**
 	@brief	エフェクトノード生成
@@ -6927,12 +6936,13 @@ public:
 //----------------------------------------------------------------------------------
 #endif	// __EFFEKSEER_ParameterNODE_TRACK_H__
 
-#ifndef	__EFFEKSEER_EFFECT_IMPLEMENTED_H__
-#define	__EFFEKSEER_EFFECT_IMPLEMENTED_H__
+#ifndef __EFFEKSEER_EFFECT_IMPLEMENTED_H__
+#define __EFFEKSEER_EFFECT_IMPLEMENTED_H__
 
 //----------------------------------------------------------------------------------
 // Include
 //----------------------------------------------------------------------------------
+
 
 //----------------------------------------------------------------------------------
 //
@@ -6946,16 +6956,14 @@ namespace Effekseer
 class EffectReloadingBackup
 {
 public:
-	template<class T> 
-	class Holder
+	template <class T> class Holder
 	{
 	public:
 		T value;
 		int counter = 0;
 	};
 
-	template<class T>
-	class HolderCollection
+	template <class T> class HolderCollection
 	{
 		std::map<std::u16string, Holder<T>> collection;
 
@@ -6964,7 +6972,7 @@ public:
 		{
 			auto key_ = std::u16string(key);
 			auto it = collection.find(key_);
-			
+
 			if (it == collection.end())
 			{
 				collection[key_].value = value;
@@ -6998,10 +7006,7 @@ public:
 			}
 		}
 
-		std::map<std::u16string, Holder<T>>& GetCollection()
-		{
-			return collection;
-		}
+		std::map<std::u16string, Holder<T>>& GetCollection() { return collection; }
 	};
 
 	HolderCollection<TextureData*> images;
@@ -7011,72 +7016,73 @@ public:
 	HolderCollection<void*> models;
 };
 
-/**
-	@brief	エフェクトパラメーター
-	@note
-	エフェクトに設定されたパラメーター。
-*/
 
-class EffectImplemented
-	: public Effect
-	, public ReferenceObject
+
+
+/**
+	@brief	Effect parameter
+*/
+class EffectImplemented : public Effect, public ReferenceObject
 {
 	friend class ManagerImplemented;
 	friend class EffectNodeImplemented;
-private:
+	friend class EffectFactory;
+
+protected:
 	ManagerImplemented* m_pManager;
 
-	Setting*	m_setting;
+	Setting* m_setting;
 
 	mutable std::atomic<int32_t> m_reference;
 
-	int	m_version;
+	EffectFactory* factory = nullptr;
 
-	int	m_ImageCount;
-	EFK_CHAR**		m_ImagePaths;
-	TextureData**	m_pImages;
+	int m_version;
 
-	int	m_normalImageCount;
-	EFK_CHAR**		m_normalImagePaths;
-	TextureData**	m_normalImages;
-	
-	int	m_distortionImageCount;
-	EFK_CHAR**		m_distortionImagePaths;
-	TextureData**	m_distortionImages;
+	int m_ImageCount;
+	EFK_CHAR** m_ImagePaths;
+	TextureData** m_pImages;
 
-	int	m_WaveCount;
-	EFK_CHAR**		m_WavePaths;
-	void**			m_pWaves;
+	int m_normalImageCount;
+	EFK_CHAR** m_normalImagePaths;
+	TextureData** m_normalImages;
 
-	int32_t	m_modelCount;
-	EFK_CHAR**		m_modelPaths;
-	void**			m_pModels;
+	int m_distortionImageCount;
+	EFK_CHAR** m_distortionImagePaths;
+	TextureData** m_distortionImages;
+
+	int m_WaveCount = 0;
+	EFK_CHAR** m_WavePaths = nullptr;
+	void** m_pWaves = nullptr;
+
+	int32_t m_modelCount = 0;
+	EFK_CHAR** m_modelPaths = nullptr;
+	void** m_pModels = nullptr;
 
 	std::u16string name_;
-	std::basic_string<EFK_CHAR>		m_materialPath;
+	std::basic_string<EFK_CHAR> m_materialPath;
 
-	int32_t			renderingNodesCount = 0;
-	int32_t			renderingNodesThreshold = 0;
+	int32_t renderingNodesCount = 0;
+	int32_t renderingNodesThreshold = 0;
 
-	/* 拡大率 */
-	float	m_maginification;
+	//! scaling of this effect
+	float m_maginification = 1.0f;
 
-	float	m_maginificationExternal;
+	float m_maginificationExternal = 1.0f;
 
 	// default random seed
-	int32_t	m_defaultRandomSeed;
+	int32_t m_defaultRandomSeed;
 
-	// 子ノード
-	EffectNode* m_pRoot;
+	//! child root node
+	EffectNode* m_pRoot = nullptr;
 
-	/* カリング */
+	// culling
 	struct
 	{
-		CullingShape	Shape;
-		Vector3D		Location;
+		CullingShape Shape;
+		Vector3D Location;
 
-		union
-		{
+		union {
 			struct
 			{
 			} None;
@@ -7095,24 +7101,26 @@ private:
 	//! backup to reload on rendering thread
 	std::unique_ptr<EffectReloadingBackup> reloadingBackup;
 
+	bool LoadBody(uint8_t* data, int32_t size, float mag);
+
 	void ResetReloadingBackup();
 
 public:
 	/**
 		@brief	生成
 	*/
-	static Effect* Create( Manager* pManager, void* pData, int size, float magnification, const EFK_CHAR* materialPath = NULL );
+	static Effect* Create(Manager* pManager, void* pData, int size, float magnification, const EFK_CHAR* materialPath = NULL);
 
 	/**
 		@brief	生成
 	*/
-	static Effect* Create( Setting* setting, void* pData, int size, float magnification, const EFK_CHAR* materialPath = NULL );
+	static Effect* Create(Setting* setting, void* pData, int size, float magnification, const EFK_CHAR* materialPath = NULL);
 
 	// コンストラクタ
-	EffectImplemented( Manager* pManager, void* pData, int size );
+	EffectImplemented(Manager* pManager, void* pData, int size);
 
 	// コンストラクタ
-	EffectImplemented( Setting* setting, void* pData, int size );
+	EffectImplemented(Setting* setting, void* pData, int size);
 
 	// デストラクタ
 	virtual ~EffectImplemented();
@@ -7122,7 +7130,7 @@ public:
 
 	float GetMaginification() const override;
 
-	bool Load( void* pData, int size, float mag, const EFK_CHAR* materialPath, ReloadingThreadType reloadingThreadType);
+	bool Load(void* pData, int size, float mag, const EFK_CHAR* materialPath, ReloadingThreadType reloadingThreadType);
 
 	/**
 		@breif	何も読み込まれていない状態に戻す
@@ -7149,7 +7157,7 @@ public:
 	@brief	設定取得
 	*/
 	Setting* GetSetting() const override;
-	
+
 	/**
 		@brief	エフェクトデータのバージョン取得
 	*/
@@ -7160,10 +7168,9 @@ public:
 	*/
 	TextureData* GetColorImage(int n) const override;
 
-	/**
-		@brief	格納されている画像のポインタの個数を取得する。
-	*/
 	int32_t GetColorImageCount() const override;
+
+	const EFK_CHAR* GetColorImagePath(int n) const override;
 
 	/**
 	@brief	格納されている画像のポインタを取得する。
@@ -7172,52 +7179,65 @@ public:
 
 	int32_t GetNormalImageCount() const override;
 
+	const EFK_CHAR* GetNormalImagePath(int n) const override;
+
 	TextureData* GetDistortionImage(int n) const override;
 
 	int32_t GetDistortionImageCount() const override;
 
-	/**
-		@brief	格納されている音波形のポインタを取得する。
-	*/
-	void* GetWave( int n ) const override;
+	const EFK_CHAR* GetDistortionImagePath(int n) const override;
+
+	void* GetWave(int n) const override;
 
 	int32_t GetWaveCount() const override;
 
-	/**
-		@brief	格納されているモデルのポインタを取得する。
-	*/
-	void* GetModel( int n ) const override;
+	const EFK_CHAR* GetWavePath(int n) const override;
+
+	void* GetModel(int n) const override;
 
 	int32_t GetModelCount() const override;
 
-	/**
-		@brief	エフェクトのリロードを行う。
-	*/
-	bool Reload( void* data, int32_t size, const EFK_CHAR* materialPath, ReloadingThreadType reloadingThreadType) override;
+	const EFK_CHAR* GetModelPath(int n) const override;
 
 	/**
 		@brief	エフェクトのリロードを行う。
 	*/
-	bool Reload( const EFK_CHAR* path, const EFK_CHAR* materialPath, ReloadingThreadType reloadingThreadType) override;
+	bool Reload(void* data, int32_t size, const EFK_CHAR* materialPath, ReloadingThreadType reloadingThreadType) override;
 
 	/**
 		@brief	エフェクトのリロードを行う。
 	*/
-	bool Reload( Manager** managers, int32_t managersCount, void* data, int32_t size, const EFK_CHAR* materialPath, ReloadingThreadType reloadingThreadType) override;
+	bool Reload(const EFK_CHAR* path, const EFK_CHAR* materialPath, ReloadingThreadType reloadingThreadType) override;
 
 	/**
 		@brief	エフェクトのリロードを行う。
 	*/
-	bool Reload( Manager** managers, int32_t managersCount, const EFK_CHAR* path, const EFK_CHAR* materialPath, ReloadingThreadType reloadingThreadType) override;
+	bool Reload(Manager** managers,
+				int32_t managersCount,
+				void* data,
+				int32_t size,
+				const EFK_CHAR* materialPath,
+				ReloadingThreadType reloadingThreadType) override;
+
+	/**
+		@brief	エフェクトのリロードを行う。
+	*/
+	bool Reload(Manager** managers,
+				int32_t managersCount,
+				const EFK_CHAR* path,
+				const EFK_CHAR* materialPath,
+				ReloadingThreadType reloadingThreadType) override;
 
 	/**
 		@brief	画像等リソースの再読み込みを行う。
 	*/
-	void ReloadResources( const EFK_CHAR* materialPath ) override;
+	void ReloadResources(const void* data, int32_t size, const EFK_CHAR* materialPath) override;
 
 	void UnloadResources(const EFK_CHAR* materialPath);
 
 	void UnloadResources() override;
+
+	EffectTerm CalculateTerm() const override;
 
 	virtual int GetRef() override { return ReferenceObject::GetRef(); }
 	virtual int AddRef() override { return ReferenceObject::AddRef(); }
@@ -7226,11 +7246,11 @@ public:
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-}
+} // namespace Effekseer
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-#endif	// __EFFEKSEER_EFFECT_IMPLEMENTED_H__
+#endif // __EFFEKSEER_EFFECT_IMPLEMENTED_H__
 
 #ifndef	__EFFEKSEER_MANAGER_IMPLEMENTED_H__
 #define	__EFFEKSEER_MANAGER_IMPLEMENTED_H__
@@ -7449,8 +7469,6 @@ private:
 
 	// 破棄等のイベントを実際に実行
 	void ExecuteEvents();
-
-	void ShowErrorAndExit(const char* message);
 public:
 
 	// コンストラクタ
@@ -9133,9 +9151,7 @@ void EffectNodeImplemented::LoadParameter(unsigned char*& pos, EffectNode* paren
 			pos += size;
 
 			// 無効化
-			if (TranslationFixed.Position.X == 0.0f &&
-				TranslationFixed.Position.Y == 0.0f &&
-				TranslationFixed.Position.Z == 0.0f)
+			if (TranslationFixed.Position.X == 0.0f && TranslationFixed.Position.Y == 0.0f && TranslationFixed.Position.Z == 0.0f)
 			{
 				TranslationType = ParameterTranslationType_None;
 				EffekseerPrintDebug("LocationType Change None\n");
@@ -9257,9 +9273,7 @@ void EffectNodeImplemented::LoadParameter(unsigned char*& pos, EffectNode* paren
 			pos += size;
 
 			// 無効化
-			if (RotationFixed.Position.X == 0.0f &&
-				RotationFixed.Position.Y == 0.0f &&
-				RotationFixed.Position.Z == 0.0f)
+			if (RotationFixed.Position.X == 0.0f && RotationFixed.Position.Y == 0.0f && RotationFixed.Position.Z == 0.0f)
 			{
 				RotationType = ParameterRotationType_None;
 				EffekseerPrintDebug("RotationType Change None\n");
@@ -9318,9 +9332,7 @@ void EffectNodeImplemented::LoadParameter(unsigned char*& pos, EffectNode* paren
 			pos += size;
 
 			// 無効化
-			if (ScalingFixed.Position.X == 1.0f &&
-				ScalingFixed.Position.Y == 1.0f &&
-				ScalingFixed.Position.Z == 1.0f)
+			if (ScalingFixed.Position.X == 1.0f && ScalingFixed.Position.Y == 1.0f && ScalingFixed.Position.Z == 1.0f)
 			{
 				ScalingType = ParameterScalingType_None;
 				EffekseerPrintDebug("ScalingType Change None\n");
@@ -9512,7 +9524,6 @@ void EffectNodeImplemented::LoadParameter(unsigned char*& pos, EffectNode* paren
 			// GenerationLocation
 			if (GenerationLocation.type == ParameterGenerationLocation::TYPE_POINT)
 			{
-
 			}
 			else if (GenerationLocation.type == ParameterGenerationLocation::TYPE_SPHERE)
 			{
@@ -9589,28 +9600,22 @@ EffectNodeImplemented::~EffectNodeImplemented()
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-Effect* EffectNodeImplemented::GetEffect() const
-{
-	return m_effect;
-}
+Effect* EffectNodeImplemented::GetEffect() const { return m_effect; }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-int EffectNodeImplemented::GetChildrenCount() const
-{
-	return (int)m_Nodes.size();
-}
+int EffectNodeImplemented::GetChildrenCount() const { return (int)m_Nodes.size(); }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
 EffectNode* EffectNodeImplemented::GetChild(int index) const
 {
-	if (index >= GetChildrenCount()) return NULL;
+	if (index >= GetChildrenCount())
+		return NULL;
 	return m_Nodes[index];
 }
-
 
 EffectBasicRenderParameter EffectNodeImplemented::GetBasicRenderParameter()
 {
@@ -9667,55 +9672,39 @@ void EffectNodeImplemented::LoadRendererParameter(unsigned char*& pos, Setting* 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void EffectNodeImplemented::BeginRendering(int32_t count, Manager* manager)
-{
-}
+void EffectNodeImplemented::BeginRendering(int32_t count, Manager* manager) {}
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void EffectNodeImplemented::BeginRenderingGroup(InstanceGroup* group, Manager* manager)
-{
-}
+void EffectNodeImplemented::BeginRenderingGroup(InstanceGroup* group, Manager* manager) {}
 
-void EffectNodeImplemented::EndRenderingGroup(InstanceGroup* group, Manager* manager)
-{
-}
+void EffectNodeImplemented::EndRenderingGroup(InstanceGroup* group, Manager* manager) {}
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void EffectNodeImplemented::Rendering(const Instance& instance, const Instance* next_instance, Manager* manager)
-{
-}
+void EffectNodeImplemented::Rendering(const Instance& instance, const Instance* next_instance, Manager* manager) {}
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void EffectNodeImplemented::EndRendering(Manager* manager)
-{
-}
+void EffectNodeImplemented::EndRendering(Manager* manager) {}
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void EffectNodeImplemented::InitializeRenderedInstanceGroup(InstanceGroup& instanceGroup, Manager* manager)
-{
-}
+void EffectNodeImplemented::InitializeRenderedInstanceGroup(InstanceGroup& instanceGroup, Manager* manager) {}
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void EffectNodeImplemented::InitializeRenderedInstance(Instance& instance, Manager* manager)
-{
-}
+void EffectNodeImplemented::InitializeRenderedInstance(Instance& instance, Manager* manager) {}
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void EffectNodeImplemented::UpdateRenderedInstance(Instance& instance, Manager* manager)
-{
-}
+void EffectNodeImplemented::UpdateRenderedInstance(Instance& instance, Manager* manager) {}
 
 //----------------------------------------------------------------------------------
 //
@@ -9727,23 +9716,20 @@ float EffectNodeImplemented::GetFadeAlpha(const Instance& instance)
 	if (RendererCommon.FadeInType == ParameterRendererCommon::FADEIN_ON && instance.m_LivingTime < RendererCommon.FadeIn.Frame)
 	{
 		float v = 1.0f;
-		RendererCommon.FadeIn.Value.setValueToArg(
-			v,
-			0.0f,
-			1.0f,
-			(float)instance.m_LivingTime / (float)RendererCommon.FadeIn.Frame);
+		RendererCommon.FadeIn.Value.setValueToArg(v, 0.0f, 1.0f, (float)instance.m_LivingTime / (float)RendererCommon.FadeIn.Frame);
 
 		alpha *= v;
 	}
 
-	if (RendererCommon.FadeOutType == ParameterRendererCommon::FADEOUT_ON && instance.m_LivingTime + RendererCommon.FadeOut.Frame > instance.m_LivedTime)
+	if (RendererCommon.FadeOutType == ParameterRendererCommon::FADEOUT_ON &&
+		instance.m_LivingTime + RendererCommon.FadeOut.Frame > instance.m_LivedTime)
 	{
 		float v = 1.0f;
-		RendererCommon.FadeOut.Value.setValueToArg(
-			v,
-			1.0f,
-			0.0f,
-			(float)(instance.m_LivingTime + RendererCommon.FadeOut.Frame - instance.m_LivedTime) / (float)RendererCommon.FadeOut.Frame);
+		RendererCommon.FadeOut.Value.setValueToArg(v,
+												   1.0f,
+												   0.0f,
+												   (float)(instance.m_LivingTime + RendererCommon.FadeOut.Frame - instance.m_LivedTime) /
+													   (float)RendererCommon.FadeOut.Frame);
 
 		alpha *= v;
 	}
@@ -9773,17 +9759,138 @@ void EffectNodeImplemented::PlaySound_(Instance& instance, SoundTag tag, Manager
 		parameter.Pan = Sound.Pan.getValue(*instanceGlobal);
 
 		parameter.Mode3D = (Sound.PanType == ParameterSoundPanType_3D);
-		Vector3D::Transform(parameter.Position,
-			Vector3D(0.0f, 0.0f, 0.0f), instance.GetGlobalMatrix43());
+		Vector3D::Transform(parameter.Position, Vector3D(0.0f, 0.0f, 0.0f), instance.GetGlobalMatrix43());
 		parameter.Distance = Sound.Distance;
 
 		player->Play(tag, parameter);
 	}
 }
 
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
+EffectInstanceTerm EffectNodeImplemented::CalculateInstanceTerm(EffectInstanceTerm& parentTerm) const
+{
+	EffectInstanceTerm ret;
+
+	auto addWithClip = [](int v1, int v2) -> int {
+		v1 = Max(v1, 0);
+		v2 = Max(v2, 0);
+
+		if (v1 >= INT_MAX / 2)
+			return INT_MAX;
+
+		if (v2 >= INT_MAX / 2)
+			return INT_MAX;
+
+		return v1 + v2;
+	};
+
+	int lifeMin = CommonValues.life.min;
+	int lifeMax = CommonValues.life.max;
+
+	if (CommonValues.RemoveWhenLifeIsExtinct <= 0)
+	{
+		lifeMin = INT_MAX;
+		lifeMax = INT_MAX;
+	}
+
+	auto firstBeginMin = CommonValues.GenerationTimeOffset.min;
+	auto firstBeginMax = CommonValues.GenerationTimeOffset.max;
+	auto firstEndMin = addWithClip(firstBeginMin, lifeMin);
+	auto firstEndMax = addWithClip(firstBeginMax, lifeMax);
+
+	auto lastBeginMin = 0;
+	auto lastBeginMax = 0;
+	if (CommonValues.MaxGeneration > INT_MAX / 2)
+	{
+		lastBeginMin = INT_MAX / 2;
+	}
+	else
+	{
+		lastBeginMin = CommonValues.GenerationTimeOffset.min + (CommonValues.MaxGeneration - 1) * (CommonValues.GenerationTime.min);
+	}
+
+	if (CommonValues.MaxGeneration > INT_MAX / 2)
+	{
+		lastBeginMax = INT_MAX / 2;
+	}
+	else
+	{
+		lastBeginMax = CommonValues.GenerationTimeOffset.max + (CommonValues.MaxGeneration - 1) * (CommonValues.GenerationTime.max);
+	}
+
+	auto lastEndMin = addWithClip(lastBeginMin, lifeMin);
+	auto lastEndMax = addWithClip(lastBeginMax, lifeMax);
+
+	auto parentFirstTermMin = parentTerm.FirstInstanceEndMin - parentTerm.FirstInstanceStartMin;
+	auto parentFirstTermMax = parentTerm.FirstInstanceEndMax - parentTerm.FirstInstanceStartMax;
+	auto parentLastTermMin = parentTerm.LastInstanceEndMin - parentTerm.LastInstanceStartMin;
+	auto parentLastTermMax = parentTerm.LastInstanceEndMax - parentTerm.LastInstanceStartMax;
+
+	if (CommonValues.RemoveWhenParentIsRemoved > 0)
+	{
+		if (firstEndMin - firstBeginMin > parentFirstTermMin)
+			firstEndMin = firstBeginMin + parentFirstTermMin;
+
+		if (firstEndMax - firstBeginMax > parentFirstTermMax)
+			firstEndMax = firstBeginMax + parentFirstTermMax;
+
+		if (lastEndMin > INT_MAX / 2)
+		{
+			lastBeginMin = parentLastTermMin;
+			lastEndMin = parentLastTermMin;
+		}
+		else if (lastEndMin - lastBeginMin > parentLastTermMin)
+		{
+			lastEndMin = lastBeginMin + parentLastTermMin;
+		}
+
+		if (lastEndMax > INT_MAX / 2)
+		{
+			lastBeginMax = parentLastTermMax;
+			lastEndMax = parentLastTermMax;
+		}
+		else if (lastEndMax - lastBeginMax > parentLastTermMax)
+		{
+			lastEndMax = lastBeginMax + parentLastTermMax;
+		}
+	}
+
+	ret.FirstInstanceStartMin = addWithClip(parentTerm.FirstInstanceStartMin, firstBeginMin);
+	ret.FirstInstanceStartMax = addWithClip(parentTerm.FirstInstanceStartMax, firstBeginMax);
+	ret.FirstInstanceEndMin = addWithClip(parentTerm.FirstInstanceStartMin, firstEndMin);
+	ret.FirstInstanceEndMax = addWithClip(parentTerm.FirstInstanceStartMax, firstEndMax);
+
+	ret.LastInstanceStartMin = addWithClip(parentTerm.LastInstanceStartMin, lastBeginMin);
+	ret.LastInstanceStartMax = addWithClip(parentTerm.LastInstanceStartMax, lastBeginMax);
+	ret.LastInstanceEndMin = addWithClip(parentTerm.LastInstanceStartMin, lastEndMin);
+	ret.LastInstanceEndMax = addWithClip(parentTerm.LastInstanceStartMax, lastEndMax);
+
+	// check children
+	if (CommonValues.RemoveWhenChildrenIsExtinct > 0)
+	{
+		int childFirstEndMin = 0;
+		int childFirstEndMax = 0;
+		int childLastEndMin = 0;
+		int childLastEndMax = 0;
+
+		for (int32_t i = 0; i < GetChildrenCount(); i++)
+		{
+			auto child = static_cast<EffectNodeImplemented*>(GetChild(i));
+			auto childTerm = child->CalculateInstanceTerm(ret);
+			childFirstEndMin = Max(childTerm.FirstInstanceEndMin, childFirstEndMin);
+			childFirstEndMax = Max(childTerm.FirstInstanceEndMax, childFirstEndMax);
+			childLastEndMin = Max(childTerm.LastInstanceEndMin, childLastEndMin);
+			childLastEndMax = Max(childTerm.LastInstanceEndMax, childLastEndMax);
+		}
+
+		ret.FirstInstanceEndMin = Min(ret.FirstInstanceEndMin, childFirstEndMin);
+		ret.FirstInstanceEndMax = Min(ret.FirstInstanceEndMax, childFirstEndMax);
+		ret.LastInstanceEndMin = Min(ret.LastInstanceEndMin, childLastEndMin);
+		ret.LastInstanceEndMax = Min(ret.LastInstanceEndMax, childLastEndMax);
+	}
+
+	return ret;
+}
+
 EffectNodeImplemented* EffectNodeImplemented::Create(Effect* effect, EffectNode* parent, unsigned char*& pos)
 {
 	EffectNodeImplemented* effectnode = NULL;
@@ -9840,7 +9947,7 @@ EffectNodeImplemented* EffectNodeImplemented::Create(Effect* effect, EffectNode*
 //
 //----------------------------------------------------------------------------------
 
-}
+} // namespace Effekseer
 
 //----------------------------------------------------------------------------------
 //
@@ -11971,17 +12078,186 @@ static std::u16string getFilenameWithoutExt(const char16_t* path)
 	return std::u16string(ret.data());
 }
 
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
-Effect* Effect::Create( Manager* manager, void* data, int32_t size, float magnification, const EFK_CHAR* materialPath )
+bool EffectFactory::LoadBody(Effect* effect, const void* data, int32_t size, float magnification, const EFK_CHAR* materialPath)
+{
+	auto effect_ = static_cast<EffectImplemented*>(effect);
+	return effect_->LoadBody((uint8_t*)data, size, magnification);
+}
+
+void EffectFactory::SetTexture(Effect* effect, int32_t index, TextureType type, TextureData* data)
+{
+	auto effect_ = static_cast<EffectImplemented*>(effect);
+
+	if (type == TextureType::Color)
+	{
+		assert(0 <= index && index < effect_->m_ImageCount);
+		effect_->m_pImages[index] = data;
+	}
+
+	if (type == TextureType::Normal)
+	{
+		assert(0 <= index && index < effect_->m_normalImageCount);
+		effect_->m_normalImages[index] = data;
+	}
+
+	if (type == TextureType::Distortion)
+	{
+		assert(0 <= index && index < effect_->m_distortionImageCount);
+		effect_->m_distortionImages[index] = data;
+	}
+}
+
+void EffectFactory::SetSound(Effect* effect, int32_t index, void* data)
+{ 
+	auto effect_ = static_cast<EffectImplemented*>(effect); 
+
+	assert(0 <= index && index < effect_->m_WaveCount);
+	effect_->m_pWaves[index] = data;
+	
+}
+
+void EffectFactory::SetModel(Effect* effect, int32_t index, void* data)
+{ 
+	auto effect_ = static_cast<EffectImplemented*>(effect);
+	assert(0 <= index && index < effect_->m_modelCount);
+	effect_->m_pModels[index] = data;
+}
+
+bool EffectFactory::OnCheckIsBinarySupported(const void* data, int32_t size)
+{ 
+	// EFKS
+	int head = 0;
+	memcpy(&head, data, sizeof(int));
+	if (memcmp(&head, "SKFE", 4) != 0)
+		return false;
+	return true; 
+}
+
+bool EffectFactory::OnCheckIsReloadSupported() { return true; }
+
+bool EffectFactory::OnLoading(Effect* effect, const void* data, int32_t size, float magnification, const EFK_CHAR* materialPath)
+{ 
+	return this->LoadBody(effect, data, size, magnification, materialPath);
+}
+
+void EffectFactory::OnLoadingResource(Effect* effect, const void* data, int32_t size, const EFK_CHAR* materialPath)
+{
+	auto textureLoader = effect->GetSetting()->GetTextureLoader();
+	auto soundLoader = effect->GetSetting()->GetSoundLoader();
+	auto modelLoader = effect->GetSetting()->GetModelLoader();
+
+	if (textureLoader != nullptr)
+	{
+		for (auto i = 0; i < effect->GetColorImageCount(); i++)
+		{
+			EFK_CHAR fullPath[512];
+			PathCombine(fullPath, materialPath, effect->GetColorImagePath(i));
+
+			auto resource = textureLoader->Load(fullPath, TextureType::Color);
+			SetTexture(effect, i, TextureType::Color, resource);
+		}
+
+		for (auto i = 0; i < effect->GetNormalImageCount(); i++)
+		{
+			EFK_CHAR fullPath[512];
+			PathCombine(fullPath, materialPath, effect->GetNormalImagePath(i));
+
+			auto resource = textureLoader->Load(fullPath, TextureType::Normal);
+			SetTexture(effect, i, TextureType::Normal, resource);
+		}
+
+		for (auto i = 0; i < effect->GetDistortionImageCount(); i++)
+		{
+			EFK_CHAR fullPath[512];
+			PathCombine(fullPath, materialPath, effect->GetDistortionImagePath(i));
+
+			auto resource = textureLoader->Load(fullPath, TextureType::Distortion);
+			SetTexture(effect, i, TextureType::Distortion, resource);
+		}
+	}
+
+	if (soundLoader != nullptr)
+	{
+		for (auto i = 0; i < effect->GetWaveCount(); i++)
+		{
+			EFK_CHAR fullPath[512];
+			PathCombine(fullPath, materialPath, effect->GetWavePath(i));
+
+			auto resource = soundLoader->Load(fullPath);
+			SetSound(effect, i, resource);
+		}
+	}
+
+	if (modelLoader != nullptr)
+	{
+		for (auto i = 0; i < effect->GetModelCount(); i++)
+		{
+			EFK_CHAR fullPath[512];
+			PathCombine(fullPath, materialPath, effect->GetModelPath(i));
+
+			auto resource = modelLoader->Load(fullPath);
+			SetModel(effect, i, resource);
+		}
+	}
+}
+
+void EffectFactory::OnUnloadingResource(Effect* effect) { 
+	auto textureLoader = effect->GetSetting()->GetTextureLoader(); 
+	auto soundLoader = effect->GetSetting()->GetSoundLoader();
+	auto modelLoader = effect->GetSetting()->GetModelLoader();
+
+	if (textureLoader != nullptr)
+	{
+		for (auto i = 0; i < effect->GetColorImageCount(); i++)
+		{
+			textureLoader->Unload(effect->GetColorImage(i));
+			SetTexture(effect, i, TextureType::Color, nullptr);
+		}
+
+		for (auto i = 0; i < effect->GetNormalImageCount(); i++)
+		{
+			textureLoader->Unload(effect->GetNormalImage(i));
+			SetTexture(effect, i, TextureType::Normal, nullptr);
+		}
+
+		for (auto i = 0; i < effect->GetDistortionImageCount(); i++)
+		{
+			textureLoader->Unload(effect->GetDistortionImage(i));
+			SetTexture(effect, i, TextureType::Distortion, nullptr);
+		}
+	}
+
+	if (soundLoader != nullptr)
+	{
+		for (auto i = 0; i < effect->GetWaveCount(); i++)
+		{
+			soundLoader->Unload(effect->GetWave(i));
+			SetSound(effect, i, nullptr);
+		}
+	}
+
+	if (modelLoader != nullptr)
+	{
+		for (auto i = 0; i < effect->GetModelCount(); i++)
+		{
+			modelLoader->Unload(effect->GetModel(i));
+			SetModel(effect, i, nullptr);
+		}
+	}
+}
+
+EffectFactory::EffectFactory() {
+}
+
+EffectFactory::~EffectFactory()
+{
+}
+
+Effect* Effect::Create(Manager * manager, void* data, int32_t size, float magnification, const EFK_CHAR* materialPath)
 {
 	return EffectImplemented::Create( manager, data, size, magnification, materialPath );
 }
 
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
 Effect* Effect::Create(Manager* manager, const EFK_CHAR* path, float magnification, const EFK_CHAR* materialPath)
 {
 	Setting* setting = manager->GetSetting();
@@ -12009,6 +12285,198 @@ Effect* Effect::Create(Manager* manager, const EFK_CHAR* path, float magnificati
 	effect->SetName(getFilenameWithoutExt(path).c_str());
 
 	return effect;
+}
+
+bool EffectImplemented::LoadBody(uint8_t* data, int32_t size, float mag)
+{
+	uint8_t* pos = (uint8_t*)data;
+
+	// EFKS
+	int head = 0;
+	memcpy(&head, pos, sizeof(int));
+	if (memcmp(&head, "SKFE", 4) != 0)
+		return false;
+	pos += sizeof(int);
+
+	memcpy(&m_version, pos, sizeof(int));
+	pos += sizeof(int);
+
+	// Image
+	memcpy(&m_ImageCount, pos, sizeof(int));
+	pos += sizeof(int);
+
+	if (m_ImageCount > 0)
+	{
+		m_ImagePaths = new EFK_CHAR*[m_ImageCount];
+		m_pImages = new TextureData*[m_ImageCount];
+
+		for (int i = 0; i < m_ImageCount; i++)
+		{
+			int length = 0;
+			memcpy(&length, pos, sizeof(int));
+			pos += sizeof(int);
+
+			m_ImagePaths[i] = new EFK_CHAR[length];
+			memcpy(m_ImagePaths[i], pos, length * sizeof(EFK_CHAR));
+			pos += length * sizeof(EFK_CHAR);
+
+			m_pImages[i] = NULL;
+		}
+	}
+
+	if (m_version >= 9)
+	{
+		// Image
+		memcpy(&m_normalImageCount, pos, sizeof(int));
+		pos += sizeof(int);
+
+		if (m_normalImageCount > 0)
+		{
+			m_normalImagePaths = new EFK_CHAR*[m_normalImageCount];
+			m_normalImages = new TextureData*[m_normalImageCount];
+
+			for (int i = 0; i < m_normalImageCount; i++)
+			{
+				int length = 0;
+				memcpy(&length, pos, sizeof(int));
+				pos += sizeof(int);
+
+				m_normalImagePaths[i] = new EFK_CHAR[length];
+				memcpy(m_normalImagePaths[i], pos, length * sizeof(EFK_CHAR));
+				pos += length * sizeof(EFK_CHAR);
+
+				m_normalImages[i] = NULL;
+			}
+		}
+
+		// Image
+		memcpy(&m_distortionImageCount, pos, sizeof(int));
+		pos += sizeof(int);
+
+		if (m_distortionImageCount > 0)
+		{
+			m_distortionImagePaths = new EFK_CHAR*[m_distortionImageCount];
+			m_distortionImages = new TextureData*[m_distortionImageCount];
+
+			for (int i = 0; i < m_distortionImageCount; i++)
+			{
+				int length = 0;
+				memcpy(&length, pos, sizeof(int));
+				pos += sizeof(int);
+
+				m_distortionImagePaths[i] = new EFK_CHAR[length];
+				memcpy(m_distortionImagePaths[i], pos, length * sizeof(EFK_CHAR));
+				pos += length * sizeof(EFK_CHAR);
+
+				m_distortionImages[i] = NULL;
+			}
+		}
+	}
+
+	if (m_version >= 1)
+	{
+		// Sound
+		memcpy(&m_WaveCount, pos, sizeof(int));
+		pos += sizeof(int);
+
+		if (m_WaveCount > 0)
+		{
+			m_WavePaths = new EFK_CHAR*[m_WaveCount];
+			m_pWaves = new void*[m_WaveCount];
+
+			for (int i = 0; i < m_WaveCount; i++)
+			{
+				int length = 0;
+				memcpy(&length, pos, sizeof(int));
+				pos += sizeof(int);
+
+				m_WavePaths[i] = new EFK_CHAR[length];
+				memcpy(m_WavePaths[i], pos, length * sizeof(EFK_CHAR));
+				pos += length * sizeof(EFK_CHAR);
+
+				m_pWaves[i] = NULL;
+			}
+		}
+	}
+
+	if (m_version >= 6)
+	{
+		// Model
+		memcpy(&m_modelCount, pos, sizeof(int));
+		pos += sizeof(int);
+
+		if (m_modelCount > 0)
+		{
+			m_modelPaths = new EFK_CHAR*[m_modelCount];
+			m_pModels = new void*[m_modelCount];
+
+			for (int i = 0; i < m_modelCount; i++)
+			{
+				int length = 0;
+				memcpy(&length, pos, sizeof(int));
+				pos += sizeof(int);
+
+				m_modelPaths[i] = new EFK_CHAR[length];
+				memcpy(m_modelPaths[i], pos, length * sizeof(EFK_CHAR));
+				pos += length * sizeof(EFK_CHAR);
+
+				m_pModels[i] = NULL;
+			}
+		}
+	}
+
+	if (m_version >= 13)
+	{
+		memcpy(&renderingNodesCount, pos, sizeof(int32_t));
+		pos += sizeof(int32_t);
+
+		memcpy(&renderingNodesThreshold, pos, sizeof(int32_t));
+		pos += sizeof(int32_t);
+	}
+
+	// magnification
+	if (m_version >= 2)
+	{
+		memcpy(&m_maginification, pos, sizeof(float));
+		pos += sizeof(float);
+	}
+
+	m_maginification *= mag;
+	m_maginificationExternal = mag;
+
+	if (m_version >= 11)
+	{
+		memcpy(&m_defaultRandomSeed, pos, sizeof(int32_t));
+		pos += sizeof(int32_t);
+	}
+	else
+	{
+		m_defaultRandomSeed = -1;
+	}
+
+	// Culling
+	if (m_version >= 9)
+	{
+		memcpy(&(Culling.Shape), pos, sizeof(int32_t));
+		pos += sizeof(int32_t);
+		if (Culling.Shape == CullingShape::Sphere)
+		{
+			memcpy(&(Culling.Sphere.Radius), pos, sizeof(float));
+			pos += sizeof(float);
+
+			memcpy(&(Culling.Location.X), pos, sizeof(float));
+			pos += sizeof(float);
+			memcpy(&(Culling.Location.Y), pos, sizeof(float));
+			pos += sizeof(float);
+			memcpy(&(Culling.Location.Z), pos, sizeof(float));
+			pos += sizeof(float);
+		}
+	}
+
+	// Nodes
+	m_pRoot = EffectNodeImplemented::Create(this, NULL, pos);
+
+	return true;
 }
 
 void EffectImplemented::ResetReloadingBackup()
@@ -12153,16 +12621,7 @@ EffectImplemented::EffectImplemented( Manager* pManager, void* pData, int size )
 	, m_distortionImageCount(0)
 	, m_distortionImagePaths(nullptr)
 	, m_distortionImages(nullptr)
-	, m_WaveCount		( 0 )
-	, m_WavePaths		( NULL )
-	, m_pWaves			( NULL )
-	, m_modelCount		( 0 )
-	, m_modelPaths		( NULL )
-	, m_pModels			( NULL )
-	, m_maginification	( 1.0f )
-	, m_maginificationExternal	( 1.0f )
 	, m_defaultRandomSeed	(-1)
-	, m_pRoot			( NULL )
 
 {
 	ES_SAFE_ADDREF( m_pManager );
@@ -12181,20 +12640,9 @@ EffectImplemented::EffectImplemented( Setting* setting, void* pData, int size )
 	, m_ImageCount		( 0 )
 	, m_ImagePaths		( NULL )
 	, m_pImages			( NULL )
-	, m_WaveCount		( 0 )
-	, m_WavePaths		( NULL )
-	, m_pWaves			( NULL )
-	, m_modelCount		( 0 )
-	, m_modelPaths		( NULL )
-	, m_pModels			( NULL )
-	, m_maginification	( 1.0f )
-	, m_maginificationExternal	( 1.0f )
-	, m_pRoot			( NULL )
-
 	, m_normalImageCount(0)
 	, m_normalImagePaths(nullptr)
 	, m_normalImages(nullptr)
-
 	, m_distortionImageCount(0)
 	, m_distortionImagePaths(nullptr)
 	, m_distortionImages(nullptr)
@@ -12214,6 +12662,8 @@ EffectImplemented::~EffectImplemented()
 
 	ES_SAFE_RELEASE( m_setting );
 	ES_SAFE_RELEASE( m_pManager );
+
+	ES_SAFE_RELEASE(factory);
 }
 
 //----------------------------------------------------------------------------------
@@ -12237,200 +12687,57 @@ float EffectImplemented::GetMaginification() const
 //----------------------------------------------------------------------------------
 bool EffectImplemented::Load( void* pData, int size, float mag, const EFK_CHAR* materialPath, ReloadingThreadType reloadingThreadType)
 {
+	if(m_setting != nullptr)
+	{
+		for (int i = 0; i < m_setting->GetEffectFactoryCount(); i++)
+		{
+			auto f = m_setting->GetEffectFactory(i);
+
+			if(f->OnCheckIsBinarySupported(pData, size))
+			{
+				ES_SAFE_ADDREF(f);
+				factory = f;
+				break;
+			}
+		}
+	}
+
+	if (m_pManager != nullptr)
+	{
+		for (int i = 0; i < m_pManager->GetSetting()->GetEffectFactoryCount(); i++)
+		{
+			auto f = m_pManager->GetSetting()->GetEffectFactory(i);
+
+			if (f->OnCheckIsBinarySupported(pData, size))
+			{
+				ES_SAFE_ADDREF(f);
+				factory = f;
+				break;
+			}
+		}
+	}
+
+	if (factory == nullptr)
+		return false;
+
 	// if reladingThreadType == ReloadingThreadType::Main, this function was regarded as loading function actually
+
+	if (!factory->OnCheckIsBinarySupported(pData, size))
+	{
+		return false;
+	}
 
 	EffekseerPrintDebug("** Create : Effect\n");
 
-	uint8_t* pos = (uint8_t*)pData;
-
-	// EFKS
-	int head = 0;
-	memcpy( &head, pos, sizeof(int) );
-	if( memcmp( &head, "SKFE", 4 ) != 0 ) return false;
-	pos += sizeof( int );
-
-	memcpy( &m_version, pos, sizeof(int) );
-	pos += sizeof(int);
-
-	// 画像
-	memcpy( &m_ImageCount, pos, sizeof(int) );
-	pos += sizeof(int);
-
-	if( m_ImageCount > 0 )
+	if(!factory->OnLoading(this, pData, size, mag, materialPath))
 	{
-		m_ImagePaths = new EFK_CHAR*[ m_ImageCount ];
-		m_pImages = new TextureData*[ m_ImageCount ];
-
-		for( int i = 0; i < m_ImageCount; i++ )
-		{
-			int length = 0;
-			memcpy( &length, pos, sizeof(int) );
-			pos += sizeof(int);
-
-			m_ImagePaths[i] = new EFK_CHAR[ length ];
-			memcpy( m_ImagePaths[i], pos, length * sizeof(EFK_CHAR) );
-			pos += length * sizeof(EFK_CHAR);
-
-			m_pImages[i] = NULL;
-		}
+		return false;
 	}
 
-	if (m_version >= 9)
-	{
-		// 画像
-		memcpy(&m_normalImageCount, pos, sizeof(int));
-		pos += sizeof(int);
+	// save materialPath for reloading
+    if (materialPath != nullptr) m_materialPath = materialPath;
 
-		if (m_normalImageCount > 0)
-		{
-			m_normalImagePaths = new EFK_CHAR*[m_normalImageCount];
-			m_normalImages = new TextureData*[m_normalImageCount];
-
-			for (int i = 0; i < m_normalImageCount; i++)
-			{
-				int length = 0;
-				memcpy(&length, pos, sizeof(int));
-				pos += sizeof(int);
-
-				m_normalImagePaths[i] = new EFK_CHAR[length];
-				memcpy(m_normalImagePaths[i], pos, length * sizeof(EFK_CHAR));
-				pos += length * sizeof(EFK_CHAR);
-
-				m_normalImages[i] = NULL;
-			}
-		}
-
-		// 画像
-		memcpy(&m_distortionImageCount, pos, sizeof(int));
-		pos += sizeof(int);
-
-		if (m_distortionImageCount > 0)
-		{
-			m_distortionImagePaths = new EFK_CHAR*[m_distortionImageCount];
-			m_distortionImages = new TextureData*[m_distortionImageCount];
-
-			for (int i = 0; i < m_distortionImageCount; i++)
-			{
-				int length = 0;
-				memcpy(&length, pos, sizeof(int));
-				pos += sizeof(int);
-
-				m_distortionImagePaths[i] = new EFK_CHAR[length];
-				memcpy(m_distortionImagePaths[i], pos, length * sizeof(EFK_CHAR));
-				pos += length * sizeof(EFK_CHAR);
-
-				m_distortionImages[i] = NULL;
-			}
-		}
-	}
-
-	if( m_version >= 1 )
-	{
-		// ウェーブ
-		memcpy( &m_WaveCount, pos, sizeof(int) );
-		pos += sizeof(int);
-
-		if( m_WaveCount > 0 )
-		{
-			m_WavePaths = new EFK_CHAR*[ m_WaveCount ];
-			m_pWaves = new void*[ m_WaveCount ];
-
-			for( int i = 0; i < m_WaveCount; i++ )
-			{
-				int length = 0;
-				memcpy( &length, pos, sizeof(int) );
-				pos += sizeof(int);
-
-				m_WavePaths[i] = new EFK_CHAR[ length ];
-				memcpy( m_WavePaths[i], pos, length * sizeof(EFK_CHAR) );
-				pos += length * sizeof(EFK_CHAR);
-
-				m_pWaves[i] = NULL;
-			}
-		}
-	}
-
-	if( m_version >= 6 )
-	{
-		/* モデル */
-		memcpy( &m_modelCount, pos, sizeof(int) );
-		pos += sizeof(int);
-
-		if( m_modelCount > 0 )
-		{
-			m_modelPaths = new EFK_CHAR*[ m_modelCount ];
-			m_pModels = new void*[ m_modelCount ];
-
-			for( int i = 0; i < m_modelCount; i++ )
-			{
-				int length = 0;
-				memcpy( &length, pos, sizeof(int) );
-				pos += sizeof(int);
-
-				m_modelPaths[i] = new EFK_CHAR[ length ];
-				memcpy( m_modelPaths[i], pos, length * sizeof(EFK_CHAR) );
-				pos += length * sizeof(EFK_CHAR);
-
-				m_pModels[i] = NULL;
-			}
-		}
-	}
-
-	if (m_version >= 13)
-	{
-		memcpy(&renderingNodesCount, pos, sizeof(int32_t));
-		pos += sizeof(int32_t);
-
-		memcpy(&renderingNodesThreshold, pos, sizeof(int32_t));
-		pos += sizeof(int32_t);	
-	}
-
-	// 拡大率
-	if( m_version >= 2 )
-	{
-		memcpy( &m_maginification, pos, sizeof(float) );
-		pos += sizeof(float);
-	}
-
-	m_maginification *= mag;
-	m_maginificationExternal = mag;
-
-	if (m_version >= 11)
-	{
-		memcpy(&m_defaultRandomSeed, pos, sizeof(int32_t));
-		pos += sizeof(int32_t);
-	}
-	else
-	{
-		m_defaultRandomSeed = -1;
-	}
-
-	// カリング
-	if( m_version >= 9 )
-	{
-		memcpy( &(Culling.Shape), pos, sizeof(int32_t) );
-		pos += sizeof(int32_t);
-		if(Culling.Shape ==	CullingShape::Sphere)
-		{
-			memcpy( &(Culling.Sphere.Radius), pos, sizeof(float) );
-			pos += sizeof(float);
-		
-			memcpy( &(Culling.Location.X), pos, sizeof(float) );
-			pos += sizeof(float);
-			memcpy( &(Culling.Location.Y), pos, sizeof(float) );
-			pos += sizeof(float);
-			memcpy( &(Culling.Location.Z), pos, sizeof(float) );
-			pos += sizeof(float);
-		}
-	}
-
-	// ノード
-	m_pRoot = EffectNodeImplemented::Create( this, NULL, pos );
-
-	// リロード用にmaterialPathを記録しておく
-    if (materialPath) m_materialPath = materialPath;
-
-	ReloadResources( materialPath );
+	ReloadResources( pData, size, materialPath);
 	return true;
 }
 
@@ -12546,6 +12853,8 @@ int32_t EffectImplemented::GetColorImageCount() const
 	return m_ImageCount;
 }
 
+const EFK_CHAR* EffectImplemented::GetColorImagePath(int n) const { return m_ImagePaths[n]; }
+
 TextureData* EffectImplemented::GetNormalImage(int n) const
 {
 	/* 強制的に互換をとる */
@@ -12561,6 +12870,8 @@ int32_t EffectImplemented::GetNormalImageCount() const
 {
 	return m_normalImageCount;
 }
+
+const EFK_CHAR* EffectImplemented::GetNormalImagePath(int n) const { return m_normalImagePaths[n]; }
 
 TextureData* EffectImplemented::GetDistortionImage(int n) const
 {
@@ -12578,9 +12889,8 @@ int32_t EffectImplemented::GetDistortionImageCount() const
 	return m_distortionImageCount;
 }
 
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
+const EFK_CHAR* EffectImplemented::GetDistortionImagePath(int n) const { return m_distortionImagePaths[n]; }
+
 void* EffectImplemented::GetWave( int n ) const
 {
 	return m_pWaves[ n ];
@@ -12591,9 +12901,8 @@ int32_t EffectImplemented::GetWaveCount() const
 	return m_WaveCount;
 }
 
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
+const EFK_CHAR* EffectImplemented::GetWavePath(int n) const { return m_WavePaths[n]; }
+
 void* EffectImplemented::GetModel( int n ) const
 {
 	return m_pModels[ n ];
@@ -12603,9 +12912,9 @@ int32_t EffectImplemented::GetModelCount() const
 {
 	return m_modelCount;
 }
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
+
+const EFK_CHAR* EffectImplemented::GetModelPath(int n) const { return m_modelPaths[n]; }
+
 bool EffectImplemented::Reload( void* data, int32_t size, const EFK_CHAR* materialPath, ReloadingThreadType reloadingThreadType)
 {
 	if(m_pManager == NULL ) return false;
@@ -12634,6 +12943,9 @@ bool EffectImplemented::Reload( const EFK_CHAR* path, const EFK_CHAR* materialPa
 //----------------------------------------------------------------------------------
 bool EffectImplemented::Reload( Manager** managers, int32_t managersCount, void* data, int32_t size, const EFK_CHAR* materialPath, ReloadingThreadType reloadingThreadType)
 {
+	if (!factory->OnCheckIsReloadSupported())
+		return false;
+
 	const EFK_CHAR* matPath = materialPath != NULL ? materialPath : m_materialPath.c_str();
 	
 	int lockCount = 0;
@@ -12672,6 +12984,9 @@ bool EffectImplemented::Reload( Manager** managers, int32_t managersCount, void*
 //----------------------------------------------------------------------------------
 bool EffectImplemented::Reload( Manager** managers, int32_t managersCount, const EFK_CHAR* path, const EFK_CHAR* materialPath, ReloadingThreadType reloadingThreadType)
 {
+	if (!factory->OnCheckIsReloadSupported())
+		return false;
+
 	Setting* loader = GetSetting();
 	
 	EffectLoader* eLoader = loader->GetEffectLoader();
@@ -12714,7 +13029,7 @@ bool EffectImplemented::Reload( Manager** managers, int32_t managersCount, const
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void EffectImplemented::ReloadResources( const EFK_CHAR* materialPath )
+void EffectImplemented::ReloadResources(const void* data, int32_t size, const EFK_CHAR* materialPath)
 {
 	UnloadResources();
 
@@ -12792,73 +13107,7 @@ void EffectImplemented::ReloadResources( const EFK_CHAR* materialPath )
 		return;
 	}
 
-	{
-		TextureLoader* textureLoader = loader->GetTextureLoader();
-		if( textureLoader != NULL )
-		{
-			for( int32_t ind = 0; ind < m_ImageCount; ind++ )
-			{
-				EFK_CHAR fullPath[512];
-				PathCombine( fullPath, matPath, m_ImagePaths[ ind ] );
-				m_pImages[ind] = textureLoader->Load( fullPath, TextureType::Color );
-			}
-		}
-	}
-
-	{
-		TextureLoader* textureLoader = loader->GetTextureLoader();
-		if (textureLoader != NULL)
-		{
-			for (int32_t ind = 0; ind < m_normalImageCount; ind++)
-			{
-				EFK_CHAR fullPath[512];
-				PathCombine(fullPath, matPath, m_normalImagePaths[ind]);
-				m_normalImages[ind] = textureLoader->Load(fullPath, TextureType::Normal);
-			}
-		}
-
-	}
-		{
-			TextureLoader* textureLoader = loader->GetTextureLoader();
-			if (textureLoader != NULL)
-			{
-				for (int32_t ind = 0; ind < m_distortionImageCount; ind++)
-				{
-					EFK_CHAR fullPath[512];
-					PathCombine(fullPath, matPath, m_distortionImagePaths[ind]);
-					m_distortionImages[ind] = textureLoader->Load(fullPath, TextureType::Distortion);
-				}
-			}
-		}
-
-	
-
-	{
-		SoundLoader* soundLoader = loader->GetSoundLoader();
-		if( soundLoader != NULL )
-		{
-			for( int32_t ind = 0; ind < m_WaveCount; ind++ )
-			{
-				EFK_CHAR fullPath[512];
-				PathCombine( fullPath, matPath, m_WavePaths[ ind ] );
-				m_pWaves[ind] = soundLoader->Load( fullPath );
-			}
-		}
-	}
-
-	{
-		ModelLoader* modelLoader = loader->GetModelLoader();
-		
-		if( modelLoader != NULL )
-		{
-			for( int32_t ind = 0; ind < m_modelCount; ind++ )
-			{
-				EFK_CHAR fullPath[512];
-				PathCombine( fullPath, matPath, m_modelPaths[ ind ] );
-				m_pModels[ind] = modelLoader->Load( fullPath );
-			}
-		}
-	}
+	factory->OnLoadingResource(this, data, size, matPath);
 }
 
 void EffectImplemented::UnloadResources(const EFK_CHAR* materialPath)
@@ -12927,49 +13176,7 @@ void EffectImplemented::UnloadResources(const EFK_CHAR* materialPath)
 		ResetReloadingBackup();
 	}
 
-	TextureLoader* textureLoader = loader->GetTextureLoader();
-	if (textureLoader != NULL)
-	{
-		for (int32_t ind = 0; ind < m_ImageCount; ind++)
-		{
-			textureLoader->Unload(m_pImages[ind]);
-			m_pImages[ind] = NULL;
-		}
-
-		for (int32_t ind = 0; ind < m_normalImageCount; ind++)
-		{
-			textureLoader->Unload(m_normalImages[ind]);
-			m_normalImages[ind] = NULL;
-		}
-
-		for (int32_t ind = 0; ind < m_distortionImageCount; ind++)
-		{
-			textureLoader->Unload(m_distortionImages[ind]);
-			m_distortionImages[ind] = NULL;
-		}
-	}
-
-	SoundLoader* soundLoader = loader->GetSoundLoader();
-	if (soundLoader != NULL)
-	{
-		for (int32_t ind = 0; ind < m_WaveCount; ind++)
-		{
-			soundLoader->Unload(m_pWaves[ind]);
-			m_pWaves[ind] = NULL;
-		}
-	}
-
-	{
-		ModelLoader* modelLoader = loader->GetModelLoader();
-		if (modelLoader != NULL)
-		{
-			for (int32_t ind = 0; ind < m_modelCount; ind++)
-			{
-				modelLoader->Unload(m_pModels[ind]);
-				m_pModels[ind] = NULL;
-			}
-		}
-	}
+	factory->OnUnloadingResource(this);
 }
 
 void EffectImplemented::UnloadResources()
@@ -12977,14 +13184,39 @@ void EffectImplemented::UnloadResources()
 	UnloadResources(nullptr);
 }
 
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
+EffectTerm EffectImplemented::CalculateTerm() const
+{ 
+	
+	EffectTerm effectTerm;
+	effectTerm.TermMin = 0;
+	effectTerm.TermMax = 0;
+
+	auto root = GetRoot(); 
+	EffectInstanceTerm rootTerm;
+
+	std::function<void(EffectNode*, EffectInstanceTerm&)> recurse;
+	recurse = [&effectTerm, &recurse](EffectNode* node, EffectInstanceTerm& term) -> void
+	{
+		for (int i = 0; i < node->GetChildrenCount(); i++)
+		{
+			auto cterm = node->GetChild(i)->CalculateInstanceTerm(term);
+			effectTerm.TermMin = Max(effectTerm.TermMin, cterm.LastInstanceEndMin);
+			effectTerm.TermMax = Max(effectTerm.TermMax, cterm.LastInstanceEndMax);
+
+			recurse(node->GetChild(i), cterm);
+		}
+	};
+
+	recurse(root, rootTerm);
+
+	return effectTerm;
 }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
+}
+
 
 
 //----------------------------------------------------------------------------------
@@ -13298,15 +13530,6 @@ void ManagerImplemented::ExecuteEvents()
 	}
 }
 
-void ManagerImplemented::ShowErrorAndExit(const char* message)
-{
-	std::cerr << "EffekseerError : " << message << std::endl;
-	abort();
-}
-
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
 ManagerImplemented::ManagerImplemented( int instance_max, bool autoFlip )
 	: m_autoFlip	( autoFlip )
 	, m_NextHandle	( 0 )
@@ -14142,11 +14365,6 @@ void ManagerImplemented::Flip()
 {
 	if( !m_autoFlip )
 	{
-		if (m_isLockedWithRenderingMutex)
-		{
-			ShowErrorAndExit("Rendering thread is locked.");
-		}
-
 		m_renderingMutex.lock();
 	}
 
@@ -14318,11 +14536,6 @@ void ManagerImplemented::Update( float deltaFrame )
 //----------------------------------------------------------------------------------
 void ManagerImplemented::BeginUpdate()
 {
-	if (m_isLockedWithRenderingMutex)
-	{
-		ShowErrorAndExit("Rendering thread is locked.");
-	}
-
 	m_renderingMutex.lock();
 	m_isLockedWithRenderingMutex = true;
 
@@ -14402,10 +14615,6 @@ void ManagerImplemented::Preupdate(DrawSet& drawSet)
 //----------------------------------------------------------------------------------
 void ManagerImplemented::Draw()
 {
-	if (m_isLockedWithRenderingMutex)
-	{
-		ShowErrorAndExit("Rendering thread is locked.");
-	}
 	std::lock_guard<std::mutex> lock(m_renderingMutex);
 
 	// 開始時間を記録
@@ -14462,10 +14671,6 @@ void ManagerImplemented::Draw()
 
 void ManagerImplemented::DrawBack()
 {
-	if (m_isLockedWithRenderingMutex)
-	{
-		ShowErrorAndExit("Rendering thread is locked.");
-	}
 	std::lock_guard<std::mutex> lock(m_renderingMutex);
 	
 	// 開始時間を記録
@@ -14510,10 +14715,6 @@ void ManagerImplemented::DrawBack()
 
 void ManagerImplemented::DrawFront()
 {
-	if (m_isLockedWithRenderingMutex)
-	{
-		ShowErrorAndExit("Rendering thread is locked.");
-	}
 	std::lock_guard<std::mutex> lock(m_renderingMutex);
 
 	// 開始時間を記録
@@ -14618,10 +14819,6 @@ Handle ManagerImplemented::Play(Effect* effect, const Vector3D& position, int32_
 
 void ManagerImplemented::DrawHandle( Handle handle )
 {
-	if (m_isLockedWithRenderingMutex)
-	{
-		ShowErrorAndExit("Rendering thread is locked.");
-	}
 	std::lock_guard<std::mutex> lock(m_renderingMutex);
 
 	std::map<Handle,DrawSet>::iterator it = m_renderingDrawSetMaps.find( handle );
@@ -14671,10 +14868,6 @@ void ManagerImplemented::DrawHandle( Handle handle )
 
 void ManagerImplemented::DrawHandleBack(Handle handle)
 {
-	if (m_isLockedWithRenderingMutex)
-	{
-		ShowErrorAndExit("Rendering thread is locked.");
-	}
 	std::lock_guard<std::mutex> lock(m_renderingMutex);
 
 	std::map<Handle, DrawSet>::iterator it = m_renderingDrawSetMaps.find(handle);
@@ -14712,10 +14905,6 @@ void ManagerImplemented::DrawHandleBack(Handle handle)
 
 void ManagerImplemented::DrawHandleFront(Handle handle)
 {
-	if (m_isLockedWithRenderingMutex)
-	{
-		ShowErrorAndExit("Rendering thread is locked.");
-	}
 	std::lock_guard<std::mutex> lock(m_renderingMutex);
 
 	std::map<Handle, DrawSet>::iterator it = m_renderingDrawSetMaps.find(handle);
@@ -14772,10 +14961,6 @@ void ManagerImplemented::BeginReloadEffect( Effect* effect, bool doLockThread)
 {
 	if (doLockThread)
 	{
-		if (m_isLockedWithRenderingMutex)
-		{
-			ShowErrorAndExit("Rendering thread is locked.");
-		}
 		m_renderingMutex.lock();
 		m_isLockedWithRenderingMutex = true;
 	}
@@ -15308,10 +15493,10 @@ Instance::Instance(Manager* pManager, EffectNode* pEffectNode, InstanceContainer
 	, m_LivedTime(0)
 	, m_LivingTime(0)
 	, uvTimeOffset(0)
-	, m_GlobalMatrix43Calculated(false)
-	, m_ParentMatrix43Calculated(false)
 	, m_flexibleGeneratedChildrenCount(nullptr)
 	, m_flexibleNextGenerationTime(nullptr)
+	, m_GlobalMatrix43Calculated(false)
+	, m_ParentMatrix43Calculated(false)
 	, m_stepTime(false)
 	, m_sequenceNumber(0)
 {
@@ -16518,8 +16703,9 @@ void Instance::ModifyMatrixFromLocationAbs( float deltaFrame )
 
 			if (deltaFrame > 0)
 			{
+				float eps = 0.0001f;
 				m_GlobalRevisionVelocity += targetDirection * force * deltaFrame;
-				float currentVelocity = Vector3D::Length(m_GlobalRevisionVelocity);
+				float currentVelocity = Vector3D::Length(m_GlobalRevisionVelocity) + eps;
 				Vector3D currentDirection = m_GlobalRevisionVelocity / currentVelocity;
 
 				m_GlobalRevisionVelocity = (targetDirection * control + currentDirection * (1.0f - control)) * currentVelocity;
@@ -17000,6 +17186,7 @@ void InstanceGroup::KillAllInstances()
 
 
 
+
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
@@ -17015,6 +17202,8 @@ Setting::Setting()
 	, m_soundLoader(NULL)
 	, m_modelLoader(NULL)
 {
+	auto effectFactory = new EffectFactory();
+	effectFactories.push_back(effectFactory);
 }
 
 //----------------------------------------------------------------------------------
@@ -17022,11 +17211,16 @@ Setting::Setting()
 //----------------------------------------------------------------------------------
 Setting::~Setting()
 {
+	for (auto& e : effectFactories)
+	{
+		ES_SAFE_RELEASE(e);
+	}
+	effectFactories.clear();
+
 	ES_SAFE_DELETE(m_effectLoader);
 	ES_SAFE_DELETE(m_textureLoader);
 	ES_SAFE_DELETE(m_soundLoader);
 	ES_SAFE_DELETE(m_modelLoader);
-
 }
 
 //----------------------------------------------------------------------------------
@@ -17121,12 +17315,23 @@ void Setting::SetSoundLoader(SoundLoader* loader)
 	m_soundLoader = loader;
 }
 
+void Setting::AddEffectFactory(EffectFactory* effectFactory) { 
+	
+	if (effectFactory == nullptr)
+		return;
+	ES_SAFE_ADDREF(effectFactory); 
+	effectFactories.push_back(effectFactory);
+}
 
+EffectFactory* Setting::GetEffectFactory(int32_t ind) const
+{
+	return effectFactories[ind]; 
+}
 
+int32_t Setting::GetEffectFactoryCount() const { 
+	return effectFactories.size();
+}
 
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
 }
 //----------------------------------------------------------------------------------
 //
