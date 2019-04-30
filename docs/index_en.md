@@ -220,6 +220,10 @@ If a large number of models are drawn, the speed tends to decrease.
 
 ## Release note
 
+### 1.431 (2018/04/30) 
+
+- Supported 4.22
+
 ### 1.43 (2018/03/02) 
 
 - Supported 4.21
