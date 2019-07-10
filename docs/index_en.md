@@ -220,6 +220,10 @@ If a large number of models are drawn, the speed tends to decrease.
 
 ## Release note
 
+### 1.43d (2019/07/11) 
+
+- Fixed a bug that the application is crashed when a model is rendered in 4.22
+
 ### 1.43b (2019/05/01) 
 
 - Supported 4.22

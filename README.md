@@ -22,7 +22,7 @@ Please read the help below.
 
 请阅读下面的帮助。
 
-[Help](https://effekseer.github.io/EffekseerForUE4/)
+[Help](https://effekseer.github.io/Help_UE4/)
 
 Todo
 =========
