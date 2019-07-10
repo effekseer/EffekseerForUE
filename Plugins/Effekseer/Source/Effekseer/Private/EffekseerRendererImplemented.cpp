@@ -796,12 +796,19 @@ namespace EffekseerRendererUE4
 				FMeshBatch& meshElement = m_meshElementCollector->AllocateMesh();
 				auto& element = meshElement.Elements[0];
 
+#if ENGINE_MINOR_VERSION < 22
 				element.PrimitiveUniformBuffer = CreatePrimitiveUniformBufferImmediate(
 					matLocalToWorld, 
 					FBoxSphereBounds(EForceInit::ForceInit), 
 					FBoxSphereBounds(EForceInit::ForceInit), 
 					false, 
 					false);
+#else
+
+				FDynamicPrimitiveUniformBuffer& dynamicPrimitiveUniformBuffer = m_meshElementCollector->AllocateOneFrameResource<FDynamicPrimitiveUniformBuffer>();
+				dynamicPrimitiveUniformBuffer.Set(matLocalToWorld, matLocalToWorld, FBoxSphereBounds(EForceInit::ForceInit), FBoxSphereBounds(EForceInit::ForceInit), false, false, false);
+				element.PrimitiveUniformBufferResource = &dynamicPrimitiveUniformBuffer.UniformBuffer;
+#endif
 
 #if ENGINE_MINOR_VERSION < 21
 				auto proxy = mat->GetRenderProxy(false);
