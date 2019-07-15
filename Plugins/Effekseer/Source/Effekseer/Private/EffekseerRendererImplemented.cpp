@@ -687,7 +687,7 @@ namespace EffekseerRendererUE4
 					si * 4 + 3);
 			}
 
-#if ENGINE_MINOR_VERSION < 21
+#if ENGINE_MINOR_VERSION < 22
 			auto proxy = mat->GetRenderProxy(false);
 #else
 			auto proxy = mat->GetRenderProxy();
@@ -737,7 +737,7 @@ namespace EffekseerRendererUE4
 					si * 4 + 3);
 			}
 
-#if ENGINE_MINOR_VERSION < 21
+#if ENGINE_MINOR_VERSION < 22
 			auto proxy = mat->GetRenderProxy(false);
 #else
 			auto proxy = mat->GetRenderProxy();
@@ -810,7 +810,7 @@ namespace EffekseerRendererUE4
 				element.PrimitiveUniformBufferResource = &dynamicPrimitiveUniformBuffer.UniformBuffer;
 #endif
 
-#if ENGINE_MINOR_VERSION < 21
+#if ENGINE_MINOR_VERSION < 22
 				auto proxy = mat->GetRenderProxy(false);
 #else
 				auto proxy = mat->GetRenderProxy();
