@@ -7,6 +7,8 @@ public class EffekseerForUE4 : ModuleRules
 	public EffekseerForUE4(ReadOnlyTargetRules Target)
 		: base(Target)
 	{
+		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
+
 		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore" });
 
 		PrivateDependencyModuleNames.AddRange(new string[] {  });

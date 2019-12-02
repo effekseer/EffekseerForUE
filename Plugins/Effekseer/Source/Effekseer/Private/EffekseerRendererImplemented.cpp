@@ -262,6 +262,8 @@ namespace EffekseerRendererUE4
 	{
 		if (m_matrixes.size() == 0) return;
 		if (parameter.ModelIndex < 0) return;
+		auto& param = parameter;
+		auto& renderer = m_renderer;
 
 		EffekseerInternalModel* model = (EffekseerInternalModel*)parameter.EffectPointer->GetModel(parameter.ModelIndex);
 		if (model == nullptr) return;
@@ -269,19 +271,39 @@ namespace EffekseerRendererUE4
 		::EffekseerRenderer::RenderStateBase::State& state = m_renderer->GetRenderState()->Push();
 		state.DepthTest = parameter.ZTest;
 		state.DepthWrite = parameter.ZWrite;
-		state.AlphaBlend = parameter.AlphaBlend;
+		state.AlphaBlend = parameter.BasicParameterPtr->AlphaBlend;
 		state.CullingType = parameter.Culling;
 		
 		m_renderer->GetRenderState()->Update(false);
-		m_renderer->SetIsLighting(parameter.Lighting);
-		m_renderer->SetIsDistorting(parameter.Distortion);
-		m_renderer->SetDistortionIntensity(parameter.DistortionIntensity);
+
+		SortTemporaryValues(m_renderer, parameter);
+
+		if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::Default)
+		{
+			m_renderer->SetIsLighting(false);
+			m_renderer->SetIsDistorting(false);
+		}
+		else if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::BackDistortion)
+		{
+			m_renderer->SetIsLighting(false);
+			m_renderer->SetIsDistorting(true);
+			m_renderer->SetDistortionIntensity(parameter.BasicParameterPtr->DistortionIntensity);
+		}
+		else if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::Lighting)
+		{
+			m_renderer->SetIsLighting(true);
+			m_renderer->SetIsDistorting(false);
+		}
+		else
+		{
+
+		}
 
 		Effekseer::TextureData* textures[1];
 
-		if (parameter.ColorTextureIndex >= 0)
+		if (parameter.BasicParameterPtr->Texture1Index >= 0)
 		{
-			textures[0] = parameter.EffectPointer->GetColorImage(parameter.ColorTextureIndex);
+			textures[0] = parameter.EffectPointer->GetColorImage(parameter.BasicParameterPtr->Texture1Index);
 		}
 		else
 		{
@@ -333,8 +355,6 @@ namespace EffekseerRendererUE4
 		m_standardRenderer = new EffekseerRenderer::StandardRenderer<RendererImplemented, Shader, Vertex, VertexDistortion>(
 			this,
 			m_stanShader,
-			m_stanShader,
-			m_distortionShader,
 			m_distortionShader);
 
 
@@ -671,7 +691,7 @@ namespace EffekseerRendererUE4
 					FVector(v.Binormal.X, v.Binormal.Z, v.Binormal.Y),
 					FVector(v.Tangent.X, v.Tangent.Z, v.Tangent.Y),
 					FVector(normal.X, normal.Z, normal.Y),
-					FColor(v.Col.R, v.Col.G, v.Col.B, v.Col.A));
+					FColor(v.Col[0], v.Col[1], v.Col[2], v.Col[3]));
 			}
 
 			for (int32_t si = 0; si < spriteCount; si++)
@@ -721,7 +741,7 @@ namespace EffekseerRendererUE4
 					v.Pos.Z = trans.Values[3][2];
 				}
 
-				meshBuilder.AddVertex(FVector(v.Pos.X, v.Pos.Z, v.Pos.Y), FVector2D(v.UV[0], v.UV[1]), FVector(1, 0, 0), FVector(1, 1, 0), FVector(0, 0, 1), FColor(v.Col.R, v.Col.G, v.Col.B, v.Col.A));
+				meshBuilder.AddVertex(FVector(v.Pos.X, v.Pos.Z, v.Pos.Y), FVector2D(v.UV[0], v.UV[1]), FVector(1, 0, 0), FVector(1, 1, 0), FVector(0, 0, 1), FColor(v.Col[0], v.Col[1], v.Col[2], v.Col[3]));
 			}
 
 			for (int32_t si = 0; si < spriteCount; si++)
@@ -903,9 +923,12 @@ namespace EffekseerRendererUE4
 		return mat;
 	}
 
-	Shader* RendererImplemented::GetShader(bool useTexture, bool useDistortion) const
+	Shader* RendererImplemented::GetShader(bool useTexture, ::Effekseer::RendererMaterialType materialType) const
 	{
-		if (useDistortion) return m_distortionShader;
+		if (materialType == ::Effekseer::RendererMaterialType::BackDistortion)
+		{
+			return m_distortionShader;
+		}
 		return m_stanShader;
 	}
 
@@ -920,16 +943,18 @@ namespace EffekseerRendererUE4
 
 	}
 
-	void RendererImplemented::SetVertexBufferToShader(const void* data, int32_t size)
+	void RendererImplemented::SetVertexBufferToShader(const void* data, int32_t size, int32_t dstOffset)
 	{
-		assert(m_currentShader != nullptr);
-		memcpy(m_currentShader->GetVertexConstantBuffer(), data, size);
+		assert(currentShader != nullptr);
+		auto p = static_cast<uint8_t*>(m_currentShader->GetVertexConstantBuffer()) + dstOffset;
+		memcpy(p, data, size);
 	}
 
-	void RendererImplemented::SetPixelBufferToShader(const void* data, int32_t size)
+	void RendererImplemented::SetPixelBufferToShader(const void* data, int32_t size, int32_t dstOffset)
 	{
-		assert(m_currentShader != nullptr);
-		memcpy(m_currentShader->GetPixelConstantBuffer(), data, size);
+		assert(currentShader != nullptr);
+		auto p = static_cast<uint8_t*>(m_currentShader->GetPixelConstantBuffer()) + dstOffset;
+		memcpy(p, data, size);
 	}
 
 	void RendererImplemented::SetTextures(Shader* shader, Effekseer::TextureData** textures, int32_t count)

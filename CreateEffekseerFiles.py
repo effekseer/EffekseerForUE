@@ -19,10 +19,11 @@ class CreateHeader:
 		f = open(path, 'r', encoding='utf-8_sig')
 		line = f.readline()
 		while line:
-			if re.search('include \"', line) == None:
+			if re.search('include \"', line) == None and re.search('include <Effekseer.Internal.h>', line) == None:
  	 			self.lines.append(line)
 			line = f.readline()
 		f.close()
+		self.lines.append(line + '\n')
 
 	def output(self,path):
 		f = codecs.open(path, 'w','utf-8_sig')
@@ -45,6 +46,7 @@ class CreateCPP:
  	 			self.lines.append(line)
 			line = f.readline()
 		f.close()
+		self.lines.append(line + '\n')
 
 	def output(self,path):
 		f = codecs.open(path, 'w','utf-8_sig')
@@ -63,8 +65,18 @@ effekseerHeader.addLine('')
 effekseerHeader.addLine(r'#pragma once')
 effekseerHeader.addLine(r'#include "CoreMinimal.h"')
 effekseerHeader.addLine('')
+effekseerHeader.addLine('#undef far')
 
+effekseerHeader = CreateHeader()
 effekseerHeader.readLines(rootEDir + 'Effekseer.Base.Pre.h')
+effekseerHeader.readLines(rootEDir + 'Effekseer.Base.h')
+
+#param
+effekseerHeader.readLines(rootEDir + 'Parameter/Effekseer.Parameters.h')
+
+effekseerHeader.readLines(rootEDir + 'Utils/Effekseer.CustomAllocator.h')
+effekseerHeader.readLines(rootEDir + 'Utils/Effekseer.BinaryReader.h')
+
 effekseerHeader.readLines(rootEDir + 'Effekseer.Vector2D.h')
 effekseerHeader.readLines(rootEDir + 'Effekseer.Vector3D.h')
 effekseerHeader.readLines(rootEDir + 'Effekseer.Color.h')
@@ -76,6 +88,13 @@ effekseerHeader.readLines(rootEDir + 'Effekseer.DefaultFile.h')
 effekseerHeader.readLines(rootEDir + 'Effekseer.Effect.h')
 effekseerHeader.readLines(rootEDir + 'Effekseer.Manager.h')
 
+effekseerHeader.readLines(rootEDir + 'IO/Effekseer.EfkEfcFactory.h')
+
+#material
+effekseerHeader.readLines(rootEDir + 'Material/Effekseer.Material.h')
+effekseerHeader.readLines(rootEDir + 'Material/Effekseer.MaterialCompiler.h')
+effekseerHeader.readLines(rootEDir + 'Material/Effekseer.CompiledMaterial.h')
+
 effekseerHeader.readLines(rootEDir + 'Renderer/Effekseer.SpriteRenderer.h')
 effekseerHeader.readLines(rootEDir + 'Renderer/Effekseer.RibbonRenderer.h')
 effekseerHeader.readLines(rootEDir + 'Renderer/Effekseer.RingRenderer.h')
@@ -85,6 +104,7 @@ effekseerHeader.readLines(rootEDir + 'Renderer/Effekseer.TrackRenderer.h')
 effekseerHeader.readLines(rootEDir + 'Effekseer.EffectLoader.h')
 effekseerHeader.readLines(rootEDir + 'Effekseer.TextureLoader.h')
 effekseerHeader.readLines(rootEDir + 'Effekseer.ModelLoader.h')
+effekseerHeader.readLines(rootEDir + 'Effekseer.MaterialLoader.h')
 
 effekseerHeader.readLines(rootEDir + 'Effekseer.Model.h')
 
@@ -93,6 +113,9 @@ effekseerHeader.readLines(rootEDir + 'Sound/Effekseer.SoundPlayer.h')
 effekseerHeader.readLines(rootEDir + 'Effekseer.SoundLoader.h')
 
 effekseerHeader.readLines(rootEDir + 'Effekseer.Setting.h')
+
+effekseerHeader.readLines(rootEDir + 'Effekseer.Server.h')
+effekseerHeader.readLines(rootEDir + 'Effekseer.Client.h')
 
 effekseerHeader.addLine('')
 effekseerHeader.addLine('#if PLATFORM_WINDOWS')
@@ -135,9 +158,21 @@ effekseerCPP.addLine('#else')
 effekseerCPP.addLine('#include <sys/types.h>')
 effekseerCPP.addLine('#include <sys/socket.h>')
 effekseerCPP.addLine('#endif')
+effekseerCPP.addLine('#undef far')
 
 
-effekseerCPP.readLines(rootEDir + 'Effekseer.Base.h')
+# param
+effekseerCPP.readLines(rootEDir + 'Parameter/Effekseer.Parameters.cpp')
+
+effekseerCPP.readLines(rootEDir + 'Utils/Effekseer.CustomAllocator.cpp')
+
+#material
+effekseerCPP.readLines(rootEDir + 'Material/Effekseer.Material.cpp')
+effekseerCPP.readLines(rootEDir + 'Material/Effekseer.MaterialCompiler.cpp')
+effekseerCPP.readLines(rootEDir + 'Material/Effekseer.CompiledMaterial.cpp')
+
+# IO
+effekseerCPP.readLines(rootEDir + 'IO/Effekseer.EfkEfcFactory.cpp')
 
 # Culling
 effekseerCPP.readLines(rootEDir + 'Culling/Culling3D.h')
@@ -164,6 +199,7 @@ effekseerCPP.readLines(rootEDir + 'Effekseer.Matrix43.cpp')
 effekseerCPP.readLines(rootEDir + 'Effekseer.Matrix44.cpp')
 
 effekseerCPP.readLines(rootEDir + 'Effekseer.InternalStruct.h')
+effekseerCPP.readLines(rootEDir + 'Effekseer.InternalScript.h')
 
 effekseerCPP.readLines(rootEDir + 'Effekseer.DefaultEffectLoader.h')
 effekseerCPP.readLines(rootEDir + 'Effekseer.DefaultEffectLoader.cpp')
@@ -185,6 +221,7 @@ effekseerCPP.readLines(rootEDir + 'Effekseer.ManagerImplemented.h')
 effekseerCPP.readLines(rootEDir + 'Effekseer.IntrusiveList.h')
 effekseerCPP.readLines(rootEDir + 'Effekseer.InstanceContainer.h')
 effekseerCPP.readLines(rootEDir + 'Effekseer.Instance.h')
+effekseerCPP.readLines(rootEDir + 'Effekseer.InstanceChunk.h')
 effekseerCPP.readLines(rootEDir + 'Effekseer.InstanceGlobal.h')
 effekseerCPP.readLines(rootEDir + 'Effekseer.InstanceGroup.h')
 
@@ -202,9 +239,10 @@ effekseerCPP.readLines(rootEDir + 'Effekseer.Manager.cpp')
 effekseerCPP.readLines(rootEDir + 'Effekseer.IntrusiveList.cpp')
 effekseerCPP.readLines(rootEDir + 'Effekseer.InstanceContainer.cpp')
 effekseerCPP.readLines(rootEDir + 'Effekseer.Instance.cpp')
+effekseerCPP.readLines(rootEDir + 'Effekseer.InstanceChunk.cpp')
 effekseerCPP.readLines(rootEDir + 'Effekseer.InstanceGlobal.cpp')
 effekseerCPP.readLines(rootEDir + 'Effekseer.InstanceGroup.cpp')
-
+effekseerCPP.readLines(rootEDir + 'Effekseer.InternalScript.cpp')
 
 effekseerCPP.readLines(rootEDir + 'Effekseer.Setting.cpp')
 
@@ -229,25 +267,33 @@ rendererHeader.addLine('')
 rendererHeader.addLine(r'#pragma once')
 rendererHeader.addLine(r'#include "CoreMinimal.h"')
 rendererHeader.addLine('')
+rendererHeader.addLine('#undef far')
 
 rendererHeader.readLines(rootRDir + 'EffekseerRenderer.CommonUtils.h')
 rendererHeader.readLines(rootRDir + 'EffekseerRenderer.Renderer.h')
 rendererHeader.readLines(rootRDir + 'EffekseerRenderer.Renderer_Impl.h')
+rendererHeader.readLines(rootRDir + 'EffekseerRenderer.RenderStateBase.h')
+
 rendererHeader.readLines(rootRDir + 'EffekseerRenderer.VertexBufferBase.h')
 rendererHeader.readLines(rootRDir + 'EffekseerRenderer.IndexBufferBase.h')
-rendererHeader.readLines(rootRDir + 'EffekseerRenderer.RenderStateBase.h')
+
 rendererHeader.readLines(rootRDir + 'EffekseerRenderer.StandardRenderer.h')
 rendererHeader.readLines(rootRDir + 'EffekseerRenderer.ModelRendererBase.h')
+
+rendererHeader.readLines(rootRDir + 'EffekseerRenderer.ShaderBase.h')
+
 rendererHeader.readLines(rootRDir + 'EffekseerRenderer.RibbonRendererBase.h')
 rendererHeader.readLines(rootRDir + 'EffekseerRenderer.RingRendererBase.h')
 rendererHeader.readLines(rootRDir + 'EffekseerRenderer.SpriteRendererBase.h')
 rendererHeader.readLines(rootRDir + 'EffekseerRenderer.TrackRendererBase.h')
+rendererHeader.readLines(rootRDir + 'EffekseerRenderer.VertexBufferBase.h')
 rendererHeader.replace('#include <Effekseer.h>','#include "EffekseerNative.h"')
 
 rendererHeader.output('Plugins/Effekseer/Source/Effekseer/Private/EffekseerRendererNative.h')
 
 rendererCPP = CreateCPP()
 rendererCPP.addLine('#include "EffekseerRendererNative.h"')
+rendererCPP.addLine('#undef far')
 rendererCPP.readLines(rootRDir + 'EffekseerRenderer.CommonUtils.cpp')
 rendererCPP.readLines(rootRDir + 'EffekseerRenderer.IndexBufferBase.cpp')
 rendererCPP.readLines(rootRDir + 'EffekseerRenderer.ModelRendererBase.cpp')
