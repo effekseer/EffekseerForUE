@@ -1,8 +1,4 @@
 ﻿
-#pragma once
-#include "CoreMinimal.h"
-
-
 #ifndef	__EFFEKSEER_BASE_PRE_H__
 #define	__EFFEKSEER_BASE_PRE_H__
 
@@ -15,6 +11,9 @@
 #include <stdint.h>
 #include <climits>
 #include <vector>
+#include <cfloat>
+#include <array>
+#include <memory>
 
 //----------------------------------------------------------------------------------
 //
@@ -74,6 +73,7 @@ class TrackRenderer;
 class Setting;
 class EffectLoader;
 class TextureLoader;
+class MaterialLoader;
 
 class SoundPlayer;
 class SoundLoader;
@@ -111,6 +111,14 @@ typedef	void ( EFK_STDCALL *EffectInstanceRemovingCallback ) ( Manager* manager,
 #define ES_SAFE_RELEASE(val)					if ( (val) != NULL ) { (val)->Release(); (val) = NULL; }
 #define ES_SAFE_DELETE(val)						if ( (val) != NULL ) { delete (val); (val) = NULL; }
 #define ES_SAFE_DELETE_ARRAY(val)				if ( (val) != NULL ) { delete [] (val); (val) = NULL; }
+
+#define EFK_ASSERT(x) assert(x)
+
+//! the maximum number of texture slot which can be specified by an user
+const int32_t UserTextureSlotMax = 6;
+
+//! the maximum number of texture slot including textures system specified
+const int32_t TextureSlotMax = 8;
 
 //----------------------------------------------------------------------------------
 //
@@ -189,6 +197,12 @@ enum class TextureType : int32_t
 	Color,
 	Normal,
 	Distortion,
+};
+
+enum class MaterialFileType : int32_t
+{
+	Code,
+	Compiled,
 };
 
 enum class TextureFormatType : int32_t
@@ -429,6 +443,35 @@ public:
 	virtual int Release() = 0;
 };
 
+/**
+	@brief	a deleter for IReference
+*/
+template <typename T>
+struct ReferenceDeleter
+{
+	void operator()(T* ptr) const
+	{ 
+		if (ptr != nullptr)
+		{
+			ptr->Release();
+		}
+	}
+};
+
+template<typename T> 
+inline std::unique_ptr<T, ReferenceDeleter<T>> CreateUniqueReference(T* ptr, bool addRef = false)
+{ 
+	if (ptr == nullptr)
+		return std::unique_ptr<T, ReferenceDeleter<T>>(nullptr); 
+
+	if (addRef)
+	{
+		ptr->AddRef();
+	}
+
+	return std::unique_ptr<T, ReferenceDeleter<T>>(ptr); 
+}
+
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
@@ -500,6 +543,106 @@ struct TextureData
 	TextureFormatType	TextureFormat;
 	void*	UserPtr;
 	int64_t	UserID;
+
+	//! for OpenGL, it is ignored in other apis
+	bool HasMipmap = true;
+};
+
+enum class ShadingModelType : int32_t
+{
+	Lit,
+	Unlit,
+};
+
+/**
+	@brief	material type
+*/
+enum class RendererMaterialType : int32_t
+{
+	Default = 0,
+	BackDistortion = 6,
+	Lighting = 7,
+	File = 128,
+};
+
+/**
+	@brief	\~english	Material data
+			\~japanese	マテリアルデータ
+*/
+struct MaterialData
+{
+	ShadingModelType ShadingModel = ShadingModelType::Lit;
+	bool IsSimpleVertex = false;
+	bool IsRefractionRequired = false;
+	int32_t CustomData1 = 0;
+	int32_t CustomData2 = 0;
+	int32_t TextureCount = 0;
+	int32_t UniformCount = 0;
+	std::array<TextureWrapType, UserTextureSlotMax> TextureWrapTypes;
+	void* UserPtr = nullptr;
+	void* ModelUserPtr = nullptr;
+	void* RefractionUserPtr = nullptr;
+	void* RefractionModelUserPtr = nullptr;
+};
+
+/**
+	@brief	\~english	Textures used by material
+			\~japanese	マテリアルに使用されるテクスチャ
+*/
+struct MaterialTextureParameter
+{
+	//! 0 - color, 1 - value
+	int32_t Type = 0;
+	int32_t Index = 0;
+};
+
+/**
+	@brief	\~english	Material parameter for shaders
+			\~japanese	シェーダー向けマテリアルパラメーター
+*/
+struct MaterialParameter
+{
+	//! material index in MaterialType::File
+	int32_t MaterialIndex = -1;
+
+	//! used textures in MaterialType::File
+	std::vector<MaterialTextureParameter> MaterialTextures;
+
+	//! used uniforms in MaterialType::File
+	std::vector<std::array<float, 4>> MaterialUniforms;
+};
+
+/**
+	@brief	\~english	Parameters about a depth which is passed into a renderer
+			\~japanese	レンダラーに渡されるデプスに関するパラメーター
+*/
+struct NodeRendererDepthParameter
+{
+	float DepthOffset = 0.0f;
+	bool IsDepthOffsetScaledWithCamera = false;
+	bool IsDepthOffsetScaledWithParticleScale = false;
+	ZSortType ZSort = ZSortType::None;
+	float SuppressionOfScalingByDepth = 1.0f;
+	float DepthClipping = FLT_MAX;
+};
+
+/**
+	@brief	\~english	Common parameters which is passed into a renderer
+			\~japanese	レンダラーに渡される共通に関するパラメーター
+*/
+struct NodeRendererBasicParameter
+{
+	RendererMaterialType MaterialType = RendererMaterialType::Default;
+	int32_t Texture1Index = -1;
+	int32_t Texture2Index = -1;
+	float DistortionIntensity = 0.0f;
+	MaterialParameter* MaterialParameterPtr = nullptr;
+	AlphaBlendType AlphaBlend = AlphaBlendType::Blend;
+
+	TextureFilterType TextureFilter1 = TextureFilterType::Nearest;
+	TextureWrapType TextureWrap1 = TextureWrapType::Repeat;
+	TextureFilterType TextureFilter2 = TextureFilterType::Nearest;
+	TextureWrapType TextureWrap2 = TextureWrapType::Repeat;
 };
 
 //----------------------------------------------------------------------------------
@@ -510,6 +653,415 @@ struct TextureData
 //
 //----------------------------------------------------------------------------------
 #endif	// __EFFEKSEER_BASE_PRE_H__
+
+#ifndef	__EFFEKSEER_BASE_H__
+#define	__EFFEKSEER_BASE_H__
+
+//----------------------------------------------------------------------------------
+// Include
+//----------------------------------------------------------------------------------
+
+#include <stdio.h>
+#include <math.h>
+#include <float.h>
+#include <assert.h>
+#include <string.h>
+#include <stdlib.h>
+#include <stdint.h>
+
+#include <map>
+#include <vector>
+#include <set>
+#include <list>
+#include <string>
+#include <queue>
+#include <chrono>
+#include <thread>
+#include <mutex>
+#include <array>
+#include <cfloat>
+
+//----------------------------------------------------------------------------------
+//
+//----------------------------------------------------------------------------------
+#ifdef _WIN32
+#define	EFK_STDCALL	__stdcall
+#else
+#define	EFK_STDCALL
+#endif
+
+//----------------------------------------------------------------------------------
+//
+//----------------------------------------------------------------------------------
+typedef char16_t			EFK_CHAR;
+
+//----------------------------------------------------------------------------------
+//
+//----------------------------------------------------------------------------------
+namespace Effekseer
+{
+//----------------------------------------------------------------------------------
+//
+//----------------------------------------------------------------------------------
+struct Color;
+
+class Manager;
+class ManagerImplemented;
+class Effect;
+class EffectImplemented;
+class EffectNode;
+class EffectNodeImplemented;
+class EffectNodeRoot;
+class EffectNodeSprite;
+class EffectNodeRibbon;
+class EffectNodeModel;
+
+class InstanceGlobal;
+class InstanceContainer;
+class Instance;
+class InstanceChunk;
+class InstanceGroup;
+
+class ParticleRenderer;
+class SpriteRenderer;
+class RibbonRenderer;
+class ModelRenderer;
+class TrackRenderer;
+
+class Setting;
+class FileReader;
+class FileWriter;
+class FileInterface;
+class EffectLoader;
+class TextureLoader;
+class SoundLoader;
+class ModelLoader;
+class MaterialLoader;
+
+class Model;
+class InternalScript;
+
+//----------------------------------------------------------------------------------
+//
+//----------------------------------------------------------------------------------
+#ifdef _DEBUG_EFFEKSEER
+#define EffekseerPrintDebug(...)	printf(__VA_ARGS__)
+#else
+#define EffekseerPrintDebug(...)
+#endif
+
+//----------------------------------------------------------------------------------
+//
+//----------------------------------------------------------------------------------
+/**
+	@brief	インスタンスの状態
+*/
+enum eInstanceState
+{
+	/**
+		@brief	正常動作中
+	*/
+	INSTANCE_STATE_ACTIVE,
+
+	/**
+		@brief	削除中
+	*/
+	INSTANCE_STATE_REMOVING,
+	/**
+		@brief	削除
+	*/
+	INSTANCE_STATE_REMOVED,
+
+	INSTANCE_STATE_DWORD = 0x7fffffff,
+};
+
+//----------------------------------------------------------------------------------
+//
+//----------------------------------------------------------------------------------
+/**
+	@brief	エフェクトに所属するノードの種類
+*/
+enum eEffectNodeType
+{
+	EFFECT_NODE_TYPE_ROOT = -1,
+	EFFECT_NODE_TYPE_NONE = 0,
+	EFFECT_NODE_TYPE_SPRITE = 2,
+	EFFECT_NODE_TYPE_RIBBON = 3,
+	EFFECT_NODE_TYPE_RING = 4,
+	EFFECT_NODE_TYPE_MODEL = 5,
+	EFFECT_NODE_TYPE_TRACK = 6,
+
+	EFFECT_NODE_TYPE_DWORD = 0x7fffffff,
+};
+
+//----------------------------------------------------------------------------------
+//
+//----------------------------------------------------------------------------------
+}
+//----------------------------------------------------------------------------------
+//
+//----------------------------------------------------------------------------------
+#endif	// __EFFEKSEER_BASE_H__
+
+#ifndef __EFFEKSEER_PARAMETERS_H__
+#define __EFFEKSEER_PARAMETERS_H__
+
+
+namespace Effekseer
+{
+
+/**
+	@brief
+	\~English	How to treat an uv of texture type for ribbon and track
+	\~Japanese	リボンと軌跡向けのテクスチャのUVの扱い方
+*/
+enum class TextureUVType : int32_t
+{
+	Strech,
+	Tile,
+};
+
+/**
+	@brief	\~english	uv texture parameters which is passed into a renderer
+			\~japanese	レンダラーに渡されるUVTextureに関するパラメーター
+*/
+struct NodeRendererTextureUVTypeParameter
+{
+	TextureUVType Type = TextureUVType::Strech;
+	float TileLength = 0.0f;
+	int32_t TileEdgeHead = 0;
+	int32_t TileEdgeTail = 0;
+	float TileLoopAreaBegin = 0.0f;
+	float TileLoopAreaEnd = 0.0f;
+
+	void Load(uint8_t*& pos, int32_t version);
+};
+
+} // namespace Effekseer
+
+#endif // __EFFEKSEER_PARAMETERS_H__
+
+#ifndef __EFFEKSEER_CUSTOM_ALLOCATOR_H__
+#define __EFFEKSEER_CUSTOM_ALLOCATOR_H__
+
+#include <list>
+#include <map>
+#include <new>
+#include <set>
+#include <vector>
+
+namespace Effekseer
+{
+/**
+	@brief
+	\~English get an allocator
+	\~Japanese メモリ確保関数を取得する。
+*/
+MallocFunc GetMallocFunc();
+
+/**
+	\~English specify an allocator
+	\~Japanese メモリ確保関数を設定する。
+*/
+void SetMallocFunc(MallocFunc func);
+
+/**
+	@brief
+	\~English get a deallocator
+	\~Japanese メモリ破棄関数を取得する。
+*/
+FreeFunc GetFreeFunc();
+
+/**
+	\~English specify a deallocator
+	\~Japanese メモリ破棄関数を設定する。
+*/
+void SetFreeFunc(FreeFunc func);
+
+template <class T> struct CustomAllocator
+{
+	using value_type = T;
+
+	CustomAllocator() {}
+
+	template <class U> CustomAllocator(const CustomAllocator<U>&) {}
+
+	T* allocate(std::size_t n) { return reinterpret_cast<T*>(GetMallocFunc()(sizeof(T) * n)); }
+	void deallocate(T* p, std::size_t n) { GetFreeFunc()(p, sizeof(T) * n); }
+};
+
+template <class T, class U> bool operator==(const CustomAllocator<T>&, const CustomAllocator<U>&) { return true; }
+
+template <class T, class U> bool operator!=(const CustomAllocator<T>&, const CustomAllocator<U>&) { return false; }
+
+template <class T> using CustomVector = std::vector<T, CustomAllocator<T>>;
+template <class T> using CustomList = std::list<T, CustomAllocator<T>>;
+template <class T> using CustomSet = std::set<T, std::less<T>, CustomAllocator<T>>;
+template <class T, class U> using CustomMap = std::map<T, U, std::less<T>, CustomAllocator<std::pair<const T, U>>>;
+
+} // namespace Effekseer
+
+#endif // __EFFEKSEER_BASE_PRE_H__
+
+#ifndef __EFFEKSEER_BINARY_READER_H__
+#define __EFFEKSEER_BINARY_READER_H__
+
+
+namespace Effekseer
+{
+
+enum class BinaryReaderStatus
+{
+	Reading,
+	Complete,
+	Failed,
+};
+
+/**
+	@brief	utility for reading binary data
+*/
+template <bool IsValidationEnabled> class BinaryReader
+{
+private:
+	uint8_t* data_ = nullptr;
+	size_t size_ = 0;
+	size_t offset = 0;
+	BinaryReaderStatus status_ = BinaryReaderStatus::Reading;
+
+public:
+	BinaryReader(uint8_t* data, size_t size)
+	{
+		data_ = data;
+		size_ = size;
+	}
+
+	template <typename T> bool Read(T& value)
+	{
+		if (IsValidationEnabled)
+		{
+
+			if (offset + sizeof(T) > size_ || status_ == BinaryReaderStatus::Failed)
+			{
+				status_ = BinaryReaderStatus::Failed;
+				return false;
+			}
+		}
+
+		memcpy(&value, data_ + offset, sizeof(T));
+		offset += sizeof(T);
+		return true;
+	}
+
+	/**
+@brief	read with validation
+*/
+	template <typename T> bool Read(T& value, const T& min_, const T& max_)
+	{
+		if (IsValidationEnabled)
+		{
+			if (offset + sizeof(T) > size_ || status_ == BinaryReaderStatus::Failed)
+			{
+				status_ = BinaryReaderStatus::Failed;
+				return false;
+			}
+		}
+
+		memcpy(&value, data_ + offset, sizeof(T));
+		offset += sizeof(T);
+
+		if (IsValidationEnabled)
+		{
+			if (value < min_ || value > max_)
+			{
+				status_ = BinaryReaderStatus::Failed;
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	/**
+		@brief	read with validation
+	*/
+	template <typename T, typename U> bool Read(T& value, const U& min_, const U& max_)
+	{
+		if (IsValidationEnabled)
+		{
+			if (offset + sizeof(T) > size_ || status_ == BinaryReaderStatus::Failed)
+			{
+				status_ = BinaryReaderStatus::Failed;
+				return false;
+			}
+		}
+
+		memcpy(&value, data_ + offset, sizeof(T));
+		offset += sizeof(T);
+
+		if (IsValidationEnabled)
+		{
+			if (reinterpret_cast<U>(value) < min_ || reinterpret_cast<U>(value) > max_)
+			{
+				status_ = BinaryReaderStatus::Failed;
+				return false;
+			}
+		}
+
+		return true;
+	}
+
+	template <typename T> bool Read(T* value, int32_t count)
+	{
+		if (IsValidationEnabled)
+		{
+			if (count < 0 || offset + sizeof(T) * count > size_ || status_ == BinaryReaderStatus::Failed)
+			{
+				status_ = BinaryReaderStatus::Failed;
+				return false;
+			}
+		}
+
+		memcpy(value, data_ + offset, sizeof(T) * count);
+		offset += sizeof(T) * count;
+		return true;
+	}
+
+	template <typename T, typename _Alloc> bool Read(std::vector<T, _Alloc>& value, int32_t count)
+	{
+		if (IsValidationEnabled)
+		{
+			if (count < 0 || offset + sizeof(T) * count > size_ || status_ == BinaryReaderStatus::Failed)
+			{
+				status_ = BinaryReaderStatus::Failed;
+				return false;
+			}
+		}
+
+		value.resize(count);
+
+		memcpy(value.data(), data_ + offset, sizeof(T) * count);
+		offset += sizeof(T) * count;
+		return true;
+	}
+
+	BinaryReaderStatus GetStatus() const
+	{
+		if (status_ == BinaryReaderStatus::Failed)
+			return status_;
+
+		return offset == size_ ? BinaryReaderStatus::Complete : BinaryReaderStatus::Reading;
+	}
+
+	void AddOffset(size_t length) { offset += length; }
+
+	size_t GetOffset() const { return offset; }
+};
+
+} // namespace Effekseer
+
+#endif // __EFFEKSEER_READER_H__
+
+
 #ifndef	__EFFEKSEER_VECTOR2D_H__
 #define	__EFFEKSEER_VECTOR2D_H__
 
@@ -561,6 +1113,7 @@ public:
 //
 //----------------------------------------------------------------------------------
 #endif	// __EFFEKSEER_VECTOR3D_H__
+
 
 #ifndef	__EFFEKSEER_VECTOR3D_H__
 #define	__EFFEKSEER_VECTOR3D_H__
@@ -672,6 +1225,8 @@ public:
 	static Vector3D& Transform( Vector3D& o, const Vector3D& in, const Matrix43& mat );
 
 	static Vector3D& Transform( Vector3D& o, const Vector3D& in, const Matrix44& mat );
+
+	static Vector3D& TransformWithW(Vector3D& o, const Vector3D& in, const Matrix44& mat);
 };
 
 //----------------------------------------------------------------------------------
@@ -682,6 +1237,7 @@ public:
 //
 //----------------------------------------------------------------------------------
 #endif	// __EFFEKSEER_VECTOR3D_H__
+
 
 #ifndef	__EFFEKSEER_COLOR_H__
 #define	__EFFEKSEER_COLOR_H__
@@ -762,6 +1318,7 @@ struct Color
 //----------------------------------------------------------------------------------
 #endif	// __EFFEKSEER_COLOR_H__
 
+
 #ifndef	__EFFEKSEER_RECTF_H__
 #define	__EFFEKSEER_RECTF_H__
 
@@ -810,6 +1367,7 @@ public:
 //----------------------------------------------------------------------------------
 #endif	// __EFFEKSEER_RECTF_H__
 
+
 #ifndef	__EFFEKSEER_MATRIX43_H__
 #define	__EFFEKSEER_MATRIX43_H__
 
@@ -837,7 +1395,6 @@ struct Matrix44;
 	[2,0][2,1][2,2]<BR>
 	[3,0][3,1][3,2]<BR>
 */
-#pragma pack(push,1)
 struct Matrix43
 {
 private:
@@ -958,6 +1515,11 @@ public:
 	void ToMatrix44(Matrix44& dst);
 
 	/**
+		@brief	check whether all values are not valid number(not nan, not inf)
+	*/
+	bool IsValid() const;
+
+	/**
 		@brief	行列同士の乗算を行う。
 		@param	out	[out]	結果
 		@param	in1	[in]	乗算の左側
@@ -966,7 +1528,6 @@ public:
 	static void Multiple( Matrix43& out, const Matrix43& in1, const Matrix43& in2 );
 };
 
-#pragma pack(pop)
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
@@ -975,6 +1536,7 @@ public:
 //
 //----------------------------------------------------------------------------------
 #endif	// __EFFEKSEER_MATRIX43_H__
+
 
 #ifndef	__EFFEKSEER_MATRIX44_H__
 #define	__EFFEKSEER_MATRIX44_H__
@@ -1125,6 +1687,7 @@ public:
 //----------------------------------------------------------------------------------
 #endif	// __EFFEKSEER_MATRIX44_H__
 
+
 #ifndef	__EFFEKSEER_FILE_H__
 #define	__EFFEKSEER_FILE_H__
 
@@ -1184,26 +1747,33 @@ public:
 };
 
 /**
-	@brief	ファイルアクセス用のファクトリクラス
+	@brief
+	\~English	factory class for io
+	\~Japanese	IOのためのファクトリークラス
 */
 class FileInterface
 {
 private:
-
 public:
-	virtual FileReader* OpenRead( const EFK_CHAR* path ) = 0;
+	virtual FileReader* OpenRead(const EFK_CHAR* path) = 0;
 
-	virtual FileWriter* OpenWrite( const EFK_CHAR* path ) = 0;
+	/**
+		@brief
+		\~English	try to open a reader. It need not to succeeds in opening it.
+		\~Japanese	リーダーを開くことを試します。成功する必要はありません。
+	*/
+	virtual FileReader* TryOpenRead(const EFK_CHAR* path) { return OpenRead(path); }
+
+	virtual FileWriter* OpenWrite(const EFK_CHAR* path) = 0;
 };
 
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
+
  } 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
 #endif	// __EFFEKSEER_FILE_H__
+
 
 #ifndef	__EFFEKSEER_DEFAULT_FILE_H__
 #define	__EFFEKSEER_DEFAULT_FILE_H__
@@ -1282,6 +1852,7 @@ public:
 //
 //----------------------------------------------------------------------------------
 #endif	// __EFFEKSEER_DEFAULT_FILE_H__
+
 
 #ifndef	__EFFEKSEER_EFFECT_H__
 #define	__EFFEKSEER_EFFECT_H__
@@ -1392,13 +1963,17 @@ struct EffectInstanceTerm
 */
 class EffectFactory : public ReferenceObject
 {
-protected:
+public:
+	EffectFactory();
+
+	virtual ~EffectFactory();
+
 	/**
-	@brief	
+	@brief
 	\~English load body data(parameters of effect) from a binary
 	\~Japanese	バイナリから本体(エフェクトのパラメーター)を読み込む。
 	*/
-	bool LoadBody(Effect* effect, const void* data, int32_t size, float magnification, const EFK_CHAR* materialPath); 
+	bool LoadBody(Effect* effect, const void* data, int32_t size, float magnification, const EFK_CHAR* materialPath);
 
 	/**
 	@brief
@@ -1422,11 +1997,19 @@ protected:
 	*/
 	void SetModel(Effect* effect, int32_t index, void* data);
 
+	/**
+	@brief
+	\~English set material data into specified index
+	\~Japanese	指定されたインデックスにマテリアルを設定する。
+	*/
+	void SetMaterial(Effect* effect, int32_t index, MaterialData* data);
 
-public:
-	EffectFactory();
-
-	virtual ~EffectFactory();
+	/**
+	@brief
+	\~English set loading data
+	\~Japanese	ロード用データを設定する。
+	*/
+	void SetLoadingParameter(Effect* effect, ReferenceObject* obj);
 
 	/**
 		@brief
@@ -1462,6 +2045,18 @@ public:
 	\~Japanese	リソースを廃棄される時に、このメソッドが呼ばれる。
 	*/
 	virtual void OnUnloadingResource(Effect* effect);
+
+	/**
+	\~English get factory's name
+	\~Japanese	ファクトリーの名称を取得する。
+	*/
+	virtual const char* GetName() const;
+
+	/**
+	\~English get whether resources are loaded automatically when a binary is loaded
+	\~Japanese	バイナリを読み込んだときに自動的にリソースを読み込むか取得する。
+	*/
+	virtual bool GetIsResourcesLoadedAutomatically() const;
 };
 
 /**
@@ -1556,6 +2151,13 @@ public:
 	virtual int GetVersion() const = 0;
 
 	/**
+		@brief
+		\~English	Get loading parameter supecfied by EffectFactory. This parameter is not used unless EffectFactory is used
+		\~Japanese	EffectFactoryによって指定されたロード用パラメーターを取得する。EffectFactoryを使用しない限り、子のパラメーターは使用しない。
+	*/
+	virtual ReferenceObject* GetLoadingParameter() const = 0;
+
+	/**
 		@brief	格納されている色画像のポインタを取得する。
 		@param	n	[in]	画像のインデックス
 		@return	画像のポインタ
@@ -1641,6 +2243,24 @@ public:
 	*/
 	virtual const EFK_CHAR* GetModelPath(int n) const = 0;
 	
+	/**
+	@brief	\~English	Get a material's pointer
+	\~Japanese	格納されているマテリアルのポインタを取得する。
+	*/
+	virtual MaterialData* GetMaterial(int n) const = 0;
+
+	/**
+	@brief	\~English	Get the number of stored material pointer 
+	\~Japanese	格納されているマテリアルのポインタの個数を取得する。
+	*/
+	virtual int32_t GetMaterialCount() const = 0;
+
+	/**
+	@brief	\~English	Get a material's path
+	\~Japanese	マテリアルのパスを取得する。
+	*/
+	virtual const EFK_CHAR* GetMaterialPath(int n) const = 0;
+
 	/**
 		@brief
 		\~English	Reload this effect
@@ -1830,6 +2450,13 @@ public:
 	virtual Effect* GetEffect() const = 0;
 
 	/**
+	@brief	
+	\~English	Get a generation in the node tree. The generation increases by 1 as it moves a child node.
+	\~Japanese	ノードツリーの世代を取得する。世代は子のノードになるにしたがって1増える。
+	*/
+	virtual int GetGeneration() const = 0;
+
+	/**
 	@brief	子のノードの数を取得する。
 	*/
 	virtual int GetChildrenCount() const = 0;
@@ -1873,6 +2500,7 @@ public:
 //----------------------------------------------------------------------------------
 #endif	// __EFFEKSEER_EFFECT_H__
 
+
 #ifndef	__EFFEKSEER_MANAGER_H__
 #define	__EFFEKSEER_MANAGER_H__
 
@@ -1895,6 +2523,31 @@ namespace Effekseer
 class Manager
 	: public IReference
 {
+public:
+	/**
+	@brief
+		@brief
+		\~English Parameters for Manager::Draw and Manager::DrawHandle
+		\~Japanese Manager::Draw and Manager::DrawHandleに使用するパラメーター
+	*/
+	struct DrawParameter
+	{
+		Vector3D CameraPosition;
+		Vector3D CameraDirection;
+
+		/**
+			@brief
+			\~English A bitmask to show effects
+			\~Japanese エフェクトを表示するためのビットマスク
+			@note
+			\~English For example, if effect's layer is 1 and CameraCullingMask's first bit is 1, this effect is shown.
+			\~Japanese 例えば、エフェクトのレイヤーが0でカリングマスクの最初のビットが1のときエフェクトは表示される。
+		*/
+		int32_t CameraCullingMask;
+
+		DrawParameter();
+	};
+
 protected:
 	Manager() {}
     virtual ~Manager() {}
@@ -1916,24 +2569,30 @@ public:
 	virtual void Destroy() = 0;
 
 	/**
-		@brief	メモリ確保関数を取得する。
+		@brief
+		\~English get an allocator
+		\~Japanese メモリ確保関数を取得する。
 	*/
 	virtual MallocFunc GetMallocFunc() const = 0;
 
 	/**
-		@brief	メモリ確保関数を設定する。
+		\~English specify an allocator
+		\~Japanese メモリ確保関数を設定する。
 	*/
-	virtual void SetMallocFunc( MallocFunc func ) = 0;
+	virtual void SetMallocFunc(MallocFunc func) = 0;
 
 	/**
-		@brief	メモリ破棄関数を取得する。
+		@brief
+		\~English get a deallocator
+		\~Japanese メモリ破棄関数を取得する。
 	*/
 	virtual FreeFunc GetFreeFunc() const = 0;
 
 	/**
-		@brief	メモリ破棄関数を設定する。
+		\~English specify a deallocator
+		\~Japanese メモリ破棄関数を設定する。
 	*/
-	virtual void SetFreeFunc( FreeFunc func ) = 0;
+	virtual void SetFreeFunc(FreeFunc func) = 0;
 
 	/**
 		@brief	ランダム関数を取得する。
@@ -2082,6 +2741,26 @@ public:
 	virtual void SetModelLoader( ModelLoader* modelLoader ) = 0;
 
 	/**
+		@brief
+		\~English get a material loader
+		\~Japanese マテリアルローダーを取得する。
+		@return
+		\~English	loader
+		\~Japanese ローダー
+	*/
+	virtual MaterialLoader* GetMaterialLoader() = 0;
+
+	/**
+		@brief
+		\~English specfiy a material loader
+		\~Japanese マテリアルローダーを設定する。
+		@param	loader
+		\~English	loader
+		\~Japanese ローダー
+	*/
+	virtual void SetMaterialLoader(MaterialLoader* loader) = 0;
+
+	/**
 		@brief	エフェクトを停止する。
 		@param	handle	[in]	インスタンスのハンドル
 	*/
@@ -2121,6 +2800,23 @@ public:
 		最初に確保した個数よりも多く存在する。
 	*/
 	virtual int32_t GetInstanceCount( Handle handle ) = 0;
+	
+	/**
+		@brief
+		\~English Get the number of instances which is used in playing effects
+		\~Japanese 全てのエフェクトに使用されているインスタンス数を取得する。
+		@return	
+		\~English The number of instances
+		\~Japanese インスタンス数
+		@note
+		\~English 
+		The number of Root is included. 
+		This means that the number of used instances added resting resting instances is larger than the number of allocated onces by the number of root.
+		\~Japanese 
+		Rootも個数に含まれる。つまり、Root削除をしていない限り、
+		Managerに残っているインスタンス数+エフェクトに使用されているインスタンス数は、最初に確保した個数よりも存在しているRootの数の分だけ多く存在する。
+	*/
+	virtual int32_t GetTotalInstanceCount() const = 0;
 
 	/**
 		@brief	エフェクトのインスタンスに設定されている行列を取得する。
@@ -2207,6 +2903,20 @@ public:
 	virtual void SetTargetLocation( Handle handle, const Vector3D& location ) = 0;
 
 	/**
+		@brief
+		\~English get a dynamic parameter, which changes effect parameters dynamically while playing
+		\~Japanese 再生中にエフェクトのパラメーターを変更する動的パラメーターを取得する。
+	*/
+	virtual float GetDynamicInput(Handle handle, int32_t index) = 0;
+
+	/**
+		@brief
+		\~English specfiy a dynamic parameter, which changes effect parameters dynamically while playing
+		\~Japanese 再生中にエフェクトのパラメーターを変更する動的パラメーターを設定する。
+	*/
+	virtual void SetDynamicInput(Handle handle, int32_t index, float value) = 0;
+
+	/**
 		@brief	エフェクトのベース行列を取得する。
 		@param	handle	[in]	インスタンスのハンドル
 		@return	ベース行列
@@ -2272,6 +2982,23 @@ public:
 	virtual void SetPausedToAllEffects(bool paused) = 0;
 
 	/**
+		@brief
+		\~English	Get a layer index
+		\~Japanese	レイヤーのインデックスを取得する
+		@note
+		\~English For example, if effect's layer is 1 and CameraCullingMask's first bit is 1, this effect is shown.
+		\~Japanese 例えば、エフェクトのレイヤーが0でカリングマスクの最初のビットが1のときエフェクトは表示される。
+	*/
+	virtual int GetLayer(Handle handle) = 0;
+
+	/**
+		@brief
+		\~English	Set a layer index
+		\~Japanese	レイヤーのインデックスを設定する
+	*/
+	virtual void SetLayer(Handle handle, int32_t layer) = 0;
+
+	/**
 	@brief
 	\~English	Get a playing speed of particle of effect.
 	\~Japanese	エフェクトのパーティクルの再生スピードを取得する。
@@ -2304,30 +3031,49 @@ public:
 	virtual void Flip() = 0;
 
 	/**
-		@brief	更新処理を行う。
-		@param	deltaFrame	[in]	更新するフレーム数(60fps基準)	
+		@brief
+		\~English	Update all effects.
+		\~Japanese	全てのエフェクトの更新処理を行う。
+		@param	deltaFrame
+		\~English	passed time (1 is 1/60 seconds)
+		\~Japanese	更新するフレーム数(60fps基準)
 	*/
 	virtual void Update( float deltaFrame = 1.0f ) = 0;
 
 	/**
-		@brief	更新処理を開始する。
+		@brief
+		\~English	Start to update effects.
+		\~Japanese	更新処理を開始する。
 		@note
-		Updateを実行する際は、実行する必要はない。
+		\~English	It is not required if Update is called.
+		\~Japanese	Updateを実行する際は、実行する必要はない。
 	*/
 	virtual void BeginUpdate() = 0;
 
 	/**
-		@brief	更新処理を終了する。
+		@brief
+		\~English	Stop to update effects.
+		\~Japanese	更新処理を終了する。
 		@note
-		Updateを実行する際は、実行する必要はない。
+		\~English	It is not required if Update is called.
+		\~Japanese	Updateを実行する際は、実行する必要はない。
 	*/
 	virtual void EndUpdate() = 0;
 
 	/**
-		@brief	ハンドル単位の更新を行う。
-		@param	handle		[in]	ハンドル
-		@param	deltaFrame	[in]	更新するフレーム数(60fps基準)
+		@brief	
+		\~English	Update an effect by a handle.
+		\~Japanese	ハンドル単位の更新を行う。
+		@param	handle
+		\~English	a handle.
+		\~Japanese	ハンドル
+		@param	deltaFrame
+		\~English	passed time (1 is 1/60 seconds)
+		\~Japanese	更新するフレーム数(60fps基準)
 		@note
+		\~English
+		You need to call BeginUpdate before starting update and EndUpdate after stopping update.
+		\~Japanese	
 		更新する前にBeginUpdate、更新し終わった後にEndUpdateを実行する必要がある。
 	*/
 	virtual void UpdateHandle( Handle handle, float deltaFrame = 1.0f ) = 0;
@@ -2337,42 +3083,42 @@ public:
 	\~English	Draw particles.
 	\~Japanese	描画処理を行う。
 	*/
-	virtual void Draw() = 0;
+	virtual void Draw(const Manager::DrawParameter& drawParameter = Manager::DrawParameter()) = 0;
 	
 	/**
 	@brief
 	\~English	Draw particles in the back of priority 0.
 	\~Japanese	背面の描画処理を行う。
 	*/
-	virtual void DrawBack() = 0;
+	virtual void DrawBack(const Manager::DrawParameter& drawParameter = Manager::DrawParameter()) = 0;
 
 	/**
 	@brief
 	\~English	Draw particles in the front of priority 0.
 	\~Japanese	前面の描画処理を行う。
 	*/
-	virtual void DrawFront() = 0;
+	virtual void DrawFront(const Manager::DrawParameter& drawParameter = Manager::DrawParameter()) = 0;
 
 	/**
 	@brief
 	\~English	Draw particles with a handle.
 	\~Japanese	ハンドル単位の描画処理を行う。
 	*/
-	virtual void DrawHandle( Handle handle ) = 0;
+	virtual void DrawHandle(Handle handle, const Manager::DrawParameter& drawParameter = Manager::DrawParameter()) = 0;
 
 	/**
 	@brief
 	\~English	Draw particles in the back of priority 0.
 	\~Japanese	背面のハンドル単位の描画処理を行う。
 	*/
-	virtual void DrawHandleBack(Handle handle) = 0;
+	virtual void DrawHandleBack(Handle handle, const Manager::DrawParameter& drawParameter = Manager::DrawParameter()) = 0;
 	
 	/**
 	@brief
 	\~English	Draw particles in the front of priority 0.
 	\~Japanese	前面のハンドル単位の描画処理を行う。
 	*/
-	virtual void DrawHandleFront(Handle handle) = 0;
+	virtual void DrawHandleFront(Handle handle, const Manager::DrawParameter& drawParameter = Manager::DrawParameter()) = 0;
 
 	/**
 		@brief	再生する。
@@ -2401,6 +3147,13 @@ public:
 	virtual Handle Play(Effect* effect, const Vector3D& position, int32_t startFrame = 0) = 0;
 
 	/**
+		@brief
+		\~English	Get a camera's culling mask to show all effects
+		\~Japanese	全てのエフェクトを表示するためのカメラのカリングマスクを取得する。
+	*/
+	virtual int GetCameraCullingMaskToShowAllEffects() = 0;
+
+	/**
 		@brief	Update処理時間を取得。
 	*/
 	virtual int GetUpdateTime() const = 0;
@@ -2411,7 +3164,9 @@ public:
 	virtual int GetDrawTime() const = 0;
 
 	/**
-		@brief	残りの確保したインスタンス数を取得する。
+		@brief
+		\~English	Gets the number of remaining allocated instances.
+		\~Japanese	残りの確保したインスタンス数を取得する。
 	*/
 	virtual int32_t GetRestInstancesCount() const = 0;
 
@@ -2445,6 +3200,286 @@ public:
 //----------------------------------------------------------------------------------
 #endif	// __EFFEKSEER_MANAGER_H__
 
+#ifndef __EFFEKSEER_EFK_EFC_LOADER_H__
+#define __EFFEKSEER_EFK_EFC_LOADER_H__
+
+#include <string>
+#include <vector>
+
+namespace Effekseer
+{
+
+/**
+	@brief a factory for effect efc format
+*/
+class EfkEfcFactory : public EffectFactory
+{
+private:
+public:
+	bool OnLoading(Effect* effect, const void* data, int32_t size, float magnification, const EFK_CHAR* materialPath) override;
+
+	bool OnCheckIsBinarySupported(const void* data, int32_t size) override;
+};
+
+/**
+	@brief	a loader to load properties from efc format
+*/
+class EfkEfcProperty
+{
+private:
+	std::vector<std::u16string> colorImages_;
+	std::vector<std::u16string> normalImages_;
+	std::vector<std::u16string> distortionImages_;
+	std::vector<std::u16string> sounds_;
+	std::vector<std::u16string> models_;
+	std::vector<std::u16string> materials_;
+
+public:
+	bool Load(const void* data, int32_t size);
+
+	const std::vector<std::u16string>& GetColorImages() const;
+	const std::vector<std::u16string>& GetNormalImages() const;
+	const std::vector<std::u16string>& GetDistortionImages() const;
+	const std::vector<std::u16string>& GetSounds() const;
+	const std::vector<std::u16string>& GetModels() const;
+	const std::vector<std::u16string>& GetMaterials() const;
+};
+
+} // namespace Effekseer
+
+#endif
+
+#ifndef __EFFEKSEER_MATERIAL_H__
+#define __EFFEKSEER_MATERIAL_H__
+
+#include <array>
+#include <assert.h>
+#include <map>
+#include <sstream>
+#include <string.h>
+#include <vector>
+
+namespace Effekseer
+{
+
+class Material
+{
+private:
+
+	const int32_t customDataMinCount_ = 2;
+
+	struct Texture
+	{
+		std::string Name;
+		int32_t Index;
+		TextureWrapType Wrap;
+	};
+
+	struct Uniform
+	{
+		std::string Name;
+		int32_t Index;
+	};
+
+	uint64_t guid_ = 0;
+
+	std::string genericCode_;
+
+	bool hasRefraction_ = false;
+
+	bool isSimpleVertex_ = false;
+
+	ShadingModelType shadingModel_;
+
+	int32_t customData1Count_ = 0;
+	int32_t customData2Count_ = 0;
+
+	std::vector<Texture> textures_;
+
+	std::vector<Uniform> uniforms_;
+
+public:
+	Material() = default;
+	virtual ~Material() = default;
+
+	virtual bool Load(const uint8_t* data, int32_t size);
+
+	virtual ShadingModelType GetShadingModel() const;
+
+	virtual void SetShadingModel(ShadingModelType shadingModel);
+
+	virtual bool GetIsSimpleVertex() const;
+
+	virtual void SetIsSimpleVertex(bool isSimpleVertex);
+
+	virtual bool GetHasRefraction() const;
+
+	virtual void SetHasRefraction(bool hasRefraction);
+
+	virtual const char* GetGenericCode() const;
+
+	virtual void SetGenericCode(const char* code);
+
+	virtual uint64_t GetGUID() const;
+
+	virtual void SetGUID(uint64_t guid);
+
+	virtual TextureWrapType GetTextureWrap(int32_t index) const;
+
+	virtual void SetTextureWrap(int32_t index, TextureWrapType value);
+
+	virtual int32_t GetTextureIndex(int32_t index) const;
+
+	virtual void SetTextureIndex(int32_t index, int32_t value);
+
+	virtual const char* GetTextureName(int32_t index) const;
+
+	virtual void SetTextureName(int32_t index, const char* name);
+
+	virtual int32_t GetTextureCount() const;
+
+	virtual void SetTextureCount(int32_t count);
+
+	virtual int32_t GetUniformIndex(int32_t index) const;
+
+	virtual void SetUniformIndex(int32_t index, int32_t value);
+
+	virtual const char* GetUniformName(int32_t index) const;
+
+	virtual void SetUniformName(int32_t index, const char* name);
+
+	virtual int32_t GetUniformCount() const;
+
+	virtual void SetUniformCount(int32_t count);
+
+	virtual int32_t GetCustomData1Count() const;
+
+	virtual void SetCustomData1Count(int32_t count);
+
+	virtual int32_t GetCustomData2Count() const;
+
+	virtual void SetCustomData2Count(int32_t count);
+};
+
+} // namespace Effekseer
+
+#endif // __EFFEKSEER_MATERIAL_H__
+#ifndef __EFFEKSEER_MATERIAL_COMPILER_H__
+#define __EFFEKSEER_MATERIAL_COMPILER_H__
+
+#include <stdint.h>
+#include <stdio.h>
+#include <vector>
+#include <map>
+
+namespace Effekseer
+{
+
+enum class MaterialShaderType : int32_t
+{
+	Standard,
+	Model,
+	Refraction,
+	RefractionModel,
+	Max,
+};
+
+class CompiledMaterialBinary : public IReference
+{
+private:
+	
+public:
+	CompiledMaterialBinary() = default;
+	virtual ~CompiledMaterialBinary() = default;
+
+	virtual const uint8_t* GetVertexShaderData(MaterialShaderType type) const = 0;
+
+	virtual int32_t GetVertexShaderSize(MaterialShaderType type) const = 0;
+
+	virtual const uint8_t* GetPixelShaderData(MaterialShaderType type) const = 0;
+
+	virtual int32_t GetPixelShaderSize(MaterialShaderType type) const = 0;
+};
+
+class MaterialCompiler : public IReference
+{
+
+public:
+	MaterialCompiler() = default;
+
+	virtual ~MaterialCompiler() = default;
+
+	/**
+	 * @bbrief compile and store data into the cache
+	 */
+	virtual CompiledMaterialBinary* Compile(Material* material) = 0;
+};
+
+} // namespace Effekseer
+
+#endif
+
+
+#ifndef __EFFEKSEER_COMPILED_MATERIAL_H__
+#define __EFFEKSEER_COMPILED_MATERIAL_H__
+
+#include <array>
+#include <assert.h>
+#include <map>
+#include <sstream>
+#include <string.h>
+#include <vector>
+
+namespace Effekseer
+{
+
+enum class CompiledMaterialPlatformType : int32_t
+{
+	DirectX9 = 0,
+	// DirectX10 = 1,
+	DirectX11 = 2,
+	DirectX12 = 3,
+	OpenGL = 10,
+	Metal = 20,
+	Vulkan = 30,
+	PS4 = 40,
+	Switch = 50,
+	XBoxOne = 60,
+};
+
+class CompiledMaterial
+{
+	std::map<CompiledMaterialPlatformType, std::unique_ptr<CompiledMaterialBinary, ReferenceDeleter<CompiledMaterialBinary>>> platforms;
+	std::vector<uint8_t> originalData;
+
+public:
+	uint64_t GUID = 0;
+
+	const std::vector<uint8_t>& GetOriginalData() const;
+
+	bool Load(const uint8_t* data, int32_t size);
+
+	void Save(std::vector<uint8_t>& dst, uint64_t guid, std::vector<uint8_t>& originalData);
+
+	bool GetHasValue(CompiledMaterialPlatformType type) const;
+
+	CompiledMaterialBinary* GetBinary(CompiledMaterialPlatformType type) const;
+
+	void UpdateData(const std::vector<uint8_t>& standardVS,
+					const std::vector<uint8_t>& standardPS,
+					const std::vector<uint8_t>& modelVS,
+					const std::vector<uint8_t>& modelPS,
+					const std::vector<uint8_t>& standardRefractionVS,
+					const std::vector<uint8_t>& standardRefractionPS,
+					const std::vector<uint8_t>& modelRefractionVS,
+					const std::vector<uint8_t>& modelRefractionPS,
+					CompiledMaterialPlatformType type);
+};
+
+} // namespace Effekseer
+
+#endif
+
 #ifndef	__EFFEKSEER_SPRITE_RENDERER_H__
 #define	__EFFEKSEER_SPRITE_RENDERER_H__
 
@@ -2468,23 +3503,29 @@ public:
 	struct NodeParameter
 	{
 		Effect*				EffectPointer;
-		int32_t				ColorTextureIndex;
-		AlphaBlendType			AlphaBlend;
-		TextureFilterType	TextureFilter;
-		TextureWrapType	TextureWrap;
+		//int32_t				ColorTextureIndex;
+		//AlphaBlendType			AlphaBlend;
+		//TextureFilterType	TextureFilter;
+		//TextureWrapType	TextureWrap;
 		bool				ZTest;
 		bool				ZWrite;
 		BillboardType		Billboard;
 		bool				IsRightHand;
 
-		bool				Distortion;
-		float				DistortionIntensity;
+		//bool				Distortion;
+		//float				DistortionIntensity;
 
-		float				DepthOffset;
-		bool				IsDepthOffsetScaledWithCamera;
-		bool				IsDepthOffsetScaledWithParticleScale;
+		//float				DepthOffset;
+		//bool				IsDepthOffsetScaledWithCamera;
+		//bool				IsDepthOffsetScaledWithParticleScale;
 
 		ZSortType			ZSort;
+
+		NodeRendererDepthParameter* DepthParameterPtr = nullptr;
+		NodeRendererBasicParameter* BasicParameterPtr = nullptr;
+
+		//RendererMaterialType MaterialType = RendererMaterialType::Default;
+		//MaterialParameter* MaterialParameterPtr = nullptr;
 	};
 
 	struct InstanceParameter
@@ -2498,6 +3539,8 @@ public:
 		Vector2D	Positions[4];
 
 		RectF	UV;
+		std::array<float, 4> CustomData1;
+		std::array<float, 4> CustomData2;
 	};
 
 public:
@@ -2521,6 +3564,7 @@ public:
 //----------------------------------------------------------------------------------
 #endif	// __EFFEKSEER_SPRITE_RENDERER_H__
 
+
 #ifndef	__EFFEKSEER_RIBBON_RENDERER_H__
 #define	__EFFEKSEER_RIBBON_RENDERER_H__
 
@@ -2533,6 +3577,9 @@ public:
 //----------------------------------------------------------------------------------
 namespace Effekseer
 {
+
+struct NodeRendererTextureUVTypeParameter;
+
 	//----------------------------------------------------------------------------------
 	//
 	//----------------------------------------------------------------------------------
@@ -2544,18 +3591,24 @@ namespace Effekseer
 		struct NodeParameter
 		{
 			Effect*				EffectPointer;
-			int32_t				ColorTextureIndex;
-			AlphaBlendType			AlphaBlend;
-			TextureFilterType	TextureFilter;
-			TextureWrapType	TextureWrap;
+			//int32_t				ColorTextureIndex;
+			//AlphaBlendType			AlphaBlend;
+			//TextureFilterType	TextureFilter;
+			//TextureWrapType	TextureWrap;
 			bool				ZTest;
 			bool				ZWrite;
 			bool				ViewpointDependent;
 
-			bool				Distortion;
-			float				DistortionIntensity;
+			//bool				Distortion;
+			//float				DistortionIntensity;
 
+			bool IsRightHand;
 			int32_t				SplineDivision;
+			NodeRendererDepthParameter* DepthParameterPtr = nullptr;
+			NodeRendererBasicParameter* BasicParameterPtr = nullptr;
+			NodeRendererTextureUVTypeParameter* TextureUVTypeParameterPtr = nullptr;
+			//RendererMaterialType MaterialType = RendererMaterialType::Default;
+			//MaterialParameter* MaterialParameterPtr = nullptr;
 		};
 
 		struct InstanceParameter
@@ -2571,6 +3624,8 @@ namespace Effekseer
 			float	Positions[4];
 
 			RectF	UV;
+			std::array<float, 4> CustomData1;
+			std::array<float, 4> CustomData2;
 		};
 
 	public:
@@ -2597,6 +3652,7 @@ namespace Effekseer
 //
 //----------------------------------------------------------------------------------
 #endif	// __EFFEKSEER_RIBBON_RENDERER_H__
+
 #ifndef	__EFFEKSEER_RING_RENDERER_H__
 #define	__EFFEKSEER_RING_RENDERER_H__
 
@@ -2620,28 +3676,38 @@ public:
 	struct NodeParameter
 	{
 		Effect*				EffectPointer;
-		int32_t				ColorTextureIndex;
-		AlphaBlendType			AlphaBlend;
-		TextureFilterType	TextureFilter;
-		TextureWrapType	TextureWrap;
+		//int32_t				ColorTextureIndex;
+		//AlphaBlendType			AlphaBlend;
+		//TextureFilterType	TextureFilter;
+		//TextureWrapType	TextureWrap;
 		bool				ZTest;
 		bool				ZWrite;
 		BillboardType		Billboard;
 		int32_t				VertexCount;
 		bool				IsRightHand;
+		float StartingFade = 0.0f;
+		float EndingFade = 0.0f;
+		//bool				Distortion;
+		//float				DistortionIntensity;
 
-		bool				Distortion;
-		float				DistortionIntensity;
+		NodeRendererDepthParameter* DepthParameterPtr = nullptr;
+		NodeRendererBasicParameter* BasicParameterPtr = nullptr;
 
-		float				DepthOffset;
-		bool				IsDepthOffsetScaledWithCamera;
-		bool				IsDepthOffsetScaledWithParticleScale;
+		//RendererMaterialType MaterialType = RendererMaterialType::Default;
+		//MaterialParameter* MaterialParameterPtr = nullptr;
+
+		//float				DepthOffset;
+		//bool				IsDepthOffsetScaledWithCamera;
+		//bool				IsDepthOffsetScaledWithParticleScale;
+
+		NodeRendererBasicParameter BasicParameter;
 	};
 
 	struct InstanceParameter
 	{
 		Matrix43	SRTMatrix43;
-		float		ViewingAngle;
+		float ViewingAngleStart;
+		float ViewingAngleEnd;
 		Vector2D	OuterLocation;
 		Vector2D	InnerLocation;
 		float		CenterRatio;
@@ -2650,6 +3716,8 @@ public:
 		Color		InnerColor;
 		
 		RectF	UV;
+		std::array<float, 4> CustomData1;
+		std::array<float, 4> CustomData2;
 	};
 
 public:
@@ -2672,6 +3740,7 @@ public:
 //
 //----------------------------------------------------------------------------------
 #endif	// __EFFEKSEER_RING_RENDERER_H__
+
 
 #ifndef	__EFFEKSEER_MODEL_RENDERER_H__
 #define	__EFFEKSEER_MODEL_RENDERER_H__
@@ -2696,27 +3765,33 @@ public:
 	struct NodeParameter
 	{
 		Effect*				EffectPointer;
-		AlphaBlendType		AlphaBlend;
-		TextureFilterType	TextureFilter;
-		TextureWrapType	TextureWrap;
+		//AlphaBlendType		AlphaBlend;
+		//TextureFilterType	TextureFilter;
+		//TextureWrapType	TextureWrap;
 		bool				ZTest;
 		bool				ZWrite;
 		BillboardType		Billboard;
 
-		bool				Lighting;
+		//bool				Lighting;
 		CullingType		Culling;
 		int32_t				ModelIndex;
-		int32_t				ColorTextureIndex;
-		int32_t				NormalTextureIndex;
+		//int32_t				ColorTextureIndex;
+		//int32_t				NormalTextureIndex;
 		float				Magnification;
 		bool				IsRightHand;
 
-		bool				Distortion;
-		float				DistortionIntensity;
+		//bool				Distortion;
+		//float				DistortionIntensity;
 
-		float				DepthOffset;
-		bool				IsDepthOffsetScaledWithCamera;
-		bool				IsDepthOffsetScaledWithParticleScale;
+		NodeRendererDepthParameter* DepthParameterPtr = nullptr;
+		NodeRendererBasicParameter* BasicParameterPtr = nullptr;
+
+		//RendererMaterialType MaterialType = RendererMaterialType::Default;
+		//MaterialParameter* MaterialParameterPtr = nullptr;
+
+		//float				DepthOffset;
+		//bool				IsDepthOffsetScaledWithCamera;
+		//bool				IsDepthOffsetScaledWithParticleScale;
 	};
 
 	struct InstanceParameter
@@ -2725,6 +3800,8 @@ public:
 		RectF			UV;
 		Color			AllColor;
 		int32_t			Time;
+		std::array<float, 4> CustomData1;
+		std::array<float, 4> CustomData2;
 	};
 
 public:
@@ -2748,6 +3825,7 @@ public:
 //----------------------------------------------------------------------------------
 #endif	// __EFFEKSEER_MODEL_RENDERER_H__
 
+
 #ifndef	__EFFEKSEER_TRACK_RENDERER_H__
 #define	__EFFEKSEER_TRACK_RENDERER_H__
 
@@ -2760,6 +3838,9 @@ public:
 //----------------------------------------------------------------------------------
 namespace Effekseer
 {
+
+struct NodeRendererTextureUVTypeParameter;
+
 	//----------------------------------------------------------------------------------
 	//
 	//----------------------------------------------------------------------------------
@@ -2771,17 +3852,25 @@ namespace Effekseer
 		struct NodeParameter
 		{
 			Effect*				EffectPointer;
-			int32_t				ColorTextureIndex;
-			AlphaBlendType			AlphaBlend;
-			TextureFilterType	TextureFilter;
-			TextureWrapType		TextureWrap;
+			//int32_t				ColorTextureIndex;
+			//AlphaBlendType			AlphaBlend;
+			//TextureFilterType	TextureFilter;
+			//TextureWrapType		TextureWrap;
 			bool				ZTest;
 			bool				ZWrite;
 
-			bool				Distortion;
-			float				DistortionIntensity;
+			//bool				Distortion;
+			//float				DistortionIntensity;
 
 			int32_t				SplineDivision;
+
+			bool IsRightHand;
+			NodeRendererDepthParameter* DepthParameterPtr = nullptr;
+			NodeRendererBasicParameter* BasicParameterPtr = nullptr;
+			NodeRendererTextureUVTypeParameter* TextureUVTypeParameterPtr = nullptr;
+
+			RendererMaterialType MaterialType = RendererMaterialType::Default;
+			MaterialParameter* MaterialParameterPtr = nullptr;
 		};
 
 		struct InstanceGroupParameter
@@ -2808,6 +3897,8 @@ namespace Effekseer
 			float	SizeBack;
 
 			RectF	UV;
+			std::array<float, 4> CustomData1;
+			std::array<float, 4> CustomData2;
 		};
 
 	public:
@@ -2834,6 +3925,7 @@ namespace Effekseer
 //
 //----------------------------------------------------------------------------------
 #endif	// __EFFEKSEER_TRACK_RENDERER_H__
+
 #ifndef	__EFFEKSEER_EFFECTLOADER_H__
 #define	__EFFEKSEER_EFFECTLOADER_H__
 
@@ -2895,6 +3987,7 @@ public:
 //
 //----------------------------------------------------------------------------------
 #endif	// __EFFEKSEER_EFFECTLOADER_H__
+
 
 #ifndef	__EFFEKSEER_TEXTURELOADER_H__
 #define	__EFFEKSEER_TEXTURELOADER_H__
@@ -2975,6 +4068,7 @@ public:
 //----------------------------------------------------------------------------------
 #endif	// __EFFEKSEER_TEXTURELOADER_H__
 
+
 #ifndef	__EFFEKSEER_MODELLOADER_H__
 #define	__EFFEKSEER_MODELLOADER_H__
 
@@ -3049,6 +4143,84 @@ public:
 //
 //----------------------------------------------------------------------------------
 #endif	// __EFFEKSEER_MODELLOADER_H__
+
+
+#ifndef __EFFEKSEER_MATERIALLOADER_H__
+#define __EFFEKSEER_MATERIALLOADER_H__
+
+
+namespace Effekseer
+{
+
+/**
+	@brief	
+	\~English	Material loader
+	\~Japanese	マテリアル読み込み破棄関数指定クラス
+*/
+class MaterialLoader
+{
+public:
+	/**
+	@brief	
+	\~English	Constructor
+	\~Japanese	コンストラクタ
+	*/
+	MaterialLoader() = default;
+
+	/**
+	@brief
+	\~English	Destructor
+	\~Japanese	デストラクタ
+	*/
+	virtual ~MaterialLoader() = default;
+
+	/**
+		@brief
+		\~English	load a material
+		\~Japanese	マテリアルを読み込む。
+		@param	path	
+		\~English	a file path
+		\~Japanese	読み込み元パス
+		@return
+		\~English	a pointer of loaded a material
+		\~Japanese	読み込まれたマテリアルのポインタ
+	*/
+	virtual MaterialData* Load(const EFK_CHAR* path) { return nullptr; }
+
+	/**
+		@brief
+		\~English	a function called when a material is loaded
+		\~Japanese	マテリアルが読み込まれるときに呼ばれる関数
+		@param	data
+		\~English	data pointer
+		\~Japanese	データのポインタ
+		@param	size
+		\~English	the size of data
+		\~Japanese	データの大きさ
+		@param	fileType
+		\~English	file type
+		\~Japanese	ファイルの種類
+		@return
+		\~English	a pointer of loaded a material
+		\~Japanese	読み込まれたマテリアルのポインタ
+	*/
+	virtual MaterialData* Load(const void* data, int32_t size, MaterialFileType fileType) { return nullptr; }
+
+	/**
+		@brief
+		\~English	dispose a material
+		\~Japanese	マテリアルを破棄する。
+		@param	data
+		\~English	a pointer of loaded a material
+		\~Japanese	読み込まれたマテリアルのポインタ
+	*/
+	virtual void Unload(MaterialData* data) {}
+};
+
+} // namespace Effekseer
+
+#endif // __EFFEKSEER_TEXTURELOADER_H__
+
 
 #ifndef	__EFFEKSEER_MODEL_H__
 #define	__EFFEKSEER_MODEL_H__
@@ -3395,6 +4567,7 @@ public:
 //----------------------------------------------------------------------------------
 #endif	// __EFFEKSEER_MODEL_H__
 
+
 #ifndef	__EFFEKSEER_SOUND_PLAYER_H__
 #define	__EFFEKSEER_SOUND_PLAYER_H__
 
@@ -3458,6 +4631,7 @@ public:
 //
 //----------------------------------------------------------------------------------
 #endif	// __EFFEKSEER_SOUND_PLAYER_H__
+
 
 #ifndef	__EFFEKSEER_SOUNDLOADER_H__
 #define	__EFFEKSEER_SOUNDLOADER_H__
@@ -3534,6 +4708,7 @@ public:
 //----------------------------------------------------------------------------------
 #endif	// __EFFEKSEER_SOUNDLOADER_H__
 
+
 #ifndef	__EFFEKSEER_LOADER_H__
 #define	__EFFEKSEER_LOADER_H__
 
@@ -3568,6 +4743,7 @@ class EffectFactory;
 		TextureLoader*	m_textureLoader;
 		SoundLoader*	m_soundLoader;
 		ModelLoader*	m_modelLoader;
+		MaterialLoader* m_materialLoader = nullptr;
 
 		std::vector<EffectFactory*> effectFactories;
 
@@ -3653,8 +4829,28 @@ class EffectFactory;
 
 		/**
 			@brief
+			\~English get a material loader
+			\~Japanese マテリアルローダーを取得する。
+			@return
+			\~English	loader
+			\~Japanese ローダー
+		*/
+		MaterialLoader* GetMaterialLoader();
+
+		/**
+			@brief
+			\~English specfiy a material loader
+			\~Japanese マテリアルローダーを設定する。
+			@param	loader
+			\~English	loader
+			\~Japanese ローダー
+			*/
+		void SetMaterialLoader(MaterialLoader* loader);
+
+		/**
+			@brief
 			\~English	Add effect factory
-			\~Japanese Add an effect factory
+			\~Japanese Effect factoryを追加する。
 		*/
 		void AddEffectFactory(EffectFactory* effectFactory);
 
@@ -3664,6 +4860,13 @@ class EffectFactory;
 			\~Japanese Effect Factoryを取得する。
 		*/
 		EffectFactory* GetEffectFactory(int32_t ind) const;
+
+		/**
+			@brief
+			\~English	clear effect factories
+			\~Japanese 全てのEffect Factoryを削除する。
+		*/
+		void ClearEffectFactory();
 
 		/**
 			@brief
@@ -3681,6 +4884,173 @@ class EffectFactory;
 //
 //----------------------------------------------------------------------------------
 #endif	// __EFFEKSEER_LOADER_H__
+
+
+#ifndef	__EFFEKSEER_SERVER_H__
+#define	__EFFEKSEER_SERVER_H__
+
+#if !( defined(_PSVITA) || defined(_XBOXONE) )
+
+//----------------------------------------------------------------------------------
+// Include
+//----------------------------------------------------------------------------------
+
+//----------------------------------------------------------------------------------
+//
+//----------------------------------------------------------------------------------
+namespace Effekseer {
+//----------------------------------------------------------------------------------
+//
+//----------------------------------------------------------------------------------
+/**
+	@brief
+	\~English	A server to edit effect from client such an editor
+	\~Japanese	エディタといったクライアントからエフェクトを編集するためのサーバー
+*/
+class Server
+{
+public:
+
+	Server() {}
+	virtual ~Server() {}
+
+	/**
+		@brief
+		\~English	create a server instance
+		\~Japanese	サーバーのインスタンスを生成する。
+	*/
+	static Server* Create();
+
+	/**
+		@brief
+		\~English	start a server
+		\~Japanese	サーバーを開始する。
+	*/
+	virtual bool Start( uint16_t port ) = 0;
+
+	/**
+		@brief
+		\~English	stop a server
+		\~Japanese	サーバーを終了する。
+	*/
+	virtual void Stop() = 0;
+
+	/**
+		@brief
+		\~English	register an effect as a target to edit.
+		\~Japanese	エフェクトを編集の対象として登録する。
+		@param	key	
+		\~English	a key to search an effect
+		\~Japanese	検索用キー
+		@param	effect
+		\~English	an effect to be edit
+		\~Japanese	編集される対象のエフェクト
+	*/
+	virtual void Register(const EFK_CHAR* key, Effect* effect) = 0;
+
+	/**
+		@brief
+		\~English	unregister an effect
+		\~Japanese	エフェクトを対象から外す。
+		@param	effect
+		\~English	an effect registered
+		\~Japanese	登録されているエフェクト
+	*/
+	virtual void Unregister(Effect* effect) = 0;
+
+	/**
+		@brief	
+		\~English	update a server and reload effects
+		\~Japanese	サーバーを更新し、エフェクトのリロードを行う。
+		@brief	managers
+		\~English	all managers which is playing effects.
+		\~Japanese	エフェクトを再生している全てのマネージャー
+		@brief	managerCount
+		\~English	the number of manager
+		\~Japanese	マネージャーの個数
+
+	*/
+	virtual void Update(Manager** managers = nullptr, int32_t managerCount = 0, ReloadingThreadType reloadingThreadType = ReloadingThreadType::Main) = 0;
+
+	/**
+		@brief
+		\~English	Specify root path to load materials
+		\~Japanese	素材のルートパスを設定する。
+	*/
+	virtual void SetMaterialPath( const EFK_CHAR* materialPath ) = 0;
+
+	/**
+		@brief
+		\~English	deprecated
+		\~Japanese	非推奨
+	*/
+	virtual void Regist(const EFK_CHAR* key, Effect* effect) = 0;
+
+	/**
+		@brief
+		\~English	deprecated
+		\~Japanese	非推奨
+	*/
+	virtual void Unregist(Effect* effect) = 0;
+};
+
+//----------------------------------------------------------------------------------
+//
+//----------------------------------------------------------------------------------
+ } 
+//----------------------------------------------------------------------------------
+//
+//----------------------------------------------------------------------------------
+
+#endif	// #if !( defined(_PSVITA) || defined(_XBOXONE) )
+
+#endif	// __EFFEKSEER_SERVER_H__
+
+
+#ifndef	__EFFEKSEER_CLIENT_H__
+#define	__EFFEKSEER_CLIENT_H__
+
+#if !( defined(_PSVITA) || defined(_PS4) || defined(_SWITCH) || defined(_XBOXONE) )
+
+//----------------------------------------------------------------------------------
+// Include
+//----------------------------------------------------------------------------------
+
+//----------------------------------------------------------------------------------
+//
+//----------------------------------------------------------------------------------
+namespace Effekseer {
+//----------------------------------------------------------------------------------
+//
+//----------------------------------------------------------------------------------
+class Client
+{
+public:
+	Client() {}
+	virtual ~Client() {}
+
+	static Client* Create();
+
+	virtual bool Start( char* host, uint16_t port ) = 0;
+	virtual void Stop()= 0;
+
+	virtual void Reload( const EFK_CHAR* key, void* data, int32_t size ) = 0;
+	virtual void Reload( Manager* manager, const EFK_CHAR* path, const EFK_CHAR* key ) = 0;
+	virtual bool IsConnected() = 0;
+};
+
+//----------------------------------------------------------------------------------
+//
+//----------------------------------------------------------------------------------
+ } 
+//----------------------------------------------------------------------------------
+//
+//----------------------------------------------------------------------------------
+
+#endif	// #if !( defined(_PSVITA) || defined(_PS4) || defined(_SWITCH) || defined(_XBOXONE) )
+
+#endif	// __EFFEKSEER_CLIENT_H__
+
 
 #if PLATFORM_WINDOWS
 
@@ -3804,6 +5174,7 @@ public:
 
 #endif	// __EFFEKSEER_SERVER_H__
 
+
 #ifndef	__EFFEKSEER_CLIENT_H__
 #define	__EFFEKSEER_CLIENT_H__
 
@@ -3847,5 +5218,6 @@ public:
 #endif	// #if !( defined(_PSVITA) || defined(_PS4) || defined(_SWITCH) || defined(_XBOXONE) )
 
 #endif	// __EFFEKSEER_CLIENT_H__
+
 #endif
 

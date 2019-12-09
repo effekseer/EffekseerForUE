@@ -15,31 +15,8 @@ namespace EffekseerRendererUE4
 	class IndexBuffer;
 	class Shader;
 
-	struct Vertex
-	{
-		::Effekseer::Vector3D	Pos;
-		::Effekseer::Color	Col;
-		float		UV[2];
-
-		void SetColor(const ::Effekseer::Color& color)
-		{
-			Col = color;
-		}
-	};
-
-	struct VertexDistortion
-	{
-		::Effekseer::Vector3D	Pos;
-		::Effekseer::Color	Col;
-		float		UV[2];
-		::Effekseer::Vector3D	Tangent;
-		::Effekseer::Vector3D	Binormal;
-
-		void SetColor(const ::Effekseer::Color& color)
-		{
-			Col = color;
-		}
-	};
+	using Vertex = EffekseerRenderer::SimpleVertex;
+	using VertexDistortion = EffekseerRenderer::VertexDistortion;
 
 	typedef ::Effekseer::ModelRenderer::NodeParameter efkModelNodeParam;
 	typedef ::Effekseer::ModelRenderer::InstanceParameter efkModelInstanceParam;
@@ -237,6 +214,7 @@ namespace EffekseerRendererUE4
 		*/
 		::Effekseer::TrackRenderer* CreateTrackRenderer() override;
 
+		virtual ::Effekseer::MaterialLoader* CreateMaterialLoader(::Effekseer::FileInterface* fileInterface = nullptr) override { return nullptr; }
 		/**
 		@brief	標準のテクスチャ読込クラスを生成する。
 		*/
@@ -272,8 +250,6 @@ namespace EffekseerRendererUE4
 
 		void SetRenderMode(Effekseer::RenderMode renderMode) override { }
 
-		Effekseer::RenderMode GetRenderMode() override { return Effekseer::RenderMode::Normal; }
-
 		Effekseer::TextureData* GetBackground();
 
 		VertexBuffer* GetVertexBuffer();
@@ -294,14 +270,14 @@ namespace EffekseerRendererUE4
 
 		UMaterialInstanceDynamic* FindMaterial();
 
-		Shader* GetShader(bool useTexture, bool useDistortion) const;
+		Shader* GetShader(bool useTexture, ::Effekseer::RendererMaterialType) const;
 
 		void BeginShader(Shader* shader);
 		void EndShader(Shader* shader);
 
-		void SetVertexBufferToShader(const void* data, int32_t size);
+		void SetVertexBufferToShader(const void* data, int32_t size, int32_t dstOffset);
 
-		void SetPixelBufferToShader(const void* data, int32_t size);
+		void SetPixelBufferToShader(const void* data, int32_t size, int32_t dstOffset);
 
 		void SetTextures(Shader* shader, Effekseer::TextureData** textures, int32_t count);
 		void SetIsLighting(bool value) { m_isLighting = value; }
