@@ -1,10 +1,13 @@
 #include "EffekseerEffect.h"
 #include "EffekseerNative.h"
+#include "EffekseerRendererNative.h"
+#include "EffekseerMaterial.h"
 
 #include <string>
 #include <functional>
 #include <vector>
 
+#include "EffekseerRendererShader.h"
 #include "EffekseerCustomVersion.h"
 
 template <size_t size_>
@@ -295,11 +298,134 @@ void ModelLoader::Unload(void* data)
 	}
 }
 
+class MaterialLoader
+	: public ::Effekseer::MaterialLoader
+{
+private:
+	UEffekseerEffect* uobject_ = nullptr;
+	bool requiredToCreateResource_ = false;
+	int32_t loadingIndex_ = 0;
+
+public:
+	MaterialLoader() = default;
+	virtual ~MaterialLoader() = default;
+
+public:
+	::Effekseer::MaterialData* Load(const EFK_CHAR* path) override;
+	void Unload(::Effekseer::MaterialData* data) override;
+	void SetUObject(UEffekseerEffect* uobject, bool requiredToCreateResource)
+	{
+		uobject_ = uobject;
+
+		requiredToCreateResource_ = requiredToCreateResource;
+		if (!requiredToCreateResource)
+		{
+			loadingIndex_ = 0;
+		}
+	}
+};
+
+::Effekseer::MaterialData* MaterialLoader::Load(const EFK_CHAR* path)
+{
+	auto path_we = GetFileNameWithoutExtension(path);
+	auto epath_ = (const char16_t*)path_we.c_str();
+	auto path_ = (const TCHAR*)epath_;
+
+	if (requiredToCreateResource_)
+	{
+		auto material = Cast<UEffekseerMaterial>(StaticLoadObject(UEffekseerMaterial::StaticClass(), NULL, path_));
+		uobject_->Materials.Add(material);
+
+		if (material != nullptr)
+		{
+			auto data = new ::Effekseer::MaterialData();
+			data->UserPtr = new EffekseerRendererUE4::Shader(material, false, false);
+			data->ModelUserPtr = new EffekseerRendererUE4::Shader(material, true, false);
+
+			if (material->GetNativePtr()->GetHasRefraction())
+			{
+				data->RefractionUserPtr = new EffekseerRendererUE4::Shader(material, false, true);
+				data->RefractionModelUserPtr = new EffekseerRendererUE4::Shader(material, true, true);
+			}
+
+			data->IsSimpleVertex = material->GetNativePtr()->GetIsSimpleVertex();
+			data->IsRefractionRequired = material->GetNativePtr()->GetHasRefraction();
+			data->CustomData1 = material->GetNativePtr()->GetCustomData1Count();
+			data->CustomData2 = material->GetNativePtr()->GetCustomData2Count();
+			data->TextureCount = std::min(material->GetNativePtr()->GetTextureCount(), Effekseer::UserTextureSlotMax);
+			data->UniformCount = material->GetNativePtr()->GetUniformCount();
+			data->ShadingModel = material->GetNativePtr()->GetShadingModel();
+
+			for (int32_t i = 0; i < data->TextureCount; i++)
+			{
+				data->TextureWrapTypes.at(i) = material->GetNativePtr()->GetTextureWrap(i);
+			}
+
+			return data;
+		}
+
+		return nullptr;
+	}
+	else
+	{
+		if (uobject_->Materials.Num() <= loadingIndex_) return nullptr;
+
+		auto o = uobject_->Materials[loadingIndex_];
+		loadingIndex_++;
+
+		if (o != nullptr)
+		{
+			auto data = new ::Effekseer::MaterialData();
+			data->UserPtr = new EffekseerRendererUE4::Shader(o, false, false);
+			data->ModelUserPtr = new EffekseerRendererUE4::Shader(o, true, false);
+
+			auto material = o;
+			if (material->GetNativePtr()->GetHasRefraction())
+			{
+				data->RefractionUserPtr = new EffekseerRendererUE4::Shader(o, false, true);
+				data->RefractionModelUserPtr = new EffekseerRendererUE4::Shader(o, true, true);
+			}
+
+			data->IsSimpleVertex = material->GetNativePtr()->GetIsSimpleVertex();
+			data->IsRefractionRequired = material->GetNativePtr()->GetHasRefraction();
+			data->CustomData1 = material->GetNativePtr()->GetCustomData1Count();
+			data->CustomData2 = material->GetNativePtr()->GetCustomData2Count();
+			data->TextureCount = std::min(material->GetNativePtr()->GetTextureCount(), Effekseer::UserTextureSlotMax);
+			data->UniformCount = material->GetNativePtr()->GetUniformCount();
+			data->ShadingModel = material->GetNativePtr()->GetShadingModel();
+
+			for (int32_t i = 0; i < data->TextureCount; i++)
+			{
+				data->TextureWrapTypes.at(i) = material->GetNativePtr()->GetTextureWrap(i);
+			}
+
+			return data;
+		}
+
+		return nullptr;
+	}
+}
+
+void MaterialLoader::Unload(::Effekseer::MaterialData* data)
+{
+	if (data == nullptr) return;
+	auto p1 = (EffekseerRendererUE4::Shader*)data->UserPtr;
+	auto p2 = (EffekseerRendererUE4::Shader*)data->ModelUserPtr;
+	auto p3 = (EffekseerRendererUE4::Shader*)data->RefractionUserPtr;
+	auto p4 = (EffekseerRendererUE4::Shader*)data->RefractionModelUserPtr;
+	ES_SAFE_DELETE(p1);
+	ES_SAFE_DELETE(p2);
+	ES_SAFE_DELETE(p3);
+	ES_SAFE_DELETE(p4);
+	ES_SAFE_DELETE(data);
+}
+
 static ::Effekseer::Setting* CreateSetting()
 {
 	auto setting = ::Effekseer::Setting::Create();
 	setting->SetTextureLoader(new TextureLoader());
 	setting->SetModelLoader(new ModelLoader());
+	setting->SetMaterialLoader(new MaterialLoader());
 	return setting;
 }
 
@@ -314,6 +440,7 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 		this->ColorTextures.Reset();
 		this->DistortionTextures.Reset();
 		this->Models.Reset();
+		this->Materials.Reset();
 	}
 
 	auto textureLoader = (TextureLoader*)setting->GetTextureLoader();
@@ -321,6 +448,9 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 
 	auto modelLoader = (ModelLoader*)setting->GetModelLoader();
 	modelLoader->SetUObject(this, isResourceReset);
+
+	auto materialLoader = (MaterialLoader*)setting->GetMaterialLoader();
+	materialLoader->SetUObject(this, isResourceReset);
 
 	EFK_CHAR* rootPath = (EFK_CHAR*)path;
 	EFK_CHAR parentPath[300];
@@ -374,14 +504,14 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 				}
 			}
 
-			UEffekseerMaterial* mat = NewObject<UEffekseerMaterial>();
+			UEffekseerEffectMaterial* mat = NewObject<UEffekseerEffectMaterial>();
 			mat->Texture = texture;
 			mat->IsDepthTestDisabled = !param.ZTest;
 			mat->AlphaBlend = (EEffekseerAlphaBlendType)param.AlphaBlend;
 			mat->IsLighting = modelParam.Lighting;
 			mat->IsDistorted = param.Distortion;
 
-			this->Materials.Add(mat);
+			this->EffekseerMaterials.Add(mat);
 
 		}
 

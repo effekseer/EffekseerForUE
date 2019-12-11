@@ -4,6 +4,7 @@
 #include "CoreMinimal.h"
 #include "Object.h"
 #include "EffekseerModel.h"
+#include "EffekseerMaterial.h"
 #include "EffekseerEffect.generated.h"
 
 UENUM()
@@ -33,7 +34,7 @@ enum class EEffekseerAlphaBlendType : uint8
 
 
 UCLASS()
-class EFFEKSEER_API UEffekseerMaterial
+class EFFEKSEER_API UEffekseerEffectMaterial
 	: public UObject
 {
 public:
@@ -54,7 +55,7 @@ public:
 	UPROPERTY()
 	bool			IsDistorted = false;
 
-	bool operator == (const UEffekseerMaterial* Other)
+	bool operator == (const UEffekseerEffectMaterial* Other)
 	{
 		return
 			Texture == Other->Texture &&
@@ -64,13 +65,13 @@ public:
 			IsDistorted == Other->IsDistorted;
 	}
 
-	friend uint32 GetTypeHash(const UEffekseerMaterial* Other)
+	friend uint32 GetTypeHash(const UEffekseerEffectMaterial* Other)
 	{
 		return GetTypeHash(Other->Texture);
 	}
 };
 
-struct EffekseerMaterial
+struct EffekseerEffectMaterial
 {
 	UTexture2D*		Texture = nullptr;
 
@@ -82,7 +83,7 @@ struct EffekseerMaterial
 
 	bool			IsDistorted = false;
 
-	bool operator < (const EffekseerMaterial& rhs) const
+	bool operator < (const EffekseerEffectMaterial& rhs) const
 	{
 		if (Texture != rhs.Texture)
 		{
@@ -152,8 +153,11 @@ public:
 	UPROPERTY(VisibleAnywhere)
 	TArray<UEffekseerModel*>	Models;
 
-	UPROPERTY(Transient)
+	UPROPERTY(VisibleAnywhere)
 	TArray<UEffekseerMaterial*>	Materials;
+
+	UPROPERTY(Transient)
+	TArray<UEffekseerEffectMaterial*>	EffekseerMaterials;
 	
 	/*
 	UPROPERTY(VisibleAnywhere, Transient)

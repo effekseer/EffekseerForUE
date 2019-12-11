@@ -13,6 +13,7 @@ UEffekseerEffectFactory::UEffekseerEffectFactory(const FObjectInitializer& Objec
 	bText = false;
 	bEditorImport = true;
 	Formats.Add(TEXT("efk;Effekseer"));
+	Formats.Add(TEXT("efkefc;Effekseer"));
 }
 bool UEffekseerEffectFactory::DoesSupportClass(UClass* Class)
 {

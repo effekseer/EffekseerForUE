@@ -4,21 +4,27 @@
 #include "EffekseerRendererNative.h"
 #include <vector>
 
+class UEffekseerMaterial;
+
 namespace EffekseerRendererUE4
 {
-	/**
-		@brief	シェーダー
-		@note
-		現在：StandardRenderer向け固定実装
-	*/
 	class Shader
 	{
 	private:
+		EffekseerRenderer::MaterialShaderParameterGenerator parameterGenerator_;
+		UEffekseerMaterial* effekseerMaterial_ = nullptr;
+		Effekseer::RendererMaterialType type_;
 		std::vector<uint8_t>	vertexConstantBuffer;
 		std::vector<uint8_t>	pixelConstantBuffer;
 
 	public:
-		Shader();
+
+		/**
+			@brief	Constructor for material
+		*/
+		Shader(UEffekseerMaterial* material, bool isModel, bool isRefraction);
+
+		Shader(Effekseer::RendererMaterialType type);
 
 		virtual ~Shader();
 
@@ -34,7 +40,10 @@ namespace EffekseerRendererUE4
 
 		void SetConstantBuffer()
 		{
-			// TODO
 		}
+
+		Effekseer::RendererMaterialType GetType() const;
+
+		UEffekseerMaterial* GetEffekseerMaterial() const;
 	};
 }
