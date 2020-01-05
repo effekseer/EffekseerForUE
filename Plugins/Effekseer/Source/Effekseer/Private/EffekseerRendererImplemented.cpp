@@ -10,6 +10,7 @@
 #include "Runtime/Engine/Public/StaticMeshResources.h"
 #include "Runtime/Core/Public/Math/Color.h"
 #include "Runtime/Engine/Public/MaterialShared.h"
+#include "Runtime/Engine/Classes/Materials/MaterialInstanceDynamic.h"
 
 namespace EffekseerRendererUE4
 {
@@ -278,26 +279,18 @@ namespace EffekseerRendererUE4
 
 		SortTemporaryValues(m_renderer, parameter);
 
-		if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::Default)
+		Shader* shader = nullptr;
+		if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::File)
 		{
-			m_renderer->SetIsLighting(false);
-			m_renderer->SetIsDistorting(false);
-		}
-		else if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::BackDistortion)
-		{
-			m_renderer->SetIsLighting(false);
-			m_renderer->SetIsDistorting(true);
-			m_renderer->SetDistortionIntensity(parameter.BasicParameterPtr->DistortionIntensity);
-		}
-		else if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::Lighting)
-		{
-			m_renderer->SetIsLighting(true);
-			m_renderer->SetIsDistorting(false);
+			// Not supported yet
+			assert(0);
 		}
 		else
 		{
-
+			shader = m_renderer->GetShader(true, param.BasicParameterPtr->MaterialType);
 		}
+
+		m_renderer->BeginShader(shader);
 
 		Effekseer::TextureData* textures[1];
 
@@ -313,6 +306,8 @@ namespace EffekseerRendererUE4
 		m_renderer->SetTextures(nullptr, textures, 1);
 
 		m_renderer->DrawModel(model, m_matrixes, m_uv, m_colors, m_times);
+
+		m_renderer->EndShader(shader);
 
 		m_renderer->GetRenderState()->Pop();
 	}
@@ -338,8 +333,6 @@ namespace EffekseerRendererUE4
 	RendererImplemented::~RendererImplemented()
 	{
 		ES_SAFE_DELETE(m_renderState);
-		ES_SAFE_DELETE(m_stanShader);
-		ES_SAFE_DELETE(m_distortionShader);
 		ES_SAFE_DELETE(m_standardRenderer);
 		ES_SAFE_DELETE(m_vertexBuffer);
 	}
@@ -349,14 +342,14 @@ namespace EffekseerRendererUE4
 		m_squareMaxCount = squareMaxCount;
 		m_renderState = new RenderState();
 		m_vertexBuffer = new VertexBuffer(sizeof(Vertex) * m_squareMaxCount * 4, true);
-		m_stanShader = new Shader();
-		m_distortionShader = new Shader();
+		stanShader_ = std::unique_ptr<Shader>(new Shader(Effekseer::RendererMaterialType::Default));
+		backDistortedShader_ = std::unique_ptr<Shader>(new Shader(Effekseer::RendererMaterialType::BackDistortion));
+		lightingShader_ = std::unique_ptr<Shader>(new Shader(Effekseer::RendererMaterialType::Lighting));
 
 		m_standardRenderer = new EffekseerRenderer::StandardRenderer<RendererImplemented, Shader, Vertex, VertexDistortion>(
 			this,
-			m_stanShader,
-			m_distortionShader);
-
+			nullptr,
+			nullptr);
 
 		return true;
 	}
@@ -373,35 +366,7 @@ namespace EffekseerRendererUE4
 
 	bool RendererImplemented::BeginRendering()
 	{
-		::Effekseer::Matrix44::Mul(m_cameraProj, m_camera, m_proj);
-
-//		// ステートを保存する
-//		if (m_restorationOfStates)
-//		{
-//			m_originalState.blend = glIsEnabled(GL_BLEND);
-//			m_originalState.cullFace = glIsEnabled(GL_CULL_FACE);
-//			m_originalState.depthTest = glIsEnabled(GL_DEPTH_TEST);
-//#if !defined(__EFFEKSEER_RENDERER_GL3__) && \
-//	!defined(__EFFEKSEER_RENDERER_GLES3__) && \
-//	!defined(__EFFEKSEER_RENDERER_GLES2__) && \
-//	!defined(EMSCRIPTEN)
-//			m_originalState.texture = glIsEnabled(GL_TEXTURE_2D);
-//#endif
-//			glGetBooleanv(GL_DEPTH_WRITEMASK, &m_originalState.depthWrite);
-//			glGetIntegerv(GL_DEPTH_FUNC, &m_originalState.depthFunc);
-//			glGetIntegerv(GL_CULL_FACE_MODE, &m_originalState.cullFaceMode);
-//			glGetIntegerv(GL_BLEND_SRC_RGB, &m_originalState.blendSrc);
-//			glGetIntegerv(GL_BLEND_DST_RGB, &m_originalState.blendDst);
-//			glGetIntegerv(GL_BLEND_EQUATION, &m_originalState.blendEquation);
-//		}
-//
-//		glDepthFunc(GL_LEQUAL);
-//		glEnable(GL_BLEND);
-//		glDisable(GL_CULL_FACE);
-//
-//		m_renderState->GetActiveState().Reset();
-//		m_renderState->Update(true);
-//		m_currentTextures.clear();
+		::Effekseer::Matrix44::Mul(GetCameraProjectionMatrix(), GetCameraMatrix(), GetProjectionMatrix());
 
 		// レンダラーリセット
 		m_standardRenderer->ResetAndRenderingIfRequired();
@@ -413,40 +378,8 @@ namespace EffekseerRendererUE4
 
 	bool RendererImplemented::EndRendering()
 	{
-//		GLCheckError();
-
 		// レンダラーリセット
 		m_standardRenderer->ResetAndRenderingIfRequired();
-
-//		// ステートを復元する
-//		if (m_restorationOfStates)
-//		{
-//			if (m_originalState.blend) glEnable(GL_BLEND); else glDisable(GL_BLEND);
-//			if (m_originalState.cullFace) glEnable(GL_CULL_FACE); else glDisable(GL_CULL_FACE);
-//			if (m_originalState.depthTest) glEnable(GL_DEPTH_TEST); else glDisable(GL_DEPTH_TEST);
-//
-//#if !defined(__EFFEKSEER_RENDERER_GL3__) && \
-//	!defined(__EFFEKSEER_RENDERER_GLES3__) && \
-//	!defined(__EFFEKSEER_RENDERER_GLES2__) && \
-//	!defined(EMSCRIPTEN)
-//			if (m_originalState.texture) glEnable(GL_TEXTURE_2D); else glDisable(GL_TEXTURE_2D);
-//#endif
-//
-//			glDepthFunc(m_originalState.depthFunc);
-//			glDepthMask(m_originalState.depthWrite);
-//			glCullFace(m_originalState.cullFaceMode);
-//			glBlendFunc(m_originalState.blendSrc, m_originalState.blendDst);
-//			GLExt::glBlendEquation(m_originalState.blendEquation);
-//
-//#if defined(__EFFEKSEER_RENDERER_GL3__) || defined(__EFFEKSEER_RENDERER_GLES3__)
-//			for (int32_t i = 0; i < 4; i++)
-//			{
-//				GLExt::glBindSampler(i, 0);
-//			}
-//#endif
-//		}
-//
-//		GLCheckError();
 
 		return true;
 	}
@@ -484,56 +417,6 @@ namespace EffekseerRendererUE4
 	int32_t RendererImplemented::GetSquareMaxCount() const
 	{
 		return m_squareMaxCount;
-	}
-
-	const ::Effekseer::Matrix44& RendererImplemented::GetProjectionMatrix() const
-	{
-		return m_proj;
-	}
-
-	void RendererImplemented::SetProjectionMatrix(const ::Effekseer::Matrix44& mat)
-	{
-		m_proj = mat;
-	}
-
-	const ::Effekseer::Matrix44& RendererImplemented::GetCameraMatrix() const
-	{
-		return m_camera;
-	}
-
-	void RendererImplemented::SetCameraMatrix(const ::Effekseer::Matrix44& mat)
-	{
-		m_cameraFrontDirection = ::Effekseer::Vector3D(mat.Values[0][2], mat.Values[1][2], mat.Values[2][2]);
-
-		auto localPos = ::Effekseer::Vector3D(-mat.Values[3][0], -mat.Values[3][1], -mat.Values[3][2]);
-		auto f = m_cameraFrontDirection;
-		auto r = ::Effekseer::Vector3D(mat.Values[0][0], mat.Values[1][0], mat.Values[2][0]);
-		auto u = ::Effekseer::Vector3D(mat.Values[0][1], mat.Values[1][1], mat.Values[2][1]);
-
-		m_cameraPosition = r * localPos.X + u * localPos.Y + f * localPos.Z;
-
-		m_camera = mat;
-	}
-
-	::Effekseer::Matrix44& RendererImplemented::GetCameraProjectionMatrix()
-	{
-		return m_cameraProj;
-	}
-
-	::Effekseer::Vector3D RendererImplemented::GetCameraFrontDirection() const
-	{
-		return m_cameraFrontDirection;
-	}
-
-	::Effekseer::Vector3D RendererImplemented::GetCameraPosition() const
-	{
-		return m_cameraPosition;
-	}
-
-	void RendererImplemented::SetCameraParameter(const ::Effekseer::Vector3D& front, const ::Effekseer::Vector3D& position)
-	{
-		m_cameraFrontDirection = front;
-		m_cameraPosition = position;
 	}
 
 	::Effekseer::SpriteRenderer* RendererImplemented::CreateSpriteRenderer()
@@ -622,31 +505,95 @@ namespace EffekseerRendererUE4
 	{
 	}
 
+	inline Effekseer::Vector3D UnpackVector3DF(const Effekseer::Color& v)
+	{
+		Effekseer::Vector3D ret;
+		ret.X = (v.R / 255.0 * 2.0f - 1.0f);
+		ret.Y = (v.G / 255.0 * 2.0f - 1.0f);
+		ret.Z = (v.B / 255.0 * 2.0f - 1.0f);
+		return ret;
+	}
+
 	void RendererImplemented::DrawSprites(int32_t spriteCount, int32_t vertexOffset)
 	{
-		SetIsLighting(false);
-
-		UMaterialInstanceDynamic* mat = FindMaterial();
+		auto mat = FindMaterial();
 		if (mat == nullptr) return;
 
+		if (m_currentShader != nullptr && m_currentShader->GetType() == Effekseer::RendererMaterialType::File)
+		{
+			assert(!m_currentShader->GetEffekseerMaterial()->GetNativePtr()->GetIsSimpleVertex());
+
+			auto* vs = (EffekseerRenderer::DynamicVertex*)m_vertexBuffer->GetResource();
+
+#if ENGINE_MINOR_VERSION < 19
+			FDynamicMeshBuilder meshBuilder;
+#else
+			FDynamicMeshBuilder meshBuilder(m_meshElementCollector->GetFeatureLevel());
+#endif
+			for (int32_t vi = vertexOffset; vi < vertexOffset + spriteCount * 4; vi++)
+			{
+				auto& v = vs[vi];
+
+				// TODO
+				auto normal = UnpackVector3DF(v.Normal);
+				auto tangent = UnpackVector3DF(v.Tangent);
+				Effekseer::Vector3D binormal;
+				Effekseer::Vector3D::Cross(binormal, normal, tangent);
+
+				meshBuilder.AddVertex(FVector(v.Pos.X, v.Pos.Z, v.Pos.Y), FVector2D(v.UV[0], v.UV[1]),
+					FVector(binormal.X, binormal.Z, binormal.Y),
+					FVector(tangent.X, tangent.Z, tangent.Y),
+					FVector(normal.X, normal.Z, normal.Y),
+					FColor(v.Col.R, v.Col.G, v.Col.B, v.Col.A));
+			}
+
+			for (int32_t si = 0; si < spriteCount; si++)
+			{
+				meshBuilder.AddTriangle(
+					si * 4 + 0,
+					si * 4 + 1,
+					si * 4 + 2);
+				
+				meshBuilder.AddTriangle(
+					si * 4 + 2,
+					si * 4 + 1,
+					si * 4 + 3);
+			}
+
+#if ENGINE_MINOR_VERSION < 22
+			auto proxy = mat->GetRenderProxy(false);
+#else
+			auto proxy = mat->GetRenderProxy();
+#endif
+
+			meshBuilder.GetMesh(m_localToWorld, proxy, SDPG_World, false, false, m_viewIndex, *m_meshElementCollector);
+			return;
+		}
+
 		// is single ring?
-		auto stanMat = ((Effekseer::Matrix44*)m_stanShader->GetVertexConstantBuffer())[0];
-		auto cameraMat = m_camera;
+		bool isSingleRing = false;
+		auto stanMat = ((Effekseer::Matrix44*)m_currentShader->GetVertexConstantBuffer())[0];
+		auto cameraMat = GetCameraMatrix();
 		Effekseer::Matrix44 ringMat;
 
-		bool isSingleRing = false;
-
-		for (int32_t r = 0; r < 4; r++)
+		if (m_currentShader != nullptr && m_currentShader->GetType() == Effekseer::RendererMaterialType::File)
 		{
-			for (int32_t c = 0; c < 4; c++)
+		}
+		else
+		{
+			for (int32_t r = 0; r < 4; r++)
 			{
-				if (stanMat.Values[r][c] != cameraMat.Values[r][c])
+				for (int32_t c = 0; c < 4; c++)
 				{
-					isSingleRing = true;
-					goto Exit;
+					if (stanMat.Values[r][c] != cameraMat.Values[r][c])
+					{
+						isSingleRing = true;
+						goto Exit;
+					}
 				}
 			}
 		}
+
 	Exit:;
 
 		if (isSingleRing)
@@ -655,12 +602,9 @@ namespace EffekseerRendererUE4
 			Effekseer::Matrix44::Mul(ringMat, stanMat, Effekseer::Matrix44::Inverse(inv, cameraMat));
 		}
 
-		//auto triangles = vertexOffset / 4 * 2;
-		//glDrawElements(GL_TRIANGLES, spriteCount * 6, GL_UNSIGNED_SHORT, (void*)(triangles * 3 * sizeof(GLushort)));
-
-		if (m_isDistorting)
+		if (m_currentShader->GetType() == Effekseer::RendererMaterialType::BackDistortion)
 		{
-			auto intensity = ((float*)m_distortionShader->GetPixelConstantBuffer())[0];
+			auto intensity = ((float*)m_currentShader->GetPixelConstantBuffer())[0];
 			SetDistortionIntensity(intensity);
 
 			VertexDistortion* vs = (VertexDistortion*)m_vertexBuffer->GetResource();
@@ -779,7 +723,7 @@ namespace EffekseerRendererUE4
 		auto& renderData = sm->RenderData;
 
 		// Material
-		UMaterialInstanceDynamic* mat = FindMaterial();
+		auto mat = FindMaterial();
 		if (mat == nullptr) return;
 
 		if (renderData->LODResources.Num() == 0) return;
@@ -892,9 +836,14 @@ namespace EffekseerRendererUE4
 		}
 	}
 
-	UMaterialInstanceDynamic* RendererImplemented::FindMaterial()
+	UMaterialInterface* RendererImplemented::FindMaterial()
 	{
-		EffekseerMaterial m;
+		if (m_currentShader->GetType() == Effekseer::RendererMaterialType::File)
+		{
+			return m_currentShader->GetEffekseerMaterial()->Material;
+		}
+
+		EffekseerEffectMaterial m;
 
 		auto textureData = (Effekseer::TextureData*)m_textures[0];
 		if (textureData != nullptr)
@@ -908,8 +857,8 @@ namespace EffekseerRendererUE4
 
 		m.AlphaBlend = (EEffekseerAlphaBlendType)m_renderState->GetActiveState().AlphaBlend;
 		m.IsDepthTestDisabled = !m_renderState->GetActiveState().DepthTest;
-		m.IsLighting = m_isLighting;
-		m.IsDistorted = m_isDistorting;
+		m.IsLighting = m_currentShader->GetType() == Effekseer::RendererMaterialType::Lighting;
+		m.IsDistorted = m_currentShader->GetType() == Effekseer::RendererMaterialType::BackDistortion;
 
 		UMaterialInstanceDynamic* mat = nullptr;
 
@@ -927,15 +876,24 @@ namespace EffekseerRendererUE4
 	{
 		if (materialType == ::Effekseer::RendererMaterialType::BackDistortion)
 		{
-			return m_distortionShader;
+			return backDistortedShader_.get();
 		}
-		return m_stanShader;
+		else if (materialType == ::Effekseer::RendererMaterialType::Lighting)
+		{
+			return lightingShader_.get();
+		}
+		else if (materialType == ::Effekseer::RendererMaterialType::Default)
+		{
+			return stanShader_.get();
+		}
+
+		// return as default shader
+		return stanShader_.get();
 	}
 
 	void RendererImplemented::BeginShader(Shader* shader)
 	{
 		m_currentShader = shader;
-		m_isDistorting = m_currentShader != m_stanShader;
 	}
 
 	void RendererImplemented::RendererImplemented::EndShader(Shader* shader)
@@ -985,7 +943,7 @@ namespace EffekseerRendererUE4
 		m_materials[index] = (TMap<UTexture2D*, UMaterialInstanceDynamic*>*)materials;
 	}
 
-	void RendererImplemented::SetNMaterials(const std::map<EffekseerMaterial, UMaterialInstanceDynamic*>& nmaterials)
+	void RendererImplemented::SetNMaterials(const std::map<EffekseerEffectMaterial, UMaterialInstanceDynamic*>& nmaterials)
 	{
 		m_nmaterials = nmaterials;
 	}

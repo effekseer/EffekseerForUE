@@ -42,8 +42,8 @@ private:
 	TMap<UTexture2D*, UMaterialInstanceDynamic*> ModulateDynamicMaterials;
 	TMap<UTexture2D*, UMaterialInstanceDynamic*> LightingDynamicMaterials;
 
-	TMap<UEffekseerMaterial*, UMaterialInstanceDynamic*> Materials;
-	std::map<EffekseerMaterial, UMaterialInstanceDynamic*> NMaterials;
+	TMap<UEffekseerEffectMaterial*, UMaterialInstanceDynamic*> Materials;
+	std::map<EffekseerEffectMaterial, UMaterialInstanceDynamic*> NMaterials;
 
 	float	Time = 0;
 
@@ -129,6 +129,11 @@ public:
 				std::swap(evmat.Values[1][0], evmat.Values[2][0]);
 				std::swap(evmat.Values[1][1], evmat.Values[2][1]);
 				std::swap(evmat.Values[1][2], evmat.Values[2][2]);
+
+				evmat.Values[0][2] = -evmat.Values[0][2];
+				evmat.Values[1][2] = -evmat.Values[1][2];
+				evmat.Values[2][2] = -evmat.Values[2][2];
+				evmat.Values[3][2] = -evmat.Values[3][2];
 
 				effekseerRenderer->SetCameraMatrix(evmat);
 				effekseerRenderer->BeginRendering();
@@ -580,7 +585,7 @@ FEffekseerHandle UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVect
 		}
 	}
 
-	for (auto m : effect->Materials)
+	for (auto m : effect->EffekseerMaterials)
 	{
 		if (Materials.Contains(m)) continue;
 
@@ -598,7 +603,7 @@ FEffekseerHandle UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVect
 			dynamicMaterial->SetTextureParameterValue(TEXT("ColorTexture"), m->Texture);
 			Materials.Add(m, dynamicMaterial);
 
-			EffekseerMaterial mkey;
+			EffekseerEffectMaterial mkey;
 			mkey.Texture = m->Texture;
 			mkey.AlphaBlend = m->AlphaBlend;
 			mkey.IsDepthTestDisabled = m->IsDepthTestDisabled;

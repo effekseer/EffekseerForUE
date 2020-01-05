@@ -6,6 +6,7 @@
 
 #include <EffekseerEffect.h>
 #include <map>
+#include <memory>
 
 namespace EffekseerRendererUE4
 {
@@ -53,16 +54,12 @@ namespace EffekseerRendererUE4
 		::Effekseer::Color		m_lightAmbient;
 		int32_t					m_squareMaxCount;
 
-		::Effekseer::Matrix44	m_proj;
-		::Effekseer::Matrix44	m_camera;
-		::Effekseer::Matrix44	m_cameraProj;
-
-		::Effekseer::Vector3D	m_cameraPosition;
-		::Effekseer::Vector3D	m_cameraFrontDirection;
-
 		VertexBuffer*			m_vertexBuffer = nullptr;
-		Shader*					m_stanShader = nullptr;
-		Shader*					m_distortionShader = nullptr;
+
+		std::unique_ptr<Shader> stanShader_;
+		std::unique_ptr<Shader> backDistortedShader_;
+		std::unique_ptr<Shader> lightingShader_;
+
 		Shader*					m_currentShader = nullptr;
 		RenderState*			m_renderState = nullptr;
 
@@ -72,11 +69,9 @@ namespace EffekseerRendererUE4
 		int32_t					m_viewIndex = 0;
 		TMap<UTexture2D*, UMaterialInstanceDynamic*>*	m_materials[6];
 		FMeshElementCollector*	m_meshElementCollector = nullptr;
-		std::map<EffekseerMaterial, UMaterialInstanceDynamic*>	m_nmaterials;
+		std::map<EffekseerEffectMaterial, UMaterialInstanceDynamic*>	m_nmaterials;
 
-		bool					m_isDistorting = false;
-		float					m_distortionIntensity = 0.0f;
-		bool					m_isLighting = false;
+		float m_distortionIntensity = 0.0f;
 
 		EffekseerRenderer::StandardRenderer<RendererImplemented, Shader, Vertex, VertexDistortion>*	m_standardRenderer = nullptr;
 	public:
@@ -148,46 +143,6 @@ namespace EffekseerRendererUE4
 		@brief	最大描画スプライト数を取得する。
 		*/
 		int32_t GetSquareMaxCount() const  override;
-
-		/**
-		@brief	投影行列を取得する。
-		*/
-		const ::Effekseer::Matrix44& GetProjectionMatrix() const  override;
-
-		/**
-		@brief	投影行列を設定する。
-		*/
-		void SetProjectionMatrix(const ::Effekseer::Matrix44& mat)  override;
-
-		/**
-		@brief	カメラ行列を取得する。
-		*/
-		const ::Effekseer::Matrix44& GetCameraMatrix() const  override;
-
-		/**
-		@brief	カメラ行列を設定する。
-		*/
-		void SetCameraMatrix(const ::Effekseer::Matrix44& mat)  override;
-
-		/**
-		@brief	カメラプロジェクション行列を取得する。
-		*/
-		::Effekseer::Matrix44& GetCameraProjectionMatrix()  override;
-
-		::Effekseer::Vector3D GetCameraFrontDirection() const  override;
-
-		/**
-		@brief	Get a position of camera
-		*/
-		::Effekseer::Vector3D GetCameraPosition() const  override;
-
-		/**
-		@brief	Set a front direction and position of camera manually
-		@note
-		These are set based on camera matrix automatically.
-		It is failed on some platform.
-		*/
-		void SetCameraParameter(const ::Effekseer::Vector3D& front, const ::Effekseer::Vector3D& position)  override;
 
 		/**
 		@brief	スプライトレンダラーを生成する。
@@ -268,7 +223,7 @@ namespace EffekseerRendererUE4
 		
 		void DrawModel(void* model, std::vector<Effekseer::Matrix44>& matrixes, std::vector<Effekseer::RectF>& uvs, std::vector<Effekseer::Color>& colors, std::vector<int32_t>& times);
 
-		UMaterialInstanceDynamic* FindMaterial();
+		UMaterialInterface* FindMaterial();
 
 		Shader* GetShader(bool useTexture, ::Effekseer::RendererMaterialType) const;
 
@@ -280,14 +235,12 @@ namespace EffekseerRendererUE4
 		void SetPixelBufferToShader(const void* data, int32_t size, int32_t dstOffset);
 
 		void SetTextures(Shader* shader, Effekseer::TextureData** textures, int32_t count);
-		void SetIsLighting(bool value) { m_isLighting = value; }
-		void SetIsDistorting(bool value) { m_isDistorting = value; }
 		void SetDistortionIntensity(float value) { m_distortionIntensity = value; }
 
 		void SetLocalToWorld(FMatrix localToWorld);
 		void SetViewIndex(int32_t viewIndex);
 		void SetMaterials(const TMap<UTexture2D*, UMaterialInstanceDynamic*>* materials, int32_t index);
-		void SetNMaterials(const std::map<EffekseerMaterial, UMaterialInstanceDynamic*>& nmaterials);
+		void SetNMaterials(const std::map<EffekseerEffectMaterial, UMaterialInstanceDynamic*>& nmaterials);
 		void SetMeshElementCollector(FMeshElementCollector* meshElementCollector);
 
 		virtual int GetRef() { return ::Effekseer::ReferenceObject::GetRef(); }

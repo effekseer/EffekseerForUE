@@ -19,7 +19,7 @@ class CreateHeader:
 		f = open(path, 'r', encoding='utf-8_sig')
 		line = f.readline()
 		while line:
-			if re.search('include \"', line) == None and re.search('include <Effekseer.Internal.h>', line) == None:
+			if re.search('include \"', line) == None and re.search('include <Effekseer.Internal.h>', line) == None and re.search('include <Effekseer/', line) == None:
  	 			self.lines.append(line)
 			line = f.readline()
 		f.close()
@@ -148,6 +148,7 @@ effekseerCPP.addLine('#include <thread>')
 effekseerCPP.addLine('#include <mutex>')
 effekseerCPP.addLine('#include <iostream>')
 effekseerCPP.addLine('#include <array>')
+effekseerCPP.addLine('#include <functional>')
 
 effekseerCPP.addLine('#ifdef _WIN32')
 effekseerCPP.addLine('#include "AllowWindowsPlatformTypes.h"  // UE4')

@@ -544,6 +544,145 @@ inline Effekseer::Color PackVector3DF(const Effekseer::Vector3D& v)
 	return ret;
 }
 
+struct MaterialShaderParameterGenerator
+{
+	int32_t VertexSize = 0;
+	int32_t VertexShaderUniformBufferSize = 0;
+	int32_t PixelShaderUniformBufferSize = 0;
+
+	int32_t VertexCameraMatrixOffset = -1;
+	int32_t VertexProjectionMatrixOffset = -1;
+	int32_t VertexInversedFlagOffset = -1;
+	int32_t VertexPredefinedOffset = -1;
+	int32_t VertexUserUniformOffset = -1;
+
+	int32_t PixelInversedFlagOffset = -1;
+	int32_t PixelPredefinedOffset = -1;
+	int32_t PixelCameraPositionOffset = -1;
+	int32_t PixelLightDirectionOffset = -1;
+	int32_t PixelLightColorOffset = -1;
+	int32_t PixelLightAmbientColorOffset = -1;
+	int32_t PixelCameraMatrixOffset = -1;
+	int32_t PixelUserUniformOffset = -1;
+
+	int32_t VertexModelMatrixOffset = -1;
+	int32_t VertexModelUVOffset = -1;
+	int32_t VertexModelColorOffset = -1;
+
+	int32_t VertexModelCustomData1Offset = -1;
+	int32_t VertexModelCustomData2Offset = -1;
+
+	MaterialShaderParameterGenerator(const ::Effekseer::Material& material, bool isModel, int32_t stage, int32_t instanceCount)
+	{
+		if (isModel)
+		{
+			VertexSize = sizeof(::Effekseer::Model::Vertex);
+		}
+		else if (material.GetIsSimpleVertex())
+		{
+			VertexSize = sizeof(EffekseerRenderer::SimpleVertex);
+		}
+		else
+		{
+			VertexSize = sizeof(EffekseerRenderer::DynamicVertex) +
+						 sizeof(float) * (material.GetCustomData1Count() + material.GetCustomData2Count());
+		}
+
+		if (isModel)
+		{
+			int32_t vsOffset = 0;
+			VertexProjectionMatrixOffset = vsOffset;
+			vsOffset += sizeof(Effekseer::Matrix44);
+
+			VertexModelMatrixOffset = vsOffset;
+			vsOffset += sizeof(Effekseer::Matrix44) * instanceCount;
+
+			VertexModelUVOffset = vsOffset;
+			vsOffset += sizeof(float) * 4 * instanceCount;
+
+			VertexModelColorOffset = vsOffset;
+			vsOffset += sizeof(float) * 4 * instanceCount;
+
+			VertexInversedFlagOffset = vsOffset;
+			vsOffset += sizeof(float) * 4;
+
+			VertexPredefinedOffset = vsOffset;
+			vsOffset += sizeof(float) * 4;
+
+			if (material.GetCustomData1Count() > 0)
+			{
+				VertexModelCustomData1Offset = vsOffset;
+				vsOffset += sizeof(float) * 4 * instanceCount;
+			}
+
+			if (material.GetCustomData2Count() > 0)
+			{
+				VertexModelCustomData2Offset = vsOffset;
+				vsOffset += sizeof(float) * 4 * instanceCount;
+			}
+
+			VertexUserUniformOffset = vsOffset;
+			vsOffset += sizeof(float) * 4 * material.GetUniformCount();
+
+			VertexShaderUniformBufferSize = vsOffset;
+		}
+		else
+		{
+			int32_t vsOffset = 0;
+			VertexCameraMatrixOffset = vsOffset;
+			vsOffset += sizeof(Effekseer::Matrix44);
+
+			VertexProjectionMatrixOffset = vsOffset;
+			vsOffset += sizeof(Effekseer::Matrix44);
+
+			VertexInversedFlagOffset = vsOffset;
+			vsOffset += sizeof(float) * 4;
+
+			VertexPredefinedOffset = vsOffset;
+			vsOffset += sizeof(float) * 4;
+
+			VertexUserUniformOffset = vsOffset;
+			vsOffset += sizeof(float) * 4 * material.GetUniformCount();
+
+			VertexShaderUniformBufferSize = vsOffset;
+		}
+
+		int32_t psOffset = 0;
+
+		PixelInversedFlagOffset = psOffset;
+		psOffset += sizeof(float) * 4;
+
+		PixelPredefinedOffset = psOffset;
+		psOffset += sizeof(float) * 4;
+
+		if (material.GetShadingModel() == ::Effekseer::ShadingModelType::Lit)
+		{
+			PixelCameraPositionOffset = psOffset;
+			psOffset += sizeof(float) * 4;
+
+			PixelLightDirectionOffset = psOffset;
+			psOffset += sizeof(float) * 4;
+
+			PixelLightColorOffset = psOffset;
+			psOffset += sizeof(float) * 4;
+
+			PixelLightAmbientColorOffset = psOffset;
+			psOffset += sizeof(float) * 4;
+		}
+
+		if (material.GetHasRefraction() && stage == 1)
+		{
+			PixelCameraMatrixOffset = psOffset;
+			psOffset += sizeof(Effekseer::Matrix44);
+		}
+
+		PixelUserUniformOffset = psOffset;
+		psOffset += sizeof(float) * 4 * material.GetUniformCount();
+
+		PixelShaderUniformBufferSize = psOffset;
+	}
+};
+
 }
 #endif // __EFFEKSEERRENDERER_COMMON_UTILS_H__
 
@@ -702,39 +841,39 @@ public:
 	virtual int32_t GetSquareMaxCount() const = 0;
 
 	/**
-		@brief	投影行列を取得する。
+		@brief	Get a projection matrix
 	*/
-	virtual const ::Effekseer::Matrix44& GetProjectionMatrix() const = 0;
+	virtual const ::Effekseer::Matrix44& GetProjectionMatrix() const;
 
 	/**
-		@brief	投影行列を設定する。
+		@brief	Set a projection matrix
 	*/
-	virtual void SetProjectionMatrix( const ::Effekseer::Matrix44& mat ) = 0;
+	virtual void SetProjectionMatrix( const ::Effekseer::Matrix44& mat );
 
 	/**
-		@brief	カメラ行列を取得する。
+		@brief	Get a camera matrix
 	*/
-	virtual const ::Effekseer::Matrix44& GetCameraMatrix() const = 0;
+	virtual const ::Effekseer::Matrix44& GetCameraMatrix() const;
 
 	/**
-		@brief	カメラ行列を設定する。
+		@brief	Set a camera matrix
 	*/
-	virtual void SetCameraMatrix( const ::Effekseer::Matrix44& mat ) = 0;
+	virtual void SetCameraMatrix( const ::Effekseer::Matrix44& mat );
 
 	/**
-		@brief	カメラプロジェクション行列を取得する。
+		@brief	Get a camera projection matrix
 	*/
-	virtual ::Effekseer::Matrix44& GetCameraProjectionMatrix() = 0;
+	virtual ::Effekseer::Matrix44& GetCameraProjectionMatrix();
 
 	/**
 		@brief	Get a front direction of camera
 	*/
-	virtual ::Effekseer::Vector3D GetCameraFrontDirection() const = 0;
+	virtual ::Effekseer::Vector3D GetCameraFrontDirection() const;
 
 	/**
 		@brief	Get a position of camera
 	*/
-	virtual ::Effekseer::Vector3D GetCameraPosition() const = 0;
+	virtual ::Effekseer::Vector3D GetCameraPosition() const;
 
 	/**
 		@brief	Set a front direction and position of camera manually
@@ -742,7 +881,7 @@ public:
 		These are set based on camera matrix automatically.
 		It is failed on some platform.
 	*/
-	virtual void SetCameraParameter(const ::Effekseer::Vector3D& front, const ::Effekseer::Vector3D& position) = 0;
+	virtual void SetCameraParameter(const ::Effekseer::Vector3D& front, const ::Effekseer::Vector3D& position);
 
 	/**
 		@brief	スプライトレンダラーを生成する。
@@ -939,6 +1078,13 @@ namespace EffekseerRenderer
 class Renderer::Impl
 {
 private:
+	::Effekseer::Matrix44 projectionMat_;
+	::Effekseer::Matrix44 cameraMat_;
+	::Effekseer::Matrix44 cameraProjMat_;
+
+	::Effekseer::Vector3D cameraPosition_;
+	::Effekseer::Vector3D cameraFrontDirection_;
+
 	UVStyle textureUVStyle = UVStyle::Normal;
 	UVStyle backgroundTextureUVStyle = UVStyle::Normal;
 	float time_ = 0.0f;
@@ -952,6 +1098,22 @@ public:
 	int32_t drawcallCount = 0;
 	int32_t drawvertexCount = 0;
 	bool isRenderModeValid = true;
+
+	const ::Effekseer::Matrix44& GetProjectionMatrix() const;
+
+	void SetProjectionMatrix(const ::Effekseer::Matrix44& mat);
+
+	const ::Effekseer::Matrix44& GetCameraMatrix() const;
+
+	void SetCameraMatrix(const ::Effekseer::Matrix44& mat);
+
+	::Effekseer::Vector3D GetCameraFrontDirection() const;
+
+	::Effekseer::Vector3D GetCameraPosition() const;
+
+	void SetCameraParameter(const ::Effekseer::Vector3D& front, const ::Effekseer::Vector3D& position);
+
+	::Effekseer::Matrix44& GetCameraProjectionMatrix();
 
 	void CreateProxyTextures(Renderer* renderer);
 
@@ -4108,19 +4270,22 @@ protected:
 
 				::Effekseer::Vector3D::Cross(normalCurrent, tangentCurrent, binormalCurrent);
 				::Effekseer::Vector3D::Cross(normalNext, tangentNext, binormalNext);
-				::Effekseer::Vector3D::Normal(normalCurrent, normalCurrent);
-				::Effekseer::Vector3D::Normal(normalNext, normalNext);
 
 				// rotate directions
-				::Effekseer::Matrix43 matRot = mat43;
-				matRot.Value[3][0] = 0.0f;
-				matRot.Value[3][1] = 0.0f;
-				matRot.Value[3][2] = 0.0f;
+				::Effekseer::Matrix43 matScaleRot = mat43;
+				matScaleRot.Value[3][0] = 0.0f;
+				matScaleRot.Value[3][1] = 0.0f;
+				matScaleRot.Value[3][2] = 0.0f;
 
-				::Effekseer::Vector3D::Transform(normalCurrent, normalCurrent, matRot);
-				::Effekseer::Vector3D::Transform(normalNext, normalNext, matRot);
-				::Effekseer::Vector3D::Transform(tangentCurrent, tangentCurrent, matRot);
-				::Effekseer::Vector3D::Transform(tangentNext, tangentNext, matRot);
+				::Effekseer::Vector3D::Transform(normalCurrent, normalCurrent, matScaleRot);
+				::Effekseer::Vector3D::Transform(normalNext, normalNext, matScaleRot);
+				::Effekseer::Vector3D::Transform(tangentCurrent, tangentCurrent, matScaleRot);
+				::Effekseer::Vector3D::Transform(tangentNext, tangentNext, matScaleRot);
+
+				::Effekseer::Vector3D::Normal(normalCurrent, normalCurrent);
+				::Effekseer::Vector3D::Normal(normalNext, normalNext);
+				::Effekseer::Vector3D::Normal(tangentCurrent, tangentCurrent);
+				::Effekseer::Vector3D::Normal(tangentNext, tangentNext);
 
 				vs[0].Normal = PackVector3DF(normalCurrent);
 				vs[1].Normal = vs[0].Normal;
