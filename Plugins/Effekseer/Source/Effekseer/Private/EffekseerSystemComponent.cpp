@@ -42,7 +42,7 @@ private:
 	TMap<UTexture2D*, UMaterialInstanceDynamic*> ModulateDynamicMaterials;
 	TMap<UTexture2D*, UMaterialInstanceDynamic*> LightingDynamicMaterials;
 
-	TMap<UEffekseerEffectMaterial*, UMaterialInstanceDynamic*> Materials;
+	TMap<UEffekseerEffectMaterialParameterHolder*, UMaterialInstanceDynamic*> Materials;
 	std::map<EffekseerEffectMaterial, UMaterialInstanceDynamic*> NMaterials;
 
 	float	Time = 0;

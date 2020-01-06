@@ -50,7 +50,7 @@ class EffekseerUpdateData
 {
 public:
 	TArray<EffekseerUpdateData_Command>	Commands;
-	TMap<UEffekseerEffectMaterial*, UMaterialInstanceDynamic*> Materials;
+	TMap<UEffekseerEffectMaterialParameterHolder*, UMaterialInstanceDynamic*> Materials;
 	std::map<EffekseerEffectMaterial, UMaterialInstanceDynamic*> NMaterials;
 
 	TMap<UTexture2D*, UMaterialInstanceDynamic*> OpaqueDynamicMaterials;
@@ -151,7 +151,7 @@ public:
 	std::map<EffekseerEffectMaterial, UMaterialInstanceDynamic*> NMaterials;
 
 	UPROPERTY(Transient)
-	TMap<UEffekseerEffectMaterial*, UMaterialInstanceDynamic*> Materials;
+	TMap<UEffekseerEffectMaterialParameterHolder*, UMaterialInstanceDynamic*> Materials;
 
 	UPROPERTY(Transient)
 	TMap<UTexture2D*, UMaterialInstanceDynamic*> OpaqueDynamicMaterials;

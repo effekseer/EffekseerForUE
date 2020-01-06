@@ -12,13 +12,87 @@
 #include "Materials/MaterialExpressionAppendVector.h"
 #include "Materials/MaterialExpressionTextureCoordinate.h"
 #include "Materials/MaterialExpressionScalarParameter.h"
+#include "Materials/MaterialExpressionVectorParameter.h"
 #include "Materials/MaterialExpressionConstant.h"
 #include "EditorFramework/AssetImportData.h"
 #include "EffekseerMaterial/efkMat.Models.h"
 #include "EffekseerMaterial/efkMat.Library.h"
+#include "EffekseerMaterial/efkMat.TextExporter.h"
 #include <map>
 #include <memory>
 #include <functional>
+
+
+struct NativeEffekseerMaterialParameter
+{
+	std::shared_ptr<EffekseerMaterial::Material> material;
+	std::shared_ptr<EffekseerMaterial::Library> library;
+	std::shared_ptr<EffekseerMaterial::Node> outputNode;
+	EffekseerMaterial::TextExporterResult result;
+	std::map<uint64_t, std::string> uniformNames;
+	std::map<uint64_t, std::string> textureNames;
+};
+
+std::shared_ptr<NativeEffekseerMaterialParameter> LoadNativeEffekseerMaterialParameter(const uint8* data, int size, const char* basePath)
+{
+	auto ret = std::make_shared< NativeEffekseerMaterialParameter>();
+
+	std::vector<uint8_t> dataVec;
+	dataVec.resize(size);
+	memcpy(dataVec.data(), data, size);
+
+	ret->library = std::make_shared<EffekseerMaterial::Library>();
+	ret->material = std::make_shared<EffekseerMaterial::Material>();
+	ret->material->Initialize();
+
+	// TODO : specify path
+	ret->material->Load(dataVec, ret->library, basePath);
+
+	for (auto node : ret->material->GetNodes())
+	{
+		if (node->Parameter->Type == EffekseerMaterial::NodeType::Output)
+		{
+			ret->outputNode = node;
+		}
+	}
+
+	assert(ret->outputNode != nullptr);
+
+	std::shared_ptr<EffekseerMaterial::TextExporter> textExporter = std::make_shared<EffekseerMaterial::TextExporter>();
+	ret->result = textExporter->Export(ret->material, ret->outputNode, "$SUFFIX");
+
+	std::unordered_set<std::string> used;
+
+	// parse uniform names
+	for (auto u : ret->result.Uniforms)
+	{
+		if (u->Name == "" || used.count(u->Name) > 0)
+		{
+			ret->uniformNames[u->GUID] = u->UniformName;
+		}
+		else
+		{
+			ret->uniformNames[u->GUID] = u->Name;
+			used.insert(u->UniformName);
+		}
+	}
+
+	// parse texture names
+	for (auto t : ret->result.Textures)
+	{
+		if (t->Name == "" || used.count(t->Name) > 0)
+		{
+			ret->textureNames[t->GUID] = t->UniformName;
+		}
+		else
+		{
+			ret->textureNames[t->GUID] = t->Name;
+			used.insert(t->UniformName);
+		}
+	}
+
+	return ret;
+}
 
 class ConvertedNode
 {
@@ -38,7 +112,7 @@ private:
 public:
 	ConvertedNodeFactory() = default;
 	virtual ~ConvertedNodeFactory() = default;
-	virtual std::shared_ptr<ConvertedNode> Create(UMaterial* material, std::shared_ptr<EffekseerMaterial::Node> effekseerNode) { return nullptr; }
+	virtual std::shared_ptr<ConvertedNode> Create(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialParameter> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode) { return nullptr; }
 };
 
 class ConvertedNodeOutput : public ConvertedNode
@@ -48,10 +122,20 @@ private:
 	UMaterial* material_ = nullptr;
 
 public:
-	ConvertedNodeOutput(UMaterial* material, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
+	ConvertedNodeOutput(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialParameter> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
 		: material_(material)
 		, effekseerNode_(effekseerNode)
 	{
+		auto shadingModel = static_cast<EffekseerMaterial::ShadingModelType>(static_cast<int>(effekseerNode_->GetProperty("ShadingModel")->Floats[0]));
+
+		if (shadingModel == EffekseerMaterial::ShadingModelType::Lit)
+		{
+			material->SetShadingModel(EMaterialShadingModel::MSM_DefaultLit);
+		}
+		else if (shadingModel == EffekseerMaterial::ShadingModelType::Unlit)
+		{
+			material->SetShadingModel(EMaterialShadingModel::MSM_Unlit);
+		}
 	}
 
 	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode) override
@@ -75,7 +159,7 @@ private:
 	UMaterialExpressionConstant* expression_ = nullptr;
 
 public:
-	ConvertedNodeConstant1(UMaterial* material, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
+	ConvertedNodeConstant1(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialParameter> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
 		: effekseerNode_(effekseerNode)
 	{
 		expression_ = NewObject<UMaterialExpressionConstant>(material);
@@ -98,14 +182,39 @@ private:
 	UMaterialExpressionScalarParameter* expression_ = nullptr;
 
 public:
-	ConvertedNodeParameter1(UMaterial* material, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
+	ConvertedNodeParameter1(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialParameter> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
 		: effekseerNode_(effekseerNode)
 	{
 		expression_ = NewObject<UMaterialExpressionScalarParameter>(material);
 		material->Expressions.Add(expression_);
-
-		expression_->ParameterName = FName(effekseerNode_->GetProperty("Name")->Str.c_str());
+		expression_->ParameterName = FName(effekseerMaterial->uniformNames[effekseerNode_->GUID].c_str());
 		expression_->DefaultValue = effekseerNode_->GetProperty("Value")->Floats[0];
+	}
+
+	UMaterialExpression* GetExpression() const override { return expression_; }
+
+	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode) override
+	{
+	}
+};
+
+class ConvertedNodeParameter4 : public ConvertedNode
+{
+private:
+	std::shared_ptr<EffekseerMaterial::Node> effekseerNode_;
+	UMaterialExpressionVectorParameter* expression_ = nullptr;
+
+public:
+	ConvertedNodeParameter4(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialParameter> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
+		: effekseerNode_(effekseerNode)
+	{
+		expression_ = NewObject<UMaterialExpressionVectorParameter>(material);
+		material->Expressions.Add(expression_);
+		expression_->ParameterName = FName(effekseerMaterial->uniformNames[effekseerNode_->GUID].c_str());
+		expression_->DefaultValue.R = effekseerNode_->GetProperty("Value")->Floats[0];
+		expression_->DefaultValue.G = effekseerNode_->GetProperty("Value")->Floats[1];
+		expression_->DefaultValue.B = effekseerNode_->GetProperty("Value")->Floats[2];
+		expression_->DefaultValue.A = effekseerNode_->GetProperty("Value")->Floats[3];
 	}
 
 	UMaterialExpression* GetExpression() const override { return expression_; }
@@ -123,7 +232,7 @@ private:
 	UMaterialExpressionAdd* expression_ = nullptr;
 
 public:
-	ConvertedNodeAdd(UMaterial* material, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
+	ConvertedNodeAdd(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialParameter> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
 		: effekseerNode_(effekseerNode)
 	{
 		expression_ = NewObject<UMaterialExpressionAdd>(material);
@@ -155,7 +264,7 @@ private:
 	UMaterialExpressionAbs* expression_ = nullptr;
 
 public:
-	ConvertedNodeAbs(UMaterial* material, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
+	ConvertedNodeAbs(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialParameter> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
 	{
 		expression_ = NewObject<UMaterialExpressionAbs>(material);
 		material->Expressions.Add(expression_);
@@ -174,14 +283,14 @@ class ConvertedNodeFactoryNormalNode : public ConvertedNodeFactory
 {
 private:
 public:
-	std::shared_ptr<ConvertedNode> Create(UMaterial* material, std::shared_ptr<EffekseerMaterial::Node> effekseerNode) override 
+	std::shared_ptr<ConvertedNode> Create(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialParameter> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode) override
 	{
-		return std::make_shared<T>(material, effekseerNode);
+		return std::make_shared<T>(material, effekseerMaterial, effekseerNode);
 	}
 };
 
 
-void UEffekseerMaterialFactory::LoadData(UMaterial* targetMaterial, const uint8* data, int size)
+void UEffekseerMaterialFactory::LoadData(UMaterial* targetMaterial, std::shared_ptr<NativeEffekseerMaterialParameter> native)
 {
 	std::map <std::string, std::shared_ptr<ConvertedNodeFactory>> nodeFactories;
 
@@ -190,21 +299,11 @@ void UEffekseerMaterialFactory::LoadData(UMaterial* targetMaterial, const uint8*
 	nodeFactories["Abs"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeAbs>>();
 	nodeFactories["Constant1"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeConstant1>>();
 	nodeFactories["Parameter1"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeParameter1>>();
-
-	std::vector<uint8_t> dataVec;
-	dataVec.resize(size);
-	memcpy(dataVec.data(), data, size);
-
-	auto library = std::make_shared<EffekseerMaterial::Library>();
-	auto material = std::make_shared<EffekseerMaterial::Material>();
-	material->Initialize();
-
-	// TODO : specify path
-	material->Load(dataVec, library, "");
+	nodeFactories["Parameter4"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeParameter4>>();
 
 	std::map<uint64_t, std::shared_ptr<ConvertedNode>> convertedNodes;
 
-	for (auto node : material->GetNodes())
+	for (auto node : native->material->GetNodes())
 	{
 		auto it = nodeFactories.find(node->Parameter->TypeName);
 
@@ -214,7 +313,7 @@ void UEffekseerMaterialFactory::LoadData(UMaterial* targetMaterial, const uint8*
 		}
 		else
 		{
-			auto n = it->second->Create(targetMaterial, node);
+			auto n = it->second->Create(targetMaterial, native, node);
 			convertedNodes[node->GUID] = n;
 
 			if (n->GetExpression() != nullptr)
@@ -230,11 +329,11 @@ void UEffekseerMaterialFactory::LoadData(UMaterial* targetMaterial, const uint8*
 		}
 	}
 
-	for (auto link : material->GetLinks())
+	for (auto link : native->material->GetLinks())
 	{
 		auto outputNode = link->OutputPin->Parent.lock();
 		auto inputNode = link->InputPin->Parent.lock();
-		
+
 		if (outputNode == nullptr || inputNode == nullptr)
 		{
 			UE_LOG(LogTemp, Warning, TEXT("Invalid link"));
@@ -246,7 +345,6 @@ void UEffekseerMaterialFactory::LoadData(UMaterial* targetMaterial, const uint8*
 		convertedNodes[inputNode->GUID]->Connect(link->InputPin->PinIndex, convertedNodes[outputNode->GUID]);
 	}
 }
-
 
 UEffekseerMaterialFactory::UEffekseerMaterialFactory(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -311,10 +409,17 @@ UObject* UEffekseerMaterialFactory::FactoryCreateBinary(
 		package->FullyLoad();
 		package->SetDirtyFlag(true);
 
-		LoadData(targetMaterial, Buffer, BufferEnd - Buffer);
+		auto native = LoadNativeEffekseerMaterialParameter(Buffer, BufferEnd - Buffer, TCHAR_TO_ANSI(*InName.ToString()));
 
-		// TODO : check side
-		targetMaterial->TwoSided = true;
+		LoadData(targetMaterial, native);
+
+		for (auto u : native->result.Uniforms)
+		{
+			FEffekseerUniformProperty prop;
+			prop.Name = FString(native->uniformNames[u->GUID].c_str());
+			prop.Count = (int)u->Type + 1;
+			assetEfkMat->Uniforms.Add(prop);
+		}
 
 		// how to load
 		// FStringAssetReference DiffuseAssetPath("/Game/T_Texture");
@@ -323,6 +428,7 @@ UObject* UEffekseerMaterialFactory::FactoryCreateBinary(
 		assetEfkMat->Material = targetMaterial;
 		assetEfkMat->StoreData(Buffer, BufferEnd - Buffer);
 		assetEfkMat->LoadMaterial(Buffer, BufferEnd - Buffer, nullptr);
+		assetEfkMat->ReassignSearchingMaps();
 		retAssets.Add(targetMaterial);
 	}
 

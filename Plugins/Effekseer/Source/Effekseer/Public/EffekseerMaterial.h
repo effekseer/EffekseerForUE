@@ -13,6 +13,17 @@ namespace Effekseer
 class Material;
 
 }
+USTRUCT(BlueprintType)
+struct FEffekseerUniformProperty
+{
+	GENERATED_USTRUCT_BODY();
+
+	UPROPERTY(VisibleAnywhere)
+	FString Name;
+
+	UPROPERTY(VisibleAnywhere)
+	int Count;
+};
 
 UCLASS()
 class EFFEKSEER_API UEffekseerMaterial 
@@ -29,6 +40,12 @@ public:
 	UPROPERTY(EditAnywhere)
 	UMaterial* Material = nullptr;
 
+	UPROPERTY(VisibleAnywhere)
+	TArray<FEffekseerUniformProperty> Uniforms;
+
+	UPROPERTY(Transient)
+	TMap<FString, int> UniformNameToIndex;
+
 #if WITH_EDITORONLY_DATA
 	UPROPERTY(Category = ImportSettings, VisibleAnywhere)
 	UAssetImportData* AssetImportData = nullptr;
@@ -37,7 +54,11 @@ public:
 	void StoreData(const uint8_t* data, uint32_t size);
 	void LoadMaterial(const uint8_t* data, int32_t size, const TCHAR* path);
 
+	void ReassignSearchingMaps();
+
 	Effekseer::Material* GetNativePtr() { return internal_; }
 
 	virtual void Serialize(FArchive& Ar) override;
+
+
 };

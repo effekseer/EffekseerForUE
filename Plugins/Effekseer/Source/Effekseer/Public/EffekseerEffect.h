@@ -34,7 +34,7 @@ enum class EEffekseerAlphaBlendType : uint8
 
 
 UCLASS()
-class EFFEKSEER_API UEffekseerEffectMaterial
+class EFFEKSEER_API UEffekseerEffectMaterialParameterHolder
 	: public UObject
 {
 public:
@@ -55,7 +55,7 @@ public:
 	UPROPERTY()
 	bool			IsDistorted = false;
 
-	bool operator == (const UEffekseerEffectMaterial* Other)
+	bool operator == (const UEffekseerEffectMaterialParameterHolder* Other)
 	{
 		return
 			Texture == Other->Texture &&
@@ -65,7 +65,7 @@ public:
 			IsDistorted == Other->IsDistorted;
 	}
 
-	friend uint32 GetTypeHash(const UEffekseerEffectMaterial* Other)
+	friend uint32 GetTypeHash(const UEffekseerEffectMaterialParameterHolder* Other)
 	{
 		return GetTypeHash(Other->Texture);
 	}
@@ -157,7 +157,7 @@ public:
 	TArray<UEffekseerMaterial*>	Materials;
 
 	UPROPERTY(Transient)
-	TArray<UEffekseerEffectMaterial*>	EffekseerMaterials;
+	TArray<UEffekseerEffectMaterialParameterHolder*>	EffekseerMaterials;
 	
 	/*
 	UPROPERTY(VisibleAnywhere, Transient)

@@ -1,6 +1,7 @@
 
 #pragma once
 
+#include <memory>
 #include "CoreMinimal.h"
 #include "Factories/Factory.h"
 
@@ -11,12 +12,15 @@
 #include "EffekseerMaterial.h"
 #include "EffekseerMaterialFactory.generated.h"
 
+
+struct NativeEffekseerMaterialParameter;
+
 UCLASS()
 class UEffekseerMaterialFactory : public UFactory, public FReimportHandler
 {
 	GENERATED_UCLASS_BODY()
 
-	void LoadData(UMaterial* targetMaterial, const uint8* data, int size);
+	void LoadData(UMaterial* targetMaterial, std::shared_ptr<NativeEffekseerMaterialParameter> native);
 
 	virtual bool DoesSupportClass(UClass* Class) override;
 	virtual UClass* ResolveSupportedClass() override;

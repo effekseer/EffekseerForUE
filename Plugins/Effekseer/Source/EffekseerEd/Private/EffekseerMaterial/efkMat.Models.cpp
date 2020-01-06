@@ -35,7 +35,7 @@ std::string Replace(std::string target, std::string from_, std::string to_)
 
 std::string Relative(const std::string& targetPath, const std::string& basePath)
 {
-	if (basePath.size() == 0)
+	if (basePath.size() == 0 || targetPath.size() == 0)
 	{
 		return targetPath;
 	}
@@ -165,6 +165,8 @@ public:
 
 static const char* tag_changeNumberCommand = "ChangeNumberCommand";
 
+static const char* tag_changeStringCommand = "ChangeStringCommand";
+
 static const char* tag_changeNodePosCommand = "ChangeNodePosCommand";
 
 static const char* tag_changeMultiNodePosCommand = "ChangeMultiNodePosCommand";
@@ -228,6 +230,58 @@ public:
 	}
 
 	virtual const char* GetTag() { return tag_changeNumberCommand; }
+};
+
+class ChangeStringCommand : public ICommand
+{
+private:
+	std::shared_ptr<NodeProperty> prop_;
+	std::string newValue_;
+	std::string oldValue_;
+
+public:
+	ChangeStringCommand(std::shared_ptr<NodeProperty> prop, std::string newValue, std::string oldValue)
+		: prop_(prop), newValue_(newValue), oldValue_(oldValue)
+	{
+	}
+
+	virtual ~ChangeStringCommand() = default;
+
+	void Execute() override { prop_->Str = newValue_; }
+
+	void Unexecute() override
+	{
+		prop_->Str = oldValue_;
+
+		auto parent = prop_->Parent.lock();
+
+		if (parent != nullptr)
+		{
+			auto parentMaterial = parent->Parent.lock();
+
+			if (parentMaterial != nullptr)
+			{
+				parentMaterial->MakeContentDirty(parent);
+			}
+		}
+	}
+
+	bool Merge(ICommand* command)
+	{
+
+		if (command->GetTag() != this->GetTag())
+			return false;
+
+		auto command_ = static_cast<ChangeStringCommand*>(command);
+		if (command_->prop_ != this->prop_)
+			return false;
+
+		this->oldValue_ = command_->oldValue_;
+
+		return true;
+	}
+
+	virtual const char* GetTag() { return tag_changeStringCommand; }
 };
 
 class ChangeNodePosCommand : public ICommand
@@ -673,6 +727,10 @@ std::string Material::SaveAsStrInternal(std::vector<std::shared_ptr<Node>> nodes
 void Material::LoadFromStrInternal(
 	const char* json, Vector2DF offset, std::shared_ptr<Library> library, const char* basePath, SaveLoadAimType aim)
 {
+	// offset must be int
+	offset.X = std::floor(offset.X);
+	offset.Y = std::floor(offset.Y);
+
 	picojson::value root_;
 	auto err = picojson::parse(root_, json);
 	if (!err.empty())
@@ -717,7 +775,7 @@ void Material::LoadFromStrInternal(
 	{
 		auto guid_obj = node_.get("GUID");
 		auto guid = (uint64_t)guid_obj.get<double>();
-
+		
 		auto type_obj = node_.get("Type");
 		auto type = type_obj.get<std::string>();
 
@@ -727,12 +785,13 @@ void Material::LoadFromStrInternal(
 
 		auto node_parameter = node_library->Create();
 
+		auto guidNew = guid;
 		if (aim == SaveLoadAimType::CopyOrPaste)
 		{
-			guid = 0;
+			guidNew = 0;
 		}
 
-		std::shared_ptr<Node> node = CreateNode(node_parameter, false, guid);
+		std::shared_ptr<Node> node = CreateNode(node_parameter, false, guidNew);
 
 		auto pos_x_obj = node_.get("PosX");
 		node->Pos.X = (float)pos_x_obj.get<double>() + offset.X;
@@ -1515,16 +1574,7 @@ void Material::ChangeValue(std::shared_ptr<NodeProperty> prop, std::string value
 	auto value_old = prop->Str;
 	auto value_new = value;
 
-	auto command = std::make_shared<DelegateCommand>(
-		[prop, value_new, this]() -> void {
-			prop->Str = value_new;
-			MakeContentDirty(prop->Parent.lock());
-		},
-		[prop, value_old, this]() -> void {
-			prop->Str = value_old;
-			MakeContentDirty(prop->Parent.lock());
-		});
-
+	auto command = std::make_shared<ChangeStringCommand>(prop, value_new, value_old);
 	commandManager_->Execute(command);
 }
 

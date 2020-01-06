@@ -14,6 +14,82 @@
 
 namespace EffekseerRendererUE4
 {
+
+	class FFileMaterialRenderProxy : public FMaterialRenderProxy
+	{
+		TArray<float> uniformBuffer_;
+		const UEffekseerMaterial* const effekseerMaterial_;
+		
+	public:
+
+		const FMaterialRenderProxy* const Parent;
+
+		FFileMaterialRenderProxy(const FMaterialRenderProxy* InParent, const UEffekseerMaterial* effekseerMaterial, float* uniformBufferPtr, int32_t uniformCount)
+			: Parent(InParent)
+			, effekseerMaterial_(effekseerMaterial)
+		{
+			uniformBuffer_.Reserve(uniformCount);
+
+			for (int32_t i = 0; i < uniformCount; i++)
+			{
+				uniformBuffer_.Add(uniformBufferPtr[i]);
+			}
+		}
+
+#if  ENGINE_MINOR_VERSION < 22
+		void GetMaterialWithFallback(ERHIFeatureLevel::Type InFeatureLevel, const FMaterialRenderProxy*& OutMaterialRenderProxy, const class FMaterial*& OutMaterial) const override;
+#else
+		const FMaterial& GetMaterialWithFallback(ERHIFeatureLevel::Type InFeatureLevel, const FMaterialRenderProxy*& OutFallbackMaterialRenderProxy) const override;
+#endif
+		virtual bool GetVectorValue(const FMaterialParameterInfo& ParameterInfo, FLinearColor* OutValue, const FMaterialRenderContext& Context) const override;
+		virtual bool GetScalarValue(const FMaterialParameterInfo& ParameterInfo, float* OutValue, const FMaterialRenderContext& Context) const override;
+		virtual bool GetTextureValue(const FMaterialParameterInfo& ParameterInfo, const UTexture** OutValue, const FMaterialRenderContext& Context) const override;
+	};
+
+#if ENGINE_MINOR_VERSION < 22
+void FFileMaterialRenderProxy::GetMaterialWithFallback(ERHIFeatureLevel::Type InFeatureLevel, const FMaterialRenderProxy*& OutMaterialRenderProxy, const class FMaterial*& OutMaterial) const
+{
+	OutMaterial = Parent->GetMaterial(InFeatureLevel);
+}
+#else
+	const FMaterial& FFileMaterialRenderProxy::GetMaterialWithFallback(ERHIFeatureLevel::Type InFeatureLevel, const FMaterialRenderProxy*& OutFallbackMaterialRenderProxy) const
+	{
+		return *(Parent->GetMaterial(InFeatureLevel));
+	}
+#endif
+
+	bool FFileMaterialRenderProxy::GetVectorValue(const FMaterialParameterInfo& ParameterInfo, FLinearColor* OutValue, const FMaterialRenderContext& Context) const
+	{
+		const auto found = effekseerMaterial_->UniformNameToIndex.Find(ParameterInfo.Name.ToString());
+		if (found != nullptr)
+		{
+			OutValue->R = uniformBuffer_[(*found) * 4 + 0];
+			OutValue->G = uniformBuffer_[(*found) * 4 + 1];
+			OutValue->B = uniformBuffer_[(*found) * 4 + 2];
+			OutValue->A = uniformBuffer_[(*found) * 4 + 3];
+			return true;
+		}
+
+		return Parent->GetVectorValue(ParameterInfo, OutValue, Context);
+	}
+
+	bool FFileMaterialRenderProxy::GetScalarValue(const FMaterialParameterInfo& ParameterInfo, float* OutValue, const FMaterialRenderContext& Context) const
+	{
+		const auto found = effekseerMaterial_->UniformNameToIndex.Find(ParameterInfo.Name.ToString());
+		if (found != nullptr)
+		{
+			*OutValue = uniformBuffer_[(*found) * 4 + 0];
+			return true;
+		}
+
+		return Parent->GetScalarValue(ParameterInfo, OutValue, Context);
+	}
+
+	bool FFileMaterialRenderProxy::GetTextureValue(const FMaterialParameterInfo& ParameterInfo, const UTexture** OutValue, const FMaterialRenderContext& Context) const
+	{
+		return Parent->GetTextureValue(ParameterInfo, OutValue, Context);
+	}
+
 	class FDistortionMaterialRenderProxy : public FMaterialRenderProxy
 	{
 	public:
@@ -528,13 +604,13 @@ namespace EffekseerRendererUE4
 #if ENGINE_MINOR_VERSION < 19
 			FDynamicMeshBuilder meshBuilder;
 #else
-			FDynamicMeshBuilder meshBuilder(m_meshElementCollector->GetFeatureLevel());
+			int32_t customDataCount = 0;
+			FDynamicMeshBuilder meshBuilder(m_meshElementCollector->GetFeatureLevel(), 1 + customDataCount);
 #endif
 			for (int32_t vi = vertexOffset; vi < vertexOffset + spriteCount * 4; vi++)
 			{
 				auto& v = vs[vi];
 
-				// TODO
 				auto normal = UnpackVector3DF(v.Normal);
 				auto tangent = UnpackVector3DF(v.Tangent);
 				Effekseer::Vector3D binormal;
@@ -565,6 +641,14 @@ namespace EffekseerRendererUE4
 #else
 			auto proxy = mat->GetRenderProxy();
 #endif
+
+			if (m_currentShader->GetEffekseerMaterial()->UniformNameToIndex.Num() > 0)
+			{
+				auto uniformOffset = m_currentShader->GetParameterGenerator()->PixelUserUniformOffset;
+				auto buffer = static_cast<uint8_t*>(m_currentShader->GetPixelConstantBuffer()) + uniformOffset;
+				proxy = new FFileMaterialRenderProxy(proxy, m_currentShader->GetEffekseerMaterial(), reinterpret_cast<float*>(buffer), m_currentShader->GetEffekseerMaterial()->Uniforms.Num());
+				m_meshElementCollector->RegisterOneFrameMaterialProxy(proxy);
+			}
 
 			meshBuilder.GetMesh(m_localToWorld, proxy, SDPG_World, false, false, m_viewIndex, *m_meshElementCollector);
 			return;
@@ -713,6 +797,13 @@ namespace EffekseerRendererUE4
 
 	void RendererImplemented::DrawModel(void* model, std::vector<Effekseer::Matrix44>& matrixes, std::vector<Effekseer::RectF>& uvs, std::vector<Effekseer::Color>& colors, std::vector<int32_t>& times)
 	{
+		// TODO support material file
+		if (m_currentShader != nullptr && m_currentShader->GetType() == Effekseer::RendererMaterialType::File)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Model with material file is not supported yet."));
+			return;
+		}
+
 		// StaticMesh
 		if (model == nullptr) return;
 		auto mdl = (EffekseerInternalModel*)model;

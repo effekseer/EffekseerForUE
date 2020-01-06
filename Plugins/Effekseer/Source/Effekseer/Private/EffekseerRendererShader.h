@@ -42,6 +42,8 @@ namespace EffekseerRendererUE4
 		{
 		}
 
+		const EffekseerRenderer::MaterialShaderParameterGenerator* GetParameterGenerator() const { return &parameterGenerator_; }
+
 		Effekseer::RendererMaterialType GetType() const;
 
 		UEffekseerMaterial* GetEffekseerMaterial() const;

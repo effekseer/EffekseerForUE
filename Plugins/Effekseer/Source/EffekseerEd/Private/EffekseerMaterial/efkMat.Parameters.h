@@ -108,6 +108,18 @@ public:
 	GetHeader(std::shared_ptr<Material> material, std::shared_ptr<NodeParameter> parameter, std::shared_ptr<Node> node) const override;
 };
 
+class NodeParameterBehaviorConstantName : public NodeParameterBehaviorComponent
+{
+private:
+	int32_t componentCount_ = 0;
+
+public:
+	NodeParameterBehaviorConstantName(int32_t componentCount) : componentCount_(componentCount) { IsGetHeaderInherited = true; }
+
+	std::string
+	GetHeader(std::shared_ptr<Material> material, std::shared_ptr<NodeParameter> parameter, std::shared_ptr<Node> node) const override;
+};
+
 class NodeParameterBehaviorComponentOutput : public NodeParameterBehaviorComponent
 {
 public:
@@ -391,6 +403,34 @@ public:
 	GetOutputType(std::shared_ptr<Material> material, std::shared_ptr<Node> node, const std::vector<ValueType>& inputTypes) const override
 	{
 		return GetOutputTypeIn1Out1(inputTypes);
+	}
+};
+
+class NodeArctangent2 : public NodeParameter
+{
+public:
+	NodeArctangent2()
+	{
+		Type = NodeType::Arctangent2;
+		TypeName = "Arctangent2";
+		Group = std::vector<std::string>{"Math"};
+
+		InitializeAsIn2Out1Param2();
+
+		InputPins[0]->Name = "Y";
+		InputPins[1]->Name = "X";
+		Properties[0]->Name = "Y";
+		Properties[1]->Name = "X";
+	}
+
+	ValueType
+	GetOutputType(std::shared_ptr<Material> material, std::shared_ptr<Node> node, const std::vector<ValueType>& inputTypes) const override
+	{
+		return GetOutputTypeIn2Out1Param2(inputTypes);
+	}
+	WarningType GetWarning(std::shared_ptr<Material> material, std::shared_ptr<Node> node) const override
+	{
+		return GetWarningIn2Out1Param2(material, node);
 	}
 };
 
@@ -894,6 +934,7 @@ public:
 		Type = NodeType::LinearInterpolate;
 		TypeName = "LinearInterpolate";
 		Group = std::vector<std::string>{"Math"};
+		Keywords.emplace_back("lerp");
 
 		auto input1 = std::make_shared<PinParameter>();
 		input1->Name = "Value1";
