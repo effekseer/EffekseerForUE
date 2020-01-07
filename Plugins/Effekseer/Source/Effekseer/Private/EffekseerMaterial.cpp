@@ -21,6 +21,16 @@ void UEffekseerMaterial::StoreData(const uint8_t* data, uint32_t size)
 	buffer_.Append(data, size);
 }
 
+void UEffekseerMaterial::ReassignSearchingMaps()
+{
+	UniformNameToIndex.Reset();
+
+	for (int32_t i = 0; i < Uniforms.Num(); i++)
+	{
+		UniformNameToIndex.Add(Uniforms[i].Name, i);
+	}
+}
+
 void UEffekseerMaterial::Serialize(FArchive& Ar)
 {
 	Super::Serialize(Ar);
@@ -38,5 +48,7 @@ void UEffekseerMaterial::Serialize(FArchive& Ar)
 
 		auto path = GetPathName();
 		LoadMaterial(buffer_.GetData(), buffer_.Num(), *path);
+
+		ReassignSearchingMaps();
 	}
 }

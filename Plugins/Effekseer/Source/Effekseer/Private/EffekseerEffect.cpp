@@ -504,7 +504,7 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 				}
 			}
 
-			UEffekseerEffectMaterial* mat = NewObject<UEffekseerEffectMaterial>();
+			UEffekseerEffectMaterialParameterHolder* mat = NewObject<UEffekseerEffectMaterialParameterHolder>();
 			mat->Texture = texture;
 			mat->IsDepthTestDisabled = !param.ZTest;
 			mat->AlphaBlend = (EEffekseerAlphaBlendType)param.AlphaBlend;

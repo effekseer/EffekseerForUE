@@ -94,6 +94,7 @@ TextExporterResult TextExporter::Export(std::shared_ptr<Material> material, std:
 						extractedTexture->DefaultPath = path;
 						extractedTexture->IsParam = false;
 						extractedTexture->Type = material->FindTexture(path.c_str())->Type;
+						extractedTexture->GUID = node->GUID;
 						extractedTextures[node->GUID] = extractedTexture;
 					}
 
@@ -120,6 +121,7 @@ TextExporterResult TextExporter::Export(std::shared_ptr<Material> material, std:
 						extractedTexture->Type = material->FindTexture(path.c_str())->Type;
 						extractedTexture->Priority = static_cast<int32_t>(node->GetProperty("Priority")->Floats[0]);
 						extractedTexture->Descriptions = node->Descriptions;
+						extractedTexture->GUID = node->GUID;
 						extractedTextures[node->GUID] = extractedTexture;
 					}
 
@@ -152,6 +154,7 @@ TextExporterResult TextExporter::Export(std::shared_ptr<Material> material, std:
 						extractedUniform->DefaultConstants = values;
 						extractedUniform->Priority = static_cast<int32_t>(node->GetProperty("Priority")->Floats[0]);
 						extractedUniform->Descriptions = node->Descriptions;
+						extractedUniform->GUID = node->GUID;
 
 						if (node->Parameter->Type == NodeType::Parameter1)
 						{
@@ -242,6 +245,7 @@ TextExporterResult TextExporter::Export(std::shared_ptr<Material> material, std:
 						extractedTexture->Name = paramName;
 						extractedTexture->DefaultPath = path;
 						extractedTexture->Type = material->FindTexture(path.c_str())->Type;
+						extractedTexture->GUID = node->GUID;
 						extractedTextures[node->GUID] = extractedTexture;
 					}
 
@@ -518,7 +522,7 @@ std::string TextExporter::ExportOutputNode(std::shared_ptr<Material> material,
 		if (outputNode->Target->Parameter->Type == NodeType::TextureObject)
 		{
 			ret << GetTypeName(ValueType::Float4) << " emissive_temp = "
-				<< "texture(" << outputNode->Outputs[0].TextureValue->UniformName << ", " << GetUVName(0) << ");" << std::endl;
+				<< "texture(" << outputNode->Outputs[0].TextureValue->UniformName << ", GetUV(" << GetUVName(0) << "));" << std::endl;
 			ret << GetTypeName(ValueType::Float3) << " emissive = emissive_temp.xyz;" << std::endl;
 			ret << "float opacity = emissive_temp.w;" << std::endl;
 
@@ -527,7 +531,7 @@ std::string TextExporter::ExportOutputNode(std::shared_ptr<Material> material,
 		else if (outputNode->Target->Parameter->Type == NodeType::TextureObjectParameter)
 		{
 			ret << GetTypeName(ValueType::Float4) << " emissive_temp = "
-				<< "texture(" << outputNode->Outputs[0].TextureValue->UniformName << ", " << GetUVName(0) << ");" << std::endl;
+				<< "texture(" << outputNode->Outputs[0].TextureValue->UniformName << ", GetUV(" << GetUVName(0) << "));" << std::endl;
 			ret << GetTypeName(ValueType::Float3) << " emissive = emissive_temp.xyz;" << std::endl;
 			ret << "float opacity = emissive_temp.w;" << std::endl;
 
@@ -629,6 +633,11 @@ std::string TextExporter::ExportNode(std::shared_ptr<TextExporterNode> node)
 	if (node->Target->Parameter->Type == NodeType::Sine)
 	{
 		exportIn1Out1("sin");
+	}
+
+	if (node->Target->Parameter->Type == NodeType::Arctangent2)
+	{
+		exportIn2Out2Param2("atan2", ",");
 	}
 
 	if (node->Target->Parameter->Type == NodeType::Abs)
