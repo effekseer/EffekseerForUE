@@ -13,6 +13,16 @@ namespace Effekseer
 class Material;
 
 }
+
+USTRUCT(BlueprintType)
+struct FEffekseerTextureProperty
+{
+	GENERATED_USTRUCT_BODY();
+
+	UPROPERTY(VisibleAnywhere)
+	FString Name;
+};
+
 USTRUCT(BlueprintType)
 struct FEffekseerUniformProperty
 {
@@ -45,6 +55,13 @@ public:
 
 	UPROPERTY(Transient)
 	TMap<FString, int> UniformNameToIndex;
+
+	UPROPERTY(VisibleAnywhere)
+	TArray<FEffekseerTextureProperty> Textures;
+
+	UPROPERTY(Transient)
+	TMap<FString, int> TextureNameToIndex;
+
 
 #if WITH_EDITORONLY_DATA
 	UPROPERTY(Category = ImportSettings, VisibleAnywhere)

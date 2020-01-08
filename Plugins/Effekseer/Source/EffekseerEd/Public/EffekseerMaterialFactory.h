@@ -13,14 +13,14 @@
 #include "EffekseerMaterialFactory.generated.h"
 
 
-struct NativeEffekseerMaterialParameter;
+struct NativeEffekseerMaterialContext;
 
 UCLASS()
 class UEffekseerMaterialFactory : public UFactory, public FReimportHandler
 {
 	GENERATED_UCLASS_BODY()
 
-	void LoadData(UMaterial* targetMaterial, std::shared_ptr<NativeEffekseerMaterialParameter> native);
+	void LoadData(UMaterial* targetMaterial, std::shared_ptr<NativeEffekseerMaterialContext> native);
 
 	virtual bool DoesSupportClass(UClass* Class) override;
 	virtual UClass* ResolveSupportedClass() override;

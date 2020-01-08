@@ -29,6 +29,13 @@ void UEffekseerMaterial::ReassignSearchingMaps()
 	{
 		UniformNameToIndex.Add(Uniforms[i].Name, i);
 	}
+
+	TextureNameToIndex.Reset();
+
+	for (int32_t i = 0; i < Textures.Num(); i++)
+	{
+		TextureNameToIndex.Add(Textures[i].Name, i);
+	}
 }
 
 void UEffekseerMaterial::Serialize(FArchive& Ar)
