@@ -17,6 +17,7 @@
 #include "Materials/MaterialExpressionTextureSample.h"
 #include "Materials/MaterialExpressionTextureObject.h"
 #include "Materials/MaterialExpressionTextureObjectParameter.h"
+#include "Materials/MaterialExpressionTextureCoordinate.h"
 #include "EditorFramework/AssetImportData.h"
 #include "EffekseerMaterial/efkMat.Models.h"
 #include "EffekseerMaterial/efkMat.Library.h"
@@ -182,6 +183,15 @@ public:
 
 	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode) override
 	{
+		if (targetInd == effekseerNode_->GetInputPinIndex("Texture"))
+		{
+			expression_->TextureObject.Expression = outputNode->GetExpression();
+		}
+
+		if (targetInd == effekseerNode_->GetInputPinIndex("UV"))
+		{
+			expression_->Coordinates.Expression = outputNode->GetExpression();
+		}
 	}
 };
 
@@ -244,6 +254,30 @@ public:
 	{
 	}
 };
+
+class ConvertedNodeTextureCoordinate : public ConvertedNode
+{
+private:
+	std::shared_ptr<EffekseerMaterial::Node> effekseerNode_;
+	UMaterialExpressionTextureCoordinate* expression_ = nullptr;
+
+public:
+	ConvertedNodeTextureCoordinate(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
+		: effekseerNode_(effekseerNode)
+	{
+		expression_ = NewObject<UMaterialExpressionTextureCoordinate>(material);
+		material->Expressions.Add(expression_);
+
+		expression_->CoordinateIndex = static_cast<int32_t>(effekseerNode_->GetProperty("UVIndex")->Floats[0]);
+	}
+
+	UMaterialExpression* GetExpression() const override { return expression_; }
+
+	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode) override
+	{
+	}
+};
+
 
 class ConvertedNodeAdd : public ConvertedNode
 {
@@ -323,6 +357,7 @@ void UEffekseerMaterialFactory::LoadData(UMaterial* targetMaterial, std::shared_
 	nodeFactories["SampleTexture"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeTextureSample>>();
 	nodeFactories["TextureObject"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeTextureObject>>();
 	nodeFactories["TextureObjectParameter"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeTextureObjectParameter>>();
+	nodeFactories["TextureCoordinate"] = std::make_shared< ConvertedNodeFactoryNormalNode<ConvertedNodeTextureCoordinate>>();
 
 	std::map<uint64_t, std::shared_ptr<ConvertedNode>> convertedNodes;
 
