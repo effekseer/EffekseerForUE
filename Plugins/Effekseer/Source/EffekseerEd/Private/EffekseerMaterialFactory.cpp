@@ -18,6 +18,8 @@
 #include "Materials/MaterialExpressionTextureObject.h"
 #include "Materials/MaterialExpressionTextureObjectParameter.h"
 #include "Materials/MaterialExpressionTextureCoordinate.h"
+#include "Materials/MaterialExpressionMaterialFunctionCall.h"
+#include "Materials/MaterialExpressionComponentMask.h"
 #include "EditorFramework/AssetImportData.h"
 #include "EffekseerMaterial/efkMat.Models.h"
 #include "EffekseerMaterial/efkMat.Library.h"
@@ -259,16 +261,29 @@ class ConvertedNodeTextureCoordinate : public ConvertedNode
 {
 private:
 	std::shared_ptr<EffekseerMaterial::Node> effekseerNode_;
-	UMaterialExpressionTextureCoordinate* expression_ = nullptr;
+	UMaterialExpressionMaterialFunctionCall* expression_ = nullptr;
 
 public:
 	ConvertedNodeTextureCoordinate(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
 		: effekseerNode_(effekseerNode)
 	{
-		expression_ = NewObject<UMaterialExpressionTextureCoordinate>(material);
+		expression_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
 		material->Expressions.Add(expression_);
 
-		expression_->CoordinateIndex = static_cast<int32_t>(effekseerNode_->GetProperty("UVIndex")->Floats[0]);
+		auto index = static_cast<int32_t>(effekseerNode_->GetProperty("UVIndex")->Floats[0]);
+
+		if (index == 0)
+		{
+			FStringAssetReference assetPath("/Effekseer/MaterialFunctions/EfkUV1.EfkUV1");
+			UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
+			expression_->SetMaterialFunction(func);
+		}
+		else
+		{
+			FStringAssetReference assetPath("/Effekseer/MaterialFunctions/EfkUV2.EfkUV2");
+			UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
+			expression_->SetMaterialFunction(func);
+		}
 	}
 
 	UMaterialExpression* GetExpression() const override { return expression_; }
@@ -332,6 +347,72 @@ public:
 	}
 };
 
+class ConvertedNodeCustomData1 : public ConvertedNode
+{
+private:
+	UMaterialExpressionComponentMask* expression_ = nullptr;
+	UMaterialExpressionMaterialFunctionCall* functions_ = nullptr;
+
+public:
+	ConvertedNodeCustomData1(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
+	{
+		expression_ = NewObject<UMaterialExpressionComponentMask>(material);
+		material->Expressions.Add(expression_);
+
+		functions_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
+		material->Expressions.Add(functions_);
+
+		FStringAssetReference assetPath("/Effekseer/MaterialFunctions/EfkCustomData1.EfkCustomData1");
+		UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
+		functions_->SetMaterialFunction(func);
+
+		expression_->Input.Expression = functions_;
+		expression_->R = effekseerNode->GetProperty("R")->Floats[0] > 0 ? 1 : 0;
+		expression_->G = effekseerNode->GetProperty("G")->Floats[0] > 0 ? 1 : 0;
+		expression_->B = effekseerNode->GetProperty("B")->Floats[0] > 0 ? 1 : 0;
+		expression_->A = effekseerNode->GetProperty("A")->Floats[0] > 0 ? 1 : 0;
+	}
+
+	UMaterialExpression* GetExpression() const override { return expression_; }
+
+	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode) override
+	{
+	}
+};
+
+class ConvertedNodeCustomData2 : public ConvertedNode
+{
+private:
+	UMaterialExpressionComponentMask* expression_ = nullptr;
+	UMaterialExpressionMaterialFunctionCall* functions_ = nullptr;
+
+public:
+	ConvertedNodeCustomData2(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
+	{
+		expression_ = NewObject<UMaterialExpressionComponentMask>(material);
+		material->Expressions.Add(expression_);
+
+		functions_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
+		material->Expressions.Add(functions_);
+
+		FStringAssetReference assetPath("/Effekseer/MaterialFunctions/EfkCustomData2.EfkCustomData2");
+		UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
+		functions_->SetMaterialFunction(func);
+
+		expression_->Input.Expression = functions_;
+		expression_->R = effekseerNode->GetProperty("R")->Floats[0] > 0 ? 1 : 0;
+		expression_->G = effekseerNode->GetProperty("G")->Floats[0] > 0 ? 1 : 0;
+		expression_->B = effekseerNode->GetProperty("B")->Floats[0] > 0 ? 1 : 0;
+		expression_->A = effekseerNode->GetProperty("A")->Floats[0] > 0 ? 1 : 0;
+	}
+
+	UMaterialExpression* GetExpression() const override { return expression_; }
+
+	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode) override
+	{
+	}
+};
+
 template<class T>
 class ConvertedNodeFactoryNormalNode : public ConvertedNodeFactory
 {
@@ -358,6 +439,8 @@ void UEffekseerMaterialFactory::LoadData(UMaterial* targetMaterial, std::shared_
 	nodeFactories["TextureObject"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeTextureObject>>();
 	nodeFactories["TextureObjectParameter"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeTextureObjectParameter>>();
 	nodeFactories["TextureCoordinate"] = std::make_shared< ConvertedNodeFactoryNormalNode<ConvertedNodeTextureCoordinate>>();
+	nodeFactories["CustomData1"] = std::make_shared< ConvertedNodeFactoryNormalNode<ConvertedNodeCustomData1>>();
+	nodeFactories["CustomData2"] = std::make_shared< ConvertedNodeFactoryNormalNode<ConvertedNodeCustomData2>>();
 
 	std::map<uint64_t, std::shared_ptr<ConvertedNode>> convertedNodes;
 
@@ -461,9 +544,10 @@ UObject* UEffekseerMaterialFactory::FactoryCreateBinary(
 		UMaterial* targetMaterial = (UMaterial*)MaterialFactory->FactoryCreateNew(UMaterial::StaticClass(), package, FName(*(InName.ToString() + TEXT("_M"))), RF_Standalone | RF_Public, NULL, GWarn);
 		FAssetRegistryModule::AssetCreated(targetMaterial);
 
+#if ENGINE_MINOR_VERSION >= 23 // TODO Check correct version
 		targetMaterial->AssetImportData = NewObject<UAssetImportData>(targetMaterial, UAssetImportData::StaticClass());
 		targetMaterial->AssetImportData->Update(CurrentFilename);
-
+#endif
 		package->FullyLoad();
 		package->SetDirtyFlag(true);
 		

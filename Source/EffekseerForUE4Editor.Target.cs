@@ -11,25 +11,4 @@ public class EffekseerForUE4EditorTarget : TargetRules
         Type = TargetType.Editor;
         ExtraModuleNames.Add("EffekseerForUE4");
     }
-
-    // UE4.15
-    /*
-	public EffekseerForUE4EditorTarget(TargetInfo Target)
-	{
-		Type = TargetType.Editor;
-	}
-
-	//
-	// TargetRules interface.
-	//
-
-	public override void SetupBinaries(
-		TargetInfo Target,
-		ref List<UEBuildBinaryConfiguration> OutBuildBinaryConfigurations,
-		ref List<string> OutExtraModuleNames
-		)
-	{
-		OutExtraModuleNames.AddRange( new string[] { "EffekseerForUE4" } );
-	}
-    */
 }

@@ -12,10 +12,91 @@
 #include "Runtime/Engine/Public/MaterialShared.h"
 #include "Runtime/Engine/Classes/Materials/MaterialInstanceDynamic.h"
 
+#if ENGINE_MINOR_VERSION < 19
+class FMaterialParameterInfo
+{
+public:
+	FName Name;
+};
+
+#define GET_MAT_PARAM_NAME .Name
+#else
+
+#define GET_MAT_PARAM_NAME
+#endif
+
 namespace EffekseerRendererUE4
 {
 
-	class FFileMaterialRenderProxy : public FMaterialRenderProxy
+	class FCompatibleMaterialRenderProxy : public FMaterialRenderProxy
+	{
+	public:
+		FCompatibleMaterialRenderProxy() = default;
+		virtual ~FCompatibleMaterialRenderProxy() = default;
+
+		virtual bool GetParentVectorValue(const FMaterialParameterInfo& ParameterInfo, FLinearColor* OutValue, const FMaterialRenderContext& Context) const { return false; }
+		virtual bool GetParentScalarValue(const FMaterialParameterInfo& ParameterInfo, float* OutValue, const FMaterialRenderContext& Context) const { return false; }
+		virtual bool GetParentTextureValue(const FMaterialParameterInfo& ParameterInfo, const UTexture** OutValue, const FMaterialRenderContext& Context) const { return false; }
+
+#if ENGINE_MINOR_VERSION < 19
+		bool GetVectorValue(const FName ParameterName, FLinearColor* OutValue, const FMaterialRenderContext& Context) const
+		{
+			FMaterialParameterInfo info;
+			info.Name = ParameterName;
+			return GetParentVectorValue(info, OutValue, Context);
+		}
+
+		bool GetScalarValue(const FName ParameterName, float* OutValue, const FMaterialRenderContext& Context) const
+		{
+			FMaterialParameterInfo info;
+			info.Name = ParameterName;
+			return GetParentScalarValue(info, OutValue, Context);
+		}
+
+		bool GetTextureValue(const FName ParameterName, const UTexture** OutValue, const FMaterialRenderContext& Context) const
+		{
+			FMaterialParameterInfo info;
+			info.Name = ParameterName;
+			return GetParentTextureValue(info, OutValue, Context);
+		}
+#else
+		bool GetVectorValue(const FMaterialParameterInfo& ParameterInfo, FLinearColor* OutValue, const FMaterialRenderContext& Context) const
+		{
+			return  GetParentVectorValue(ParameterInfo, OutValue, Context);
+		}
+
+		bool GetScalarValue(const FMaterialParameterInfo& ParameterInfo, float* OutValue, const FMaterialRenderContext& Context) const
+		{
+			return GetParentScalarValue(ParameterInfo, OutValue, Context);
+		}
+
+		bool GetTextureValue(const FMaterialParameterInfo& ParameterInfo, const UTexture** OutValue, const FMaterialRenderContext& Context) const
+		{
+			return GetParentTextureValue(ParameterInfo, OutValue, Context);
+		}
+#endif
+
+		virtual const FMaterial* GetParentMaterial(ERHIFeatureLevel::Type InFeatureLevel) const { return nullptr; }
+
+#if ENGINE_MINOR_VERSION < 20
+		const FMaterial* GetMaterial(ERHIFeatureLevel::Type InFeatureLevel) const override
+		{
+			return GetParentMaterial(InFeatureLevel);
+		}
+#elif ENGINE_MINOR_VERSION < 22
+		void GetMaterialWithFallback(ERHIFeatureLevel::Type InFeatureLevel, const FMaterialRenderProxy*& OutMaterialRenderProxy, const class FMaterial*& OutMaterial) const override
+		{
+			OutMaterial = GetParentMaterial(InFeatureLevel);
+		}
+#else
+		const FMaterial& GetMaterialWithFallback(ERHIFeatureLevel::Type InFeatureLevel, const FMaterialRenderProxy*& OutFallbackMaterialRenderProxy) const override
+		{
+			return *(GetParentMaterial(InFeatureLevel));
+		}
+#endif
+	};
+
+	class FFileMaterialRenderProxy : public FCompatibleMaterialRenderProxy
 	{
 		TArray<float> uniformBuffer_;
 		const UEffekseerMaterial* const effekseerMaterial_;
@@ -36,59 +117,48 @@ namespace EffekseerRendererUE4
 			}
 		}
 
-#if  ENGINE_MINOR_VERSION < 22
-		void GetMaterialWithFallback(ERHIFeatureLevel::Type InFeatureLevel, const FMaterialRenderProxy*& OutMaterialRenderProxy, const class FMaterial*& OutMaterial) const override;
-#else
-		const FMaterial& GetMaterialWithFallback(ERHIFeatureLevel::Type InFeatureLevel, const FMaterialRenderProxy*& OutFallbackMaterialRenderProxy) const override;
-#endif
-		virtual bool GetVectorValue(const FMaterialParameterInfo& ParameterInfo, FLinearColor* OutValue, const FMaterialRenderContext& Context) const override;
-		virtual bool GetScalarValue(const FMaterialParameterInfo& ParameterInfo, float* OutValue, const FMaterialRenderContext& Context) const override;
-		virtual bool GetTextureValue(const FMaterialParameterInfo& ParameterInfo, const UTexture** OutValue, const FMaterialRenderContext& Context) const override;
+		const FMaterial* GetParentMaterial(ERHIFeatureLevel::Type InFeatureLevel) const override;
+		bool GetParentVectorValue(const FMaterialParameterInfo& ParameterInfo, FLinearColor* OutValue, const FMaterialRenderContext& Context) const override;
+		bool GetParentScalarValue(const FMaterialParameterInfo& ParameterInfo, float* OutValue, const FMaterialRenderContext& Context) const override;
+		bool GetParentTextureValue(const FMaterialParameterInfo& ParameterInfo, const UTexture** OutValue, const FMaterialRenderContext& Context) const override;
 	};
 
-#if ENGINE_MINOR_VERSION < 22
-void FFileMaterialRenderProxy::GetMaterialWithFallback(ERHIFeatureLevel::Type InFeatureLevel, const FMaterialRenderProxy*& OutMaterialRenderProxy, const class FMaterial*& OutMaterial) const
+const FMaterial* FFileMaterialRenderProxy::GetParentMaterial(ERHIFeatureLevel::Type InFeatureLevel) const
 {
-	OutMaterial = Parent->GetMaterial(InFeatureLevel);
+	return Parent->GetMaterial(InFeatureLevel);
 }
-#else
-	const FMaterial& FFileMaterialRenderProxy::GetMaterialWithFallback(ERHIFeatureLevel::Type InFeatureLevel, const FMaterialRenderProxy*& OutFallbackMaterialRenderProxy) const
-	{
-		return *(Parent->GetMaterial(InFeatureLevel));
-	}
-#endif
 
-	bool FFileMaterialRenderProxy::GetVectorValue(const FMaterialParameterInfo& ParameterInfo, FLinearColor* OutValue, const FMaterialRenderContext& Context) const
+bool FFileMaterialRenderProxy::GetParentVectorValue(const FMaterialParameterInfo& ParameterInfo, FLinearColor* OutValue, const FMaterialRenderContext& Context) const
+{
+	const auto found = effekseerMaterial_->UniformNameToIndex.Find(ParameterInfo.Name.ToString());
+	if (found != nullptr)
 	{
-		const auto found = effekseerMaterial_->UniformNameToIndex.Find(ParameterInfo.Name.ToString());
-		if (found != nullptr)
-		{
-			OutValue->R = uniformBuffer_[(*found) * 4 + 0];
-			OutValue->G = uniformBuffer_[(*found) * 4 + 1];
-			OutValue->B = uniformBuffer_[(*found) * 4 + 2];
-			OutValue->A = uniformBuffer_[(*found) * 4 + 3];
-			return true;
-		}
-
-		return Parent->GetVectorValue(ParameterInfo, OutValue, Context);
+		OutValue->R = uniformBuffer_[(*found) * 4 + 0];
+		OutValue->G = uniformBuffer_[(*found) * 4 + 1];
+		OutValue->B = uniformBuffer_[(*found) * 4 + 2];
+		OutValue->A = uniformBuffer_[(*found) * 4 + 3];
+		return true;
 	}
 
-	bool FFileMaterialRenderProxy::GetScalarValue(const FMaterialParameterInfo& ParameterInfo, float* OutValue, const FMaterialRenderContext& Context) const
-	{
-		const auto found = effekseerMaterial_->UniformNameToIndex.Find(ParameterInfo.Name.ToString());
-		if (found != nullptr)
-		{
-			*OutValue = uniformBuffer_[(*found) * 4 + 0];
-			return true;
-		}
+	return Parent->GetVectorValue(ParameterInfo GET_MAT_PARAM_NAME, OutValue, Context);
+}
 
-		return Parent->GetScalarValue(ParameterInfo, OutValue, Context);
+bool FFileMaterialRenderProxy::GetParentScalarValue(const FMaterialParameterInfo& ParameterInfo, float* OutValue, const FMaterialRenderContext& Context) const
+{
+	const auto found = effekseerMaterial_->UniformNameToIndex.Find(ParameterInfo.Name.ToString());
+	if (found != nullptr)
+	{
+		*OutValue = uniformBuffer_[(*found) * 4 + 0];
+		return true;
 	}
 
-	bool FFileMaterialRenderProxy::GetTextureValue(const FMaterialParameterInfo& ParameterInfo, const UTexture** OutValue, const FMaterialRenderContext& Context) const
-	{
-		return Parent->GetTextureValue(ParameterInfo, OutValue, Context);
-	}
+	return Parent->GetScalarValue(ParameterInfo GET_MAT_PARAM_NAME, OutValue, Context);
+}
+
+bool FFileMaterialRenderProxy::GetParentTextureValue(const FMaterialParameterInfo& ParameterInfo, const UTexture** OutValue, const FMaterialRenderContext& Context) const
+{
+	return Parent->GetTextureValue(ParameterInfo GET_MAT_PARAM_NAME, OutValue, Context);
+}
 
 	class FDistortionMaterialRenderProxy : public FMaterialRenderProxy
 	{
