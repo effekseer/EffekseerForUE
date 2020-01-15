@@ -106,6 +106,9 @@ namespace EffekseerRendererUE4
 
 		FLinearColor ModelUV;
 		FLinearColor ModelColor;
+		FLinearColor CustomData1;
+		FLinearColor CustomData2;
+		std::array<void*, Effekseer::TextureSlotMax> Textures;
 
 		const FMaterialRenderProxy* const Parent;
 
@@ -114,6 +117,8 @@ namespace EffekseerRendererUE4
 			, effekseerMaterial_(effekseerMaterial)
 			, isModel_(isModel)
 		{
+			Textures.fill(nullptr);
+
 			uniformBuffer_.Reserve(uniformCount);
 
 			for (int32_t i = 0; i < uniformCount; i++)
@@ -148,6 +153,18 @@ bool FFileMaterialRenderProxy::GetParentVectorValue(const FMaterialParameterInfo
 			*OutValue = ModelColor;
 			return true;
 		}
+
+		if (ParameterInfo.Name == FName(TEXT("CustomData1")))
+		{
+			*OutValue = CustomData1;
+			return true;
+		}
+
+		if (ParameterInfo.Name == FName(TEXT("CustomData2")))
+		{
+			*OutValue = CustomData2;
+			return true;
+		}
 	}
 
 	const auto found = effekseerMaterial_->UniformNameToIndex.Find(ParameterInfo.Name.ToString());
@@ -167,7 +184,8 @@ bool FFileMaterialRenderProxy::GetParentScalarValue(const FMaterialParameterInfo
 {
 	if (ParameterInfo.Name == FName(TEXT("Model")))
 	{
-		return isModel_ ? 1.0f : 0.0f;
+		*OutValue = isModel_ ? 1.0f : 0.0f;
+		return true;
 	}
 
 	const auto found = effekseerMaterial_->UniformNameToIndex.Find(ParameterInfo.Name.ToString());
@@ -182,6 +200,13 @@ bool FFileMaterialRenderProxy::GetParentScalarValue(const FMaterialParameterInfo
 
 bool FFileMaterialRenderProxy::GetParentTextureValue(const FMaterialParameterInfo& ParameterInfo, const UTexture** OutValue, const FMaterialRenderContext& Context) const
 {
+	const auto found = effekseerMaterial_->TextureNameToIndex.Find(ParameterInfo.Name.ToString());
+	if (found != nullptr)
+	{
+		*OutValue = (UTexture*)Textures[*found];
+		return true;
+	}
+
 	return Parent->GetTextureValue(ParameterInfo GET_MAT_PARAM_NAME, OutValue, Context);
 }
 
@@ -345,11 +370,60 @@ bool FModelMaterialRenderProxy::GetParentTextureValue(const FMaterialParameterIn
 
 		Shader* shader = m_renderer->GetShader(true, param.BasicParameterPtr->MaterialType);
 
+		if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::File &&
+			param.BasicParameterPtr->MaterialParameterPtr != nullptr &&
+			param.BasicParameterPtr->MaterialParameterPtr->MaterialIndex >= 0 &&
+			param.EffectPointer->GetMaterial(param.BasicParameterPtr->MaterialParameterPtr->MaterialIndex) != nullptr)
+		{
+			shader = (Shader*)param.EffectPointer->GetMaterial(param.BasicParameterPtr->MaterialParameterPtr->MaterialIndex)->ModelUserPtr;
+		}
+
 		m_renderer->BeginShader(shader);
 
 		if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::File)
 		{
+			auto materialParam = param.BasicParameterPtr->MaterialParameterPtr;
 
+			int32_t textureCount = 0;
+			std::array<Effekseer::TextureData*, ::Effekseer::TextureSlotMax> textures;
+
+			if (materialParam->MaterialTextures.size() > 0)
+			{
+				textureCount = Effekseer::Min(materialParam->MaterialTextures.size(), ::Effekseer::UserTextureSlotMax);
+
+				auto effect = param.EffectPointer;
+
+				for (size_t i = 0; i < textureCount; i++)
+				{
+					if (materialParam->MaterialTextures[i].Type == 1)
+					{
+						if (materialParam->MaterialTextures[i].Index >= 0)
+						{
+							textures[i] = effect->GetNormalImage(materialParam->MaterialTextures[i].Index);
+						}
+						else
+						{
+							textures[i] = nullptr;
+						}
+					}
+					else
+					{
+						if (materialParam->MaterialTextures[i].Index >= 0)
+						{
+							textures[i] = effect->GetColorImage(materialParam->MaterialTextures[i].Index);
+						}
+						else
+						{
+							textures[i] = nullptr;
+						}
+					}
+				}
+			}
+
+			if (textureCount > 0)
+			{
+				renderer->SetTextures(nullptr, textures.data(), textureCount);
+			}
 		}
 		else
 		{
@@ -367,7 +441,7 @@ bool FModelMaterialRenderProxy::GetParentTextureValue(const FMaterialParameterIn
 			m_renderer->SetTextures(nullptr, textures, 1);
 		}
 
-		m_renderer->DrawModel(model, m_matrixes, m_uv, m_colors, m_times);
+		m_renderer->DrawModel(model, m_matrixes, m_uv, m_colors, m_times, customData1_, customData2_);
 
 		m_renderer->EndShader(shader);
 
@@ -386,10 +460,7 @@ bool FModelMaterialRenderProxy::GetParentTextureValue(const FMaterialParameterIn
 			m_materials[i] = nullptr;
 		}
 
-		m_textures[0] = nullptr;
-		m_textures[1] = nullptr;
-		m_textures[2] = nullptr;
-		m_textures[3] = nullptr;
+		textures_.fill(nullptr);
 	}
 	
 	RendererImplemented::~RendererImplemented()
@@ -681,7 +752,11 @@ bool FModelMaterialRenderProxy::GetParentTextureValue(const FMaterialParameterIn
 			{
 				auto uniformOffset = m_currentShader->GetParameterGenerator()->PixelUserUniformOffset;
 				auto buffer = static_cast<uint8_t*>(m_currentShader->GetPixelConstantBuffer()) + uniformOffset;
-				proxy = new FFileMaterialRenderProxy(proxy, m_currentShader->GetEffekseerMaterial(), reinterpret_cast<float*>(buffer), m_currentShader->GetEffekseerMaterial()->Uniforms.Num(), false);
+				auto newProxy = new FFileMaterialRenderProxy(proxy, m_currentShader->GetEffekseerMaterial(), reinterpret_cast<float*>(buffer), m_currentShader->GetEffekseerMaterial()->Uniforms.Num(), false);
+				
+				newProxy->Textures = textures_;
+
+				proxy = newProxy;
 				m_meshElementCollector->RegisterOneFrameMaterialProxy(proxy);
 			}
 
@@ -830,15 +905,8 @@ bool FModelMaterialRenderProxy::GetParentTextureValue(const FMaterialParameterIn
 		}
 	}
 
-	void RendererImplemented::DrawModel(void* model, std::vector<Effekseer::Matrix44>& matrixes, std::vector<Effekseer::RectF>& uvs, std::vector<Effekseer::Color>& colors, std::vector<int32_t>& times)
+	void RendererImplemented::DrawModel(void* model, std::vector<Effekseer::Matrix44>& matrixes, std::vector<Effekseer::RectF>& uvs, std::vector<Effekseer::Color>& colors, std::vector<int32_t>& times, std::vector<std::array<float, 4>>& customData1, std::vector<std::array<float, 4>>& customData2)
 	{
-		// TODO support material file
-		if (m_currentShader != nullptr && m_currentShader->GetType() == Effekseer::RendererMaterialType::File)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("Model with material file is not supported yet."));
-			return;
-		}
-
 		// StaticMesh
 		if (model == nullptr) return;
 		auto mdl = (EffekseerInternalModel*)model;
@@ -850,6 +918,7 @@ bool FModelMaterialRenderProxy::GetParentTextureValue(const FMaterialParameterIn
 
 		// Material
 		auto mat = FindMaterial();
+
 		if (mat == nullptr) return;
 
 		if (renderData->LODResources.Num() == 0) return;
@@ -911,8 +980,43 @@ bool FModelMaterialRenderProxy::GetParentTextureValue(const FMaterialParameterIn
 				auto proxy = mat->GetRenderProxy();
 #endif
 
-				proxy = new FModelMaterialRenderProxy(proxy, uv, color, m_distortionIntensity);
-				m_meshElementCollector->RegisterOneFrameMaterialProxy(proxy);
+				if (m_currentShader != nullptr && m_currentShader->GetType() == Effekseer::RendererMaterialType::File)
+				{
+					const auto nativeMaterial = m_currentShader->GetEffekseerMaterial()->GetNativePtr();
+
+					auto uniformOffset = m_currentShader->GetParameterGenerator()->PixelUserUniformOffset;
+					auto buffer = static_cast<uint8_t*>(m_currentShader->GetPixelConstantBuffer()) + uniformOffset;
+					auto newProxy = new FFileMaterialRenderProxy(
+						proxy, 
+						m_currentShader->GetEffekseerMaterial(), 
+						reinterpret_cast<float*>(buffer), 
+						m_currentShader->GetEffekseerMaterial()->Uniforms.Num(), 
+						true);
+
+					newProxy->ModelUV = uv;
+					newProxy->ModelColor = color;
+					newProxy->Textures = textures_;
+
+					if (nativeMaterial->GetCustomData1Count() > 0)
+					{
+						auto cd = customData1[objectIndex];
+						newProxy->CustomData1 = FLinearColor(cd[0], cd[1], cd[2], cd[3]);
+					}
+
+					if (nativeMaterial->GetCustomData2Count() > 0)
+					{
+						auto cd = customData2[objectIndex];
+						newProxy->CustomData2 = FLinearColor(cd[0], cd[1], cd[2], cd[3]);
+					}
+
+					proxy = newProxy;
+					m_meshElementCollector->RegisterOneFrameMaterialProxy(proxy);
+				}
+				else
+				{
+					proxy = new FModelMaterialRenderProxy(proxy, uv, color, m_distortionIntensity);
+					m_meshElementCollector->RegisterOneFrameMaterialProxy(proxy);
+				}
 
 				meshElement.MaterialRenderProxy = proxy;
 #if ENGINE_MINOR_VERSION < 19
@@ -970,16 +1074,7 @@ bool FModelMaterialRenderProxy::GetParentTextureValue(const FMaterialParameterIn
 		}
 
 		EffekseerEffectMaterial m;
-
-		auto textureData = (Effekseer::TextureData*)m_textures[0];
-		if (textureData != nullptr)
-		{
-			m.Texture = (UTexture2D*)textureData->UserPtr;
-		}
-		else
-		{
-			m.Texture = nullptr;
-		}
+		m.Texture = (UTexture2D*)textures_[0];
 
 		m.AlphaBlend = (EEffekseerAlphaBlendType)m_renderState->GetActiveState().AlphaBlend;
 		m.IsDepthTestDisabled = !m_renderState->GetActiveState().DepthTest;
@@ -1043,14 +1138,23 @@ bool FModelMaterialRenderProxy::GetParentTextureValue(const FMaterialParameterIn
 
 	void RendererImplemented::SetTextures(Shader* shader, Effekseer::TextureData** textures, int32_t count)
 	{
-		// TODO Normal map
 		if (count > 0)
 		{
-			m_textures[0] = textures[0];
+			for (int32_t i = 0; i < count; i++)
+			{
+				if (textures[i] != nullptr && textures[i] != (void*)1)
+				{
+					textures_[i] = textures[i]->UserPtr;
+				}
+				else 
+				{
+					textures_[i] = nullptr;
+				}
+			}
 		}
 		else
 		{
-			m_textures[0] = nullptr;
+			textures_[0] = nullptr;
 		}
 	}
 
