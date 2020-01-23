@@ -4,6 +4,7 @@
 #include "CoreMinimal.h"
 #include "Object.h"
 #include "Materials/Material.h"
+#include "EffekseerAlphaBlendType.h"
 #include "EditorFramework/AssetImportData.h"
 #include "EffekseerMaterial.generated.h"
 
@@ -35,6 +36,19 @@ struct FEffekseerUniformProperty
 	int Count;
 };
 
+USTRUCT()
+struct EFFEKSEER_API FEffekseerMaterialElement
+{
+	GENERATED_BODY()
+
+public:
+	UPROPERTY(EditInstanceOnly)
+	UMaterialInterface* Material = nullptr;
+
+	UPROPERTY(EditInstanceOnly)
+	EEffekseerAlphaBlendType AlphaBlend = EEffekseerAlphaBlendType::Blend;
+};
+
 UCLASS()
 class EFFEKSEER_API UEffekseerMaterial 
 	: public UObject
@@ -47,8 +61,11 @@ private:
 	void ReleaseMaterial();
 public:
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(EditInstanceOnly)
 	UMaterial* Material = nullptr;
+
+	UPROPERTY(EditInstanceOnly)
+	TArray<FEffekseerMaterialElement> MaterialElements;
 
 	UPROPERTY(VisibleAnywhere)
 	TArray<FEffekseerUniformProperty> Uniforms;
@@ -72,6 +89,8 @@ public:
 	void LoadMaterial(const uint8_t* data, int32_t size, const TCHAR* path);
 
 	void ReassignSearchingMaps();
+
+	UMaterialInterface* FindMatrial(EEffekseerAlphaBlendType alphaBlend) const;
 
 	Effekseer::Material* GetNativePtr() { return internal_; }
 

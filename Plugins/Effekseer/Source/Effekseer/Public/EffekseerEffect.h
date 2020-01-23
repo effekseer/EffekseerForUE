@@ -5,33 +5,8 @@
 #include "Object.h"
 #include "EffekseerModel.h"
 #include "EffekseerMaterial.h"
+#include "EffekseerAlphaBlendType.h"
 #include "EffekseerEffect.generated.h"
-
-UENUM()
-enum class EEffekseerAlphaBlendType : uint8
-{
-	/// <summary>
-	/// ïsìßñæ
-	/// </summary>
-	Opacity = 0,
-	/// <summary>
-	/// ìßñæ
-	/// </summary>
-	Blend = 1,
-	/// <summary>
-	/// â¡éZ
-	/// </summary>
-	Add = 2,
-	/// <summary>
-	/// å∏éZ
-	/// </summary>
-	Sub = 3,
-	/// <summary>
-	/// èÊéZ
-	/// </summary>
-	Mul = 4,
-};
-
 
 UCLASS()
 class EFFEKSEER_API UEffekseerEffectMaterialParameterHolder
