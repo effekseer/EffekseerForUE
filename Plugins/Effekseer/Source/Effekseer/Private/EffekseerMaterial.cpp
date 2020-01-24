@@ -21,6 +21,20 @@ void UEffekseerMaterial::StoreData(const uint8_t* data, uint32_t size)
 	buffer_.Append(data, size);
 }
 
+UMaterialInterface* UEffekseerMaterial::FindMatrial(EEffekseerAlphaBlendType alphaBlend) const
+{
+	for (const auto& e : MaterialElements)
+	{
+		if (e.AlphaBlend == alphaBlend && e.Material != nullptr)
+		{
+			return e.Material;
+		}
+	}
+
+	UE_LOG(LogTemp, Warning, TEXT("Material %d is not found."), (int)alphaBlend);
+	return Material;
+}
+
 void UEffekseerMaterial::ReassignSearchingMaps()
 {
 	UniformNameToIndex.Reset();

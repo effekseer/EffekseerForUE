@@ -110,10 +110,10 @@ namespace EffekseerRendererUE4
 		FLinearColor CustomData2;
 		std::array<void*, Effekseer::TextureSlotMax> Textures;
 
-		const FMaterialRenderProxy* const Parent;
+		const FMaterialRenderProxy* const ParentProxy;
 
 		FFileMaterialRenderProxy(const FMaterialRenderProxy* InParent, const UEffekseerMaterial* effekseerMaterial, float* uniformBufferPtr, int32_t uniformCount, bool isModel)
-			: Parent(InParent)
+			: ParentProxy(InParent)
 			, effekseerMaterial_(effekseerMaterial)
 			, isModel_(isModel)
 		{
@@ -135,7 +135,7 @@ namespace EffekseerRendererUE4
 
 const FMaterial* FFileMaterialRenderProxy::GetParentMaterial(ERHIFeatureLevel::Type InFeatureLevel) const
 {
-	return Parent->GetMaterial(InFeatureLevel);
+	return ParentProxy->GetMaterial(InFeatureLevel);
 }
 
 bool FFileMaterialRenderProxy::GetParentVectorValue(const FMaterialParameterInfo& ParameterInfo, FLinearColor* OutValue, const FMaterialRenderContext& Context) const
@@ -177,7 +177,7 @@ bool FFileMaterialRenderProxy::GetParentVectorValue(const FMaterialParameterInfo
 		return true;
 	}
 
-	return Parent->GetVectorValue(ParameterInfo GET_MAT_PARAM_NAME, OutValue, Context);
+	return ParentProxy->GetVectorValue(ParameterInfo GET_MAT_PARAM_NAME, OutValue, Context);
 }
 
 bool FFileMaterialRenderProxy::GetParentScalarValue(const FMaterialParameterInfo& ParameterInfo, float* OutValue, const FMaterialRenderContext& Context) const
@@ -195,7 +195,7 @@ bool FFileMaterialRenderProxy::GetParentScalarValue(const FMaterialParameterInfo
 		return true;
 	}
 
-	return Parent->GetScalarValue(ParameterInfo GET_MAT_PARAM_NAME, OutValue, Context);
+	return ParentProxy->GetScalarValue(ParameterInfo GET_MAT_PARAM_NAME, OutValue, Context);
 }
 
 bool FFileMaterialRenderProxy::GetParentTextureValue(const FMaterialParameterInfo& ParameterInfo, const UTexture** OutValue, const FMaterialRenderContext& Context) const
@@ -207,7 +207,7 @@ bool FFileMaterialRenderProxy::GetParentTextureValue(const FMaterialParameterInf
 		return true;
 	}
 
-	return Parent->GetTextureValue(ParameterInfo GET_MAT_PARAM_NAME, OutValue, Context);
+	return ParentProxy->GetTextureValue(ParameterInfo GET_MAT_PARAM_NAME, OutValue, Context);
 }
 
 	class FDistortionMaterialRenderProxy : public FCompatibleMaterialRenderProxy
@@ -319,6 +319,51 @@ bool FModelMaterialRenderProxy::GetParentTextureValue(const FMaterialParameterIn
 }
 
 
+void ExtractTextures(const Effekseer::Effect* effect,
+	const Effekseer::NodeRendererBasicParameter* param,
+	std::array<Effekseer::TextureData*, ::Effekseer::TextureSlotMax>& textures,
+	int32_t& textureCount)
+{
+	if (param->MaterialType == Effekseer::RendererMaterialType::File)
+	{
+		auto materialParam = param->MaterialParameterPtr;
+
+		textureCount = 0;
+		std::array<Effekseer::TextureData*, ::Effekseer::TextureSlotMax> textures;
+
+		if (materialParam->MaterialTextures.size() > 0)
+		{
+			textureCount = Effekseer::Min(materialParam->MaterialTextures.size(), ::Effekseer::UserTextureSlotMax);
+
+			for (size_t i = 0; i < textureCount; i++)
+			{
+				if (materialParam->MaterialTextures[i].Type == 1)
+				{
+					if (materialParam->MaterialTextures[i].Index >= 0)
+					{
+						textures[i] = effect->GetNormalImage(materialParam->MaterialTextures[i].Index);
+					}
+					else
+					{
+						textures[i] = nullptr;
+					}
+				}
+				else
+				{
+					if (materialParam->MaterialTextures[i].Index >= 0)
+					{
+						textures[i] = effect->GetColorImage(materialParam->MaterialTextures[i].Index);
+					}
+					else
+					{
+						textures[i] = nullptr;
+					}
+				}
+			}
+		}
+	}
+}
+
 	ModelRenderer::ModelRenderer(RendererImplemented* renderer)
 		: m_renderer(renderer)
 	{
@@ -387,38 +432,7 @@ bool FModelMaterialRenderProxy::GetParentTextureValue(const FMaterialParameterIn
 			int32_t textureCount = 0;
 			std::array<Effekseer::TextureData*, ::Effekseer::TextureSlotMax> textures;
 
-			if (materialParam->MaterialTextures.size() > 0)
-			{
-				textureCount = Effekseer::Min(materialParam->MaterialTextures.size(), ::Effekseer::UserTextureSlotMax);
-
-				auto effect = param.EffectPointer;
-
-				for (size_t i = 0; i < textureCount; i++)
-				{
-					if (materialParam->MaterialTextures[i].Type == 1)
-					{
-						if (materialParam->MaterialTextures[i].Index >= 0)
-						{
-							textures[i] = effect->GetNormalImage(materialParam->MaterialTextures[i].Index);
-						}
-						else
-						{
-							textures[i] = nullptr;
-						}
-					}
-					else
-					{
-						if (materialParam->MaterialTextures[i].Index >= 0)
-						{
-							textures[i] = effect->GetColorImage(materialParam->MaterialTextures[i].Index);
-						}
-						else
-						{
-							textures[i] = nullptr;
-						}
-					}
-				}
-			}
+			ExtractTextures(parameter.EffectPointer, parameter.BasicParameterPtr, textures, textureCount);
 
 			if (textureCount > 0)
 			{
@@ -1070,7 +1084,7 @@ bool FModelMaterialRenderProxy::GetParentTextureValue(const FMaterialParameterIn
 	{
 		if (m_currentShader->GetType() == Effekseer::RendererMaterialType::File)
 		{
-			return m_currentShader->GetEffekseerMaterial()->Material;
+			return m_currentShader->GetEffekseerMaterial()->FindMatrial((EEffekseerAlphaBlendType)m_renderState->GetActiveState().AlphaBlend);
 		}
 
 		EffekseerEffectMaterial m;
