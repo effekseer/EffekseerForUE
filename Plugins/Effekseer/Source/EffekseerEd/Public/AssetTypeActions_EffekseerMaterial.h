@@ -18,4 +18,5 @@ public:
 
 	virtual bool HasActions(const TArray<UObject*>& InObjects) const override { return true; }
 	virtual void GetActions(const TArray<UObject*>& InObjects, FMenuBuilder& MenuBuilder) override;
+	void ExecuteGenerateMaterialElements(TArray<TWeakObjectPtr<class UEffekseerMaterial>> Objects);
 };

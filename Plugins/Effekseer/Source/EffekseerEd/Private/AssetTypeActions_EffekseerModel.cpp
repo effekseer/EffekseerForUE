@@ -11,6 +11,7 @@ void FAssetTypeActions_EffekseerModel::GetActions(
 	const TArray<UObject*>& InObjects, FMenuBuilder& MenuBuilder)
 {
 	auto MyAssetImports = GetTypedWeakObjectPtrs<UEffekseerModel>(InObjects);
+	/*
 	MenuBuilder.AddMenuEntry(
 		LOCTEXT("MyAsset_AssignResources", "AssignResources"),
 		LOCTEXT("MyAsset_AssignResourcesTooltip", "AssignResources this EffekseerModel"),
@@ -21,6 +22,7 @@ void FAssetTypeActions_EffekseerModel::GetActions(
 			FCanExecuteAction()
 		)
 	);
+	*/
 }
 void FAssetTypeActions_EffekseerModel::ExecuteAssignResources(TArray<TWeakObjectPtr<class UEffekseerModel>> Objects)
 {

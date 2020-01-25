@@ -85,6 +85,7 @@ public:
 	UAssetImportData* AssetImportData = nullptr;
 #endif
 
+	const TArray<uint8>& GetData() const;
 	void StoreData(const uint8_t* data, uint32_t size);
 	void LoadMaterial(const uint8_t* data, int32_t size, const TCHAR* path);
 
