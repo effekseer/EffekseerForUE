@@ -15,6 +15,11 @@ void UEffekseerMaterial::ReleaseMaterial()
 	internal_ = nullptr;
 }
 
+const TArray<uint8>& UEffekseerMaterial::GetData() const
+{
+	return buffer_;
+}
+
 void UEffekseerMaterial::StoreData(const uint8_t* data, uint32_t size)
 {
 	buffer_.Reset(0);
