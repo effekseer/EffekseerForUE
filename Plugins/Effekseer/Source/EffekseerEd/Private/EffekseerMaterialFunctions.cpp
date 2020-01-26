@@ -8,7 +8,7 @@
 #include "Materials/MaterialExpressionTextureCoordinate.h"
 #include "Materials/MaterialExpressionMaterialFunctionCall.h"
 #include "Materials/MaterialExpressionComponentMask.h"
-
+#include "Materials/MaterialExpressionTime.h"
 #include "EffekseerMaterial/efkMat.Models.h"
 #include "EffekseerMaterial/efkMat.Library.h"
 #include "EffekseerMaterial/efkMat.TextExporter.h"
@@ -175,6 +175,28 @@ public:
 	}
 };
 
+class ConvertedNodeTime : public ConvertedNode
+{
+private:
+	std::shared_ptr<EffekseerMaterial::Node> effekseerNode_;
+	UMaterialExpressionTime* expression_ = nullptr;
+
+public:
+	ConvertedNodeTime(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
+		: effekseerNode_(effekseerNode)
+	{
+		expression_ = NewObject<UMaterialExpressionTime>(material);
+		material->Expressions.Add(expression_);
+	}
+
+	UMaterialExpression* GetExpression() const override { return expression_; }
+
+	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode) override
+	{
+	}
+};
+
+
 template<class T>
 class ConvertedNodeFactoryNormalNode : public ConvertedNodeFactory
 {
@@ -260,19 +282,18 @@ UMaterial* CreateUE4MaterialFromEffekseerMaterial(const std::shared_ptr<NativeEf
 	nodeFactories["AppendVector"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeAppendVector>>();
 
 	nodeFactories["TextureCoordinate"] = std::make_shared< ConvertedNodeFactoryNormalNode<ConvertedNodeTextureCoordinate>>();
-	// TODO : Panner
+	nodeFactories["Panner"] = std::make_shared< ConvertedNodeFactoryNormalNode<ConvertedNodePanner>>();
 
 	nodeFactories["TextureObject"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeTextureObject>>();
 	nodeFactories["TextureObjectParameter"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeTextureObjectParameter>>();
 	nodeFactories["SampleTexture"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeTextureSample>>();
-	
-	// TODO : Time,
-	
-	// TODO : VertexNormalWS,
-	// TODO : PixelNormalWS,
-	
-	// TODO : VertexColor,
-	
+
+	nodeFactories["Time"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeTime>>();
+
+	nodeFactories["VertexNormalWS"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeVertexNormalWS>>();
+	nodeFactories["VertexPixelWS"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodePixelNormalWS>>();
+	nodeFactories["VertexColor"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeVertexColor>>();
+
 	nodeFactories["CustomData1"] = std::make_shared< ConvertedNodeFactoryNormalNode<ConvertedNodeCustomData1>>();
 	nodeFactories["CustomData2"] = std::make_shared< ConvertedNodeFactoryNormalNode<ConvertedNodeCustomData2>>();
 

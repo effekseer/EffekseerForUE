@@ -94,7 +94,7 @@ private:
 	T* expression_ = nullptr;
 
 public:
-	ConvertedNodeABInputProp(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
+	ConvertedNodeABInput(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
 		: effekseerNode_(effekseerNode)
 	{
 		expression_ = NewObject<T>(material);
