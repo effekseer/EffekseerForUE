@@ -1,13 +1,7 @@
 #include "EffekseerMaterialFunctions.h"
 
-#include "Materials/MaterialExpressionAbs.h"
-#include "Materials/MaterialExpressionAdd.h"
-#include "Materials/MaterialExpressionMultiply.h"
 #include "Materials/MaterialExpressionAppendVector.h"
 #include "Materials/MaterialExpressionTextureCoordinate.h"
-#include "Materials/MaterialExpressionScalarParameter.h"
-#include "Materials/MaterialExpressionVectorParameter.h"
-#include "Materials/MaterialExpressionConstant.h"
 #include "Materials/MaterialExpressionTextureSample.h"
 #include "Materials/MaterialExpressionTextureObject.h"
 #include "Materials/MaterialExpressionTextureObjectParameter.h"
@@ -31,18 +25,11 @@
 #include "Materials/MaterialInstanceConstant.h"
 
 #include "Runtime/Launch/Resources/Version.h"
-
-class ConvertedNode
-{
-private:
-public:
-	ConvertedNode() = default;
-	virtual ~ConvertedNode() = default;
-
-	virtual UMaterialExpression* GetExpression() const { return nullptr; }
-
-	virtual void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode) {}
-};
+#include "MaterialNodeConverter/ConvertedNode.h"
+#include "MaterialNodeConverter/ConvertedNodeConstant.h"
+#include "MaterialNodeConverter/ConvertedNodeParameter.h"
+#include "MaterialNodeConverter/ConvertedNodeMath.h"
+#include "MaterialNodeConverter/ConvertedNodeModel.h"
 
 class ConvertedNodeFactory
 {
@@ -87,78 +74,6 @@ public:
 		{
 			material_->EmissiveColor.Expression = outputNode->GetExpression();
 		}
-	}
-};
-
-class ConvertedNodeConstant1 : public ConvertedNode
-{
-private:
-	std::shared_ptr<EffekseerMaterial::Node> effekseerNode_;
-	UMaterialExpressionConstant* expression_ = nullptr;
-
-public:
-	ConvertedNodeConstant1(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
-		: effekseerNode_(effekseerNode)
-	{
-		expression_ = NewObject<UMaterialExpressionConstant>(material);
-		material->Expressions.Add(expression_);
-
-		expression_->R = effekseerNode_->GetProperty("Value")->Floats[0];
-	}
-
-	UMaterialExpression* GetExpression() const override { return expression_; }
-
-	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode) override
-	{
-	}
-};
-
-class ConvertedNodeParameter1 : public ConvertedNode
-{
-private:
-	std::shared_ptr<EffekseerMaterial::Node> effekseerNode_;
-	UMaterialExpressionScalarParameter* expression_ = nullptr;
-
-public:
-	ConvertedNodeParameter1(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
-		: effekseerNode_(effekseerNode)
-	{
-		expression_ = NewObject<UMaterialExpressionScalarParameter>(material);
-		material->Expressions.Add(expression_);
-		expression_->ParameterName = FName(effekseerMaterial->uniformNames[effekseerNode_->GUID].c_str());
-		expression_->DefaultValue = effekseerNode_->GetProperty("Value")->Floats[0];
-	}
-
-	UMaterialExpression* GetExpression() const override { return expression_; }
-
-	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode) override
-	{
-	}
-};
-
-class ConvertedNodeParameter4 : public ConvertedNode
-{
-private:
-	std::shared_ptr<EffekseerMaterial::Node> effekseerNode_;
-	UMaterialExpressionVectorParameter* expression_ = nullptr;
-
-public:
-	ConvertedNodeParameter4(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
-		: effekseerNode_(effekseerNode)
-	{
-		expression_ = NewObject<UMaterialExpressionVectorParameter>(material);
-		material->Expressions.Add(expression_);
-		expression_->ParameterName = FName(effekseerMaterial->uniformNames[effekseerNode_->GUID].c_str());
-		expression_->DefaultValue.R = effekseerNode_->GetProperty("Value")->Floats[0];
-		expression_->DefaultValue.G = effekseerNode_->GetProperty("Value")->Floats[1];
-		expression_->DefaultValue.B = effekseerNode_->GetProperty("Value")->Floats[2];
-		expression_->DefaultValue.A = effekseerNode_->GetProperty("Value")->Floats[3];
-	}
-
-	UMaterialExpression* GetExpression() const override { return expression_; }
-
-	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode) override
-	{
 	}
 };
 
@@ -260,162 +175,6 @@ public:
 	}
 };
 
-class ConvertedNodeTextureCoordinate : public ConvertedNode
-{
-private:
-	std::shared_ptr<EffekseerMaterial::Node> effekseerNode_;
-	UMaterialExpressionMaterialFunctionCall* expression_ = nullptr;
-
-public:
-	ConvertedNodeTextureCoordinate(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
-		: effekseerNode_(effekseerNode)
-	{
-		expression_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
-		material->Expressions.Add(expression_);
-
-		auto index = static_cast<int32_t>(effekseerNode_->GetProperty("UVIndex")->Floats[0]);
-
-		if (index == 0)
-		{
-			FStringAssetReference assetPath("/Effekseer/MaterialFunctions/EfkUV1.EfkUV1");
-			UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
-			expression_->SetMaterialFunction(func);
-		}
-		else
-		{
-			FStringAssetReference assetPath("/Effekseer/MaterialFunctions/EfkUV2.EfkUV2");
-			UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
-			expression_->SetMaterialFunction(func);
-		}
-	}
-
-	UMaterialExpression* GetExpression() const override { return expression_; }
-
-	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode) override
-	{
-	}
-};
-
-
-class ConvertedNodeAdd : public ConvertedNode
-{
-private:
-	std::shared_ptr<EffekseerMaterial::Node> effekseerNode_;
-	UMaterialExpressionAdd* expression_ = nullptr;
-
-public:
-	ConvertedNodeAdd(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
-		: effekseerNode_(effekseerNode)
-	{
-		expression_ = NewObject<UMaterialExpressionAdd>(material);
-		material->Expressions.Add(expression_);
-
-		expression_->ConstA = effekseerNode_->GetProperty("Value1")->Floats[0];
-		expression_->ConstB = effekseerNode_->GetProperty("Value2")->Floats[0];
-	}
-
-	UMaterialExpression* GetExpression() const override { return expression_; }
-
-	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode) override
-	{
-		if (targetInd == effekseerNode_->GetInputPinIndex("Value1"))
-		{
-			expression_->A.Expression = outputNode->GetExpression();
-		}
-
-		if (targetInd == effekseerNode_->GetInputPinIndex("Value2"))
-		{
-			expression_->B.Expression = outputNode->GetExpression();
-		}
-	}
-};
-
-class ConvertedNodeAbs : public ConvertedNode
-{
-private:
-	UMaterialExpressionAbs* expression_ = nullptr;
-
-public:
-	ConvertedNodeAbs(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
-	{
-		expression_ = NewObject<UMaterialExpressionAbs>(material);
-		material->Expressions.Add(expression_);
-	}
-
-	UMaterialExpression* GetExpression() const override { return expression_; }
-
-	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode) override
-	{
-		expression_->Input.Expression = outputNode->GetExpression();
-	}
-};
-
-class ConvertedNodeCustomData1 : public ConvertedNode
-{
-private:
-	UMaterialExpressionComponentMask* expression_ = nullptr;
-	UMaterialExpressionMaterialFunctionCall* functions_ = nullptr;
-
-public:
-	ConvertedNodeCustomData1(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
-	{
-		expression_ = NewObject<UMaterialExpressionComponentMask>(material);
-		material->Expressions.Add(expression_);
-
-		functions_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
-		material->Expressions.Add(functions_);
-
-		FStringAssetReference assetPath("/Effekseer/MaterialFunctions/EfkCustomData1.EfkCustomData1");
-		UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
-		functions_->SetMaterialFunction(func);
-
-		expression_->Input.Expression = functions_;
-		expression_->R = effekseerNode->GetProperty("R")->Floats[0] > 0 ? 1 : 0;
-		expression_->G = effekseerNode->GetProperty("G")->Floats[0] > 0 ? 1 : 0;
-		expression_->B = effekseerNode->GetProperty("B")->Floats[0] > 0 ? 1 : 0;
-		expression_->A = effekseerNode->GetProperty("A")->Floats[0] > 0 ? 1 : 0;
-	}
-
-	UMaterialExpression* GetExpression() const override { return expression_; }
-
-	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode) override
-	{
-	}
-};
-
-class ConvertedNodeCustomData2 : public ConvertedNode
-{
-private:
-	UMaterialExpressionComponentMask* expression_ = nullptr;
-	UMaterialExpressionMaterialFunctionCall* functions_ = nullptr;
-
-public:
-	ConvertedNodeCustomData2(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
-	{
-		expression_ = NewObject<UMaterialExpressionComponentMask>(material);
-		material->Expressions.Add(expression_);
-
-		functions_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
-		material->Expressions.Add(functions_);
-
-		FStringAssetReference assetPath("/Effekseer/MaterialFunctions/EfkCustomData2.EfkCustomData2");
-		UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
-		functions_->SetMaterialFunction(func);
-
-		expression_->Input.Expression = functions_;
-		expression_->R = effekseerNode->GetProperty("R")->Floats[0] > 0 ? 1 : 0;
-		expression_->G = effekseerNode->GetProperty("G")->Floats[0] > 0 ? 1 : 0;
-		expression_->B = effekseerNode->GetProperty("B")->Floats[0] > 0 ? 1 : 0;
-		expression_->A = effekseerNode->GetProperty("A")->Floats[0] > 0 ? 1 : 0;
-	}
-
-	UMaterialExpression* GetExpression() const override { return expression_; }
-
-	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode) override
-	{
-	}
-};
-
 template<class T>
 class ConvertedNodeFactoryNormalNode : public ConvertedNodeFactory
 {
@@ -468,18 +227,56 @@ UMaterial* CreateUE4MaterialFromEffekseerMaterial(const std::shared_ptr<NativeEf
 
 	std::map <std::string, std::shared_ptr<ConvertedNodeFactory>> nodeFactories;
 
-	nodeFactories["Output"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeOutput>>();
-	nodeFactories["Add"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeAdd>>();
-	nodeFactories["Abs"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeAbs>>();
 	nodeFactories["Constant1"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeConstant1>>();
+	nodeFactories["Constant2"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeConstant2>>();
+	nodeFactories["Constant3"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeConstant3>>();
+	nodeFactories["Constant4"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeConstant4>>();
+
 	nodeFactories["Parameter1"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeParameter1>>();
 	nodeFactories["Parameter4"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeParameter4>>();
-	nodeFactories["SampleTexture"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeTextureSample>>();
+
+	nodeFactories["Abs"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeAbs>>();
+	nodeFactories["Sine"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeSine>>();
+	nodeFactories["Arctangent2"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeArctangent2>>();
+
+	nodeFactories["Add"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeAdd>>();
+	nodeFactories["Subtract"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeSubtract>>();
+	nodeFactories["Multiply"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeMultiply>>();
+	nodeFactories["Divide"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeDivide>>();
+	nodeFactories["Fmod"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeFmod>>();
+	nodeFactories["Ceil"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeCeil>>();
+	nodeFactories["Floor"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeFloor>>();
+	nodeFactories["Frac"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeFrac>>();
+	nodeFactories["Min"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeMin>>();
+	nodeFactories["Max"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeMax>>();
+	nodeFactories["Power"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodePower>>();
+	nodeFactories["SquareRoot"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeSquareRoot>>();
+	nodeFactories["Clamp"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeClamp>>();
+	nodeFactories["DotProduct"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeDotProduct>>();
+	nodeFactories["CrossProduct"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeCrossProduct>>();
+	nodeFactories["LinearInterpolate"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeLinearInterpolate>>();
+	nodeFactories["OneMinus"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeOneMinus>>();
+	nodeFactories["ComponentMask"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeComponentMask>>();
+	nodeFactories["AppendVector"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeAppendVector>>();
+
+	nodeFactories["TextureCoordinate"] = std::make_shared< ConvertedNodeFactoryNormalNode<ConvertedNodeTextureCoordinate>>();
+	// TODO : Panner
+
 	nodeFactories["TextureObject"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeTextureObject>>();
 	nodeFactories["TextureObjectParameter"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeTextureObjectParameter>>();
-	nodeFactories["TextureCoordinate"] = std::make_shared< ConvertedNodeFactoryNormalNode<ConvertedNodeTextureCoordinate>>();
+	nodeFactories["SampleTexture"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeTextureSample>>();
+	
+	// TODO : Time,
+	
+	// TODO : VertexNormalWS,
+	// TODO : PixelNormalWS,
+	
+	// TODO : VertexColor,
+	
 	nodeFactories["CustomData1"] = std::make_shared< ConvertedNodeFactoryNormalNode<ConvertedNodeCustomData1>>();
 	nodeFactories["CustomData2"] = std::make_shared< ConvertedNodeFactoryNormalNode<ConvertedNodeCustomData2>>();
+
+	nodeFactories["Output"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeOutput>>();
 
 	std::map<uint64_t, std::shared_ptr<ConvertedNode>> convertedNodes;
 
