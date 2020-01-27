@@ -2,6 +2,7 @@
 #define _WINSOCK_DEPRECATED_NO_WARNINGS
 #define _WINSOCKAPI_
 #define NOMINMAX
+#define __EFFEKSEER_FOR_UE4__ 1
 #include "EffekseerNative.h"
 #include <math.h>
 #include <cmath>
@@ -10904,8 +10905,10 @@ void EffectNodeImplemented::LoadParameter(unsigned char*& pos, EffectNode* paren
 		LoadRendererParameter(pos, m_effect->GetSetting());
 
 		// rescale intensity after 1.5
+#ifndef __EFFEKSEER_FOR_UE4__ // Hack for EffekseerForUE4
 		RendererCommon.BasicParameter.DistortionIntensity *= m_effect->GetMaginification();
 		RendererCommon.DistortionIntensity *= m_effect->GetMaginification();
+#endif // !__EFFEKSEER_FOR_UE4__ 
 
 		if (m_effect->GetVersion() >= 1)
 		{

@@ -441,6 +441,12 @@ void ExtractTextures(const Effekseer::Effect* effect,
 		}
 		else
 		{
+			if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::BackDistortion)
+			{
+				
+				m_renderer->SetDistortionIntensity(parameter.BasicParameterPtr->DistortionIntensity);
+			}
+
 			Effekseer::TextureData* textures[1];
 
 			if (parameter.BasicParameterPtr->Texture1Index >= 0)
