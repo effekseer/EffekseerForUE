@@ -620,7 +620,7 @@ std::string TextExporter::ExportNode(std::shared_ptr<TextExporterNode> node)
 
 	if (node->Target->Parameter->Type == NodeType::Parameter1)
 	{
-		ret << GetTypeName(ValueType::Float1) << " " << node->Outputs[0].Name << "=" << node->Outputs[0].UniformValue->UniformName << ";"
+		ret << GetTypeName(ValueType::Float1) << " " << node->Outputs[0].Name << "=" << node->Outputs[0].UniformValue->UniformName << ".x" << ";"
 			<< std::endl;
 	}
 
@@ -701,7 +701,7 @@ std::string TextExporter::ExportNode(std::shared_ptr<TextExporterNode> node)
 
 		ret << GetTypeName(node->Outputs[0].Type) << " " << node->Outputs[0].Name << "= pow("
 			<< GetInputArg(node->Outputs[0].Type, node->Inputs[0]) << ","
-			<< exportInputOrProp(node->Inputs[1].Type, node->Inputs[1], node->Target->Properties[0]) << ");" << std::endl;
+			<< exportInputOrProp(node->Inputs[0].Type, node->Inputs[1], node->Target->Properties[0]) << ");" << std::endl;
 	}
 
 	if (node->Target->Parameter->Type == NodeType::SquareRoot)
@@ -733,9 +733,11 @@ std::string TextExporter::ExportNode(std::shared_ptr<TextExporterNode> node)
 
 	if (node->Target->Parameter->Type == NodeType::LinearInterpolate)
 	{
+		
 		ret << GetTypeName(node->Outputs[0].Type) << " " << node->Outputs[0].Name << "= LERP("
-			<< GetInputArg(node->Inputs[0].Type, node->Inputs[0]) << "," << GetInputArg(node->Inputs[0].Type, node->Inputs[1]) << ","
-			<< GetInputArg(ValueType::Float1, node->Inputs[2]) << ");" << std::endl;
+			<< exportInputOrProp(node->Outputs[0].Type, node->Inputs[0], node->Target->Properties[0]) << ","
+			<< exportInputOrProp(node->Outputs[0].Type, node->Inputs[1], node->Target->Properties[1]) << ","
+			<< exportInputOrProp(node->Inputs[2].Type, node->Inputs[2], node->Target->Properties[2]) << ");" << std::endl;
 	}
 
 	if (node->Target->Parameter->Type == NodeType::TextureCoordinate)
@@ -1176,7 +1178,7 @@ std::string TextExporter::ConvertType(ValueType dst, ValueType src, const std::s
 	{
 		if (src == ValueType::Float1)
 		{
-			return GetTypeName(ValueType::Float4) + "(" + name + "," + name + "," + name + ", 1.0)";
+			return GetTypeName(ValueType::Float4) + "(" + name + "," + name + "," + name + "," + name + ")";
 		}
 		else if (src == ValueType::Float2)
 		{

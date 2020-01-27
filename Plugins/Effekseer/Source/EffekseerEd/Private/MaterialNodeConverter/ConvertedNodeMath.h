@@ -127,13 +127,30 @@ class ConvertedNodeArctangent2 : public ConvertedNode
 private:
 	std::shared_ptr<EffekseerMaterial::Node> effekseerNode_;
 	UMaterialExpressionArctangent2* expression_ = nullptr;
-
+	UMaterialExpressionConstant* expression1_ = nullptr;
+	UMaterialExpressionConstant* expression2_ = nullptr;
 public:
 	ConvertedNodeArctangent2(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
 		: effekseerNode_(effekseerNode)
 	{
 		expression_ = NewObject<UMaterialExpressionArctangent2>(material);
 		material->Expressions.Add(expression_);
+
+		if (effekseerMaterial->material->GetConnectedPins(effekseerNode->InputPins[effekseerNode_->GetInputPinIndex("Y")]).size() == 0)
+		{
+			expression1_ = NewObject<UMaterialExpressionConstant>(material);
+			material->Expressions.Add(expression1_);
+			expression1_->R = effekseerNode->Properties[effekseerNode_->GetInputPinIndex("Y")]->Floats[0];
+			expression_->Y.Expression = expression1_;
+		}
+
+		if (effekseerMaterial->material->GetConnectedPins(effekseerNode->InputPins[effekseerNode_->GetInputPinIndex("X")]).size() == 0)
+		{
+			expression2_ = NewObject<UMaterialExpressionConstant>(material);
+			material->Expressions.Add(expression2_);
+			expression2_->R = effekseerNode->Properties[effekseerNode_->GetInputPinIndex("X")]->Floats[0];
+			expression_->X.Expression = expression2_;
+		}
 	}
 
 	UMaterialExpression* GetExpression() const override { return expression_; }
@@ -296,10 +313,9 @@ public:
 		expression_ = NewObject<UMaterialExpressionLinearInterpolate>(material);
 		material->Expressions.Add(expression_);
 
-		// TODO
-		//expression_->ConstA = effekseerNode_->GetProperty("Min")->Floats[0];
-		//expression_->ConstB = effekseerNode_->GetProperty("Max")->Floats[0];
-		//expression_->ConstAlpha = effekseerNode_->GetProperty("Max")->Floats[0];
+		expression_->ConstA = effekseerNode_->GetProperty("Value1")->Floats[0];
+		expression_->ConstB = effekseerNode_->GetProperty("Value2")->Floats[0];
+		expression_->ConstAlpha = effekseerNode_->GetProperty("Alpha")->Floats[0];
 	}
 
 	UMaterialExpression* GetExpression() const override { return expression_; }
