@@ -96,16 +96,18 @@ class ConvertedNodeTime : public ConvertedNode
 {
 private:
 	std::shared_ptr<EffekseerMaterial::Node> effekseerNode_;
-	UMaterialExpressionTime* expression_ = nullptr;
+	UMaterialExpressionMaterialFunctionCall* expression_ = nullptr;
 
 public:
 	ConvertedNodeTime(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
 		: effekseerNode_(effekseerNode)
 	{
-#if ENGINE_MINOR_VERSION >= 23 // TODO Check correct version
-		expression_ = NewObject<UMaterialExpressionTime>(material);
-#endif
+		expression_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
 		material->Expressions.Add(expression_);
+
+		FStringAssetReference assetPath("/Effekseer/MaterialFunctions/EfkTime.EfkTime");
+		UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
+		expression_->SetMaterialFunction(func);
 	}
 
 	UMaterialExpression* GetExpression() const override { return expression_; }
