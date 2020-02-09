@@ -102,7 +102,9 @@ public:
 	ConvertedNodeTime(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
 		: effekseerNode_(effekseerNode)
 	{
+#if ENGINE_MINOR_VERSION >= 23 // TODO Check correct version
 		expression_ = NewObject<UMaterialExpressionTime>(material);
+#endif
 		material->Expressions.Add(expression_);
 	}
 
@@ -117,15 +119,18 @@ class ConvertedNodeCameraPositionWS : public ConvertedNode
 {
 private:
 	std::shared_ptr<EffekseerMaterial::Node> effekseerNode_;
-	UMaterialExpressionCameraPositionWS* expression_ = nullptr;
+	UMaterialExpressionMaterialFunctionCall* expression_ = nullptr;
 
 public:
 	ConvertedNodeCameraPositionWS(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
 		: effekseerNode_(effekseerNode)
 	{
-		// bug?
-		//expression_ = NewObject<UMaterialExpressionCameraPositionWS>(material);
+		expression_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
 		material->Expressions.Add(expression_);
+
+		FStringAssetReference assetPath("/Effekseer/MaterialFunctions/EfkCameraPosition.EfkCameraPosition");
+		UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
+		expression_->SetMaterialFunction(func);
 	}
 
 	UMaterialExpression* GetExpression() const override { return expression_; }

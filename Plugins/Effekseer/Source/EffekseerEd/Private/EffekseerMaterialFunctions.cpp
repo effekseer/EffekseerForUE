@@ -70,6 +70,21 @@ public:
 			material_->BaseColor.Expression = outputNode->GetExpression();
 		}
 
+		if (targetInd == effekseerNode_->GetInputPinIndex("Opacity"))
+		{
+			material_->Opacity.Expression = outputNode->GetExpression();
+		}
+
+		if (targetInd == effekseerNode_->GetInputPinIndex("OpacityMask"))
+		{
+			material_->OpacityMask.Expression = outputNode->GetExpression();
+		}
+
+		if (targetInd == effekseerNode_->GetInputPinIndex("WorldPositionOffset"))
+		{
+			material_->WorldPositionOffset.Expression = outputNode->GetExpression();
+		}
+
 		if (targetInd == effekseerNode_->GetInputPinIndex("Emissive"))
 		{
 			material_->EmissiveColor.Expression = outputNode->GetExpression();
@@ -246,9 +261,12 @@ UMaterial* CreateUE4MaterialFromEffekseerMaterial(const std::shared_ptr<NativeEf
 	nodeFactories["Multiply"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeMultiply>>();
 	nodeFactories["Divide"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeDivide>>();
 	nodeFactories["Fmod"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeFmod>>();
+
+#if ENGINE_MINOR_VERSION >= 19 // TODO Check correct version
 	nodeFactories["Ceil"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeCeil>>();
 	nodeFactories["Floor"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeFloor>>();
 	nodeFactories["Frac"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeFrac>>();
+#endif
 	nodeFactories["Min"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeMin>>();
 	nodeFactories["Max"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeMax>>();
 	nodeFactories["Power"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodePower>>();
@@ -274,7 +292,7 @@ UMaterial* CreateUE4MaterialFromEffekseerMaterial(const std::shared_ptr<NativeEf
 
 	nodeFactories["WorldPosition"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeWorldPosition>>();
 	nodeFactories["VertexNormalWS"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeVertexNormalWS>>();
-	nodeFactories["VertexPixelWS"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodePixelNormalWS>>();
+	nodeFactories["PixelNormalWS"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodePixelNormalWS>>();
 	nodeFactories["VertexColor"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeVertexColor>>();
 	nodeFactories["ObjectScale"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeObjectScale>>();
 
@@ -367,7 +385,10 @@ UMaterialInstance* CreateUE4MaterialFromEffekseerMaterial(UMaterial* parent, con
 
 	auto MaterialEditorInstance = NewObject<UMaterialEditorInstanceConstant>(GetTransientPackage(), NAME_None, RF_Transactional);
 	MaterialEditorInstance->SetSourceInstance(material);
+
+#if ENGINE_MINOR_VERSION >= 23 // TODO Check correct version
 	MaterialEditorInstance->SetSourceFunction(nullptr);
+#endif
 	MaterialEditorInstance->BasePropertyOverrides.BlendMode = blendMode;
 	MaterialEditorInstance->BasePropertyOverrides.bOverride_BlendMode = true;
 	MaterialEditorInstance->PostEditChange();

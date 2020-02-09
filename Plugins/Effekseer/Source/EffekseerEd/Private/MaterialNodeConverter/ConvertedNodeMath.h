@@ -75,21 +75,21 @@ public:
 };
 
 template<class T>
-class ConvertedNodeABInputProp : public ConvertedNode
+class ConvertedNodeConstABInputProp : public ConvertedNode
 {
 private:
 	std::shared_ptr<EffekseerMaterial::Node> effekseerNode_;
 	T* expression_ = nullptr;
 
 public:
-	ConvertedNodeABInputProp(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
+	ConvertedNodeConstABInputProp(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
 		: effekseerNode_(effekseerNode)
 	{
 		expression_ = NewObject<T>(material);
 		material->Expressions.Add(expression_);
 
-		expression_->ConstA = effekseerNode_->GetProperty("Value1")->Floats[0];
-		expression_->ConstB = effekseerNode_->GetProperty("Value2")->Floats[0];
+		expression_->ConstA = effekseerNode_->GetProperty("ConstValue1")->Floats[0];
+		expression_->ConstB = effekseerNode_->GetProperty("ConstValue2")->Floats[0];
 	}
 
 	UMaterialExpression* GetExpression() const override { return expression_; }
@@ -155,7 +155,9 @@ public:
 	ConvertedNodeArctangent2(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
 		: effekseerNode_(effekseerNode)
 	{
+#if ENGINE_MINOR_VERSION >= 19 // TODO Check correct version
 		expression_ = NewObject<UMaterialExpressionArctangent2>(material);
+#endif
 		material->Expressions.Add(expression_);
 
 		if (effekseerMaterial->material->GetConnectedPins(effekseerNode->InputPins[effekseerNode_->GetInputPinIndex("Y")]).size() == 0)
@@ -191,10 +193,10 @@ public:
 	}
 };
 
-using ConvertedNodeAdd = ConvertedNodeABInputProp<UMaterialExpressionAdd>;
-using ConvertedNodeSubtract = ConvertedNodeABInputProp<UMaterialExpressionSubtract>;
-using ConvertedNodeMultiply = ConvertedNodeABInputProp<UMaterialExpressionMultiply>;
-using ConvertedNodeDivide = ConvertedNodeABInputProp<UMaterialExpressionDivide>;
+using ConvertedNodeAdd = ConvertedNodeConstABInputProp<UMaterialExpressionAdd>;
+using ConvertedNodeSubtract = ConvertedNodeConstABInputProp<UMaterialExpressionSubtract>;
+using ConvertedNodeMultiply = ConvertedNodeConstABInputProp<UMaterialExpressionMultiply>;
+using ConvertedNodeDivide = ConvertedNodeConstABInputProp<UMaterialExpressionDivide>;
 
 class ConvertedNodeFmod : public ConvertedNode
 {
@@ -244,12 +246,14 @@ public:
 	}
 };
 
+#if ENGINE_MINOR_VERSION >= 19 // TODO Check correct version
 using ConvertedNodeCeil = ConvertedNodeOneInput<UMaterialExpressionCeil>;
 using ConvertedNodeFloor = ConvertedNodeOneInput<UMaterialExpressionFloor>;
 using ConvertedNodeFrac = ConvertedNodeOneInput<UMaterialExpressionFrac>;
+#endif
 
-using ConvertedNodeMax = ConvertedNodeABInputProp<UMaterialExpressionMax>;
-using ConvertedNodeMin = ConvertedNodeABInputProp<UMaterialExpressionMin>;
+using ConvertedNodeMax = ConvertedNodeConstABInputProp<UMaterialExpressionMax>;
+using ConvertedNodeMin = ConvertedNodeConstABInputProp<UMaterialExpressionMin>;
 
 
 class ConvertedNodePower : public ConvertedNode
