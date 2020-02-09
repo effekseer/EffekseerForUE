@@ -7,7 +7,30 @@
 #include "Materials/MaterialExpressionVertexNormalWS.h"
 #include "Materials/MaterialExpressionPixelNormalWS.h"
 #include "Materials/MaterialExpressionVertexColor.h"
+#include "Materials/MaterialExpressionWorldPosition.h"
+
 #include "../NativeEffekseerMaterialContext.h"
+
+class ConvertedNodeWorldPosition : public ConvertedNode
+{
+private:
+	std::shared_ptr<EffekseerMaterial::Node> effekseerNode_;
+	UMaterialExpressionWorldPosition* expression_ = nullptr;
+
+public:
+	ConvertedNodeWorldPosition(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
+		: effekseerNode_(effekseerNode)
+	{
+		expression_ = NewObject<UMaterialExpressionWorldPosition>(material);
+		material->Expressions.Add(expression_);
+	}
+
+	UMaterialExpression* GetExpression() const override { return expression_; }
+
+	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode) override
+	{
+	}
+};
 
 class ConvertedNodeTextureCoordinate : public ConvertedNode
 {
@@ -89,3 +112,28 @@ public:
 using ConvertedNodeVertexNormalWS = ConvertedNodeSimple<UMaterialExpressionVertexNormalWS>;
 using ConvertedNodePixelNormalWS = ConvertedNodeSimple<UMaterialExpressionPixelNormalWS>;
 using ConvertedNodeVertexColor = ConvertedNodeSimple<UMaterialExpressionVertexColor>;
+
+class ConvertedNodeObjectScale : public ConvertedNode
+{
+private:
+	std::shared_ptr<EffekseerMaterial::Node> effekseerNode_;
+	UMaterialExpressionMaterialFunctionCall* expression_ = nullptr;
+
+public:
+	ConvertedNodeObjectScale(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
+		: effekseerNode_(effekseerNode)
+	{
+		expression_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
+		material->Expressions.Add(expression_);
+
+		FStringAssetReference assetPath("/Engine/Functions/Engine_MaterialFunctions02/WorldPositionOffset/ObjectScale.ObjectScale");
+		UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
+		expression_->SetMaterialFunction(func);
+	}
+
+	UMaterialExpression* GetExpression() const override { return expression_; }
+
+	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode) override
+	{
+	}
+};

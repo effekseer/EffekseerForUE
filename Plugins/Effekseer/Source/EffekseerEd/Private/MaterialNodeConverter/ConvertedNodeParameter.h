@@ -31,6 +31,75 @@ public:
 	}
 };
 
+class ConvertedNodeParameter2 : public ConvertedNode
+{
+private:
+	std::shared_ptr<EffekseerMaterial::Node> effekseerNode_;
+	UMaterialExpressionComponentMask* expression_ = nullptr;
+	UMaterialExpressionVectorParameter* function_ = nullptr;
+
+public:
+	ConvertedNodeParameter2(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
+		: effekseerNode_(effekseerNode)
+	{
+		expression_ = NewObject<UMaterialExpressionComponentMask>(material);
+		material->Expressions.Add(expression_);
+
+		function_ = NewObject<UMaterialExpressionVectorParameter>(material);
+		material->Expressions.Add(function_);
+		function_->ParameterName = FName(effekseerMaterial->uniformNames[effekseerNode_->GUID].c_str());
+		function_->DefaultValue.R = effekseerNode_->GetProperty("Value")->Floats[0];
+		function_->DefaultValue.G = effekseerNode_->GetProperty("Value")->Floats[1];
+
+		expression_->Input.Expression = function_;
+		expression_->R = 1;
+		expression_->G = 1;
+		expression_->B = 0;
+		expression_->A = 0;
+	}
+
+	UMaterialExpression* GetExpression() const override { return expression_; }
+
+	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode) override
+	{
+	}
+};
+
+class ConvertedNodeParameter3 : public ConvertedNode
+{
+private:
+	std::shared_ptr<EffekseerMaterial::Node> effekseerNode_;
+	UMaterialExpressionComponentMask* expression_ = nullptr;
+	UMaterialExpressionVectorParameter* function_ = nullptr;
+
+public:
+	ConvertedNodeParameter3(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
+		: effekseerNode_(effekseerNode)
+	{
+		expression_ = NewObject<UMaterialExpressionComponentMask>(material);
+		material->Expressions.Add(expression_);
+
+		function_ = NewObject<UMaterialExpressionVectorParameter>(material);
+		material->Expressions.Add(function_);
+		function_->ParameterName = FName(effekseerMaterial->uniformNames[effekseerNode_->GUID].c_str());
+		function_->DefaultValue.R = effekseerNode_->GetProperty("Value")->Floats[0];
+		function_->DefaultValue.G = effekseerNode_->GetProperty("Value")->Floats[1];
+		function_->DefaultValue.B = effekseerNode_->GetProperty("Value")->Floats[2];
+
+		expression_->Input.Expression = function_;
+		expression_->R = 1;
+		expression_->G = 1;
+		expression_->B = 1;
+		expression_->A = 0;
+	}
+
+	UMaterialExpression* GetExpression() const override { return expression_; }
+
+	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode) override
+	{
+	}
+};
+
 class ConvertedNodeParameter4 : public ConvertedNode
 {
 private:

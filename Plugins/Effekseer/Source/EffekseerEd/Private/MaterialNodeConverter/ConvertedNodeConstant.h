@@ -7,6 +7,7 @@
 #include "Materials/MaterialExpressionConstant2Vector.h"
 #include "Materials/MaterialExpressionConstant3Vector.h"
 #include "Materials/MaterialExpressionConstant4Vector.h"
+#include "Materials/MaterialExpressionCameraPositionWS.h"
 #include "../NativeEffekseerMaterialContext.h"
 
 class ConvertedNodeConstant1 : public ConvertedNode
@@ -89,4 +90,47 @@ public:
 	}
 
 	UMaterialExpression* GetExpression() const override { return expression_; }
+};
+
+class ConvertedNodeTime : public ConvertedNode
+{
+private:
+	std::shared_ptr<EffekseerMaterial::Node> effekseerNode_;
+	UMaterialExpressionTime* expression_ = nullptr;
+
+public:
+	ConvertedNodeTime(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
+		: effekseerNode_(effekseerNode)
+	{
+		expression_ = NewObject<UMaterialExpressionTime>(material);
+		material->Expressions.Add(expression_);
+	}
+
+	UMaterialExpression* GetExpression() const override { return expression_; }
+
+	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode) override
+	{
+	}
+};
+
+class ConvertedNodeCameraPositionWS : public ConvertedNode
+{
+private:
+	std::shared_ptr<EffekseerMaterial::Node> effekseerNode_;
+	UMaterialExpressionCameraPositionWS* expression_ = nullptr;
+
+public:
+	ConvertedNodeCameraPositionWS(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
+		: effekseerNode_(effekseerNode)
+	{
+		// bug?
+		//expression_ = NewObject<UMaterialExpressionCameraPositionWS>(material);
+		material->Expressions.Add(expression_);
+	}
+
+	UMaterialExpression* GetExpression() const override { return expression_; }
+
+	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode) override
+	{
+	}
 };

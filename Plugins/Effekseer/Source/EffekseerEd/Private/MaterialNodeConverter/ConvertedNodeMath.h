@@ -19,6 +19,7 @@
 #include "Materials/MaterialExpressionClamp.h"
 #include "Materials/MaterialExpressionDotProduct.h"
 #include "Materials/MaterialExpressionCrossProduct.h"
+#include "Materials/MaterialExpressionNormalize.h"
 #include "Materials/MaterialExpressionLinearInterpolate.h"
 #include "Materials/MaterialExpressionOneMinus.h"
 
@@ -49,6 +50,27 @@ public:
 	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode) override
 	{
 		expression_->Input.Expression = outputNode->GetExpression();
+	}
+};
+
+template<class T>
+class ConvertedNodeOneVectorInput : public ConvertedNode
+{
+private:
+	T* expression_ = nullptr;
+
+public:
+	ConvertedNodeOneVectorInput(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
+	{
+		expression_ = NewObject<T>(material);
+		material->Expressions.Add(expression_);
+	}
+
+	UMaterialExpression* GetExpression() const override { return expression_; }
+
+	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode) override
+	{
+		expression_->VectorInput.Expression = outputNode->GetExpression();
 	}
 };
 
@@ -299,6 +321,7 @@ public:
 
 using ConvertedNodeDotProduct = ConvertedNodeABInput<UMaterialExpressionDotProduct>;
 using ConvertedNodeCrossProduct = ConvertedNodeABInput<UMaterialExpressionCrossProduct>;
+using ConvertedNodeNormalize = ConvertedNodeOneVectorInput<UMaterialExpressionNormalize>;
 
 class ConvertedNodeLinearInterpolate : public ConvertedNode
 {

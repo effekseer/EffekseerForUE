@@ -175,28 +175,6 @@ public:
 	}
 };
 
-class ConvertedNodeTime : public ConvertedNode
-{
-private:
-	std::shared_ptr<EffekseerMaterial::Node> effekseerNode_;
-	UMaterialExpressionTime* expression_ = nullptr;
-
-public:
-	ConvertedNodeTime(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
-		: effekseerNode_(effekseerNode)
-	{
-		expression_ = NewObject<UMaterialExpressionTime>(material);
-		material->Expressions.Add(expression_);
-	}
-
-	UMaterialExpression* GetExpression() const override { return expression_; }
-
-	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode) override
-	{
-	}
-};
-
-
 template<class T>
 class ConvertedNodeFactoryNormalNode : public ConvertedNodeFactory
 {
@@ -255,6 +233,8 @@ UMaterial* CreateUE4MaterialFromEffekseerMaterial(const std::shared_ptr<NativeEf
 	nodeFactories["Constant4"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeConstant4>>();
 
 	nodeFactories["Parameter1"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeParameter1>>();
+	nodeFactories["Parameter2"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeParameter2>>();
+	nodeFactories["Parameter3"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeParameter3>>();
 	nodeFactories["Parameter4"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeParameter4>>();
 
 	nodeFactories["Abs"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeAbs>>();
@@ -276,6 +256,7 @@ UMaterial* CreateUE4MaterialFromEffekseerMaterial(const std::shared_ptr<NativeEf
 	nodeFactories["Clamp"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeClamp>>();
 	nodeFactories["DotProduct"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeDotProduct>>();
 	nodeFactories["CrossProduct"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeCrossProduct>>();
+	nodeFactories["Normalize"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeNormalize>>();
 	nodeFactories["LinearInterpolate"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeLinearInterpolate>>();
 	nodeFactories["OneMinus"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeOneMinus>>();
 	nodeFactories["ComponentMask"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeComponentMask>>();
@@ -289,10 +270,13 @@ UMaterial* CreateUE4MaterialFromEffekseerMaterial(const std::shared_ptr<NativeEf
 	nodeFactories["SampleTexture"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeTextureSample>>();
 
 	nodeFactories["Time"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeTime>>();
+	nodeFactories["CameraPositionWS"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeCameraPositionWS>>();
 
+	nodeFactories["WorldPosition"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeWorldPosition>>();
 	nodeFactories["VertexNormalWS"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeVertexNormalWS>>();
 	nodeFactories["VertexPixelWS"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodePixelNormalWS>>();
 	nodeFactories["VertexColor"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeVertexColor>>();
+	nodeFactories["ObjectScale"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeObjectScale>>();
 
 	nodeFactories["CustomData1"] = std::make_shared< ConvertedNodeFactoryNormalNode<ConvertedNodeCustomData1>>();
 	nodeFactories["CustomData2"] = std::make_shared< ConvertedNodeFactoryNormalNode<ConvertedNodeCustomData2>>();

@@ -312,6 +312,80 @@ public:
 	}
 };
 
+class NodeParameter2 : public NodeParameter
+{
+public:
+	NodeParameter2()
+	{
+		Type = NodeType::Parameter2;
+		TypeName = "Parameter2";
+		Description = "Param value...";
+		Group = std::vector<std::string>{"Parameter"};
+		HasDescription = true;
+		IsDescriptionExported = true;
+
+		auto output = std::make_shared<PinParameter>();
+		output->Name = "Output";
+		output->Type = ValueType::Float2;
+		OutputPins.push_back(output);
+
+		auto paramName = std::make_shared<NodePropertyParameter>();
+		paramName->Name = "Name";
+		paramName->Type = ValueType::String;
+		Properties.push_back(paramName);
+
+		auto paramPriority = std::make_shared<NodePropertyParameter>();
+		paramPriority->Name = "Priority";
+		paramPriority->Type = ValueType::Int;
+		paramPriority->DefaultValues[0] = 1;
+		Properties.push_back(paramPriority);
+
+		auto param = std::make_shared<NodePropertyParameter>();
+		param->Name = "Value";
+		param->Type = ValueType::Float2;
+		Properties.push_back(param);
+
+		BehaviorComponents = {std::make_shared<NodeParameterBehaviorComponentName>()};
+	}
+};
+
+class NodeParameter3 : public NodeParameter
+{
+public:
+	NodeParameter3()
+	{
+		Type = NodeType::Parameter3;
+		TypeName = "Parameter3";
+		Description = "Param value...";
+		Group = std::vector<std::string>{"Parameter"};
+		HasDescription = true;
+		IsDescriptionExported = true;
+
+		auto output = std::make_shared<PinParameter>();
+		output->Name = "Output";
+		output->Type = ValueType::Float3;
+		OutputPins.push_back(output);
+
+		auto paramName = std::make_shared<NodePropertyParameter>();
+		paramName->Name = "Name";
+		paramName->Type = ValueType::String;
+		Properties.push_back(paramName);
+
+		auto paramPriority = std::make_shared<NodePropertyParameter>();
+		paramPriority->Name = "Priority";
+		paramPriority->Type = ValueType::Int;
+		paramPriority->DefaultValues[0] = 1;
+		Properties.push_back(paramPriority);
+
+		auto param = std::make_shared<NodePropertyParameter>();
+		param->Name = "Value";
+		param->Type = ValueType::Float3;
+		Properties.push_back(param);
+
+		BehaviorComponents = {std::make_shared<NodeParameterBehaviorComponentName>()};
+	}
+};
+
 class NodeParameter4 : public NodeParameter
 {
 public:
@@ -880,8 +954,6 @@ public:
 		output->Name = "Output";
 		output->Type = ValueType::Float1;
 		OutputPins.push_back(output);
-
-		BehaviorComponents = {std::make_shared<NodeParameterBehaviorComponentTwoInputMath>()};
 	}
 
 	ValueType
@@ -923,6 +995,33 @@ public:
 		output->Name = "Output";
 		output->Type = ValueType::Float3;
 		OutputPins.push_back(output);
+	}
+};
+
+class NodeNormalize : public NodeParameter
+{
+public:
+	NodeNormalize()
+	{
+		Type = NodeType::Normalize;
+		TypeName = "Normalize";
+		Group = std::vector<std::string>{"Math"};
+
+		auto input1 = std::make_shared<PinParameter>();
+		input1->Name = "Value";
+		input1->Type = ValueType::FloatN;
+		InputPins.push_back(input1);
+
+		auto output = std::make_shared<PinParameter>();
+		output->Name = "Output";
+		output->Type = ValueType::FloatN;
+		OutputPins.push_back(output);
+	}
+
+	ValueType
+	GetOutputType(std::shared_ptr<Material> material, std::shared_ptr<Node> node, const std::vector<ValueType>& inputTypes) const override
+	{
+		return GetOutputTypeIn1Out1(inputTypes);
 	}
 };
 
@@ -1171,6 +1270,22 @@ public:
 	}
 };
 
+class NodeCameraPositionWS : public NodeParameter
+{
+public:
+	NodeCameraPositionWS()
+	{
+		Type = NodeType::CameraPositionWS;
+		TypeName = "CameraPositionWS";
+		Group = std::vector<std::string>{"Constant"};
+
+		auto output = std::make_shared<PinParameter>();
+		output->Name = "Output";
+		output->Type = ValueType::Float3;
+		OutputPins.push_back(output);
+	}
+};
+
 class NodeVertexNormalWS : public NodeParameter
 {
 public:
@@ -1194,6 +1309,22 @@ public:
 	{
 		Type = NodeType::PixelNormalWS;
 		TypeName = "PixelNormalWS";
+		Group = std::vector<std::string>{"Model"};
+
+		auto output = std::make_shared<PinParameter>();
+		output->Name = "Output";
+		output->Type = ValueType::Float3;
+		OutputPins.push_back(output);
+	}
+};
+
+class NodeWorldPosition : public NodeParameter
+{
+public:
+	NodeWorldPosition()
+	{
+		Type = NodeType::WorldPosition;
+		TypeName = "WorldPosition";
 		Group = std::vector<std::string>{"Model"};
 
 		auto output = std::make_shared<PinParameter>();
@@ -1236,6 +1367,22 @@ public:
 		a->Name = "A";
 		a->Type = ValueType::Float1;
 		OutputPins.push_back(a);
+	}
+};
+
+class NodeObjectScale : public NodeParameter
+{
+public:
+	NodeObjectScale()
+	{
+		Type = NodeType::ObjectScale;
+		TypeName = "ObjectScale";
+		Group = std::vector<std::string>{"Model"};
+
+		auto output = std::make_shared<PinParameter>();
+		output->Name = "XYZ";
+		output->Type = ValueType::Float3;
+		OutputPins.push_back(output);
 	}
 };
 
