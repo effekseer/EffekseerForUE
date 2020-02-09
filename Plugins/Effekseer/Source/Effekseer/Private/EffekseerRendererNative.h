@@ -1008,7 +1008,7 @@ public:
 namespace EffekseerRenderer
 {
 
-class Renderer::Impl
+class Renderer::Impl : public ::Effekseer::AlignedAllocationPolicy<16>
 {
 private:
 	::Effekseer::Mat44f projectionMat_;
