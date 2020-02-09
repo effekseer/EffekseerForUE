@@ -77,6 +77,7 @@ effekseerHeader.readLines(rootEDir + 'Parameter/Effekseer.Parameters.h')
 effekseerHeader.readLines(rootEDir + 'Utils/Effekseer.CustomAllocator.h')
 effekseerHeader.readLines(rootEDir + 'Utils/Effekseer.BinaryReader.h')
 
+effekseerHeader.readLines(rootEDir + 'Effekseer.Math.h')
 effekseerHeader.readLines(rootEDir + 'Effekseer.Vector2D.h')
 effekseerHeader.readLines(rootEDir + 'Effekseer.Vector3D.h')
 effekseerHeader.readLines(rootEDir + 'Effekseer.Color.h')
@@ -87,6 +88,17 @@ effekseerHeader.readLines(rootEDir + 'Effekseer.File.h')
 effekseerHeader.readLines(rootEDir + 'Effekseer.DefaultFile.h')
 effekseerHeader.readLines(rootEDir + 'Effekseer.Effect.h')
 effekseerHeader.readLines(rootEDir + 'Effekseer.Manager.h')
+
+# SIMD
+effekseerHeader.readLines(rootEDir + 'SIMD/Effekseer.SIMD4f_Gen.h')
+effekseerHeader.readLines(rootEDir + 'SIMD/Effekseer.SIMD4f_NEON.h')
+effekseerHeader.readLines(rootEDir + 'SIMD/Effekseer.SIMD4f_SSE.h')
+effekseerHeader.readLines(rootEDir + 'SIMD/Effekseer.Vec2f.h')
+effekseerHeader.readLines(rootEDir + 'SIMD/Effekseer.Vec3f.h')
+effekseerHeader.readLines(rootEDir + 'SIMD/Effekseer.Vec4f.h')
+effekseerHeader.readLines(rootEDir + 'SIMD/Effekseer.Mat43f.h')
+effekseerHeader.readLines(rootEDir + 'SIMD/Effekseer.Mat44f.h')
+effekseerHeader.readLines(rootEDir + 'SIMD/Effekseer.SIMDUtils.h')
 
 effekseerHeader.readLines(rootEDir + 'IO/Effekseer.EfkEfcFactory.h')
 
@@ -114,15 +126,15 @@ effekseerHeader.readLines(rootEDir + 'Effekseer.SoundLoader.h')
 
 effekseerHeader.readLines(rootEDir + 'Effekseer.Setting.h')
 
-effekseerHeader.readLines(rootEDir + 'Effekseer.Server.h')
-effekseerHeader.readLines(rootEDir + 'Effekseer.Client.h')
-
 effekseerHeader.addLine('')
 effekseerHeader.addLine('#if PLATFORM_WINDOWS')
 effekseerHeader.readLines(rootEDir + 'Effekseer.Server.h')
 effekseerHeader.readLines(rootEDir + 'Effekseer.Client.h')
 effekseerHeader.addLine('#endif')
-effekseerHeader.addLine('')
+
+
+effekseerHeader.readLines(rootEDir + 'Effekseer.Setting.h')
+
 
 effekseerHeader.output('Plugins/Effekseer/Source/Effekseer/Private/EffekseerNative.h')
 
@@ -162,6 +174,11 @@ effekseerCPP.addLine('#include <sys/socket.h>')
 effekseerCPP.addLine('#endif')
 effekseerCPP.addLine('#undef far')
 
+# noise
+effekseerCPP.readLines(rootEDir + 'Noise/PerlinNoise.h')
+effekseerCPP.readLines(rootEDir + 'Noise/PerlinNoise.cpp')
+effekseerCPP.readLines(rootEDir + 'Noise/CurlNoise.h')
+effekseerCPP.readLines(rootEDir + 'Noise/CurlNoise.cpp')
 
 # param
 effekseerCPP.readLines(rootEDir + 'Parameter/Effekseer.Parameters.cpp')
@@ -247,6 +264,10 @@ effekseerCPP.readLines(rootEDir + 'Effekseer.InstanceGroup.cpp')
 effekseerCPP.readLines(rootEDir + 'Effekseer.InternalScript.cpp')
 
 effekseerCPP.readLines(rootEDir + 'Effekseer.Setting.cpp')
+
+effekseerCPP.readLines(rootEDir + 'SIMD/Effekseer.Mat43f.cpp')
+effekseerCPP.readLines(rootEDir + 'SIMD/Effekseer.Mat44f.cpp')
+effekseerCPP.readLines(rootEDir + 'SIMD/Effekseer.SIMDUtils.cpp')
 
 effekseerCPP.addLine('')
 effekseerCPP.addLine('#if PLATFORM_WINDOWS')

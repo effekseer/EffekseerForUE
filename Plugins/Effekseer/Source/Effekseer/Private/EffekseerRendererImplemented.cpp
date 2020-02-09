@@ -519,7 +519,7 @@ void ExtractTextures(const Effekseer::Effect* effect,
 
 	bool RendererImplemented::BeginRendering()
 	{
-		::Effekseer::Matrix44::Mul(GetCameraProjectionMatrix(), GetCameraMatrix(), GetProjectionMatrix());
+		impl->CalculateCameraProjectionMatrix();
 
 		// レンダラーリセット
 		m_standardRenderer->ResetAndRenderingIfRequired();
@@ -537,7 +537,7 @@ void ExtractTextures(const Effekseer::Effect* effect,
 		return true;
 	}
 
-	const ::Effekseer::Vector3D& RendererImplemented::GetLightDirection() const
+	::Effekseer::Vector3D RendererImplemented::GetLightDirection() const
 	{
 		return m_lightDirection;
 	}
