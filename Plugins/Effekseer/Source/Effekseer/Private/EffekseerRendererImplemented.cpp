@@ -329,7 +329,6 @@ void ExtractTextures(const Effekseer::Effect* effect,
 		auto materialParam = param->MaterialParameterPtr;
 
 		textureCount = 0;
-		std::array<Effekseer::TextureData*, ::Effekseer::TextureSlotMax> textures;
 
 		if (materialParam->MaterialTextures.size() > 0)
 		{
@@ -521,7 +520,7 @@ void ExtractTextures(const Effekseer::Effect* effect,
 	{
 		impl->CalculateCameraProjectionMatrix();
 
-		// レンダラーリセット
+		// Reset a renderer
 		m_standardRenderer->ResetAndRenderingIfRequired();
 
 		//GLCheckError();
@@ -531,7 +530,7 @@ void ExtractTextures(const Effekseer::Effect* effect,
 
 	bool RendererImplemented::EndRendering()
 	{
-		// レンダラーリセット
+		// Reset a renderer
 		m_standardRenderer->ResetAndRenderingIfRequired();
 
 		return true;
