@@ -75,6 +75,21 @@ public:
 			material_->Opacity.Expression = outputNode->GetExpression();
 		}
 
+		if (targetInd == effekseerNode_->GetInputPinIndex("Roughness"))
+		{
+			material_->Roughness.Expression = outputNode->GetExpression();
+		}
+
+		if (targetInd == effekseerNode_->GetInputPinIndex("AmbientOcclusion"))
+		{
+			material_->AmbientOcclusion.Expression = outputNode->GetExpression();
+		}
+
+		if (targetInd == effekseerNode_->GetInputPinIndex("Metallic"))
+		{
+			material_->Metallic.Expression = outputNode->GetExpression();
+		}
+
 		if (targetInd == effekseerNode_->GetInputPinIndex("OpacityMask"))
 		{
 			material_->OpacityMask.Expression = outputNode->GetExpression();
@@ -108,6 +123,10 @@ public:
 		auto texturePath = effekseerNode_->GetProperty("Texture")->Str;
 		int ext_i = texturePath.find_last_of(".");
 		texturePath = +"/" + texturePath.substr(0, ext_i);
+
+		int slash_i = texturePath.find_last_of("/");
+		texturePath = texturePath + "." + texturePath.substr(slash_i + 1, texturePath.size());
+
 		FStringAssetReference assetPath(texturePath.c_str());
 		UTexture* texture = Cast<UTexture>(assetPath.TryLoad());
 
@@ -146,6 +165,10 @@ public:
 		auto texturePath = effekseerNode_->GetProperty("Texture")->Str;
 		int ext_i = texturePath.find_last_of(".");
 		texturePath = +"/" + texturePath.substr(0, ext_i);
+
+		int slash_i = texturePath.find_last_of("/");
+		texturePath = texturePath + "." + texturePath.substr(slash_i + 1, texturePath.size());
+
 		FStringAssetReference assetPath(texturePath.c_str());
 		UTexture* texture = Cast<UTexture>(assetPath.TryLoad());
 
@@ -177,6 +200,10 @@ public:
 		auto texturePath = effekseerNode_->GetProperty("Texture")->Str;
 		int ext_i = texturePath.find_last_of(".");
 		texturePath = +"/" + texturePath.substr(0, ext_i);
+
+		int slash_i = texturePath.find_last_of("/");
+		texturePath = texturePath + "." + texturePath.substr(slash_i + 1, texturePath.size());
+
 		FStringAssetReference assetPath(texturePath.c_str());
 		UTexture* texture = Cast<UTexture>(assetPath.TryLoad());
 
