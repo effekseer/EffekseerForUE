@@ -15,6 +15,6 @@ struct UE4MaterialFromEffekseerMaterialOption
 
 UMaterial* CreateUE4MaterialFromEffekseerMaterial(const std::shared_ptr<NativeEffekseerMaterialContext>& context, const FString& packageRoot, const FString& filename, const UE4MaterialFromEffekseerMaterialOption& option);
 
-UMaterialInstance* CreateUE4MaterialFromEffekseerMaterial(UMaterial* parent, const FString& packageRoot, const FString& filename, const UE4MaterialFromEffekseerMaterialOption& option);
+UMaterialInstance* CreateUE4MaterialInstanceFromUE4Material(UMaterial* parent, const FString& packageRoot, const FString& filename, const UE4MaterialFromEffekseerMaterialOption& option);
 
 TArray<UObject*> AssignElementMaterials(UEffekseerMaterial* material, bool isInstance);

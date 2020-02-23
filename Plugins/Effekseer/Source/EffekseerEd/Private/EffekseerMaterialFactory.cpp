@@ -114,10 +114,13 @@ UObject* UEffekseerMaterialFactory::FactoryCreateBinary(
 		assetEfkMat->ReassignSearchingMaps();
 		retAssets.Add(originalMaterial);
 
-		for (auto a : AssignElementMaterials(assetEfkMat, false))
+		for (auto a : AssignElementMaterials(assetEfkMat, true))
 		{
 			retAssets.Add(a);
 		}
+
+		// To reupdate elements
+		assetEfkMat->RegisterMaterialCompicationFinished();
 	}
 
 	// notify finished

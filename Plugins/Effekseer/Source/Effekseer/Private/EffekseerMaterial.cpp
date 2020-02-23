@@ -15,6 +15,38 @@ void UEffekseerMaterial::ReleaseMaterial()
 	internal_ = nullptr;
 }
 
+#if WITH_EDITOR
+void UEffekseerMaterial::ReupdateElements()
+{
+	FMaterialUpdateContext context;
+
+	for (auto& element : MaterialElements)
+	{
+		if (element.Material == nullptr) continue;
+
+		context.AddMaterialInterface(element.Material);
+	}
+}
+
+void UEffekseerMaterial::OnMaterialCompilationFinished(UMaterialInterface* MaterialInterface)
+{
+	if (MaterialInterface == Material)
+	{
+		ReupdateElements();
+	}
+}
+
+void UEffekseerMaterial::RegisterMaterialCompicationFinished()
+{
+	if (!isMaterialCompilationRegistered_)
+	{
+		UMaterial::OnMaterialCompilationFinished().AddUObject(this, &UEffekseerMaterial::OnMaterialCompilationFinished);
+	}
+	isMaterialCompilationRegistered_ = true;
+}
+
+#endif
+
 const TArray<uint8>& UEffekseerMaterial::GetData() const
 {
 	return buffer_;
@@ -55,6 +87,18 @@ void UEffekseerMaterial::ReassignSearchingMaps()
 	{
 		TextureNameToIndex.Add(Textures[i].Name, i);
 	}
+}
+
+void UEffekseerMaterial::BeginDestroy()
+{
+#if WITH_EDITOR
+	if (isMaterialCompilationRegistered_)
+	{
+		UMaterial::OnMaterialCompilationFinished().RemoveAll(this);
+		isMaterialCompilationRegistered_ = false;
+	}
+#endif
+	Super::BeginDestroy();
 }
 
 void UEffekseerMaterial::Serialize(FArchive& Ar)

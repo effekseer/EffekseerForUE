@@ -58,6 +58,10 @@ private:
 	Effekseer::Material* internal_ = nullptr;
 	TArray<uint8> buffer_;
 
+#if WITH_EDITOR
+	bool isMaterialCompilationRegistered_ = false;
+#endif
+
 	void ReleaseMaterial();
 public:
 
@@ -85,6 +89,15 @@ public:
 	UAssetImportData* AssetImportData = nullptr;
 #endif
 
+#if WITH_EDITOR
+	//! Reupdate elements to apply parent shaders (UE4 requires to update after a parent material finishes to be compiled)
+	void ReupdateElements();
+
+	void OnMaterialCompilationFinished(UMaterialInterface* MaterialInterface);
+
+	void RegisterMaterialCompicationFinished();
+#endif
+
 	const TArray<uint8>& GetData() const;
 	void StoreData(const uint8_t* data, uint32_t size);
 	void LoadMaterial(const uint8_t* data, int32_t size, const TCHAR* path);
@@ -94,6 +107,8 @@ public:
 	UMaterialInterface* FindMatrial(EEffekseerAlphaBlendType alphaBlend) const;
 
 	Effekseer::Material* GetNativePtr() { return internal_; }
+
+	virtual void BeginDestroy() override;
 
 	virtual void Serialize(FArchive& Ar) override;
 

@@ -352,7 +352,7 @@ UMaterial* CreateUE4MaterialFromEffekseerMaterial(const std::shared_ptr<NativeEf
 	return originalMaterial;
 }
 
-UMaterialInstance* CreateUE4MaterialFromEffekseerMaterial(UMaterial* parent, const FString& packageRoot, const FString& filename, const UE4MaterialFromEffekseerMaterialOption& option)
+UMaterialInstance* CreateUE4MaterialInstanceFromUE4Material(UMaterial* parent, const FString& packageRoot, const FString& filename, const UE4MaterialFromEffekseerMaterialOption& option)
 {
 	EBlendMode blendMode = EBlendMode::BLEND_Translucent;
 	if (option.AlphaBlend == EEffekseerAlphaBlendType::Blend)
@@ -411,7 +411,12 @@ TArray<UObject*> AssignElementMaterials(UEffekseerMaterial* material, bool isIns
 		auto& e = material->MaterialElements[i];
 
 		const FString elementParentName = material->Material->GetOuter()->GetPathName();
-		FString elementAssetName = material->Material->GetName() + TEXT("_Inst");
+		FString elementAssetName = material->Material->GetName();
+
+		if (isInstance)
+		{
+			elementAssetName += TEXT("_Inst");
+		}
 
 		if (e.AlphaBlend == EEffekseerAlphaBlendType::Blend)
 		{
@@ -446,7 +451,7 @@ TArray<UObject*> AssignElementMaterials(UEffekseerMaterial* material, bool isIns
 
 		if (isInstance)
 		{
-			elementMaterial = CreateUE4MaterialFromEffekseerMaterial(material->Material, elementParentName, elementAssetName, option);
+			elementMaterial = CreateUE4MaterialInstanceFromUE4Material(material->Material, elementParentName, elementAssetName, option);
 		}
 		else
 		{

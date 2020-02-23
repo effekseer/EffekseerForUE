@@ -33,7 +33,7 @@ void FAssetTypeActions_EffekseerMaterial::ExecuteGenerateMaterialElements(TArray
 		auto Object = (*ObjIt).Get();
 		if (Object)
 		{
-			AssignElementMaterials(Object, false);
+			AssignElementMaterials(Object, true);
 		}
 	}
 }
