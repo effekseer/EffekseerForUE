@@ -38,6 +38,10 @@ struct DynamicVertex
 
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 	float AlphaUV[2];
+
+	float FlipbookIndexAndNextRate;
+
+	float AlphaThreshold;
 #endif
 
 	void SetColor(const VertexColor& color) { Col = color; }
@@ -56,6 +60,10 @@ struct SimpleVertex
 
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 	float AlphaUV[2];
+
+	float FlipbookIndexAndNextRate;
+
+	float AlphaThreshold;
 #endif
 
 	void SetColor(const ::Effekseer::Color& color)
@@ -80,6 +88,10 @@ struct SimpleVertexDX9
 
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 	float AlphaUV[2];
+
+	float FlipbookIndexAndNextRate;
+
+	float AlphaThreshold;
 #endif
 
 	void SetColor(const ::Effekseer::Color& color)
@@ -107,6 +119,10 @@ struct VertexDistortion
 
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 	float AlphaUV[2];
+
+	float FlipbookIndexAndNextRate;
+
+	float AlphaThreshold;
 #endif
 	
 	void SetColor(const ::Effekseer::Color& color)
@@ -134,6 +150,10 @@ struct VertexDistortionDX9
 	
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 	float AlphaUV[2];
+
+	float FlipbookIndexAndNextRate;
+
+	float AlphaThreshold;
 #endif
 
 	void SetColor(const ::Effekseer::Color& color)
@@ -739,36 +759,36 @@ public:
 	virtual bool EndRendering() = 0;
 
 	/**
-		@brief	ライトの方向を取得する。
+		@brief	Get the direction of light
 	*/
-	virtual ::Effekseer::Vector3D GetLightDirection() const = 0;
+	virtual ::Effekseer::Vector3D GetLightDirection() const;
 
 	/**
-		@brief	ライトの方向を設定する。
+		@brief	Specifiy the direction of light
 	*/
-	virtual void SetLightDirection( const ::Effekseer::Vector3D& direction ) = 0;
+	virtual void SetLightDirection(const ::Effekseer::Vector3D& direction);
 
 	/**
-		@brief	ライトの色を取得する。
+		@brief	Get the color of light
 	*/
-	virtual const ::Effekseer::Color& GetLightColor() const = 0;
+	virtual const ::Effekseer::Color& GetLightColor() const;
 
 	/**
-		@brief	ライトの色を設定する。
+		@brief	Specify the color of light
 	*/
-	virtual void SetLightColor( const ::Effekseer::Color& color ) = 0;
+	virtual void SetLightColor(const ::Effekseer::Color& color);
 
 	/**
-		@brief	ライトの環境光の色を取得する。
+		@brief	Get the color of ambient
 	*/
-	virtual const ::Effekseer::Color& GetLightAmbientColor() const = 0;
+	virtual const ::Effekseer::Color& GetLightAmbientColor() const;
 
 	/**
-		@brief	ライトの環境光の色を設定する。
+		@brief	Specify the color of ambient
 	*/
-	virtual void SetLightAmbientColor( const ::Effekseer::Color& color ) = 0;
+	virtual void SetLightAmbientColor(const ::Effekseer::Color& color);
 
-		/**
+	/**
 		@brief	最大描画スプライト数を取得する。
 	*/
 	virtual int32_t GetSquareMaxCount() const = 0;
@@ -1018,6 +1038,10 @@ private:
 	::Effekseer::Vec3f cameraPosition_;
 	::Effekseer::Vec3f cameraFrontDirection_;
 
+	::Effekseer::Vec3f lightDirection_ = ::Effekseer::Vec3f(1.0f, 1.0f, 1.0f);
+	::Effekseer::Color lightColor_ = ::Effekseer::Color(255, 255, 255, 255);
+	::Effekseer::Color lightAmbient_ = ::Effekseer::Color(40, 40, 40, 255);
+
 	UVStyle textureUVStyle = UVStyle::Normal;
 	UVStyle backgroundTextureUVStyle = UVStyle::Normal;
 	float time_ = 0.0f;
@@ -1031,6 +1055,18 @@ public:
 	int32_t drawcallCount = 0;
 	int32_t drawvertexCount = 0;
 	bool isRenderModeValid = true;
+
+	::Effekseer::Vector3D GetLightDirection() const;
+
+	void SetLightDirection(const ::Effekseer::Vector3D& direction);
+
+	const ::Effekseer::Color& GetLightColor() const;
+
+	void SetLightColor(const ::Effekseer::Color& color);
+
+	const ::Effekseer::Color& GetLightAmbientColor() const;
+
+	void SetLightAmbientColor(const ::Effekseer::Color& color);
 
 	void CalculateCameraProjectionMatrix();
 
@@ -1115,6 +1151,9 @@ public:
 		::Effekseer::CullingType			CullingType;
 		std::array<::Effekseer::TextureFilterType, Effekseer::TextureSlotMax> TextureFilterTypes;
 		std::array<::Effekseer::TextureWrapType, Effekseer::TextureSlotMax> TextureWrapTypes;
+
+		//! for OpenGL
+		std::array<uint64_t, Effekseer::TextureSlotMax> TextureIDs;
 
 		State();
 
@@ -1294,6 +1333,14 @@ struct StandardRendererState
 	::Effekseer::TextureData* AlphaTexturePtr;
 #endif
 
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+	int32_t EnableInterpolation;
+	int32_t UVLoopType;
+	int32_t InterpolationType;
+	int32_t FlipbookDivideX;
+	int32_t FlipbookDivideY;
+#endif
+
 	::Effekseer::RendererMaterialType MaterialType;
 	::Effekseer::MaterialData* MaterialPtr;
 	int32_t MaterialUniformCount = 0;
@@ -1326,6 +1373,14 @@ struct StandardRendererState
 		NormalTexturePtr = nullptr;
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 		AlphaTexturePtr = nullptr;
+#endif
+
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+		EnableInterpolation = 0;
+		UVLoopType = 0;
+		InterpolationType = 0;
+		FlipbookDivideX = 0;
+		FlipbookDivideY = 0;
 #endif
 
 		MaterialPtr = nullptr;
@@ -1370,6 +1425,22 @@ struct StandardRendererState
 			return true;
 		if (NormalTexturePtr != state.TexturePtr)
 			return true;
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+		if (AlphaTexturePtr != state.AlphaTexturePtr)
+			return true;
+#endif
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+		if (EnableInterpolation != state.EnableInterpolation)
+			return true;
+		if (UVLoopType != state.UVLoopType)
+			return true;
+		if (InterpolationType != state.InterpolationType)
+			return true;
+		if (FlipbookDivideX != state.FlipbookDivideX)
+			return true;
+		if (FlipbookDivideY != state.FlipbookDivideY)
+			return true;
+#endif
 		if (MaterialType != state.MaterialType)
 			return true;
 		if (MaterialPtr != state.MaterialPtr)
@@ -1505,7 +1576,6 @@ struct StandardRendererState
 
 template <typename RENDERER, typename SHADER, typename VERTEX, typename VERTEX_DISTORTION> class StandardRenderer
 {
-
 private:
 	RENDERER* m_renderer;
 	SHADER* m_shader;
@@ -1528,15 +1598,67 @@ private:
 	{
 		Effekseer::Matrix44 constantVSBuffer[2];
 		float uvInversed[4];
+
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+		struct
+		{
+			union
+			{
+				float Buffer[4];
+
+				struct
+				{
+					float enableInterpolation;
+					float loopType;
+					float divideX;
+					float divideY;
+				};
+			};
+		} flipbookParameter;
+#endif
 	};
+
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+	struct PixelConstantBuffer
+	{
+		struct
+		{
+			union
+			{
+				float Buffer[4];
+
+				struct
+				{
+					float enableInterpolation;
+					float interpolationType;
+				};
+			};
+		} flipbookParameter;
+	};
+#endif
 
 	struct DistortionPixelConstantBuffer
 	{
 		float scale[4];
 		float uvInversed[4];
+
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+		struct
+		{
+			union
+			{
+				float Buffer[4];
+
+				struct
+				{
+					float enableInterpolation;
+					float interpolationType;
+				};
+			};
+		} flipbookParameter;
+#endif
 	};
 
-	
 	void ColorToFloat4(::Effekseer::Color color, float fc[4])
 	{
 		fc[0] = color.R / 255.0f;
@@ -2049,6 +2171,13 @@ public:
 			vcb.uvInversed[0] = uvInversed[0];
 			vcb.uvInversed[1] = uvInversed[1];
 
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+			vcb.flipbookParameter.enableInterpolation = static_cast<float>(m_state.EnableInterpolation);
+			vcb.flipbookParameter.loopType = static_cast<float>(m_state.UVLoopType);
+			vcb.flipbookParameter.divideX = static_cast<float>(m_state.FlipbookDivideX);
+			vcb.flipbookParameter.divideY = static_cast<float>(m_state.FlipbookDivideY);
+#endif
+
 			m_renderer->SetVertexBufferToShader(&vcb, sizeof(VertexConstantBuffer), 0);
 
 			// ps
@@ -2072,6 +2201,13 @@ public:
 			m_renderer->SetPixelBufferToShader(lightAmbientColor, sizeof(float) * 4, psOffset);
 			psOffset += (sizeof(float) * 4);
 			
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+			PixelConstantBuffer pcb;
+			pcb.flipbookParameter.enableInterpolation = static_cast<float>(m_state.EnableInterpolation);
+			pcb.flipbookParameter.interpolationType = static_cast<float>(m_state.InterpolationType);
+
+			m_renderer->SetPixelBufferToShader(&pcb.flipbookParameter, sizeof(float) * 4, psOffset);
+#endif
 		}
 		else
 		{
@@ -2080,6 +2216,15 @@ public:
 			vcb.constantVSBuffer[1] = ToStruct(mProj);
 			vcb.uvInversed[0] = uvInversed[0];
 			vcb.uvInversed[1] = uvInversed[1];
+			vcb.uvInversed[2] = 0.0f;
+			vcb.uvInversed[3] = 0.0f;
+
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+			vcb.flipbookParameter.enableInterpolation = static_cast<float>(m_state.EnableInterpolation);
+			vcb.flipbookParameter.loopType = static_cast<float>(m_state.UVLoopType);
+			vcb.flipbookParameter.divideX = static_cast<float>(m_state.FlipbookDivideX);
+			vcb.flipbookParameter.divideY = static_cast<float>(m_state.FlipbookDivideY);
+#endif
 
 			m_renderer->SetVertexBufferToShader(&vcb, sizeof(VertexConstantBuffer), 0);
 
@@ -2090,8 +2235,23 @@ public:
 				pcb.uvInversed[0] = uvInversedBack[0];
 				pcb.uvInversed[1] = uvInversedBack[1];
 
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+				pcb.flipbookParameter.enableInterpolation = static_cast<float>(m_state.EnableInterpolation);
+				pcb.flipbookParameter.interpolationType = static_cast<float>(m_state.InterpolationType);
+#endif
+
 				m_renderer->SetPixelBufferToShader(&pcb, sizeof(DistortionPixelConstantBuffer), 0);
 			}
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+			else
+			{
+				PixelConstantBuffer pcb;
+				pcb.flipbookParameter.enableInterpolation = static_cast<float>(m_state.EnableInterpolation);
+				pcb.flipbookParameter.interpolationType = static_cast<float>(m_state.InterpolationType);
+
+				m_renderer->SetPixelBufferToShader(&pcb, sizeof(PixelConstantBuffer), 0);
+			}
+#endif
 		}
 
 		shader_->SetConstantBuffer();
@@ -2146,13 +2306,34 @@ typedef ::Effekseer::ModelRenderer::InstanceParameter efkModelInstanceParam;
 typedef ::Effekseer::Vec3f efkVector3D;
 
 template<int MODEL_COUNT>
-struct ModelRendererVertexConstantBuffer
+ struct ModelRendererVertexConstantBuffer
 {
 	Effekseer::Matrix44		CameraMatrix;
 	Effekseer::Matrix44		ModelMatrix[MODEL_COUNT];
 	float	ModelUV[MODEL_COUNT][4];
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 	float	ModelAlphaUV[MODEL_COUNT][4];
+
+	struct
+	{
+		union
+		{
+			float Buffer[4];
+
+			struct
+			{
+				float EnableInterpolation;
+				float LoopType;
+				float DivideX;
+				float DivideY;
+			};
+		};
+	} ModelFlipbookParameter;
+	
+	float	ModelFlipbookIndexAndNextRate[MODEL_COUNT][4];
+
+	float	ModelAlphaThreshold[MODEL_COUNT][4];
+
 #endif
 	float	ModelColor[MODEL_COUNT][4];
 
@@ -2167,6 +2348,22 @@ struct ModelRendererPixelConstantBuffer
 	float	LightDirection[4];
 	float	LightColor[4];
 	float	LightAmbientColor[4];
+
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+	struct
+	{
+		union
+		{
+			float Buffer[4];
+
+			struct
+			{
+				float EnableInterpolation;
+				float InterpolationType;
+			};
+		};
+	} ModelFlipbookParameter;
+#endif
 };
 
 class ModelRendererBase
@@ -2186,6 +2383,8 @@ protected:
 	std::vector<Effekseer::RectF> uvSorted_;
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 	std::vector<Effekseer::RectF> alphaUVSorted_;
+	std::vector<float> flipbookIndexAndNextRateSorted_;
+	std::vector<float> alphaThresholdSorted_;
 #endif
 	std::vector<Effekseer::Color> colorsSorted_;
 	std::vector<int32_t> timesSorted_;
@@ -2196,6 +2395,8 @@ protected:
 	std::vector<Effekseer::RectF> m_uv;
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 	std::vector<Effekseer::RectF> m_alphaUV;
+	std::vector<float> m_flipbookIndexAndNextRate;
+	std::vector<float> m_alphaThreshold;
 #endif
 	std::vector<Effekseer::Color> m_colors;
 	std::vector<int32_t> m_times;
@@ -2221,6 +2422,32 @@ protected:
 
 	ModelRendererBase()
 	{
+	}
+
+	template <typename RENDERER>
+	void GetInversedFlags(RENDERER* renderer, std::array<float, 4>& uvInversed, std::array<float, 4>& uvInversedBack)
+	{
+		if (renderer->GetTextureUVStyle() == UVStyle::VerticalFlipped)
+		{
+			uvInversed[0] = 1.0f;
+			uvInversed[1] = -1.0f;
+		}
+		else
+		{
+			uvInversed[0] = 0.0f;
+			uvInversed[1] = 1.0f;
+		}
+
+		if (renderer->GetBackgroundTextureUVStyle() == UVStyle::VerticalFlipped)
+		{
+			uvInversedBack[0] = 1.0f;
+			uvInversedBack[1] = -1.0f;
+		}
+		else
+		{
+			uvInversedBack[0] = 0.0f;
+			uvInversedBack[1] = 1.0f;
+		}
 	}
 
 	template <typename RENDERER>
@@ -2259,6 +2486,7 @@ protected:
 			uvSorted_.resize(m_matrixes.size());
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 			alphaUVSorted_.resize(m_matrixes.size());
+			flipbookIndexAndNextRateSorted_.resize(m_matrixes.size());
 #endif
 			colorsSorted_.resize(m_matrixes.size());
 			timesSorted_.resize(m_matrixes.size());
@@ -2279,6 +2507,8 @@ protected:
 				uvSorted_[keyValues_[i].Value] = m_uv[i];
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 				alphaUVSorted_[keyValues_[i].Value] = m_alphaUV[i];
+				flipbookIndexAndNextRateSorted_[keyValues_[i].Value] = m_flipbookIndexAndNextRate[i];
+				alphaThresholdSorted_[keyValues_[i].Value] = m_alphaThreshold[i];
 #endif
 				colorsSorted_[keyValues_[i].Value] = m_colors[i];
 				timesSorted_[keyValues_[i].Value] = m_times[i];
@@ -2304,6 +2534,8 @@ protected:
 			m_uv = uvSorted_;
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 			m_alphaUV = alphaUVSorted_;
+			m_flipbookIndexAndNextRate = flipbookIndexAndNextRateSorted_;
+			m_alphaThreshold = alphaThresholdSorted_;
 #endif
 			m_colors = colorsSorted_;
 			m_times = timesSorted_;
@@ -2312,7 +2544,123 @@ protected:
 		}
 	}
 
-public:
+	template <typename RENDERER, typename SHADER, int InstanceCount>
+	void StoreFileUniform(RENDERER* renderer,
+						  SHADER* shader_,
+						  Effekseer::MaterialData* material,
+						  Effekseer::MaterialParameter* materialParam,
+						  const efkModelNodeParam& param,
+						  int32_t renderPassInd,
+						  float*& cutomData1Ptr,
+						  float*& cutomData2Ptr)
+	{
+		std::array<float, 4> uvInversed;
+		std::array<float, 4> uvInversedBack;
+		cutomData1Ptr = nullptr;
+		cutomData2Ptr = nullptr;
+
+		GetInversedFlags(renderer, uvInversed, uvInversedBack);
+
+		std::array<float, 4> uvInversedMaterial;
+		uvInversedMaterial[0] = uvInversed[0];
+		uvInversedMaterial[1] = uvInversed[1];
+		uvInversedMaterial[2] = uvInversedBack[0];
+		uvInversedMaterial[3] = uvInversedBack[1];
+
+		// camera
+		float cameraPosition[4];
+		::Effekseer::Vec3f cameraPosition3 = renderer->GetCameraPosition();
+		VectorToFloat4(cameraPosition3, cameraPosition);
+
+		// time
+		std::array<float, 4> predefined_uniforms;
+		predefined_uniforms.fill(0.5f);
+		predefined_uniforms[0] = renderer->GetTime();
+
+		// vs
+		int32_t vsOffset = sizeof(Effekseer::Matrix44) + (sizeof(Effekseer::Matrix44) + sizeof(float) * 4 * 2) * InstanceCount;
+
+		renderer->SetVertexBufferToShader(uvInversedMaterial.data(), sizeof(float) * 4, vsOffset);
+		vsOffset += (sizeof(float) * 4);
+
+		renderer->SetVertexBufferToShader(predefined_uniforms.data(), sizeof(float) * 4, vsOffset);
+		vsOffset += (sizeof(float) * 4);
+
+		renderer->SetVertexBufferToShader(cameraPosition, sizeof(float) * 4, vsOffset);
+		vsOffset += (sizeof(float) * 4);
+
+		// vs - custom data
+		if (customData1Count_ > 0)
+		{
+			cutomData1Ptr = (float*)((uint8_t*)shader_->GetVertexConstantBuffer() + vsOffset);
+			vsOffset += (sizeof(float) * 4) * InstanceCount;
+		}
+
+		if (customData2Count_ > 0)
+		{
+			cutomData2Ptr = (float*)((uint8_t*)shader_->GetVertexConstantBuffer() + vsOffset);
+			vsOffset += (sizeof(float) * 4) * InstanceCount;
+		}
+
+		for (size_t i = 0; i < materialParam->MaterialUniforms.size(); i++)
+		{
+			renderer->SetVertexBufferToShader(materialParam->MaterialUniforms[i].data(), sizeof(float) * 4, vsOffset);
+			vsOffset += (sizeof(float) * 4);
+		}
+
+		// ps
+		int32_t psOffset = 0;
+		renderer->SetPixelBufferToShader(uvInversedMaterial.data(), sizeof(float) * 4, psOffset);
+		psOffset += (sizeof(float) * 4);
+
+		renderer->SetPixelBufferToShader(predefined_uniforms.data(), sizeof(float) * 4, psOffset);
+		psOffset += (sizeof(float) * 4);
+
+		renderer->SetPixelBufferToShader(cameraPosition, sizeof(float) * 4, psOffset);
+		psOffset += (sizeof(float) * 4);
+
+		// shader model
+		material = param.EffectPointer->GetMaterial(materialParam->MaterialIndex);
+
+		if (material->ShadingModel == ::Effekseer::ShadingModelType::Lit)
+		{
+			float lightDirection[4];
+			float lightColor[4];
+			float lightAmbientColor[4];
+
+			::Effekseer::Vec3f lightDirection3 = renderer->GetLightDirection();
+			lightDirection3 = lightDirection3.Normalize();
+
+			VectorToFloat4(lightDirection3, lightDirection);
+			ColorToFloat4(renderer->GetLightColor(), lightColor);
+			ColorToFloat4(renderer->GetLightAmbientColor(), lightAmbientColor);
+
+			renderer->SetPixelBufferToShader(lightDirection, sizeof(float) * 4, psOffset);
+			psOffset += (sizeof(float) * 4);
+
+			renderer->SetPixelBufferToShader(lightColor, sizeof(float) * 4, psOffset);
+			psOffset += (sizeof(float) * 4);
+
+			renderer->SetPixelBufferToShader(lightAmbientColor, sizeof(float) * 4, psOffset);
+			psOffset += (sizeof(float) * 4);
+		}
+
+		// refraction
+		if (material->RefractionModelUserPtr != nullptr && renderPassInd == 0)
+		{
+			auto mat = renderer->GetCameraMatrix();
+			renderer->SetPixelBufferToShader(&mat, sizeof(float) * 16, psOffset);
+			psOffset += (sizeof(float) * 16);
+		}
+
+		for (size_t i = 0; i < materialParam->MaterialUniforms.size(); i++)
+		{
+			renderer->SetPixelBufferToShader(materialParam->MaterialUniforms[i].data(), sizeof(float) * 4, psOffset);
+			psOffset += (sizeof(float) * 4);
+		}
+	}
+
+ public:
 
 	virtual ~ModelRendererBase() {}
 
@@ -2325,6 +2673,8 @@ public:
 		m_uv.clear();
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 		m_alphaUV.clear();
+		m_flipbookIndexAndNextRate.clear();
+		m_alphaThreshold.clear();
 #endif
 		m_colors.clear();
 		m_times.clear();
@@ -2335,6 +2685,8 @@ public:
 		uvSorted_.clear();
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 		alphaUVSorted_.clear();
+		flipbookIndexAndNextRateSorted_.clear();
+		alphaThresholdSorted_.clear();
 #endif
 		colorsSorted_.clear();
 		timesSorted_.clear();
@@ -2395,6 +2747,8 @@ public:
 		m_uv.push_back(instanceParameter.UV);
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 		m_alphaUV.push_back(instanceParameter.AlphaUV);
+		m_flipbookIndexAndNextRate.push_back(instanceParameter.FlipbookIndexAndNextRate);
+		m_alphaThreshold.push_back(instanceParameter.AlphaThreshold);
 #endif
 		m_colors.push_back(instanceParameter.AllColor);
 		m_times.push_back(instanceParameter.Time);
@@ -2764,37 +3118,6 @@ public:
 		
 		renderer->GetRenderState()->Update(distortion);
 
-		std::array<float, 4> uvInversed;
-		std::array<float, 4> uvInversedBack;
-		std::array<float, 4> uvInversedMaterial;
-		
-		if (renderer->GetTextureUVStyle() == UVStyle::VerticalFlipped)
-		{
-			uvInversed[0] = 1.0f;
-			uvInversed[1] = -1.0f;
-		}
-		else
-		{
-			uvInversed[0] = 0.0f;
-			uvInversed[1] = 1.0f;
-		}
-
-		if (renderer->GetBackgroundTextureUVStyle() == UVStyle::VerticalFlipped)
-		{
-			uvInversedBack[0] = 1.0f;
-			uvInversedBack[1] = -1.0f;
-		}
-		else
-		{
-			uvInversedBack[0] = 0.0f;
-			uvInversedBack[1] = 1.0f;
-		}
-
-		uvInversedMaterial[0] = uvInversed[0];
-		uvInversedMaterial[1] = uvInversed[1];
-		uvInversedMaterial[2] = uvInversedBack[0];
-		uvInversedMaterial[3] = uvInversedBack[1];
-
 		ModelRendererVertexConstantBuffer<InstanceCount>* vcb =
 			(ModelRendererVertexConstantBuffer<InstanceCount>*)shader_->GetVertexConstantBuffer();
 
@@ -2803,101 +3126,15 @@ public:
 
 		if (materialParam != nullptr && material != nullptr)
 		{
-			// camera
-			float cameraPosition[4];
-			::Effekseer::Vec3f cameraPosition3 = renderer->GetCameraPosition();
-			VectorToFloat4(cameraPosition3, cameraPosition);
-
-			// time
-			std::array<float, 4> predefined_uniforms;
-			predefined_uniforms.fill(0.5f);
-			predefined_uniforms[0] = renderer->GetTime();
-
-			// vs
-			int32_t vsOffset = sizeof(Effekseer::Matrix44) + (sizeof(Effekseer::Matrix44) + sizeof(float) * 4 * 2) * InstanceCount;
-
-			renderer->SetVertexBufferToShader(uvInversedMaterial.data(), sizeof(float) * 4, vsOffset);
-			vsOffset += (sizeof(float) * 4);
-
-			renderer->SetVertexBufferToShader(predefined_uniforms.data(), sizeof(float) * 4, vsOffset);
-			vsOffset += (sizeof(float) * 4);
-
-			renderer->SetVertexBufferToShader(cameraPosition, sizeof(float) * 4, vsOffset);
-			vsOffset += (sizeof(float) * 4);
-
-
-			// vs - custom data
-			if (customData1Count_ > 0)
-			{
-				cutomData1Ptr = (float*)((uint8_t*)shader_->GetVertexConstantBuffer() + vsOffset);
-				vsOffset += (sizeof(float) * 4) * InstanceCount;
-			}
-
-			if (customData2Count_ > 0)
-			{
-				cutomData2Ptr = (float*)((uint8_t*)shader_->GetVertexConstantBuffer() + vsOffset);
-				vsOffset += (sizeof(float) * 4) * InstanceCount;
-			}
-
-			for (size_t i = 0; i < materialParam->MaterialUniforms.size(); i++)
-			{
-				renderer->SetVertexBufferToShader(materialParam->MaterialUniforms[i].data(), sizeof(float) * 4, vsOffset);
-				vsOffset += (sizeof(float) * 4);
-			}
-
-			// ps
-			int32_t psOffset = 0;
-			renderer->SetPixelBufferToShader(uvInversedMaterial.data(), sizeof(float) * 4, psOffset);
-			psOffset += (sizeof(float) * 4);
-
-			renderer->SetPixelBufferToShader(predefined_uniforms.data(), sizeof(float) * 4, psOffset);
-			psOffset += (sizeof(float) * 4);
-
-			renderer->SetPixelBufferToShader(cameraPosition, sizeof(float) * 4, psOffset);
-			psOffset += (sizeof(float) * 4);
-
-			// shader model
-			material = param.EffectPointer->GetMaterial(materialParam->MaterialIndex);
-
-			if (material->ShadingModel == ::Effekseer::ShadingModelType::Lit)
-			{
-				float lightDirection[4];
-				float lightColor[4];
-				float lightAmbientColor[4];
-
-				::Effekseer::Vec3f lightDirection3 = renderer->GetLightDirection();
-				lightDirection3 = lightDirection3.Normalize();
-				
-				VectorToFloat4(lightDirection3, lightDirection);
-				ColorToFloat4(renderer->GetLightColor(), lightColor);
-				ColorToFloat4(renderer->GetLightAmbientColor(), lightAmbientColor);
-
-				renderer->SetPixelBufferToShader(lightDirection, sizeof(float) * 4, psOffset);
-				psOffset += (sizeof(float) * 4);
-
-				renderer->SetPixelBufferToShader(lightColor, sizeof(float) * 4, psOffset);
-				psOffset += (sizeof(float) * 4);
-
-				renderer->SetPixelBufferToShader(lightAmbientColor, sizeof(float) * 4, psOffset);
-				psOffset += (sizeof(float) * 4);
-			}
-
-			// refraction
-			if (material->RefractionModelUserPtr != nullptr && renderPassInd == 0)
-			{
-				auto mat = renderer->GetCameraMatrix();
-				renderer->SetPixelBufferToShader(&mat, sizeof(float) * 16, psOffset);
-				psOffset += (sizeof(float) * 16);
-			}
-
-			for (size_t i = 0; i < materialParam->MaterialUniforms.size(); i++)
-			{
-				renderer->SetPixelBufferToShader(materialParam->MaterialUniforms[i].data(), sizeof(float) * 4, psOffset);
-				psOffset += (sizeof(float) * 4);
-			}
+			StoreFileUniform<RENDERER, SHADER, InstanceCount>(renderer, shader_, material, materialParam, param, renderPassInd, cutomData1Ptr, cutomData2Ptr);
 		}
 		else
 		{
+			std::array<float, 4> uvInversed;
+			std::array<float, 4> uvInversedBack;
+
+			GetInversedFlags(renderer, uvInversed, uvInversedBack);
+
 			vcb->UVInversed[0] = uvInversed[0];
 			vcb->UVInversed[1] = uvInversed[1];
 
@@ -2908,6 +3145,11 @@ public:
 
 				pcb[4 * 1 + 0] = uvInversedBack[0];
 				pcb[4 * 1 + 1] = uvInversedBack[1];
+
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+				pcb[4 * 2 + 0] = param.BasicParameterPtr->EnableInterpolation;
+				pcb[4 * 2 + 1] = param.BasicParameterPtr->InterpolationType;
+#endif
 			}
 			else
 			{
@@ -2931,10 +3173,22 @@ public:
 					ColorToFloat4(renderer->GetLightAmbientColor(), vcb->LightAmbientColor);
 					ColorToFloat4(renderer->GetLightAmbientColor(), pcb->LightAmbientColor);
 				}
+
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+				pcb->ModelFlipbookParameter.EnableInterpolation = param.BasicParameterPtr->EnableInterpolation;
+				pcb->ModelFlipbookParameter.InterpolationType = param.BasicParameterPtr->InterpolationType;
+#endif
 			}
 		}
 
 		vcb->CameraMatrix = renderer->GetCameraProjectionMatrix();
+
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+		vcb->ModelFlipbookParameter.EnableInterpolation = param.BasicParameterPtr->EnableInterpolation;
+		vcb->ModelFlipbookParameter.LoopType = param.BasicParameterPtr->UVLoopType;
+		vcb->ModelFlipbookParameter.DivideX =  param.BasicParameterPtr->FlipbookDivideX;
+		vcb->ModelFlipbookParameter.DivideY =  param.BasicParameterPtr->FlipbookDivideY;
+#endif
 
 		// Check time
 		auto stTime0 = m_times[0] % model->GetFrameCount();
@@ -2986,6 +3240,10 @@ public:
 					vcb->ModelAlphaUV[num][1] = m_alphaUV[loop + num].Y;
 					vcb->ModelAlphaUV[num][2] = m_alphaUV[loop + num].Width;
 					vcb->ModelAlphaUV[num][3] = m_alphaUV[loop + num].Height;
+
+					vcb->ModelFlipbookIndexAndNextRate[num][0] = m_flipbookIndexAndNextRate[loop + num];
+
+					vcb->ModelAlphaThreshold[num][0] = m_alphaThreshold[loop + num];
 #endif
 
 					ColorToFloat4(m_colors[loop+num],vcb->ModelColor[num]);
@@ -3037,6 +3295,10 @@ public:
 				vcb->ModelAlphaUV[0][1] = m_alphaUV[loop].Y;
 				vcb->ModelAlphaUV[0][2] = m_alphaUV[loop].Width;
 				vcb->ModelAlphaUV[0][3] = m_alphaUV[loop].Height;
+
+				vcb->ModelFlipbookIndexAndNextRate[0][0] = m_flipbookIndexAndNextRate[loop];
+
+				vcb->ModelAlphaThreshold[0][0] = m_alphaThreshold[loop];
 #endif
 
 				// DepthParameters
@@ -3511,6 +3773,11 @@ namespace EffekseerRenderer
 							verteies[i].Pos.Y = 0.0f;
 							verteies[i].Pos.Z = 0.0f;
 							verteies[i].SetColor(param.Colors[i]);
+
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+							verteies[i].FlipbookIndexAndNextRate = param.FlipbookIndexAndNextRate;
+							verteies[i].AlphaThreshold = param.AlphaThreshold;
+#endif
 						}
 					}
 
@@ -3878,6 +4145,12 @@ namespace EffekseerRenderer
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 			state.TextureFilter3 = param.BasicParameterPtr->TextureFilter3;
 			state.TextureWrap3 = param.BasicParameterPtr->TextureWrap3;
+
+			state.EnableInterpolation = param.BasicParameterPtr->EnableInterpolation;
+			state.UVLoopType = param.BasicParameterPtr->UVLoopType;
+			state.InterpolationType = param.BasicParameterPtr->InterpolationType;
+			state.FlipbookDivideX = param.BasicParameterPtr->FlipbookDivideX;
+			state.FlipbookDivideY = param.BasicParameterPtr->FlipbookDivideY;
 #endif
 
 
@@ -4035,6 +4308,12 @@ protected:
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 		state.TextureFilter3 = param.BasicParameterPtr->TextureFilter3;
 		state.TextureWrap3 = param.BasicParameterPtr->TextureWrap3;
+
+		state.EnableInterpolation = param.BasicParameterPtr->EnableInterpolation;
+		state.UVLoopType = param.BasicParameterPtr->UVLoopType;
+		state.InterpolationType = param.BasicParameterPtr->InterpolationType;
+		state.FlipbookDivideX = param.BasicParameterPtr->FlipbookDivideX;
+		state.FlipbookDivideY = param.BasicParameterPtr->FlipbookDivideY;
 #endif
 
 		state.Distortion = param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::BackDistortion;
@@ -4316,6 +4595,12 @@ protected:
 
 			v[7].AlphaUV[0] = alphaUVtexNext;
 			v[7].AlphaUV[1] = alphaUVv3;
+
+			for (int32_t i = 0; i < 8; i++)
+			{
+				v[i].FlipbookIndexAndNextRate = instanceParameter.FlipbookIndexAndNextRate;
+				v[i].AlphaThreshold = instanceParameter.AlphaThreshold;
+			}
 #endif
 
 			// distortion
@@ -4696,6 +4981,12 @@ protected:
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 		state.TextureFilter3 = param.BasicParameterPtr->TextureFilter3;
 		state.TextureWrap3 = param.BasicParameterPtr->TextureWrap3;
+
+		state.EnableInterpolation = param.BasicParameterPtr->EnableInterpolation;
+		state.UVLoopType = param.BasicParameterPtr->UVLoopType;
+		state.InterpolationType = param.BasicParameterPtr->InterpolationType;
+		state.FlipbookDivideX = param.BasicParameterPtr->FlipbookDivideX;
+		state.FlipbookDivideY = param.BasicParameterPtr->FlipbookDivideY;
 #endif
 
 
@@ -4767,6 +5058,11 @@ protected:
 			verteies[i].Pos.Z = 0.0f;
 	
 			verteies[i].SetColor( instanceParameter.Colors[i] );
+
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+			verteies[i].FlipbookIndexAndNextRate = instanceParameter.FlipbookIndexAndNextRate;
+			verteies[i].AlphaThreshold = instanceParameter.AlphaThreshold;
+#endif
 		}
 		
 		verteies[0].UV[0] = instanceParameter.UV.X;
@@ -5448,6 +5744,16 @@ namespace EffekseerRenderer
 					v[2].Pos.Z = 0.0f;
 					v[2].SetColor(rightColor);
 
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+					v[0].FlipbookIndexAndNextRate = param.FlipbookIndexAndNextRate;
+					v[1].FlipbookIndexAndNextRate = param.FlipbookIndexAndNextRate;
+					v[2].FlipbookIndexAndNextRate = param.FlipbookIndexAndNextRate;
+
+					v[0].AlphaThreshold = param.AlphaThreshold;
+					v[1].AlphaThreshold = param.AlphaThreshold;
+					v[2].AlphaThreshold = param.AlphaThreshold;
+#endif
+
 					if (parameter.SplineDivision > 1)
 					{
 						v[1].Pos = ToStruct(spline.GetValue(param.InstanceIndex + sploop / (float)parameter.SplineDivision));
@@ -5769,6 +6075,12 @@ namespace EffekseerRenderer
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 			state.TextureFilter3 = param.BasicParameterPtr->TextureFilter3;
 			state.TextureWrap3 = param.BasicParameterPtr->TextureWrap3;
+
+			state.EnableInterpolation = param.BasicParameterPtr->EnableInterpolation;
+			state.UVLoopType = param.BasicParameterPtr->UVLoopType;
+			state.InterpolationType = param.BasicParameterPtr->InterpolationType;
+			state.FlipbookDivideX = param.BasicParameterPtr->FlipbookDivideX;
+			state.FlipbookDivideY = param.BasicParameterPtr->FlipbookDivideY;
 #endif
 
 			state.Distortion = param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::BackDistortion;

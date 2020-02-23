@@ -50,17 +50,17 @@ struct uStr
 	}
 };
 
-static void GetParentDir(EFK_CHAR* dst, const EFK_CHAR* src)
+static void GetParentDir(char16_t* dst, const char16_t* src)
 {
 	int i, last = -1;
 	for (i = 0; src[i] != L'\0'; i++)
 	{
-		if (src[i] == L'/' || src[i] == L'\\')
+		if (src[i] == u'/' || src[i] == u'\\')
 			last = i;
 	}
 	if (last >= 0)
 	{
-		memcpy(dst, src, last * sizeof(EFK_CHAR));
+		memcpy(dst, src, last * sizeof(char16_t));
 		dst[last] = L'\0';
 	}
 	else
@@ -69,9 +69,9 @@ static void GetParentDir(EFK_CHAR* dst, const EFK_CHAR* src)
 	}
 }
 
-static std::basic_string<EFK_CHAR> GetFileNameWithoutExtension(const EFK_CHAR* filepath)
+static std::basic_string<char16_t> GetFileNameWithoutExtension(const char16_t* filepath)
 {
-	auto path = std::basic_string<EFK_CHAR>(filepath);
+	auto path = Effekseer::PathHelper::Normalize(std::u16string(filepath));
 	size_t i = path.rfind('.', path.length());
 	if (i != std::basic_string<EFK_CHAR>::npos)
 	{
@@ -260,11 +260,11 @@ void* ModelLoader::Load(const EFK_CHAR* path)
 {
 	auto path_we = GetFileNameWithoutExtension(path);
 	auto epath_ = (const char16_t*)path_we.c_str();
-	auto path_ = (const TCHAR*)epath_;
+	auto path_ = tStr<512>(epath_);
 
 	if (m_requiredToCreateResource)
 	{
-		auto model = Cast<UEffekseerModel>(StaticLoadObject(UEffekseerModel::StaticClass(), NULL, path_));
+		auto model = Cast<UEffekseerModel>(StaticLoadObject(UEffekseerModel::StaticClass(), NULL, path_.c_str()));
 		m_uobject->Models.Add(model);
 
 		if (model != nullptr)
@@ -431,7 +431,9 @@ static ::Effekseer::Setting* CreateSetting()
 
 void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR* path, bool isResourceReset)
 {
-	Name = (const TCHAR*)GetFileNameWithoutExtension((const EFK_CHAR*)path).c_str();
+	auto uPath = uStr<260>(path);
+
+	Name = tStr<260>(GetFileNameWithoutExtension(uPath.c_str()).c_str()).c_str();
 
 	::Effekseer::Setting* setting = CreateSetting();
 	 
@@ -452,12 +454,12 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 	auto materialLoader = (MaterialLoader*)setting->GetMaterialLoader();
 	materialLoader->SetUObject(this, isResourceReset);
 
-	EFK_CHAR* rootPath = (EFK_CHAR*)path;
+	auto rootPath = uPath.c_str();
 	EFK_CHAR parentPath[300];
 
 	if (path != nullptr)
 	{
-		GetParentDir(parentPath, (const EFK_CHAR*)path);
+		GetParentDir(parentPath, uPath.c_str());
 		rootPath = parentPath;
 	}
 	

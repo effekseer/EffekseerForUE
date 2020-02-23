@@ -524,6 +524,18 @@ Renderer::~Renderer() { ES_SAFE_DELETE(impl); }
 
 Renderer::Impl* Renderer::GetImpl() { return impl; }
 
+::Effekseer::Vector3D Renderer::GetLightDirection() const { return impl->GetLightDirection(); }
+
+void Renderer::SetLightDirection(const ::Effekseer::Vector3D& direction) { impl->SetLightDirection(direction); }
+
+const ::Effekseer::Color& Renderer::GetLightColor() const { return impl->GetLightColor(); }
+
+void Renderer::SetLightColor(const ::Effekseer::Color& color) { impl->SetLightColor(color); }
+
+const ::Effekseer::Color& Renderer::GetLightAmbientColor() const { return impl->GetLightAmbientColor(); }
+
+void Renderer::SetLightAmbientColor(const ::Effekseer::Color& color) { impl->SetLightAmbientColor(color); }
+
 ::Effekseer::Matrix44 Renderer::GetProjectionMatrix() const { return impl->GetProjectionMatrix(); }
 
 void Renderer::SetProjectionMatrix(const ::Effekseer::Matrix44& mat) { impl->SetProjectionMatrix(mat); }
@@ -577,6 +589,19 @@ void Renderer::SetBackgroundTexture(::Effekseer::TextureData* textureData)
 
 namespace EffekseerRenderer
 {
+
+::Effekseer::Vector3D Renderer::Impl::GetLightDirection() const {return ToStruct(lightDirection_); }
+
+void Renderer::Impl::SetLightDirection(const ::Effekseer::Vector3D& direction) { lightDirection_ = direction; }
+
+const ::Effekseer::Color& Renderer::Impl::GetLightColor() const { return lightColor_; }
+
+void Renderer::Impl::SetLightColor(const ::Effekseer::Color& color) { lightColor_ = color; }
+
+const ::Effekseer::Color& Renderer::Impl::GetLightAmbientColor() const { return lightAmbient_; }
+
+void Renderer::Impl::SetLightAmbientColor(const ::Effekseer::Color& color) { lightAmbient_ = color; }
+
 void Renderer::Impl::CalculateCameraProjectionMatrix() { cameraProjMat_ = cameraMat_ * projectionMat_; }
 
 ::Effekseer::Matrix44 Renderer::Impl::GetProjectionMatrix() const { return ToStruct(projectionMat_); }
@@ -697,6 +722,7 @@ void RenderStateBase::State::Reset()
 	CullingType = ::Effekseer::CullingType::Double;
 	TextureFilterTypes.fill(::Effekseer::TextureFilterType::Nearest);
 	TextureWrapTypes.fill(::Effekseer::TextureWrapType::Clamp);
+	TextureIDs.fill(0);
 }
 
 //-----------------------------------------------------------------------------------
@@ -710,6 +736,7 @@ void RenderStateBase::State::CopyTo( State& state )
 	state.CullingType = CullingType;
 	state.TextureFilterTypes = TextureFilterTypes;
 	state.TextureWrapTypes = TextureWrapTypes;
+	state.TextureIDs = TextureIDs;
 }
 
 //-----------------------------------------------------------------------------------
