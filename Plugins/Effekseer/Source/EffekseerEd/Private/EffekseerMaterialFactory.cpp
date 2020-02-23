@@ -93,6 +93,7 @@ UObject* UEffekseerMaterialFactory::FactoryCreateBinary(
 		UE4MaterialFromEffekseerMaterialOption option;
 		auto originalMaterial = CreateUE4MaterialFromEffekseerMaterial(native, InParent->GetFName().ToString() + TEXT("_Mat/"), InName.ToString() + TEXT("_M"), option);
 		
+		assetEfkMat->Uniforms.Empty();
 		for (auto u : native->result.Uniforms)
 		{
 			FEffekseerUniformProperty prop;
@@ -101,6 +102,7 @@ UObject* UEffekseerMaterialFactory::FactoryCreateBinary(
 			assetEfkMat->Uniforms.Add(prop);
 		}
 
+		assetEfkMat->Textures.Empty();
 		for (auto u : native->result.Textures)
 		{
 			FEffekseerTextureProperty prop;

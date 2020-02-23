@@ -374,6 +374,8 @@ UMaterial* CreateUE4MaterialFromEffekseerMaterial(const std::shared_ptr<NativeEf
 
 	originalMaterial->BlendMode = blendMode;
 
+	originalMaterial->TwoSided = 1;
+
 	originalMaterial->PostEditChange();
 
 	return originalMaterial;
