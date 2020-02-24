@@ -58,9 +58,9 @@ FEffekseerModelMesh UEffekseerModel::GetMesh()
 		for (auto i = 0; i < p->GetFaceCount(f); i++)
 		{
 			auto face = p->GetFaces(f)[i];
-			mesh.Indexes.Add(face.Indexes[0] + vertexOffset);
-			mesh.Indexes.Add(face.Indexes[1] + vertexOffset);
 			mesh.Indexes.Add(face.Indexes[2] + vertexOffset);
+			mesh.Indexes.Add(face.Indexes[1] + vertexOffset);
+			mesh.Indexes.Add(face.Indexes[0] + vertexOffset);
 		}
 
 		vertexOffset += p->GetVertexCount(f);
