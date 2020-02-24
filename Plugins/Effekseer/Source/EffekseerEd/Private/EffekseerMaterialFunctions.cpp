@@ -131,6 +131,18 @@ public:
 		UTexture* texture = Cast<UTexture>(assetPath.TryLoad());
 
 		expression_->Texture = texture;
+
+		if (texture != nullptr)
+		{
+			if (texture->SRGB)
+			{
+				expression_->SamplerType = SAMPLERTYPE_Color;
+			}
+			else
+			{
+				expression_->SamplerType = SAMPLERTYPE_LinearColor;
+			}
+		}
 	}
 
 	UMaterialExpression* GetExpression() const override { return expression_; }
@@ -173,6 +185,18 @@ public:
 		UTexture* texture = Cast<UTexture>(assetPath.TryLoad());
 
 		expression_->Texture = texture;
+
+		if (texture != nullptr)
+		{
+			if (texture->SRGB)
+			{
+				expression_->SamplerType = SAMPLERTYPE_Color;
+			}
+			else
+			{
+				expression_->SamplerType = SAMPLERTYPE_LinearColor;
+			}
+		}
 	}
 
 	UMaterialExpression* GetExpression() const override { return expression_; }
@@ -208,6 +232,18 @@ public:
 		UTexture* texture = Cast<UTexture>(assetPath.TryLoad());
 
 		expression_->Texture = texture;
+
+		if (texture != nullptr)
+		{
+			if (texture->SRGB)
+			{
+				expression_->SamplerType = SAMPLERTYPE_Color;
+			}
+			else
+			{
+				expression_->SamplerType = SAMPLERTYPE_LinearColor;
+			}
+		}
 	}
 
 	UMaterialExpression* GetExpression() const override { return expression_; }
