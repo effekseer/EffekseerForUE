@@ -210,6 +210,10 @@ The normal map to the model does not apply.
 
 If a large number of models are drawn, the speed tends to decrease.
 
+Does not support culling settings.
+
+Materials do not have depth ignoring settings.
+
 ## Todo
 
 - Match of display of Effekseer and UnrealEngine4 of subtraction, distortion
