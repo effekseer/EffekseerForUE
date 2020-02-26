@@ -25,10 +25,6 @@ public:
 	}
 
 	UMaterialExpression* GetExpression() const override { return expression_; }
-
-	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode) override
-	{
-	}
 };
 
 class ConvertedNodeParameter2 : public ConvertedNode
@@ -60,9 +56,13 @@ public:
 
 	UMaterialExpression* GetExpression() const override { return expression_; }
 
-	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode) override
-	{
+	UMaterialExpression* GetExpressions(int32_t ind) const override {
+		if (ind == 0) return expression_;
+		if (ind == 1) return function_;
+		return nullptr;
 	}
+
+	int32_t GetExpressionCount() const { return 2; }
 };
 
 class ConvertedNodeParameter3 : public ConvertedNode
@@ -95,9 +95,13 @@ public:
 
 	UMaterialExpression* GetExpression() const override { return expression_; }
 
-	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode) override
-	{
+	UMaterialExpression* GetExpressions(int32_t ind) const override {
+		if (ind == 0) return expression_;
+		if (ind == 1) return function_;
+		return nullptr;
 	}
+
+	int32_t GetExpressionCount() const { return 2; }
 };
 
 class ConvertedNodeParameter4 : public ConvertedNode
@@ -120,17 +124,13 @@ public:
 	}
 
 	UMaterialExpression* GetExpression() const override { return expression_; }
-
-	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode) override
-	{
-	}
 };
 
 class ConvertedNodeCustomData1 : public ConvertedNode
 {
 private:
 	UMaterialExpressionComponentMask* expression_ = nullptr;
-	UMaterialExpressionMaterialFunctionCall* functions_ = nullptr;
+	UMaterialExpressionMaterialFunctionCall* function_ = nullptr;
 
 public:
 	ConvertedNodeCustomData1(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
@@ -138,14 +138,14 @@ public:
 		expression_ = NewObject<UMaterialExpressionComponentMask>(material);
 		material->Expressions.Add(expression_);
 
-		functions_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
-		material->Expressions.Add(functions_);
+		function_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
+		material->Expressions.Add(function_);
 
 		FStringAssetReference assetPath("/Effekseer/MaterialFunctions/EfkCustomData1.EfkCustomData1");
 		UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
-		functions_->SetMaterialFunction(func);
+		function_->SetMaterialFunction(func);
 
-		expression_->Input.Expression = functions_;
+		expression_->Input.Expression = function_;
 		expression_->R = effekseerNode->GetProperty("R")->Floats[0] > 0 ? 1 : 0;
 		expression_->G = effekseerNode->GetProperty("G")->Floats[0] > 0 ? 1 : 0;
 		expression_->B = effekseerNode->GetProperty("B")->Floats[0] > 0 ? 1 : 0;
@@ -154,16 +154,20 @@ public:
 
 	UMaterialExpression* GetExpression() const override { return expression_; }
 
-	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode) override
-	{
+	UMaterialExpression* GetExpressions(int32_t ind) const override {
+		if (ind == 0) return expression_;
+		if (ind == 1) return function_;
+		return nullptr;
 	}
+
+	int32_t GetExpressionCount() const { return 2; }
 };
 
 class ConvertedNodeCustomData2 : public ConvertedNode
 {
 private:
 	UMaterialExpressionComponentMask* expression_ = nullptr;
-	UMaterialExpressionMaterialFunctionCall* functions_ = nullptr;
+	UMaterialExpressionMaterialFunctionCall* function_ = nullptr;
 
 public:
 	ConvertedNodeCustomData2(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
@@ -171,14 +175,14 @@ public:
 		expression_ = NewObject<UMaterialExpressionComponentMask>(material);
 		material->Expressions.Add(expression_);
 
-		functions_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
-		material->Expressions.Add(functions_);
+		function_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
+		material->Expressions.Add(function_);
 
 		FStringAssetReference assetPath("/Effekseer/MaterialFunctions/EfkCustomData2.EfkCustomData2");
 		UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
-		functions_->SetMaterialFunction(func);
+		function_->SetMaterialFunction(func);
 
-		expression_->Input.Expression = functions_;
+		expression_->Input.Expression = function_;
 		expression_->R = effekseerNode->GetProperty("R")->Floats[0] > 0 ? 1 : 0;
 		expression_->G = effekseerNode->GetProperty("G")->Floats[0] > 0 ? 1 : 0;
 		expression_->B = effekseerNode->GetProperty("B")->Floats[0] > 0 ? 1 : 0;
@@ -187,7 +191,11 @@ public:
 
 	UMaterialExpression* GetExpression() const override { return expression_; }
 
-	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode) override
-	{
+	UMaterialExpression* GetExpressions(int32_t ind) const override {
+		if (ind == 0) return expression_;
+		if (ind == 1) return function_;
+		return nullptr;
 	}
+
+	int32_t GetExpressionCount() const { return 2; }
 };

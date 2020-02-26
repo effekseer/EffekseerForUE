@@ -63,46 +63,46 @@ public:
 		}
 	}
 
-	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode) override
+	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) override
 	{
 		if (targetInd == effekseerNode_->GetInputPinIndex("BaseColor"))
 		{
-			material_->BaseColor.Expression = outputNode->GetExpression();
+			material_->BaseColor.Expression = outputNode->GetExpressions(outputNodePinIndex);
 		}
 
 		if (targetInd == effekseerNode_->GetInputPinIndex("Opacity"))
 		{
-			material_->Opacity.Expression = outputNode->GetExpression();
+			material_->Opacity.Expression = outputNode->GetExpressions(outputNodePinIndex);
 		}
 
 		if (targetInd == effekseerNode_->GetInputPinIndex("Roughness"))
 		{
-			material_->Roughness.Expression = outputNode->GetExpression();
+			material_->Roughness.Expression = outputNode->GetExpressions(outputNodePinIndex);
 		}
 
 		if (targetInd == effekseerNode_->GetInputPinIndex("AmbientOcclusion"))
 		{
-			material_->AmbientOcclusion.Expression = outputNode->GetExpression();
+			material_->AmbientOcclusion.Expression = outputNode->GetExpressions(outputNodePinIndex);
 		}
 
 		if (targetInd == effekseerNode_->GetInputPinIndex("Metallic"))
 		{
-			material_->Metallic.Expression = outputNode->GetExpression();
+			material_->Metallic.Expression = outputNode->GetExpressions(outputNodePinIndex);
 		}
 
 		if (targetInd == effekseerNode_->GetInputPinIndex("OpacityMask"))
 		{
-			material_->OpacityMask.Expression = outputNode->GetExpression();
+			material_->OpacityMask.Expression = outputNode->GetExpressions(outputNodePinIndex);
 		}
 
 		if (targetInd == effekseerNode_->GetInputPinIndex("WorldPositionOffset"))
 		{
-			material_->WorldPositionOffset.Expression = outputNode->GetExpression();
+			material_->WorldPositionOffset.Expression = outputNode->GetExpressions(outputNodePinIndex);
 		}
 
 		if (targetInd == effekseerNode_->GetInputPinIndex("Emissive"))
 		{
-			material_->EmissiveColor.Expression = outputNode->GetExpression();
+			material_->EmissiveColor.Expression = outputNode->GetExpressions(outputNodePinIndex);
 		}
 	}
 };
@@ -147,16 +147,16 @@ public:
 
 	UMaterialExpression* GetExpression() const override { return expression_; }
 
-	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode) override
+	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) override
 	{
 		if (targetInd == effekseerNode_->GetInputPinIndex("Texture"))
 		{
-			expression_->TextureObject.Expression = outputNode->GetExpression();
+			expression_->TextureObject.Expression = outputNode->GetExpressions(outputNodePinIndex);
 		}
 
 		if (targetInd == effekseerNode_->GetInputPinIndex("UV"))
 		{
-			expression_->Coordinates.Expression = outputNode->GetExpression();
+			expression_->Coordinates.Expression = outputNode->GetExpressions(outputNodePinIndex);
 		}
 	}
 };
@@ -200,10 +200,6 @@ public:
 	}
 
 	UMaterialExpression* GetExpression() const override { return expression_; }
-
-	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode) override
-	{
-	}
 };
 
 class ConvertedNodeTextureObjectParameter : public ConvertedNode
@@ -247,10 +243,6 @@ public:
 	}
 
 	UMaterialExpression* GetExpression() const override { return expression_; }
-
-	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode) override
-	{
-	}
 };
 
 template<class T>
@@ -379,15 +371,19 @@ UMaterial* CreateUE4MaterialFromEffekseerMaterial(const std::shared_ptr<NativeEf
 			auto n = it->second->Create(originalMaterial, context, node);
 			convertedNodes[node->GUID] = n;
 
-			if (n->GetExpression() != nullptr)
+			for (int32_t i = 0; i < n->GetExpressionCount(); i++)
 			{
-				n->GetExpression()->MaterialExpressionEditorX = node->Pos.X;
-				n->GetExpression()->MaterialExpressionEditorY = node->Pos.Y;
-			}
-			else
-			{
-				originalMaterial->EditorX = node->Pos.X;
-				originalMaterial->EditorY = node->Pos.Y;
+				if (n->GetExpressions(i) != nullptr)
+				{
+					n->GetExpressions(i)->MaterialExpressionEditorX = node->Pos.X;
+					n->GetExpressions(i)->MaterialExpressionEditorY = node->Pos.Y;
+				}
+				else
+				{
+					// for output
+					originalMaterial->EditorX = node->Pos.X;
+					originalMaterial->EditorY = node->Pos.Y;
+				}
 			}
 		}
 	}
@@ -405,7 +401,7 @@ UMaterial* CreateUE4MaterialFromEffekseerMaterial(const std::shared_ptr<NativeEf
 		if (convertedNodes.count(outputNode->GUID) == 0) continue;
 		if (convertedNodes.count(inputNode->GUID) == 0) continue;
 
-		convertedNodes[inputNode->GUID]->Connect(link->InputPin->PinIndex, convertedNodes[outputNode->GUID]);
+		convertedNodes[inputNode->GUID]->Connect(link->InputPin->PinIndex, convertedNodes[outputNode->GUID], link->OutputPin->PinIndex);
 	}
 
 	originalMaterial->BlendMode = blendMode;

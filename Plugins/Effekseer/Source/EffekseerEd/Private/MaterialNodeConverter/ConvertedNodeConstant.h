@@ -111,10 +111,6 @@ public:
 	}
 
 	UMaterialExpression* GetExpression() const override { return expression_; }
-
-	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode) override
-	{
-	}
 };
 
 class ConvertedNodeCameraPositionWS : public ConvertedNode
@@ -136,8 +132,4 @@ public:
 	}
 
 	UMaterialExpression* GetExpression() const override { return expression_; }
-
-	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode) override
-	{
-	}
 };

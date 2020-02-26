@@ -47,9 +47,9 @@ public:
 
 	UMaterialExpression* GetExpression() const override { return expression_; }
 
-	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode) override
+	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) override
 	{
-		expression_->Input.Expression = outputNode->GetExpression();
+		expression_->Input.Expression = outputNode->GetExpressions(outputNodePinIndex);
 	}
 };
 
@@ -68,9 +68,9 @@ public:
 
 	UMaterialExpression* GetExpression() const override { return expression_; }
 
-	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode) override
+	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) override
 	{
-		expression_->VectorInput.Expression = outputNode->GetExpression();
+		expression_->VectorInput.Expression = outputNode->GetExpressions(outputNodePinIndex);
 	}
 };
 
@@ -94,16 +94,16 @@ public:
 
 	UMaterialExpression* GetExpression() const override { return expression_; }
 
-	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode) override
+	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) override
 	{
 		if (targetInd == effekseerNode_->GetInputPinIndex("Value1"))
 		{
-			expression_->A.Expression = outputNode->GetExpression();
+			expression_->A.Expression = outputNode->GetExpressions(outputNodePinIndex);
 		}
 
 		if (targetInd == effekseerNode_->GetInputPinIndex("Value2"))
 		{
-			expression_->B.Expression = outputNode->GetExpression();
+			expression_->B.Expression = outputNode->GetExpressions(outputNodePinIndex);
 		}
 	}
 };
@@ -125,16 +125,16 @@ public:
 
 	UMaterialExpression* GetExpression() const override { return expression_; }
 
-	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode) override
+	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) override
 	{
 		if (targetInd == effekseerNode_->GetInputPinIndex("Value1"))
 		{
-			expression_->A.Expression = outputNode->GetExpression();
+			expression_->A.Expression = outputNode->GetExpressions(outputNodePinIndex);
 		}
 
 		if (targetInd == effekseerNode_->GetInputPinIndex("Value2"))
 		{
-			expression_->B.Expression = outputNode->GetExpression();
+			expression_->B.Expression = outputNode->GetExpressions(outputNodePinIndex);
 		}
 	}
 };
@@ -179,16 +179,25 @@ public:
 
 	UMaterialExpression* GetExpression() const override { return expression_; }
 
-	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode) override
+	UMaterialExpression* GetExpressions(int32_t ind) const override {
+		if (ind == 0) return expression_;
+		if (ind == 1) return expression1_;
+		if (ind == 2) return expression2_;
+		return nullptr;
+	}
+
+	int32_t GetExpressionCount() const { return 3; }
+
+	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) override
 	{
 		if (targetInd == effekseerNode_->GetInputPinIndex("Y"))
 		{
-			expression_->Y.Expression = outputNode->GetExpression();
+			expression_->Y.Expression = outputNode->GetExpressions(outputNodePinIndex);
 		}
 
 		if (targetInd == effekseerNode_->GetInputPinIndex("X"))
 		{
-			expression_->X.Expression = outputNode->GetExpression();
+			expression_->X.Expression = outputNode->GetExpressions(outputNodePinIndex);
 		}
 	}
 };
@@ -232,16 +241,25 @@ public:
 
 	UMaterialExpression* GetExpression() const override { return expression_; }
 
-	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode) override
+	UMaterialExpression* GetExpressions(int32_t ind) const override {
+		if (ind == 0) return expression_;
+		if (ind == 1) return expression1_;
+		if (ind == 2) return expression2_;
+		return nullptr;
+	}
+
+	int32_t GetExpressionCount() const { return 3; }
+
+	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) override
 	{
 		if (targetInd == effekseerNode_->GetInputPinIndex("Value1"))
 		{
-			expression_->A.Expression = outputNode->GetExpression();
+			expression_->A.Expression = outputNode->GetExpressions(outputNodePinIndex);
 		}
 
 		if (targetInd == effekseerNode_->GetInputPinIndex("Value2"))
 		{
-			expression_->B.Expression = outputNode->GetExpression();
+			expression_->B.Expression = outputNode->GetExpressions(outputNodePinIndex);
 		}
 	}
 };
@@ -274,16 +292,16 @@ public:
 
 	UMaterialExpression* GetExpression() const override { return expression_; }
 
-	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode) override
+	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) override
 	{
 		if (targetInd == effekseerNode_->GetInputPinIndex("Base"))
 		{
-			expression_->Base.Expression = outputNode->GetExpression();
+			expression_->Base.Expression = outputNode->GetExpressions(outputNodePinIndex);
 		}
 
 		if (targetInd == effekseerNode_->GetInputPinIndex("Exp"))
 		{
-			expression_->Exponent.Expression = outputNode->GetExpression();
+			expression_->Exponent.Expression = outputNode->GetExpressions(outputNodePinIndex);
 		}
 	}
 };
@@ -309,16 +327,16 @@ public:
 
 	UMaterialExpression* GetExpression() const override { return expression_; }
 
-	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode) override
+	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) override
 	{
 		if (targetInd == effekseerNode_->GetInputPinIndex("Min"))
 		{
-			expression_->Min.Expression = outputNode->GetExpression();
+			expression_->Min.Expression = outputNode->GetExpressions(outputNodePinIndex);
 		}
 
 		if (targetInd == effekseerNode_->GetInputPinIndex("Max"))
 		{
-			expression_->Max.Expression = outputNode->GetExpression();
+			expression_->Max.Expression = outputNode->GetExpressions(outputNodePinIndex);
 		}
 	}
 };
@@ -347,21 +365,21 @@ public:
 
 	UMaterialExpression* GetExpression() const override { return expression_; }
 
-	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode) override
+	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) override
 	{
 		if (targetInd == effekseerNode_->GetInputPinIndex("Value1"))
 		{
-			expression_->A.Expression = outputNode->GetExpression();
+			expression_->A.Expression = outputNode->GetExpressions(outputNodePinIndex);
 		}
 
 		if (targetInd == effekseerNode_->GetInputPinIndex("Value2"))
 		{
-			expression_->B.Expression = outputNode->GetExpression();
+			expression_->B.Expression = outputNode->GetExpressions(outputNodePinIndex);
 		}
 
 		if (targetInd == effekseerNode_->GetInputPinIndex("Alpha"))
 		{
-			expression_->Alpha.Expression = outputNode->GetExpression();
+			expression_->Alpha.Expression = outputNode->GetExpressions(outputNodePinIndex);
 		}
 	}
 };
@@ -388,9 +406,9 @@ public:
 
 	UMaterialExpression* GetExpression() const override { return expression_; }
 
-	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode) override
+	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) override
 	{
-		expression_->Input.Expression = outputNode->GetExpression();
+		expression_->Input.Expression = outputNode->GetExpressions(outputNodePinIndex);
 	}
 };
 

@@ -14,7 +14,11 @@ public:
 
 	virtual UMaterialExpression* GetExpression() const { return nullptr; }
 
-	virtual void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode) {}
+	virtual UMaterialExpression* GetExpressions(int32_t i) const { return GetExpression(); }
+
+	virtual int32_t GetExpressionCount() const { return 1; }
+
+	virtual void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) {}
 };
 
 template<class T>
@@ -31,8 +35,4 @@ public:
 	}
 
 	UMaterialExpression* GetExpression() const override { return expression_; }
-
-	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode) override
-	{
-	}
 };
