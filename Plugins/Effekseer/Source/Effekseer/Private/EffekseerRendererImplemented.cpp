@@ -101,7 +101,7 @@ namespace EffekseerRendererUE4
 		TArray<float> uniformBuffer_;
 		const UEffekseerMaterial* const effekseerMaterial_;
 		bool isModel_ = false;
-
+		Effekseer::CullingType cullingType_;
 	public:
 
 		FLinearColor ModelUV;
@@ -112,10 +112,11 @@ namespace EffekseerRendererUE4
 
 		const FMaterialRenderProxy* const ParentProxy;
 
-		FFileMaterialRenderProxy(const FMaterialRenderProxy* InParent, const UEffekseerMaterial* effekseerMaterial, float* uniformBufferPtr, int32_t uniformCount, bool isModel)
+		FFileMaterialRenderProxy(const FMaterialRenderProxy* InParent, const UEffekseerMaterial* effekseerMaterial, float* uniformBufferPtr, int32_t uniformCount, bool isModel, Effekseer::CullingType cullingType)
 			: ParentProxy(InParent)
 			, effekseerMaterial_(effekseerMaterial)
 			, isModel_(isModel)
+			, cullingType_(cullingType)
 		{
 			Textures.fill(nullptr);
 
@@ -163,6 +164,20 @@ namespace EffekseerRendererUE4
 			if (ParameterInfo.Name == FName(TEXT("CustomData2")))
 			{
 				*OutValue = CustomData2;
+				return true;
+			}
+
+			if (ParameterInfo.Name == FName(TEXT("Culling")))
+			{
+				if (cullingType_ == Effekseer::CullingType::Front)
+					*OutValue = FLinearColor(1, 0, 0, 0);
+
+				if (cullingType_ == Effekseer::CullingType::Back)
+					*OutValue = FLinearColor(0, 1, 0, 0);
+
+				if (cullingType_ == Effekseer::CullingType::Double)
+					*OutValue = FLinearColor(1, 1, 0, 0);
+
 				return true;
 			}
 		}
@@ -264,13 +279,15 @@ namespace EffekseerRendererUE4
 		FLinearColor	uv;
 		FLinearColor	color;
 		float			distortionIntensity;
+		Effekseer::CullingType cullingType_;
 
 		/** Initialization constructor. */
-		FModelMaterialRenderProxy(const FMaterialRenderProxy* InParent, FLinearColor uv, FLinearColor color, float distortionIntensity) :
+		FModelMaterialRenderProxy(const FMaterialRenderProxy* InParent, FLinearColor uv, FLinearColor color, float distortionIntensity, Effekseer::CullingType cullingType) :
 			Parent(InParent),
 			uv(uv),
 			color(color),
-			distortionIntensity(distortionIntensity)
+			distortionIntensity(distortionIntensity),
+			cullingType_(cullingType)
 		{}
 
 		const FMaterial* GetParentMaterial(ERHIFeatureLevel::Type InFeatureLevel) const override;
@@ -296,6 +313,20 @@ namespace EffekseerRendererUE4
 		if (ParameterInfo.Name == FName(TEXT("UserColor")))
 		{
 			*OutValue = color;
+			return true;
+		}
+
+		if (ParameterInfo.Name == FName(TEXT("Culling")))
+		{
+			if (cullingType_ == Effekseer::CullingType::Front)
+				*OutValue = FLinearColor(1, 0, 0, 0);
+
+			if (cullingType_ == Effekseer::CullingType::Back)
+				*OutValue = FLinearColor(0, 1, 0, 0);
+
+			if (cullingType_ == Effekseer::CullingType::Double)
+				*OutValue = FLinearColor(1, 1, 0, 0);
+
 			return true;
 		}
 
@@ -782,7 +813,7 @@ namespace EffekseerRendererUE4
 			{
 				auto uniformOffset = m_currentShader->GetParameterGenerator()->PixelUserUniformOffset;
 				auto buffer = static_cast<uint8_t*>(m_currentShader->GetPixelConstantBuffer()) + uniformOffset;
-				auto newProxy = new FFileMaterialRenderProxy(proxy, m_currentShader->GetEffekseerMaterial(), reinterpret_cast<float*>(buffer), m_currentShader->GetEffekseerMaterial()->Uniforms.Num(), false);
+				auto newProxy = new FFileMaterialRenderProxy(proxy, m_currentShader->GetEffekseerMaterial(), reinterpret_cast<float*>(buffer), m_currentShader->GetEffekseerMaterial()->Uniforms.Num(), false, m_renderState->GetActiveState().CullingType);
 
 				newProxy->Textures = textures_;
 
@@ -1021,7 +1052,8 @@ namespace EffekseerRendererUE4
 						m_currentShader->GetEffekseerMaterial(),
 						reinterpret_cast<float*>(buffer),
 						m_currentShader->GetEffekseerMaterial()->Uniforms.Num(),
-						true);
+						true,
+						m_renderState->GetActiveState().CullingType);
 
 					newProxy->ModelUV = uv;
 					newProxy->ModelColor = color;
@@ -1044,7 +1076,7 @@ namespace EffekseerRendererUE4
 					}
 				else
 				{
-					proxy = new FModelMaterialRenderProxy(proxy, uv, color, m_distortionIntensity);
+					proxy = new FModelMaterialRenderProxy(proxy, uv, color, m_distortionIntensity, m_renderState->GetActiveState().CullingType);
 					m_meshElementCollector->RegisterOneFrameMaterialProxy(proxy);
 				}
 
