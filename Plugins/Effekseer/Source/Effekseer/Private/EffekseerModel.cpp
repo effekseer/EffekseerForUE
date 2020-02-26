@@ -4,6 +4,12 @@
 
 #include "EffekseerCustomVersion.h"
 
+void UEffekseerModel::BeginDestroy()
+{
+	ReleaseModel();
+	Super::BeginDestroy();
+}
+
 void UEffekseerModel::LoadModel(const uint8_t* data, int32_t size, const TCHAR* path)
 {
 	auto model = new EffekseerInternalModel((void*)data, size);

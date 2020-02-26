@@ -98,6 +98,7 @@ void UEffekseerMaterial::BeginDestroy()
 		isMaterialCompilationRegistered_ = false;
 	}
 #endif
+	ReleaseMaterial();
 	Super::BeginDestroy();
 }
 

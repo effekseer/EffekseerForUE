@@ -30,6 +30,8 @@ private:
 	void LoadModel(const uint8_t* data, int32_t size, const TCHAR* path);
 	void ReleaseModel();
 public:
+	void BeginDestroy() override;
+
 	void Load(const uint8_t* data, int32_t size, const TCHAR* path);
 
 	UPROPERTY(EditAnywhere)
