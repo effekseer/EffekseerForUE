@@ -111,7 +111,7 @@ private:
 	UMaterialExpressionComponentMask* expressionG_ = nullptr;
 	UMaterialExpressionComponentMask* expressionB_ = nullptr;
 	UMaterialExpressionComponentMask* expressionA_ = nullptr;
-	UMaterialExpressionVertexColor* function_ = nullptr;
+	UMaterialExpressionMaterialFunctionCall* function_ = nullptr;
 
 public:
 	ConvertedNodeVertexColor(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
@@ -128,8 +128,12 @@ public:
 		expressionA_ = NewObject<UMaterialExpressionComponentMask>(material);
 		material->Expressions.Add(expressionA_);
 
-		function_ = NewObject<UMaterialExpressionVertexColor>(material);
+		function_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
 		material->Expressions.Add(function_);
+
+		FStringAssetReference assetPath("/Effekseer/MaterialFunctions/EfkVertexColor.EfkVertexColor");
+		UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
+		function_->SetMaterialFunction(func);
 
 		expressionR_->Input.Expression = function_;
 		expressionR_->R = 1;
