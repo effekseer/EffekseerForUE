@@ -31,7 +31,12 @@ namespace EffekseerRendererUE4
 	class FCompatibleMaterialRenderProxy : public FMaterialRenderProxy
 	{
 	public:
-		FCompatibleMaterialRenderProxy() = default;
+		const FMaterialRenderProxy* Parent = nullptr;
+
+		FCompatibleMaterialRenderProxy(const FMaterialRenderProxy* parent)
+			: Parent(parent)
+		{
+		}
 		virtual ~FCompatibleMaterialRenderProxy() = default;
 
 		virtual bool GetParentVectorValue(const FMaterialParameterInfo& ParameterInfo, FLinearColor* OutValue, const FMaterialRenderContext& Context) const { return false; }
@@ -76,6 +81,13 @@ namespace EffekseerRendererUE4
 		}
 #endif
 
+#if ENGINE_MINOR_VERSION >= 24
+		bool GetTextureValue(const FMaterialParameterInfo& ParameterInfo, const URuntimeVirtualTexture** OutValue, const FMaterialRenderContext& Context) const override
+		{
+			return Parent->GetTextureValue(ParameterInfo, OutValue, Context);
+		}
+#endif
+
 		virtual const FMaterial* GetParentMaterial(ERHIFeatureLevel::Type InFeatureLevel) const { return nullptr; }
 
 #if ENGINE_MINOR_VERSION < 20
@@ -110,10 +122,10 @@ namespace EffekseerRendererUE4
 		FLinearColor CustomData2;
 		std::array<void*, Effekseer::TextureSlotMax> Textures;
 
-		const FMaterialRenderProxy* const ParentProxy;
+		
 
 		FFileMaterialRenderProxy(const FMaterialRenderProxy* InParent, const UEffekseerMaterial* effekseerMaterial, float* uniformBufferPtr, int32_t uniformCount, bool isModel, Effekseer::CullingType cullingType)
-			: ParentProxy(InParent)
+			: FCompatibleMaterialRenderProxy(InParent)
 			, effekseerMaterial_(effekseerMaterial)
 			, isModel_(isModel)
 			, cullingType_(cullingType)
@@ -136,7 +148,7 @@ namespace EffekseerRendererUE4
 
 	const FMaterial* FFileMaterialRenderProxy::GetParentMaterial(ERHIFeatureLevel::Type InFeatureLevel) const
 	{
-		return ParentProxy->GetMaterial(InFeatureLevel);
+		return Parent->GetMaterial(InFeatureLevel);
 	}
 
 	bool FFileMaterialRenderProxy::GetParentVectorValue(const FMaterialParameterInfo& ParameterInfo, FLinearColor* OutValue, const FMaterialRenderContext& Context) const
@@ -192,7 +204,7 @@ namespace EffekseerRendererUE4
 			return true;
 		}
 
-		return ParentProxy->GetVectorValue(ParameterInfo GET_MAT_PARAM_NAME, OutValue, Context);
+		return Parent->GetVectorValue(ParameterInfo GET_MAT_PARAM_NAME, OutValue, Context);
 	}
 
 	bool FFileMaterialRenderProxy::GetParentScalarValue(const FMaterialParameterInfo& ParameterInfo, float* OutValue, const FMaterialRenderContext& Context) const
@@ -210,7 +222,7 @@ namespace EffekseerRendererUE4
 			return true;
 		}
 
-		return ParentProxy->GetScalarValue(ParameterInfo GET_MAT_PARAM_NAME, OutValue, Context);
+		return Parent->GetScalarValue(ParameterInfo GET_MAT_PARAM_NAME, OutValue, Context);
 	}
 
 	bool FFileMaterialRenderProxy::GetParentTextureValue(const FMaterialParameterInfo& ParameterInfo, const UTexture** OutValue, const FMaterialRenderContext& Context) const
@@ -222,19 +234,17 @@ namespace EffekseerRendererUE4
 			return true;
 		}
 
-		return ParentProxy->GetTextureValue(ParameterInfo GET_MAT_PARAM_NAME, OutValue, Context);
+		return Parent->GetTextureValue(ParameterInfo GET_MAT_PARAM_NAME, OutValue, Context);
 	}
 
 	class FDistortionMaterialRenderProxy : public FCompatibleMaterialRenderProxy
 	{
 	public:
-
-		const FMaterialRenderProxy* const Parent;
-		float			distortionIntensity;
+		float distortionIntensity;
 
 		/** Initialization constructor. */
 		FDistortionMaterialRenderProxy(const FMaterialRenderProxy* InParent, float distortionIntensity) :
-			Parent(InParent),
+			FCompatibleMaterialRenderProxy(InParent),
 			distortionIntensity(distortionIntensity)
 		{}
 
@@ -274,8 +284,6 @@ namespace EffekseerRendererUE4
 	class FModelMaterialRenderProxy : public FCompatibleMaterialRenderProxy
 	{
 	public:
-
-		const FMaterialRenderProxy* const Parent;
 		FLinearColor	uv;
 		FLinearColor	color;
 		float			distortionIntensity;
@@ -283,7 +291,7 @@ namespace EffekseerRendererUE4
 
 		/** Initialization constructor. */
 		FModelMaterialRenderProxy(const FMaterialRenderProxy* InParent, FLinearColor uv, FLinearColor color, float distortionIntensity, Effekseer::CullingType cullingType) :
-			Parent(InParent),
+			FCompatibleMaterialRenderProxy(InParent),
 			uv(uv),
 			color(color),
 			distortionIntensity(distortionIntensity),
