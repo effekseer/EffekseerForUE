@@ -19,6 +19,18 @@ public:
 	virtual int32_t GetExpressionCount() const { return 1; }
 
 	virtual void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) {}
+
+	virtual void SetEditorPosition(int32_t x, int32_t y)
+	{
+		for (int32_t i = 0; i < GetExpressionCount(); i++)
+		{
+			if (GetExpressions(i) != nullptr)
+			{
+				GetExpressions(i)->MaterialExpressionEditorX = x;
+				GetExpressions(i)->MaterialExpressionEditorY = y;
+			}
+		}
+	}
 };
 
 template<class T>

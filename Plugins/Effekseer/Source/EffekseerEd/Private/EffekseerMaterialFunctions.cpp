@@ -45,6 +45,8 @@ class ConvertedNodeOutput : public ConvertedNode
 private:
 	std::shared_ptr<EffekseerMaterial::Node> effekseerNode_;
 	UMaterial* material_ = nullptr;
+	UMaterialExpressionMaterialFunctionCall* opacityFunction_ = nullptr;
+	UMaterialExpressionMaterialFunctionCall* opacityMaskFunction_ = nullptr;
 
 public:
 	ConvertedNodeOutput(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
@@ -61,6 +63,21 @@ public:
 		{
 			material->SetShadingModel(EMaterialShadingModel::MSM_Unlit);
 		}
+
+		opacityFunction_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
+		material->Expressions.Add(opacityFunction_);
+		opacityMaskFunction_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
+		material->Expressions.Add(opacityMaskFunction_);
+
+
+		FStringAssetReference assetPath("/Effekseer/MaterialFunctions/EfkCullingMask.EfkCullingMask");
+		UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
+		opacityFunction_->SetMaterialFunction(func);
+		opacityMaskFunction_->SetMaterialFunction(func);
+
+		material_->Opacity.Expression = opacityFunction_;
+		material_->OpacityMask.Expression = opacityMaskFunction_;
+
 	}
 
 	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) override
@@ -72,7 +89,12 @@ public:
 
 		if (targetInd == effekseerNode_->GetInputPinIndex("Opacity"))
 		{
-			material_->Opacity.Expression = outputNode->GetExpressions(outputNodePinIndex);
+			opacityFunction_->GetInput(0)->Expression = outputNode->GetExpressions(outputNodePinIndex);
+		}
+
+		if (targetInd == effekseerNode_->GetInputPinIndex("OpacityMask"))
+		{
+			opacityMaskFunction_->GetInput(0)->Expression = outputNode->GetExpressions(outputNodePinIndex);
 		}
 
 		if (targetInd == effekseerNode_->GetInputPinIndex("Roughness"))
@@ -90,11 +112,6 @@ public:
 			material_->Metallic.Expression = outputNode->GetExpressions(outputNodePinIndex);
 		}
 
-		if (targetInd == effekseerNode_->GetInputPinIndex("OpacityMask"))
-		{
-			material_->OpacityMask.Expression = outputNode->GetExpressions(outputNodePinIndex);
-		}
-
 		if (targetInd == effekseerNode_->GetInputPinIndex("WorldPositionOffset"))
 		{
 			material_->WorldPositionOffset.Expression = outputNode->GetExpressions(outputNodePinIndex);
@@ -104,6 +121,18 @@ public:
 		{
 			material_->EmissiveColor.Expression = outputNode->GetExpressions(outputNodePinIndex);
 		}
+	}
+
+	void SetEditorPosition(int32_t x, int32_t y) override
+	{
+		material_->EditorX = x;
+		material_->EditorY = y;
+
+		opacityFunction_->MaterialExpressionEditorX = x;
+		opacityFunction_->MaterialExpressionEditorY = y;
+		opacityMaskFunction_->MaterialExpressionEditorX = x;
+		opacityMaskFunction_->MaterialExpressionEditorY = y;
+
 	}
 };
 
@@ -370,21 +399,7 @@ UMaterial* CreateUE4MaterialFromEffekseerMaterial(const std::shared_ptr<NativeEf
 		{
 			auto n = it->second->Create(originalMaterial, context, node);
 			convertedNodes[node->GUID] = n;
-
-			for (int32_t i = 0; i < n->GetExpressionCount(); i++)
-			{
-				if (n->GetExpressions(i) != nullptr)
-				{
-					n->GetExpressions(i)->MaterialExpressionEditorX = node->Pos.X;
-					n->GetExpressions(i)->MaterialExpressionEditorY = node->Pos.Y;
-				}
-				else
-				{
-					// for output
-					originalMaterial->EditorX = node->Pos.X;
-					originalMaterial->EditorY = node->Pos.Y;
-				}
-			}
+			n->SetEditorPosition(node->Pos.X, node->Pos.Y);
 		}
 	}
 
