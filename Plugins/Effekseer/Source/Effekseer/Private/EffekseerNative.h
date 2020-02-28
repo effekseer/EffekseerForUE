@@ -795,7 +795,7 @@ public:
 	template <typename T>
 	static std::basic_string<T> Replace(std::basic_string<T> target, std::basic_string<T> from_, std::basic_string<T> to_)
 	{
-		std::basic_string<T>::size_type Pos(target.find(from_));
+		auto Pos = target.find(from_);
 
 		while (Pos != std::basic_string<T>::npos)
 		{
@@ -4944,6 +4944,8 @@ struct Vec3f
 	static Vec3f Transform(const Vec3f& lhs, const Mat44f& rhs);
 };
 
+inline Vec3f operator-(const Vec3f& i) { return Vec3f(-i.GetX(), -i.GetY(), -i.GetZ()); }
+
 inline Vec3f operator+(const Vec3f& lhs, const Vec3f& rhs)
 {
 	return Vec3f{lhs.s + rhs.s};
@@ -5834,7 +5836,7 @@ class CompiledMaterial
 	static const int32_t Version = 1;
 
 	std::map<CompiledMaterialPlatformType, std::unique_ptr<CompiledMaterialBinary, ReferenceDeleter<CompiledMaterialBinary>>> platforms;
-	std::vector<uint8_t> originalData;
+	std::vector<uint8_t> originalData_;
 
 public:
 	uint64_t GUID = 0;

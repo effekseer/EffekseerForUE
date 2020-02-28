@@ -471,9 +471,9 @@ inline void SwapRGBAToBGRA(Effekseer::Color& color)
 inline Effekseer::Color PackVector3DF(const Effekseer::Vec3f& v)
 {
 	Effekseer::Color ret;
-	ret.R = static_cast<uint8_t>((v.GetX() + 1.0f) / 2.0f * 255.0f);
-	ret.G = static_cast<uint8_t>((v.GetY() + 1.0f) / 2.0f * 255.0f);
-	ret.B = static_cast<uint8_t>((v.GetZ() + 1.0f) / 2.0f * 255.0f);
+	ret.R = static_cast<uint8_t>(Effekseer::Clamp(((v.GetX() + 1.0f) / 2.0f + 0.5f / 255.0f) * 255.0f, 255, 0));
+	ret.G = static_cast<uint8_t>(Effekseer::Clamp(((v.GetY() + 1.0f) / 2.0f + 0.5f / 255.0f) * 255.0f, 255, 0));
+	ret.B = static_cast<uint8_t>(Effekseer::Clamp(((v.GetZ() + 1.0f) / 2.0f + 0.5f / 255.0f) * 255.0f, 255, 0));
 	ret.A = 255;
 	return ret;
 }
@@ -820,16 +820,21 @@ public:
 
 	/**
 		@brief	Get a front direction of camera
+		@note
+		We don't recommend to use it without understanding of internal code.
 	*/
 	virtual ::Effekseer::Vector3D GetCameraFrontDirection() const;
 
 	/**
 		@brief	Get a position of camera
+		@note
+		We don't recommend to use it without understanding of internal code.
 	*/
 	virtual ::Effekseer::Vector3D GetCameraPosition() const;
 
 	/**
 		@brief	Set a front direction and position of camera manually
+		@param front (Right Hand) a direction from focus to eye, (Left Hand) a direction from eye to focus, 
 		@note
 		These are set based on camera matrix automatically.
 		It is failed on some platform.
@@ -3988,6 +3993,11 @@ namespace EffekseerRenderer
 					Effekseer::Vec3f normal = Effekseer::Vec3f::Cross(axis, tangent);
 					normal = normal.Normalize();
 
+					if (!parameter.IsRightHand)
+					{
+						normal = -normal;
+					}
+
 					if (isFirst_)
 					{
 						vs_[0].Normal = PackVector3DF(normal);					
@@ -4697,6 +4707,12 @@ protected:
 				normalCurrent = ::Effekseer::Vec3f::Cross(tangentCurrent, binormalCurrent);
 				normalNext = ::Effekseer::Vec3f::Cross(tangentNext, binormalNext);
 
+				if (!parameter.IsRightHand)
+				{
+					normalCurrent = -normalCurrent;
+					normalNext = -normalNext;
+				}
+
 				// rotate directions
 				::Effekseer::Mat43f matRot = mat43;
 				matRot.SetTranslation({0.0f, 0.0f, 0.0f});
@@ -5146,6 +5162,11 @@ protected:
 
 			if (vertexType == VertexType::Dynamic)
 			{
+				if (!parameter.IsRightHand)
+				{
+					F = -F;
+				}
+
 				StrideView<DynamicVertex> vs(verteies.pointerOrigin_, stride_, 4);
 				for (auto i = 0; i < 4; i++)
 				{
@@ -5192,6 +5213,12 @@ protected:
 					auto tangentZ = efkVector3D(mat.X.GetZ(), mat.Y.GetZ(), mat.Z.GetZ());
 					tangentX = tangentX.Normalize();
 					tangentZ = tangentZ.Normalize();
+
+					if (!parameter.IsRightHand)
+					{
+						tangentZ = -tangentZ;
+					}
+
 					vs[i].Normal = PackVector3DF(tangentZ);
 					vs[i].Tangent = PackVector3DF(tangentX);
 				}
@@ -5888,6 +5915,11 @@ namespace EffekseerRenderer
 
 						::Effekseer::Vec3f tangent = Effekseer::Vec3f(vl_->Pos - vr_->Pos).Normalize();
 						Effekseer::Vec3f normal = Effekseer::Vec3f::Cross(tangent, axis).Normalize();
+
+						if (!parameter.IsRightHand)
+						{
+							normal = -normal;
+						}
 
 						Effekseer::Color normal_ = PackVector3DF(normal);
 						Effekseer::Color tangent_ = PackVector3DF(tangent);

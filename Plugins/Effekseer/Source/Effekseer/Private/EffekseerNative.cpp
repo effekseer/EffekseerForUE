@@ -605,7 +605,7 @@ public:
 	int GetRef() override { return ReferenceObject::GetRef(); }
 };
 
-const std::vector<uint8_t>& CompiledMaterial::GetOriginalData() const { return originalData; }
+const std::vector<uint8_t>& CompiledMaterial::GetOriginalData() const { return originalData_; }
 
 bool CompiledMaterial::Load(const uint8_t* data, int32_t size)
 {
@@ -649,8 +649,8 @@ bool CompiledMaterial::Load(const uint8_t* data, int32_t size)
 	memcpy(&originalDataSize, data + offset, 4);
 	offset += sizeof(uint32_t);
 
-	originalData.resize(originalDataSize);
-	memcpy(originalData.data(), data + offset, originalDataSize);
+	originalData_.resize(originalDataSize);
+	memcpy(originalData_.data(), data + offset, originalDataSize);
 
 	offset += originalDataSize;
 
@@ -802,14 +802,14 @@ void CompiledMaterial::Save(std::vector<uint8_t>& dst, uint64_t guid, std::vecto
 
 		for (size_t i = 0; i < 8; i++)
 		{
-			int32_t bodySize = bodySizes[i];
+			int32_t bodySize2 = bodySizes[i];
 
 			dst.resize(dst.size() + sizeof(int));
-			memcpy(dst.data() + offset, &(bodySize), sizeof(int));
+			memcpy(dst.data() + offset, &(bodySize2), sizeof(int));
 			offset = dst.size();
 
-			dst.resize(dst.size() + bodySize);
-			memcpy(dst.data() + offset, bodies[i], bodySize);
+			dst.resize(dst.size() + bodySize2);
+			memcpy(dst.data() + offset, bodies[i], bodySize2);
 			offset = dst.size();
 		}
 	}
@@ -19263,13 +19263,13 @@ void Instance::CalculateMatrix( float deltaFrame )
 		}
 
 		// update local fields
-		auto currentPosition = localPosition + modifyWithNoise_;
+		auto currentLocalPosition = localPosition + modifyWithNoise_;
 		for (const auto& field : m_pEffectNode->LocalForceFields)
 		{
 			if (field.Turbulence != nullptr)
 			{
 				auto mag = static_cast<EffectImplemented*>(m_pEffectNode->GetEffect())->GetMaginification();
-				modifyWithNoise_ += field.Turbulence->Noise.Get(currentPosition / mag) * field.Turbulence->Strength * mag;
+				modifyWithNoise_ += field.Turbulence->Noise.Get(currentLocalPosition / mag) * field.Turbulence->Strength * mag;
 			}
 
 		}
@@ -19314,11 +19314,11 @@ void Instance::CalculateMatrix( float deltaFrame )
 
 		if( m_pEffectNode->LocationAbs.type != LocationAbsType::None )
 		{
-			Vec3f currentPosition = m_GlobalMatrix43.GetTranslation();
+			Vec3f currentTranslation = m_GlobalMatrix43.GetTranslation();
 			assert(m_GlobalMatrix43.IsValid());
 
-			m_GlobalVelocity = currentPosition - m_GlobalPosition;
-			m_GlobalPosition = currentPosition;
+			m_GlobalVelocity = currentTranslation - m_GlobalPosition;
+			m_GlobalPosition = currentTranslation;
 
 			ModifyMatrixFromLocationAbs( deltaFrame );
 		}
