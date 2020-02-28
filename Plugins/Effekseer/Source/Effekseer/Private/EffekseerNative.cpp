@@ -22,9 +22,9 @@
 #include <array>
 #include <functional>
 #ifdef _WIN32
-#include "AllowWindowsPlatformTypes.h"  // UE4
+#include "Windows/AllowWindowsPlatformTypes.h"  // UE4
 #include <winsock2.h>
-#include "HideWindowsPlatformTypes.h"  // UE4
+#include "Windows/HideWindowsPlatformTypes.h"  // UE4
 #pragma comment( lib, "ws2_32.lib" )
 #else
 #include <sys/types.h>
