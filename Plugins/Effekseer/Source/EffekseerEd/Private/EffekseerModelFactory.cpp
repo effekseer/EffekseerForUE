@@ -2,9 +2,9 @@
 #include "EffekseerModelFactory.h"
 #include "EffekseerModel.h"
 
-#include "Editor/UnrealEd/Public/Editor.h"
-#include "Runtime/Core/Public/HAL/FileManager.h"
-#include "Developer/RawMesh/Public/RawMesh.h"
+#include "Editor.h"
+#include "HAL/FileManager.h"
+#include "RawMesh.h"
 
 #include "Runtime/Launch/Resources/Version.h"
 

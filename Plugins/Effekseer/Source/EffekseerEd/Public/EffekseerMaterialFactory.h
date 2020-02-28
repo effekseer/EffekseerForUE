@@ -6,7 +6,7 @@
 #include "Factories/Factory.h"
 
 #if WITH_EDITOR
-#include "Editor/UnrealEd/Public/EditorReimportHandler.h"
+#include "EditorReimportHandler.h"
 #endif
 
 #include "EffekseerMaterial.h"

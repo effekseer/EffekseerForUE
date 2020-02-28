@@ -3,7 +3,7 @@
 
 #include "CoreMinimal.h"
 #include "Components/PrimitiveComponent.h"
-#include "Runtime/Engine/Public/EngineUtils.h"
+#include "EngineUtils.h"
 
 #include "EffekseerEffect.h"
 #include "EffekseerHandle.h"

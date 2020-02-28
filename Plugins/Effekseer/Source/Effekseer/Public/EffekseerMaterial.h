@@ -2,7 +2,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Object.h"
+#include "UObject/Object.h"
 #include "Materials/Material.h"
 #include "EffekseerAlphaBlendType.h"
 #include "EditorFramework/AssetImportData.h"

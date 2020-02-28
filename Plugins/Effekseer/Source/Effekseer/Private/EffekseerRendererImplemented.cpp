@@ -8,9 +8,9 @@
 #include "DynamicMeshBuilder.h"
 #include "EffekseerInternalModel.h"
 #include "Runtime/Engine/Public/StaticMeshResources.h"
-#include "Runtime/Core/Public/Math/Color.h"
-#include "Runtime/Engine/Public/MaterialShared.h"
-#include "Runtime/Engine/Classes/Materials/MaterialInstanceDynamic.h"
+#include "Math/Color.h"
+#include "MaterialShared.h"
+#include "Materials/MaterialInstanceDynamic.h"
 
 #if ENGINE_MINOR_VERSION < 19
 class FMaterialParameterInfo

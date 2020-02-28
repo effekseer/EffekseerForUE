@@ -1,7 +1,7 @@
 #include "EffekseerMaterialFactory.h"
 
-#include "Editor/UnrealEd/Public/Editor.h"
-#include "Runtime/Core/Public/HAL/FileManager.h"
+#include "Editor.h"
+#include "HAL/FileManager.h"
 
 #include "Runtime/Launch/Resources/Version.h"
 #include "EditorFramework/AssetImportData.h"

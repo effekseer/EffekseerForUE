@@ -1,7 +1,7 @@
 
 #include "EffekseerEffectFactory.h"
 #include "EffekseerEffect.h"
-#include "Runtime/Core/Public/HAL/FileManager.h"
+#include "HAL/FileManager.h"
 
 #include "Runtime/Launch/Resources/Version.h"
 

@@ -3,8 +3,8 @@
 
 #include "CoreMinimal.h"
 #include "Components/PrimitiveComponent.h"
-#include "Runtime/Engine/Classes/Materials/MaterialInstanceConstant.h"
-#include "Runtime/Engine/Classes/Materials/MaterialInstanceDynamic.h"
+#include "Materials/MaterialInstanceConstant.h"
+#include "Materials/MaterialInstanceDynamic.h"
 #include "Runtime/Launch/Resources/Version.h"
 
 #include "EffekseerEffect.h"

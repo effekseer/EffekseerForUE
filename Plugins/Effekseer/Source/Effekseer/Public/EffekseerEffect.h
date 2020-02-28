@@ -2,7 +2,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "Object.h"
+#include "UObject/Object.h"
 #include "EffekseerModel.h"
 #include "EffekseerMaterial.h"
 #include "EffekseerAlphaBlendType.h"

@@ -23,12 +23,12 @@ static void SpawnEmitterAtLocation(UWorld* world, UEffekseerEffect* effekseerEff
 	if (world == nullptr) return;
 
 	auto eec = CreateEffekseerEmitter(effekseerEffect, world, world->GetWorldSettings(), bAutoDestroy);
-	eec->bAbsoluteLocation = true;
-	eec->bAbsoluteRotation = true;
-	eec->bAbsoluteScale = true;
-	eec->RelativeLocation = transform.GetLocation();
-	eec->RelativeRotation = transform.GetRotation().Rotator();
-	eec->RelativeScale3D = transform.GetScale3D();
+	eec->SetUsingAbsoluteLocation(true);
+	eec->SetUsingAbsoluteRotation(true);
+	eec->SetUsingAbsoluteScale(true);
+	eec->SetRelativeLocation(transform.GetLocation());
+	eec->SetRelativeRotation(transform.GetRotation().Rotator());
+	eec->SetRelativeScale3D(transform.GetScale3D());
 	eec->RegisterComponentWithWorld(world);
 	eec->Activate();
 }
@@ -61,8 +61,8 @@ static void SpawnEmitterAttached(UEffekseerEffect* effekseerEffect, class UScene
 	}
 	else
 	{
-		eec->RelativeLocation = location;
-		eec->RelativeRotation = rotation;
+		eec->SetRelativeLocation(location);
+		eec->SetRelativeRotation(rotation);
 
 		if (locationType == EAttachLocation::SnapToTarget)
 		{
