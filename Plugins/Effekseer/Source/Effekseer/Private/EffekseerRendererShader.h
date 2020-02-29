@@ -11,8 +11,8 @@ namespace EffekseerRendererUE4
 	class Shader
 	{
 	private:
-		EffekseerRenderer::MaterialShaderParameterGenerator parameterGenerator_;
 		UEffekseerMaterial* effekseerMaterial_ = nullptr;
+		EffekseerRenderer::MaterialShaderParameterGenerator parameterGenerator_;
 		Effekseer::RendererMaterialType type_;
 		std::vector<uint8_t>	vertexConstantBuffer;
 		std::vector<uint8_t>	pixelConstantBuffer;

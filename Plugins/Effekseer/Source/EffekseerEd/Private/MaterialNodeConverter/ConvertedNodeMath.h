@@ -142,7 +142,25 @@ public:
 
 
 using ConvertedNodeAbs = ConvertedNodeOneInput<UMaterialExpressionAbs>;
-using ConvertedNodeSine = ConvertedNodeOneInput<UMaterialExpressionSine>;
+
+class ConvertedNodeSine : public ConvertedNode
+{
+private:
+	std::shared_ptr<EffekseerMaterial::Node> effekseerNode_;
+	UMaterialExpressionSine* expression_ = nullptr;
+
+public:
+	ConvertedNodeSine(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
+		: effekseerNode_(effekseerNode)
+	{
+		expression_ = NewObject<UMaterialExpressionSine>(material);
+		material->Expressions.Add(expression_);
+
+		expression_->Period = 3.141592f * 2.0f;
+	}
+
+	UMaterialExpression* GetExpression() const override { return expression_; }
+};
 
 class ConvertedNodeArctangent2 : public ConvertedNode
 {

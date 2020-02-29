@@ -43,8 +43,8 @@ public:
 class ConvertedNodeOutput : public ConvertedNode
 {
 private:
-	std::shared_ptr<EffekseerMaterial::Node> effekseerNode_;
 	UMaterial* material_ = nullptr;
+	std::shared_ptr<EffekseerMaterial::Node> effekseerNode_;
 	UMaterialExpressionMaterialFunctionCall* opacityFunction_ = nullptr;
 	UMaterialExpressionMaterialFunctionCall* opacityMaskFunction_ = nullptr;
 
