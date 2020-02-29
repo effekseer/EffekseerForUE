@@ -23,9 +23,15 @@ static void SpawnEmitterAtLocation(UWorld* world, UEffekseerEffect* effekseerEff
 	if (world == nullptr) return;
 
 	auto eec = CreateEffekseerEmitter(effekseerEffect, world, world->GetWorldSettings(), bAutoDestroy);
+#if ENGINE_MINOR_VERSION >= 24
 	eec->SetUsingAbsoluteLocation(true);
 	eec->SetUsingAbsoluteRotation(true);
 	eec->SetUsingAbsoluteScale(true);
+#else
+	eec->bAbsoluteLocation = true;
+	eec->bAbsoluteRotation = true;
+	eec->bAbsoluteScale = true;
+#endif
 	eec->SetRelativeLocation(transform.GetLocation());
 	eec->SetRelativeRotation(transform.GetRotation().Rotator());
 	eec->SetRelativeScale3D(transform.GetScale3D());
