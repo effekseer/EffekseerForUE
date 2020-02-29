@@ -160,6 +160,11 @@ public:
 	}
 
 	UMaterialExpression* GetExpression() const override { return expression_; }
+
+	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) override
+	{
+		expression_->Input.Expression = outputNode->GetExpressions(outputNodePinIndex);
+	}
 };
 
 class ConvertedNodeArctangent2 : public ConvertedNode
