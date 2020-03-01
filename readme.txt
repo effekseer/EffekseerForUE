@@ -8,7 +8,7 @@ At first, please read Help.
 This directory contains plugin files to use EffekseerForUE4
 
 - Help
-This directory contains help about EffekseerForUE4
+Help written about how to use on the online.
 
 - EffekseerForUE4.uproject
 This uproject contains samples ofEffekseerForUE4
@@ -23,7 +23,7 @@ UnrealEngine4でエフェクトを使用するためのラッパーです。
 EffekseerForUE4を使用する時に使うプラグインが保存されています。
 
 ・Help
-EffekseerForUE4の使い方が保存されています。
+使い方について記述されているオンラインのヘルプです。
 
 ・EffekseerForUE4.uproject
 EffekseerForUE4のサンプルが保存されています。
