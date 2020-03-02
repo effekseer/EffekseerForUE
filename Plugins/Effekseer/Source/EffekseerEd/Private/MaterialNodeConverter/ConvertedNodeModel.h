@@ -86,17 +86,17 @@ public:
 	{
 		if (targetInd == effekseerNode_->GetInputPinIndex("UV"))
 		{
-			expression_->Coordinate.Expression = outputNode->GetExpressions(outputNodePinIndex);
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(expression_->Coordinate);
 		}
 
 		if (targetInd == effekseerNode_->GetInputPinIndex("Time"))
 		{
-			expression_->Time.Expression = outputNode->GetExpressions(outputNodePinIndex);
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(expression_->Time);
 		}
 
 		if (targetInd == effekseerNode_->GetInputPinIndex("Speed"))
 		{
-			expression_->Speed.Expression = outputNode->GetExpressions(outputNodePinIndex);
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(expression_->Speed);
 		}
 	}
 };

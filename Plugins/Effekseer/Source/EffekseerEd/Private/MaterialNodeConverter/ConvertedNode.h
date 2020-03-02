@@ -5,6 +5,24 @@
 #include "Materials/MaterialExpression.h"
 #include <memory>
 
+struct ConvertedNodeOutputConnector
+{
+	UMaterialExpression* Expression = nullptr;
+	int32_t OutputIndex = 0;
+
+	ConvertedNodeOutputConnector(UMaterialExpression* e, int32_t ind)
+		: Expression(e)
+		, OutputIndex(ind)
+	{
+	}
+
+	void Apply(FExpressionInput& input)
+	{
+		input.Expression = Expression;
+		input.OutputIndex = OutputIndex;
+	}
+};
+
 class ConvertedNode
 {
 private:
@@ -17,6 +35,11 @@ public:
 	virtual UMaterialExpression* GetExpressions(int32_t i) const { return GetExpression(); }
 
 	virtual int32_t GetExpressionCount() const { return 1; }
+
+	virtual ConvertedNodeOutputConnector GetNodeOutputConnector(int32_t index) const
+	{
+		return ConvertedNodeOutputConnector(GetExpressions(index), 0);
+	}
 
 	virtual void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) {}
 

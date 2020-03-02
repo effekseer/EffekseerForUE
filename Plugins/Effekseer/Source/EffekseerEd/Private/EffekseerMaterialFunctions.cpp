@@ -84,42 +84,42 @@ public:
 	{
 		if (targetInd == effekseerNode_->GetInputPinIndex("BaseColor"))
 		{
-			material_->BaseColor.Expression = outputNode->GetExpressions(outputNodePinIndex);
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(material_->BaseColor);
 		}
 
 		if (targetInd == effekseerNode_->GetInputPinIndex("Opacity"))
 		{
-			opacityFunction_->GetInput(0)->Expression = outputNode->GetExpressions(outputNodePinIndex);
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(*opacityFunction_->GetInput(0));
 		}
 
 		if (targetInd == effekseerNode_->GetInputPinIndex("OpacityMask"))
 		{
-			opacityMaskFunction_->GetInput(0)->Expression = outputNode->GetExpressions(outputNodePinIndex);
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(*opacityMaskFunction_->GetInput(0));
 		}
 
 		if (targetInd == effekseerNode_->GetInputPinIndex("Roughness"))
 		{
-			material_->Roughness.Expression = outputNode->GetExpressions(outputNodePinIndex);
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(material_->Roughness);
 		}
 
 		if (targetInd == effekseerNode_->GetInputPinIndex("AmbientOcclusion"))
 		{
-			material_->AmbientOcclusion.Expression = outputNode->GetExpressions(outputNodePinIndex);
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(material_->AmbientOcclusion);
 		}
 
 		if (targetInd == effekseerNode_->GetInputPinIndex("Metallic"))
 		{
-			material_->Metallic.Expression = outputNode->GetExpressions(outputNodePinIndex);
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(material_->Metallic);
 		}
 
 		if (targetInd == effekseerNode_->GetInputPinIndex("WorldPositionOffset"))
 		{
-			material_->WorldPositionOffset.Expression = outputNode->GetExpressions(outputNodePinIndex);
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(material_->WorldPositionOffset);
 		}
 
 		if (targetInd == effekseerNode_->GetInputPinIndex("Emissive"))
 		{
-			material_->EmissiveColor.Expression = outputNode->GetExpressions(outputNodePinIndex);
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(material_->EmissiveColor);
 		}
 	}
 
@@ -151,7 +151,7 @@ public:
 
 		auto texturePath = effekseerNode_->GetProperty("Texture")->Str;
 		int ext_i = texturePath.find_last_of(".");
-		texturePath = +"/" + texturePath.substr(0, ext_i);
+		texturePath = texturePath.substr(0, ext_i);
 
 		int slash_i = texturePath.find_last_of("/");
 		texturePath = texturePath + "." + texturePath.substr(slash_i + 1, texturePath.size());
@@ -180,13 +180,18 @@ public:
 	{
 		if (targetInd == effekseerNode_->GetInputPinIndex("Texture"))
 		{
-			expression_->TextureObject.Expression = outputNode->GetExpressions(outputNodePinIndex);
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(expression_->TextureObject);
 		}
 
 		if (targetInd == effekseerNode_->GetInputPinIndex("UV"))
 		{
-			expression_->Coordinates.Expression = outputNode->GetExpressions(outputNodePinIndex);
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(expression_->Coordinates);
 		}
+	}
+
+	virtual ConvertedNodeOutputConnector GetNodeOutputConnector(int32_t index) const
+	{
+		return ConvertedNodeOutputConnector(expression_, index);
 	}
 };
 
@@ -205,7 +210,7 @@ public:
 
 		auto texturePath = effekseerNode_->GetProperty("Texture")->Str;
 		int ext_i = texturePath.find_last_of(".");
-		texturePath = +"/" + texturePath.substr(0, ext_i);
+		texturePath = texturePath.substr(0, ext_i);
 
 		int slash_i = texturePath.find_last_of("/");
 		texturePath = texturePath + "." + texturePath.substr(slash_i + 1, texturePath.size());
@@ -248,7 +253,7 @@ public:
 
 		auto texturePath = effekseerNode_->GetProperty("Texture")->Str;
 		int ext_i = texturePath.find_last_of(".");
-		texturePath = +"/" + texturePath.substr(0, ext_i);
+		texturePath = texturePath.substr(0, ext_i);
 
 		int slash_i = texturePath.find_last_of("/");
 		texturePath = texturePath + "." + texturePath.substr(slash_i + 1, texturePath.size());

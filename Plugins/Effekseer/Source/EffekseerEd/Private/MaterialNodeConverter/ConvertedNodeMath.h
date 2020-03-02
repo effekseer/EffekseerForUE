@@ -49,7 +49,7 @@ public:
 
 	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) override
 	{
-		expression_->Input.Expression = outputNode->GetExpressions(outputNodePinIndex);
+		outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(expression_->Input);
 	}
 };
 
@@ -70,7 +70,7 @@ public:
 
 	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) override
 	{
-		expression_->VectorInput.Expression = outputNode->GetExpressions(outputNodePinIndex);
+		outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(expression_->VectorInput);
 	}
 };
 
@@ -98,12 +98,12 @@ public:
 	{
 		if (targetInd == effekseerNode_->GetInputPinIndex("Value1"))
 		{
-			expression_->A.Expression = outputNode->GetExpressions(outputNodePinIndex);
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(expression_->A);
 		}
 
 		if (targetInd == effekseerNode_->GetInputPinIndex("Value2"))
 		{
-			expression_->B.Expression = outputNode->GetExpressions(outputNodePinIndex);
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(expression_->B);
 		}
 	}
 };
@@ -129,12 +129,12 @@ public:
 	{
 		if (targetInd == effekseerNode_->GetInputPinIndex("Value1"))
 		{
-			expression_->A.Expression = outputNode->GetExpressions(outputNodePinIndex);
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(expression_->A);
 		}
 
 		if (targetInd == effekseerNode_->GetInputPinIndex("Value2"))
 		{
-			expression_->B.Expression = outputNode->GetExpressions(outputNodePinIndex);
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(expression_->B);
 		}
 	}
 };
@@ -163,7 +163,7 @@ public:
 
 	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) override
 	{
-		expression_->Input.Expression = outputNode->GetExpressions(outputNodePinIndex);
+		outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(expression_->Input);
 	}
 };
 
@@ -215,12 +215,12 @@ public:
 	{
 		if (targetInd == effekseerNode_->GetInputPinIndex("Y"))
 		{
-			expression_->Y.Expression = outputNode->GetExpressions(outputNodePinIndex);
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(expression_->Y);
 		}
 
 		if (targetInd == effekseerNode_->GetInputPinIndex("X"))
 		{
-			expression_->X.Expression = outputNode->GetExpressions(outputNodePinIndex);
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(expression_->X);
 		}
 	}
 };
@@ -277,12 +277,12 @@ public:
 	{
 		if (targetInd == effekseerNode_->GetInputPinIndex("Value1"))
 		{
-			expression_->A.Expression = outputNode->GetExpressions(outputNodePinIndex);
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(expression_->A);
 		}
 
 		if (targetInd == effekseerNode_->GetInputPinIndex("Value2"))
 		{
-			expression_->B.Expression = outputNode->GetExpressions(outputNodePinIndex);
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(expression_->B);
 		}
 	}
 };
@@ -319,12 +319,12 @@ public:
 	{
 		if (targetInd == effekseerNode_->GetInputPinIndex("Base"))
 		{
-			expression_->Base.Expression = outputNode->GetExpressions(outputNodePinIndex);
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(expression_->Base);
 		}
 
 		if (targetInd == effekseerNode_->GetInputPinIndex("Exp"))
 		{
-			expression_->Exponent.Expression = outputNode->GetExpressions(outputNodePinIndex);
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(expression_->Exponent);
 		}
 	}
 };
@@ -354,12 +354,12 @@ public:
 	{
 		if (targetInd == effekseerNode_->GetInputPinIndex("Min"))
 		{
-			expression_->Min.Expression = outputNode->GetExpressions(outputNodePinIndex);
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(expression_->Min);
 		}
 
 		if (targetInd == effekseerNode_->GetInputPinIndex("Max"))
 		{
-			expression_->Max.Expression = outputNode->GetExpressions(outputNodePinIndex);
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(expression_->Max);
 		}
 	}
 };
@@ -392,17 +392,17 @@ public:
 	{
 		if (targetInd == effekseerNode_->GetInputPinIndex("Value1"))
 		{
-			expression_->A.Expression = outputNode->GetExpressions(outputNodePinIndex);
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(expression_->A);
 		}
 
 		if (targetInd == effekseerNode_->GetInputPinIndex("Value2"))
 		{
-			expression_->B.Expression = outputNode->GetExpressions(outputNodePinIndex);
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(expression_->B);
 		}
 
 		if (targetInd == effekseerNode_->GetInputPinIndex("Alpha"))
 		{
-			expression_->Alpha.Expression = outputNode->GetExpressions(outputNodePinIndex);
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(expression_->Alpha);
 		}
 	}
 };
@@ -431,7 +431,7 @@ public:
 
 	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) override
 	{
-		expression_->Input.Expression = outputNode->GetExpressions(outputNodePinIndex);
+		outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(expression_->Input);
 	}
 };
 

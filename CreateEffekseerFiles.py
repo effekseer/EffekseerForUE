@@ -331,6 +331,7 @@ rendererCPP.readLines(rootRDir + 'EffekseerRenderer.VertexBufferBase.cpp')
 rendererCPP.output('Plugins/Effekseer/Source/Effekseer/Private/EffekseerRendererNative.cpp')
 
 
+from distutils.dir_util import copy_tree
 
-
+copy_tree("../Effekseer/Dev/Cpp/EffekseerMaterial", "./Plugins/Effekseer/Source/EffekseerEd/Private/EffekseerMaterial")
 
