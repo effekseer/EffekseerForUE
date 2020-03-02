@@ -287,6 +287,40 @@ public:
 	}
 };
 
+class ConvertedNodeStep : public ConvertedNode
+{
+private:
+	std::shared_ptr<EffekseerMaterial::Node> effekseerNode_;
+	UMaterialExpressionMaterialFunctionCall* expression_ = nullptr;
+
+public:
+	ConvertedNodeStep(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
+		: effekseerNode_(effekseerNode)
+	{
+		expression_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
+		material->Expressions.Add(expression_);
+
+		FStringAssetReference assetPath("/Effekseer/MaterialFunctions/EfkStep.EfkStep");
+		UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
+		expression_->SetMaterialFunction(func);
+	}
+
+	UMaterialExpression* GetExpression() const override { return expression_; }
+
+	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) override
+	{
+		if (targetInd == effekseerNode_->GetInputPinIndex("Edge"))
+		{
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(*expression_->GetInput(0));
+		}
+
+		if (targetInd == effekseerNode_->GetInputPinIndex("Value"))
+		{
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(*expression_->GetInput(1));
+		}
+	}
+};
+
 #if ENGINE_MINOR_VERSION >= 19 // TODO Check correct version
 using ConvertedNodeCeil = ConvertedNodeOneInput<UMaterialExpressionCeil>;
 using ConvertedNodeFloor = ConvertedNodeOneInput<UMaterialExpressionFloor>;

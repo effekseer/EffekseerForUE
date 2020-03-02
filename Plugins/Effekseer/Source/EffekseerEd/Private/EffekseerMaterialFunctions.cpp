@@ -350,6 +350,7 @@ UMaterial* CreateUE4MaterialFromEffekseerMaterial(const std::shared_ptr<NativeEf
 	nodeFactories["Multiply"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeMultiply>>();
 	nodeFactories["Divide"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeDivide>>();
 	nodeFactories["Fmod"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeFmod>>();
+	nodeFactories["Step"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeStep>>();
 
 #if ENGINE_MINOR_VERSION >= 19 // TODO Check correct version
 	nodeFactories["Ceil"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeCeil>>();
