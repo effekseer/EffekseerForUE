@@ -1,11 +1,13 @@
 
 #include "AnimNotify_PlayEffekseerEffect.h"
 
+#include "Animation/AnimSequenceBase.h"
 #include "Components/SkeletalMeshComponent.h"
+#include "Runtime/Launch/Resources/Version.h"
 
 #include "EffekseerEmitterComponent.h"
-
 #include "EffekseerEffect.h"
+
 
 static UEffekseerEmitterComponent* CreateEffekseerEmitter(UEffekseerEffect* effekseerEffect, UWorld* World, AActor* Actor, bool bAutoDestroy)
 {
