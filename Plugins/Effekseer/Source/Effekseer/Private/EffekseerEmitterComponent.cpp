@@ -6,6 +6,20 @@ UEffekseerEmitterComponent::UEffekseerEmitterComponent()
 	bTickInEditor = true;
 	bAutoDestroy = false;
 	PrimaryComponentTick.bCanEverTick = true;
+
+	if (DynamicInput.Num() < 4)
+	{
+		for (size_t i = DynamicInput.Num(); i < 4; i++)
+		{
+			DynamicInput.Add(0.0f);
+		}
+	}
+
+	DynamicInput_.Empty();
+	for (size_t i = 0; i < 4; i++)
+	{
+		DynamicInput_.Add(0.0f);
+	}
 }
 
 UEffekseerEmitterComponent::~UEffekseerEmitterComponent()
@@ -97,6 +111,15 @@ void UEffekseerEmitterComponent::TickComponent(float DeltaTime, ELevelTick TickT
 				system_->SetEffectSpeed(handle, Speed);
 				Speed_ = Speed;
 			}
+
+			for (int32_t i = 0; i < DynamicInput.Num(); i++)
+			{
+				if (DynamicInput[i] != DynamicInput_[i])
+				{
+					system_->SetEffectDynamicInput(handle, i, DynamicInput[i]);
+				}
+			}
+			DynamicInput_ = DynamicInput;
 		}
 		else
 		{

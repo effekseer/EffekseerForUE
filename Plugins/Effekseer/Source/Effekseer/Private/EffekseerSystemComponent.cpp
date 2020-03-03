@@ -260,6 +260,15 @@ public:
 				}
 			}
 
+			if (cmd.Type == EffekseerUpdateData_CommandType::SetDynamicInput)
+			{
+				if (internalHandle2EfkHandle.Contains(cmd.ID))
+				{
+					auto eid = internalHandle2EfkHandle[cmd.ID];
+					effekseerManager->SetDynamicInput(eid, cmd.DynamicInput.Index, cmd.DynamicInput.Value);
+				}
+			}
+
 			if (cmd.Type == EffekseerUpdateData_CommandType::SetSpeed)
 			{
 				if (internalHandle2EfkHandle.Contains(cmd.ID))
@@ -722,6 +731,18 @@ void UEffekseerSystemComponent::SetEffectAllColor(FEffekseerHandle handle, FColo
 	cmd.Type = EffekseerUpdateData_CommandType::SetAllColor;
 	cmd.ID = handle.ID;
 	cmd.AllColor = color;
+	currentUpdateData->Commands.Add(cmd);
+}
+
+void UEffekseerSystemComponent::SetEffectDynamicInput(FEffekseerHandle handle, int index, float value)
+{
+	if (handle.Effect == nullptr) return;
+
+	EffekseerUpdateData_Command cmd;
+	cmd.Type = EffekseerUpdateData_CommandType::SetDynamicInput;
+	cmd.ID = handle.ID;
+	cmd.DynamicInput.Value = value;
+	cmd.DynamicInput.Index = index;
 	currentUpdateData->Commands.Add(cmd);
 }
 

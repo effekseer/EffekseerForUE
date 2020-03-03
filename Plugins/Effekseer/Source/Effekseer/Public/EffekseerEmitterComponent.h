@@ -22,6 +22,7 @@ private:
 
 	FColor AllColor_ = FColor(255, 255, 255, 255);
 	float Speed_ = 1.0f;
+	TArray<float> DynamicInput_;
 
 public:
 	UEffekseerEmitterComponent();
@@ -60,6 +61,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Property)
 	float Speed = 1.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Property)
+	TArray<float> DynamicInput;
 
 	UPROPERTY(Transient)
 	UEffekseerSystemComponent* system_ = nullptr;
