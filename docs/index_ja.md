@@ -11,12 +11,12 @@
 
 #### バージョン
 
-UnrealEngine4.16以降
+UnrealEngine4.23以降
 
 #### コンパイラ
 
 環境に合わせたコンパイラをインストールする必要があります。
-例えば、WindowsではVisualStudio2015、もしくはVisualStudio2017をインストールする必要があります。
+例えば、WindowsではVisualStudio2017、もしくはVisualStudio2019をインストールする必要があります。
 
 #### プラットフォーム
 
@@ -225,6 +225,7 @@ EffekseerSystemコンポーネントにEffekseerから接続するためのポ�
 ### 1.43f (2019/09/16) 
 
 - 4.23に対応
+- デフォルトのパラメーターを変更 (AutoActicate, Scale)
 
 ### 1.43e (2019/07/15) 
 

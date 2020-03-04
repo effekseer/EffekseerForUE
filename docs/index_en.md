@@ -11,12 +11,12 @@ With this plugin, you can play effects created with Effekseer on UnrealEngine 4.
 
 #### Version
 
-UnrealEngine4.16 or later
+UnrealEngine4.23 or later
 
 #### Compiler
 
 It is necessary to install a compiler suitable for the environment.
-For example, you need to install VisualStudio 2015 or 2017 on Windows.
+For example, you need to install VisualStudio 2017 or 2019 on Windows.
 
 #### Platform
 
@@ -227,6 +227,7 @@ Materials do not have depth ignoring settings.
 ### 1.43f (2019/09/16) 
 
 - Support 4.23
+- Change default parameter (AutoActicate, Scale)
 
 ### 1.43e (2019/07/15) 
 
