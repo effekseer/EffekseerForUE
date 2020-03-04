@@ -26,6 +26,7 @@ enum class EffekseerUpdateData_CommandType
 	StopAll,
 	SetSpeed,
 	SetAllColor,
+	SetDynamicInput,
 	StartNetwork,
 	StopNetwork,
 };
@@ -41,7 +42,16 @@ public:
 	FRotator	Rotation;
 	FVector	Scale;
 	FColor	AllColor;
-	float	Speed;
+
+	union
+	{
+		float Speed;
+
+		struct {
+			float Value;
+			int Index;
+		} DynamicInput;
+	};
 
 	EffekseerUpdateData_CommandType	Type;
 };
@@ -203,6 +213,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Control")
 	void SetEffectAllColor(FEffekseerHandle handle, FColor color);
+
+	UFUNCTION(BlueprintCallable, Category = "Control")
+	void SetEffectDynamicInput(FEffekseerHandle handle, int index, float value);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Network")
 	int NetworkPort = 60000;

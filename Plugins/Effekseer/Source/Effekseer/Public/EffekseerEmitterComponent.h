@@ -22,9 +22,15 @@ private:
 
 	FColor AllColor_ = FColor(255, 255, 255, 255);
 	float Speed_ = 1.0f;
+	TArray<float> DynamicInput_;
+	
+	//! HACK for activate
+	bool autoActivateOnActivate_ = false;
+
+	void ApplyParameters();
 
 public:
-	UEffekseerEmitterComponent();
+	UEffekseerEmitterComponent(const FObjectInitializer& ObjectInitializer);
 	virtual ~UEffekseerEmitterComponent();
 
 #if WITH_EDITOR
@@ -43,6 +49,8 @@ public:
 
 	virtual void OnUnregister() override;
 
+	virtual void Serialize(FArchive& Ar) override;
+
 	UPROPERTY()
 	uint8 bAutoDestroy : 1;
 
@@ -60,6 +68,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Property)
 	float Speed = 1.0f;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Property)
+	TArray<float> DynamicInput;
 
 	UPROPERTY(Transient)
 	UEffekseerSystemComponent* system_ = nullptr;
