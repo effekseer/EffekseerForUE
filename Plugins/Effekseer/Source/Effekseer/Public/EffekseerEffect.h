@@ -114,7 +114,7 @@ public:
 	int32 Version = -1;
 
 	UPROPERTY(EditAnywhere)
-	float Scale = 1.0f;
+	float Scale = 20.0f;
 
 	UPROPERTY(VisibleAnywhere)
 	FString	Name = TEXT("Effect");

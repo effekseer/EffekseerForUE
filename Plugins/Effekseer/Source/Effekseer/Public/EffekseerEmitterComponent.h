@@ -23,9 +23,14 @@ private:
 	FColor AllColor_ = FColor(255, 255, 255, 255);
 	float Speed_ = 1.0f;
 	TArray<float> DynamicInput_;
+	
+	//! HACK for activate
+	bool autoActivateOnActivate_ = false;
+
+	void ApplyParameters();
 
 public:
-	UEffekseerEmitterComponent();
+	UEffekseerEmitterComponent(const FObjectInitializer& ObjectInitializer);
 	virtual ~UEffekseerEmitterComponent();
 
 #if WITH_EDITOR
@@ -43,6 +48,8 @@ public:
 	virtual void Deactivate() override;
 
 	virtual void OnUnregister() override;
+
+	virtual void Serialize(FArchive& Ar) override;
 
 	UPROPERTY()
 	uint8 bAutoDestroy : 1;

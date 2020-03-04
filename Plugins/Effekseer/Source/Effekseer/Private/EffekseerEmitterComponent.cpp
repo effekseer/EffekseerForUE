@@ -1,10 +1,43 @@
 #include "EffekseerEmitterComponent.h"
 #include "EffekseerSystemComponent.h"
 
-UEffekseerEmitterComponent::UEffekseerEmitterComponent()
+
+void UEffekseerEmitterComponent::ApplyParameters()
+{
+	if (AllColor != AllColor_)
+	{
+		system_->SetEffectAllColor(handle, AllColor);
+		AllColor_ = AllColor;
+	}
+
+	if (Speed != Speed_)
+	{
+		system_->SetEffectSpeed(handle, Speed);
+		Speed_ = Speed;
+	}
+
+	bool isDynamicInputChanged = false;
+	for (int32_t i = 0; i < DynamicInput.Num(); i++)
+	{
+		if (DynamicInput[i] != DynamicInput_[i])
+		{
+			system_->SetEffectDynamicInput(handle, i, DynamicInput[i]);
+			isDynamicInputChanged = true;
+		}
+	}
+
+	if (isDynamicInputChanged)
+	{
+		DynamicInput_ = DynamicInput;
+	}
+}
+
+UEffekseerEmitterComponent::UEffekseerEmitterComponent(const FObjectInitializer& ObjectInitializer)
+	: Super(ObjectInitializer)
 {
 	bTickInEditor = true;
 	bAutoDestroy = false;
+	bAutoActivate = true;
 	PrimaryComponentTick.bCanEverTick = true;
 
 	if (DynamicInput.Num() < 4)
@@ -32,10 +65,11 @@ void UEffekseerEmitterComponent::PostEditChangeProperty(struct FPropertyChangedE
 {
 	Super::PostEditChangeProperty(PropertyChangedEvent);
 
+	Stop();
 	if (bAutoActivate)
 	{
-		Stop();
 		shouldActivate = true;
+		autoActivateOnActivate_ = bAutoActivate;
 	}
 }
 #endif
@@ -57,7 +91,7 @@ void UEffekseerEmitterComponent::BeginDestroy()
 	Super::BeginDestroy();
 }
 
-void  UEffekseerEmitterComponent::OnUnregister()
+void UEffekseerEmitterComponent::OnUnregister()
 {
 	if (isPlaying)
 	{
@@ -68,25 +102,30 @@ void  UEffekseerEmitterComponent::OnUnregister()
 	Super::OnUnregister();
 }
 
+void UEffekseerEmitterComponent::Serialize(FArchive& Ar)
+{
+	Super::Serialize(Ar);
+}
+
 void UEffekseerEmitterComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
+	// HACK for activate
+	if (shouldActivate && autoActivateOnActivate_ != bAutoActivate)
+	{
+		shouldActivate = false;
+	}
+
 	if (shouldActivate)
 	{
 		handle = Play();
-		isPlaying = true;
 
-		shouldActivate = false;
-
-		if (AllColor != AllColor_)
+		if (handle.Effect != nullptr)
 		{
-			system_->SetEffectAllColor(handle, AllColor);
-			AllColor_ = AllColor;
-		}
+			isPlaying = true;
 
-		if (Speed != Speed_)
-		{
-			system_->SetEffectSpeed(handle, Speed);
-			Speed_ = Speed;
+			shouldActivate = false;
+
+			ApplyParameters();
 		}
 	}
 
@@ -100,26 +139,7 @@ void UEffekseerEmitterComponent::TickComponent(float DeltaTime, ELevelTick TickT
 			system_->SetEffectRotation(handle, transform.GetRotation().Rotator());
 			system_->SetEffectScaling(handle, transform.GetScale3D());
 
-			if (AllColor != AllColor_)
-			{
-				system_->SetEffectAllColor(handle, AllColor);
-				AllColor_ = AllColor;
-			}
-
-			if (Speed != Speed_)
-			{
-				system_->SetEffectSpeed(handle, Speed);
-				Speed_ = Speed;
-			}
-
-			for (int32_t i = 0; i < DynamicInput.Num(); i++)
-			{
-				if (DynamicInput[i] != DynamicInput_[i])
-				{
-					system_->SetEffectDynamicInput(handle, i, DynamicInput[i]);
-				}
-			}
-			DynamicInput_ = DynamicInput;
+			ApplyParameters();
 		}
 		else
 		{
@@ -147,13 +167,20 @@ void UEffekseerEmitterComponent::TickComponent(float DeltaTime, ELevelTick TickT
 
 void UEffekseerEmitterComponent::Activate(bool bReset)
 {
+	Super::Activate(bReset);
+
+	if (isPlaying && bReset)
+	{
+		return;
+	}
+
 	if (isPlaying)
 	{
 		Stop();
 	}
 
 	shouldActivate = true;
-	Super::Activate(bReset);
+	autoActivateOnActivate_ = bAutoActivate;
 }
 
 void UEffekseerEmitterComponent::Deactivate()
@@ -213,7 +240,7 @@ FEffekseerHandle UEffekseerEmitterComponent::Play()
 		System = nullptr;
 	}
 
-	// SystemÇÃíTçı
+	// Find a System
 	if (System == nullptr)
 	{
 		for (TActorIterator<AActor> ait(GetWorld()); ait; ++ait)
