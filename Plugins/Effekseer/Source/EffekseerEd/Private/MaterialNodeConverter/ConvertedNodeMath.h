@@ -257,7 +257,7 @@ public:
 		{
 			expression2_ = NewObject<UMaterialExpressionConstant>(material);
 			material->Expressions.Add(expression2_);
-			expression2_->R = effekseerNode->Properties[0]->Floats[0];
+			expression2_->R = effekseerNode->Properties[1]->Floats[0];
 			expression_->B.Expression = expression2_;
 		}
 	}

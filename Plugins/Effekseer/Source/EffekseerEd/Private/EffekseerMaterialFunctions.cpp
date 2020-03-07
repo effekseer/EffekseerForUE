@@ -9,6 +9,9 @@
 #include "Materials/MaterialExpressionMaterialFunctionCall.h"
 #include "Materials/MaterialExpressionComponentMask.h"
 #include "Materials/MaterialExpressionTime.h"
+#include "Materials/MaterialExpressionRotator.h"
+#include "Materials/MaterialExpressionFresnel.h"
+#include "Materials/MaterialExpressionConstant2Vector.h"
 #include "EffekseerMaterial/efkMat.Models.h"
 #include "EffekseerMaterial/efkMat.Library.h"
 #include "EffekseerMaterial/efkMat.TextExporter.h"
@@ -30,6 +33,7 @@
 #include "MaterialNodeConverter/ConvertedNodeParameter.h"
 #include "MaterialNodeConverter/ConvertedNodeMath.h"
 #include "MaterialNodeConverter/ConvertedNodeModel.h"
+
 
 class ConvertedNodeFactory
 {
@@ -135,6 +139,158 @@ public:
 
 	}
 };
+
+class ConvertedNodeFresnel : public ConvertedNode
+{
+private:
+	std::shared_ptr<EffekseerMaterial::Node> effekseerNode_;
+	UMaterialExpressionFresnel* expression_ = nullptr;
+
+public:
+	ConvertedNodeFresnel(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
+		: effekseerNode_(effekseerNode)
+	{
+		expression_ = NewObject<UMaterialExpressionFresnel>(material);
+		material->Expressions.Add(expression_);
+
+		expression_->Exponent = effekseerNode_->GetProperty("Exponent")->Floats[0];
+		expression_->BaseReflectFraction = effekseerNode_->GetProperty("BaseReflectFraction")->Floats[0];
+	}
+
+	UMaterialExpression* GetExpression() const override { return expression_; }
+
+	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) override
+	{
+		if (targetInd == effekseerNode_->GetInputPinIndex("Exponent"))
+		{
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(expression_->ExponentIn);
+		}
+
+		if (targetInd == effekseerNode_->GetInputPinIndex("BaseReflectFraction"))
+		{
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(expression_->BaseReflectFractionIn);
+		}
+	}
+};
+
+class ConvertedNodeRotator : public ConvertedNode
+{
+private:
+	std::shared_ptr<EffekseerMaterial::Node> effekseerNode_;
+	UMaterialExpressionMaterialFunctionCall* expression_ = nullptr;
+
+public:
+	ConvertedNodeRotator(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
+		: effekseerNode_(effekseerNode)
+	{
+		expression_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
+		material->Expressions.Add(expression_);
+
+		FStringAssetReference assetPath("/Effekseer/MaterialFunctions/EfkRotator.EfkRotator");
+		UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
+		expression_->SetMaterialFunction(func);
+	}
+
+	UMaterialExpression* GetExpression() const override { return expression_; }
+
+	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) override
+	{
+		if (targetInd == effekseerNode_->GetInputPinIndex("UV"))
+		{
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(*expression_->GetInput(0));
+		}
+
+		if (targetInd == effekseerNode_->GetInputPinIndex("RotationCenter"))
+		{
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(*expression_->GetInput(1));
+		}
+
+		if (targetInd == effekseerNode_->GetInputPinIndex("RotationAngle"))
+		{
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(*expression_->GetInput(2));
+		}
+	}
+};
+
+class ConvertedNodePolarCoords : public ConvertedNode
+{
+private:
+	std::shared_ptr<EffekseerMaterial::Node> effekseerNode_;
+	UMaterialExpressionMaterialFunctionCall* expression_ = nullptr;
+
+	UMaterialExpressionConstant2Vector* expression1_ = nullptr;
+	UMaterialExpressionConstant2Vector* expression2_ = nullptr;
+	UMaterialExpressionConstant* expression3_ = nullptr;
+	
+public:
+	ConvertedNodePolarCoords(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
+		: effekseerNode_(effekseerNode)
+	{
+		expression_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
+		material->Expressions.Add(expression_);
+
+		FStringAssetReference assetPath("/Effekseer/MaterialFunctions/EfkPolarCoords.EfkPolarCoords");
+		UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
+		expression_->SetMaterialFunction(func);
+
+		if (effekseerMaterial->material->GetConnectedPins(effekseerNode->InputPins[0]).size() == 0)
+		{
+			expression1_ = NewObject<UMaterialExpressionConstant2Vector>(material);
+			material->Expressions.Add(expression1_);
+			expression1_->R = effekseerNode->Properties[0]->Floats[0];
+			expression1_->G = effekseerNode->Properties[0]->Floats[1];
+			expression_->GetInput(0)->Connect(0, expression1_);
+		}
+
+		if (effekseerMaterial->material->GetConnectedPins(effekseerNode->InputPins[1]).size() == 0)
+		{
+			expression2_ = NewObject<UMaterialExpressionConstant2Vector>(material);
+			material->Expressions.Add(expression2_);
+			expression2_->R = effekseerNode->Properties[1]->Floats[0];
+			expression2_->G = effekseerNode->Properties[1]->Floats[1];
+			expression_->GetInput(1)->Connect(0, expression2_);
+		}
+
+		if (effekseerMaterial->material->GetConnectedPins(effekseerNode->InputPins[2]).size() == 0)
+		{
+			expression3_ = NewObject<UMaterialExpressionConstant>(material);
+			material->Expressions.Add(expression3_);
+			expression3_->R = effekseerNode->Properties[2]->Floats[0];
+			expression_->GetInput(2)->Connect(0, expression3_);
+		}
+	}
+
+	UMaterialExpression* GetExpression() const override { return expression_; }
+
+	UMaterialExpression* GetExpressions(int32_t ind) const override {
+		if (ind == 0) return expression_;
+		if (ind == 1) return expression1_;
+		if (ind == 2) return expression2_;
+		if (ind == 3) return expression3_;
+		return nullptr;
+	}
+
+	int32_t GetExpressionCount() const { return 4; }
+
+	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) override
+	{
+		if (targetInd == effekseerNode_->GetInputPinIndex("Tile"))
+		{
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(*expression_->GetInput(0));
+		}
+
+		if (targetInd == effekseerNode_->GetInputPinIndex("Offset"))
+		{
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(*expression_->GetInput(1));
+		}
+
+		if (targetInd == effekseerNode_->GetInputPinIndex("PitchV"))
+		{
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(*expression_->GetInput(2));
+		}
+	}
+};
+
 
 class ConvertedNodeTextureSample : public ConvertedNode
 {
@@ -390,6 +546,10 @@ UMaterial* CreateUE4MaterialFromEffekseerMaterial(const std::shared_ptr<NativeEf
 	nodeFactories["CustomData2"] = std::make_shared< ConvertedNodeFactoryNormalNode<ConvertedNodeCustomData2>>();
 
 	nodeFactories["Output"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeOutput>>();
+
+	nodeFactories["Fresnel"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeFresnel>>();
+	nodeFactories["Rotator"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeRotator>>();
+	nodeFactories["PolarCoords"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodePolarCoords>>();
 
 	std::map<uint64_t, std::shared_ptr<ConvertedNode>> convertedNodes;
 
