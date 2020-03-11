@@ -53,6 +53,7 @@ public:
 	std::string Description;
 	ValueType Type;
 	std::array<float, 4> DefaultValues;
+	std::string DefaultStr;
 
 	NodePropertyParameter() { DefaultValues.fill(0.0f); }
 };
@@ -69,8 +70,8 @@ class NodeParameterBehaviorComponent
 {
 public:
 	bool IsGetIsInputPinEnabledInherited = false;
-
 	bool IsGetHeaderInherited = false;
+	bool IsGetWarningInherited = false;
 
 	virtual bool GetIsInputPinEnabled(std::shared_ptr<Material> material,
 									  std::shared_ptr<NodeParameter> parameter,
@@ -85,6 +86,8 @@ public:
 	{
 		return "";
 	}
+
+	virtual WarningType GetWarning(std::shared_ptr<Material> material, std::shared_ptr<Node> node) const { return WarningType::None; }
 };
 
 class NodeParameterBehaviorComponentTwoInputMath : public NodeParameterBehaviorComponent
@@ -105,13 +108,18 @@ public:
 	GetHeader(std::shared_ptr<Material> material, std::shared_ptr<NodeParameter> parameter, std::shared_ptr<Node> node) const override;
 };
 
-class NodeParameterBehaviorComponentName : public NodeParameterBehaviorComponent
+class NodeParameterBehaviorComponentParameter : public NodeParameterBehaviorComponent
 {
 public:
-	NodeParameterBehaviorComponentName() { IsGetHeaderInherited = true; }
+	NodeParameterBehaviorComponentParameter() {
+		IsGetHeaderInherited = true; 
+		IsGetWarningInherited = true;
+	}
 
 	std::string
 	GetHeader(std::shared_ptr<Material> material, std::shared_ptr<NodeParameter> parameter, std::shared_ptr<Node> node) const override;
+
+	WarningType GetWarning(std::shared_ptr<Material> material, std::shared_ptr<Node> node) const override;
 };
 
 class NodeParameterBehaviorConstantName : public NodeParameterBehaviorComponent
@@ -301,6 +309,7 @@ public:
 		auto paramName = std::make_shared<NodePropertyParameter>();
 		paramName->Name = "Name";
 		paramName->Type = ValueType::String;
+		paramName->DefaultStr = "Noname";
 		Properties.push_back(paramName);
 
 		auto paramPriority = std::make_shared<NodePropertyParameter>();
@@ -314,7 +323,7 @@ public:
 		param->Type = ValueType::Float1;
 		Properties.push_back(param);
 
-		BehaviorComponents = {std::make_shared<NodeParameterBehaviorComponentName>()};
+		BehaviorComponents = {std::make_shared<NodeParameterBehaviorComponentParameter>()};
 	}
 };
 
@@ -338,6 +347,7 @@ public:
 		auto paramName = std::make_shared<NodePropertyParameter>();
 		paramName->Name = "Name";
 		paramName->Type = ValueType::String;
+		paramName->DefaultStr = "Noname";
 		Properties.push_back(paramName);
 
 		auto paramPriority = std::make_shared<NodePropertyParameter>();
@@ -351,7 +361,7 @@ public:
 		param->Type = ValueType::Float2;
 		Properties.push_back(param);
 
-		BehaviorComponents = {std::make_shared<NodeParameterBehaviorComponentName>()};
+		BehaviorComponents = {std::make_shared<NodeParameterBehaviorComponentParameter>()};
 	}
 };
 
@@ -375,6 +385,7 @@ public:
 		auto paramName = std::make_shared<NodePropertyParameter>();
 		paramName->Name = "Name";
 		paramName->Type = ValueType::String;
+		paramName->DefaultStr = "Noname";
 		Properties.push_back(paramName);
 
 		auto paramPriority = std::make_shared<NodePropertyParameter>();
@@ -388,7 +399,7 @@ public:
 		param->Type = ValueType::Float3;
 		Properties.push_back(param);
 
-		BehaviorComponents = {std::make_shared<NodeParameterBehaviorComponentName>()};
+		BehaviorComponents = {std::make_shared<NodeParameterBehaviorComponentParameter>()};
 	}
 };
 
@@ -413,6 +424,7 @@ public:
 		paramName->Name = "Name";
 		paramName->Type = ValueType::String;
 		Properties.push_back(paramName);
+		paramName->DefaultStr = "Noname";
 
 		auto paramPriority = std::make_shared<NodePropertyParameter>();
 		paramPriority->Name = "Priority";
@@ -425,7 +437,7 @@ public:
 		param->Type = ValueType::Float4;
 		Properties.push_back(param);
 
-		BehaviorComponents = {std::make_shared<NodeParameterBehaviorComponentName>()};
+		BehaviorComponents = {std::make_shared<NodeParameterBehaviorComponentParameter>()};
 	}
 };
 
@@ -738,6 +750,7 @@ public:
 		auto edge = std::make_shared<PinParameter>();
 		edge->Name = "Edge";
 		edge->Type = ValueType::Float1;
+		edge->DefaultValues[0] = 0.5f;
 		InputPins.push_back(edge);
 
 		auto value = std::make_shared<PinParameter>();
@@ -886,6 +899,7 @@ public:
 		auto paramExp = std::make_shared<NodePropertyParameter>();
 		paramExp->Name = "Exp";
 		paramExp->Type = ValueType::Float1;
+		paramExp->DefaultValues[0] = 2.0f;
 		Properties.push_back(paramExp);
 	}
 
@@ -1224,6 +1238,7 @@ public:
 		auto paramName = std::make_shared<NodePropertyParameter>();
 		paramName->Name = "Name";
 		paramName->Type = ValueType::String;
+		paramName->DefaultStr = "Noname";
 		Properties.push_back(paramName);
 
 		auto paramPriority = std::make_shared<NodePropertyParameter>();
@@ -1237,7 +1252,7 @@ public:
 		param->Type = ValueType::Texture;
 		Properties.push_back(param);
 
-		BehaviorComponents = {std::make_shared<NodeParameterBehaviorComponentName>()};
+		BehaviorComponents = {std::make_shared<NodeParameterBehaviorComponentParameter>()};
 	}
 };
 
@@ -1562,7 +1577,7 @@ public:
 	{
 		Type = NodeType::Fresnel;
 		TypeName = "Fresnel";
-		Group = std::vector<std::string>{"Others"};
+		Group = std::vector<std::string>{"Advanced"};
 
 		auto output = std::make_shared<PinParameter>();
 		output->Name = "Output";
@@ -1600,7 +1615,7 @@ public:
 	{
 		Type = NodeType::Rotator;
 		TypeName = "Rotator";
-		Group = std::vector<std::string>{"Others"};
+		Group = std::vector<std::string>{"Advanced"};
 
 		auto output = std::make_shared<PinParameter>();
 		output->Name = "Output";
@@ -1631,7 +1646,7 @@ public:
 	{
 		Type = NodeType::PolarCoords;
 		TypeName = "PolarCoords";
-		Group = std::vector<std::string>{"Others"};
+		Group = std::vector<std::string>{"Advanced"};
 
 		auto tilePin = std::make_shared<PinParameter>();
 		tilePin->Name = "Tile";

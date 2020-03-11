@@ -3419,7 +3419,7 @@ namespace EffekseerRenderer
 		uint8_t*						m_ringBufferData;
 
 		efkRibbonNodeParam					innstancesNodeParam;
-		std::vector<efkRibbonInstanceParam>	instances;
+		Effekseer::CustomAlignedVector<efkRibbonInstanceParam> instances;
 		SplineGenerator spline_left;
 		SplineGenerator spline_right;
 
@@ -4940,7 +4940,7 @@ protected:
 		efkSpriteInstanceParam	Value;
 	};
 
-	std::vector<KeyValue>				instances;
+	Effekseer::CustomAlignedVector<KeyValue> instances;
 	int32_t vertexCount_ = 0;
 	int32_t stride_ = 0;
 	int32_t customData1Count_ = 0;
@@ -5350,7 +5350,7 @@ namespace EffekseerRenderer
 		uint8_t*						m_ringBufferData;
 
 		efkTrackNodeParam					innstancesNodeParam;
-		std::vector<efkTrackInstanceParam>	instances;
+		Effekseer::CustomAlignedVector<efkTrackInstanceParam> instances;
 		SplineGenerator spline;
 
 		int32_t vertexCount_ = 0;

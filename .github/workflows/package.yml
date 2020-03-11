@@ -1,0 +1,27 @@
+name: package
+
+on:
+  push:
+    branches:    
+      - master
+    tags:
+      - v*
+
+jobs:
+  build:
+
+    runs-on: vs2017-win2016
+    
+    steps:
+    - uses: actions/checkout@v2
+    - name: release
+      shell: bash
+      run: |
+        ls -la
+        python CreatePackage.py
+    - uses: actions/upload-artifact@v1
+      with:
+        name: EffekseerForUE4
+        path: EffekseerForUE4
+  
+
