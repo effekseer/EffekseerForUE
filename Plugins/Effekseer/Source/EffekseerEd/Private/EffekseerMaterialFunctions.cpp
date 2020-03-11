@@ -332,6 +332,26 @@ public:
 				}
 			}
 		}
+
+		if (expression_->Texture == nullptr)
+		{
+			FStringAssetReference assetPath("/Engine/EngineResources/DefaultTexture.DefaultTexture");
+			UTexture* texture = Cast<UTexture>(assetPath.TryLoad());
+
+			expression_->Texture = texture;
+
+			if (texture != nullptr)
+			{
+				if (texture->SRGB)
+				{
+					expression_->SamplerType = SAMPLERTYPE_Color;
+				}
+				else
+				{
+					expression_->SamplerType = SAMPLERTYPE_LinearColor;
+				}
+			}
+		}
 	}
 
 	UMaterialExpression* GetExpression() const override { return expression_; }
@@ -396,6 +416,26 @@ public:
 				}
 			}
 		}
+
+		if (expression_->Texture == nullptr)
+		{
+			FStringAssetReference assetPath("/Engine/EngineResources/DefaultTexture.DefaultTexture");
+			UTexture* texture = Cast<UTexture>(assetPath.TryLoad());
+
+			expression_->Texture = texture;
+
+			if (texture != nullptr)
+			{
+				if (texture->SRGB)
+				{
+					expression_->SamplerType = SAMPLERTYPE_Color;
+				}
+				else
+				{
+					expression_->SamplerType = SAMPLERTYPE_LinearColor;
+				}
+			}
+		}
 	}
 
 	UMaterialExpression* GetExpression() const override { return expression_; }
@@ -428,6 +468,26 @@ public:
 			texturePath = texturePath + "." + texturePath.substr(slash_i + 1, texturePath.size());
 
 			FStringAssetReference assetPath(texturePath.c_str());
+			UTexture* texture = Cast<UTexture>(assetPath.TryLoad());
+
+			expression_->Texture = texture;
+
+			if (texture != nullptr)
+			{
+				if (texture->SRGB)
+				{
+					expression_->SamplerType = SAMPLERTYPE_Color;
+				}
+				else
+				{
+					expression_->SamplerType = SAMPLERTYPE_LinearColor;
+				}
+			}
+		}
+		
+		if(expression_->Texture == nullptr)
+		{
+			FStringAssetReference assetPath("/Engine/EngineResources/DefaultTexture.DefaultTexture");
 			UTexture* texture = Cast<UTexture>(assetPath.TryLoad());
 
 			expression_->Texture = texture;

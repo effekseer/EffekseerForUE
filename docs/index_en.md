@@ -214,6 +214,8 @@ Does not support culling settings.
 
 Materials do not have depth ignoring settings.
 
+Some materials do not work. (It will be fixed in the next update.)
+
 ## Todo
 
 - Match of display of Effekseer and UnrealEngine4 of subtraction, distortion
@@ -224,10 +226,15 @@ Materials do not have depth ignoring settings.
 
 ## Release note
 
+### 1.50 (xxxx/xx/xx) 
+
+- Support 4.24
+- Support Material partially
+- Change default parameter (AutoActicate, Scale)
+
 ### 1.43f (2019/09/16) 
 
 - Support 4.23
-- Change default parameter (AutoActicate, Scale)
 
 ### 1.43e (2019/07/15) 
 
