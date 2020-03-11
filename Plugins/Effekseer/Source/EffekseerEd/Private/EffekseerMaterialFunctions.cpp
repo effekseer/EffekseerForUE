@@ -305,27 +305,31 @@ public:
 		expression_ = NewObject<UMaterialExpressionTextureSample>(material);
 		material->Expressions.Add(expression_);
 
-		auto texturePath = effekseerNode_->GetProperty("Texture")->Str;
-		int ext_i = texturePath.find_last_of(".");
-		texturePath = texturePath.substr(0, ext_i);
+		auto originalTexturePath = effekseerNode_->GetProperty("Texture")->Str;
 
-		int slash_i = texturePath.find_last_of("/");
-		texturePath = texturePath + "." + texturePath.substr(slash_i + 1, texturePath.size());
-
-		FStringAssetReference assetPath(texturePath.c_str());
-		UTexture* texture = Cast<UTexture>(assetPath.TryLoad());
-
-		expression_->Texture = texture;
-
-		if (texture != nullptr)
+		if (originalTexturePath != "")
 		{
-			if (texture->SRGB)
+			int ext_i = originalTexturePath.find_last_of(".");
+			auto texturePath = originalTexturePath.substr(0, ext_i);
+
+			int slash_i = texturePath.find_last_of("/");
+			texturePath = texturePath + "." + texturePath.substr(slash_i + 1, texturePath.size());
+
+			FStringAssetReference assetPath(texturePath.c_str());
+			UTexture* texture = Cast<UTexture>(assetPath.TryLoad());
+
+			expression_->Texture = texture;
+
+			if (texture != nullptr)
 			{
-				expression_->SamplerType = SAMPLERTYPE_Color;
-			}
-			else
-			{
-				expression_->SamplerType = SAMPLERTYPE_LinearColor;
+				if (texture->SRGB)
+				{
+					expression_->SamplerType = SAMPLERTYPE_Color;
+				}
+				else
+				{
+					expression_->SamplerType = SAMPLERTYPE_LinearColor;
+				}
 			}
 		}
 	}
@@ -364,27 +368,32 @@ public:
 		expression_ = NewObject<UMaterialExpressionTextureObject>(material);
 		material->Expressions.Add(expression_);
 
-		auto texturePath = effekseerNode_->GetProperty("Texture")->Str;
-		int ext_i = texturePath.find_last_of(".");
-		texturePath = texturePath.substr(0, ext_i);
+		auto originalTexturePath = effekseerNode_->GetProperty("Texture")->Str;
 
-		int slash_i = texturePath.find_last_of("/");
-		texturePath = texturePath + "." + texturePath.substr(slash_i + 1, texturePath.size());
-
-		FStringAssetReference assetPath(texturePath.c_str());
-		UTexture* texture = Cast<UTexture>(assetPath.TryLoad());
-
-		expression_->Texture = texture;
-
-		if (texture != nullptr)
+		if (originalTexturePath != "")
 		{
-			if (texture->SRGB)
+			auto texturePath = effekseerNode_->GetProperty("Texture")->Str;
+			int ext_i = texturePath.find_last_of(".");
+			texturePath = texturePath.substr(0, ext_i);
+
+			int slash_i = texturePath.find_last_of("/");
+			texturePath = texturePath + "." + texturePath.substr(slash_i + 1, texturePath.size());
+
+			FStringAssetReference assetPath(texturePath.c_str());
+			UTexture* texture = Cast<UTexture>(assetPath.TryLoad());
+
+			expression_->Texture = texture;
+
+			if (texture != nullptr)
 			{
-				expression_->SamplerType = SAMPLERTYPE_Color;
-			}
-			else
-			{
-				expression_->SamplerType = SAMPLERTYPE_LinearColor;
+				if (texture->SRGB)
+				{
+					expression_->SamplerType = SAMPLERTYPE_Color;
+				}
+				else
+				{
+					expression_->SamplerType = SAMPLERTYPE_LinearColor;
+				}
 			}
 		}
 	}
@@ -407,27 +416,32 @@ public:
 
 		expression_->ParameterName = FName(effekseerMaterial->textureNames[effekseerNode_->GUID].c_str());
 
-		auto texturePath = effekseerNode_->GetProperty("Texture")->Str;
-		int ext_i = texturePath.find_last_of(".");
-		texturePath = texturePath.substr(0, ext_i);
+		auto originalTexturePath = effekseerNode_->GetProperty("Texture")->Str;
 
-		int slash_i = texturePath.find_last_of("/");
-		texturePath = texturePath + "." + texturePath.substr(slash_i + 1, texturePath.size());
-
-		FStringAssetReference assetPath(texturePath.c_str());
-		UTexture* texture = Cast<UTexture>(assetPath.TryLoad());
-
-		expression_->Texture = texture;
-
-		if (texture != nullptr)
+		if (originalTexturePath != "")
 		{
-			if (texture->SRGB)
+			auto texturePath = effekseerNode_->GetProperty("Texture")->Str;
+			int ext_i = texturePath.find_last_of(".");
+			texturePath = texturePath.substr(0, ext_i);
+
+			int slash_i = texturePath.find_last_of("/");
+			texturePath = texturePath + "." + texturePath.substr(slash_i + 1, texturePath.size());
+
+			FStringAssetReference assetPath(texturePath.c_str());
+			UTexture* texture = Cast<UTexture>(assetPath.TryLoad());
+
+			expression_->Texture = texture;
+
+			if (texture != nullptr)
 			{
-				expression_->SamplerType = SAMPLERTYPE_Color;
-			}
-			else
-			{
-				expression_->SamplerType = SAMPLERTYPE_LinearColor;
+				if (texture->SRGB)
+				{
+					expression_->SamplerType = SAMPLERTYPE_Color;
+				}
+				else
+				{
+					expression_->SamplerType = SAMPLERTYPE_LinearColor;
+				}
 			}
 		}
 	}
