@@ -49,8 +49,9 @@ class ConvertedNodeOutput : public ConvertedNode
 private:
 	UMaterial* material_ = nullptr;
 	std::shared_ptr<EffekseerMaterial::Node> effekseerNode_;
+	UMaterialExpressionMaterialFunctionCall* opacityCullingFunction_ = nullptr;
+	UMaterialExpressionMaterialFunctionCall* opacityMaskCullingFunction_ = nullptr;
 	UMaterialExpressionMaterialFunctionCall* opacityFunction_ = nullptr;
-	UMaterialExpressionMaterialFunctionCall* opacityMaskFunction_ = nullptr;
 
 public:
 	ConvertedNodeOutput(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
@@ -70,18 +71,29 @@ public:
 
 		opacityFunction_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
 		material->Expressions.Add(opacityFunction_);
-		opacityMaskFunction_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
-		material->Expressions.Add(opacityMaskFunction_);
+		opacityCullingFunction_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
+		material->Expressions.Add(opacityCullingFunction_);
+		opacityMaskCullingFunction_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
+		material->Expressions.Add(opacityMaskCullingFunction_);
 
 
-		FStringAssetReference assetPath("/Effekseer/MaterialFunctions/EfkCullingMask.EfkCullingMask");
-		UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
-		opacityFunction_->SetMaterialFunction(func);
-		opacityMaskFunction_->SetMaterialFunction(func);
+		{
+			FStringAssetReference assetPath("/Effekseer/MaterialFunctions/EfkCullingMask.EfkCullingMask");
+			UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
+			opacityCullingFunction_->SetMaterialFunction(func);
+			opacityMaskCullingFunction_->SetMaterialFunction(func);
+		}
 
-		material_->Opacity.Expression = opacityFunction_;
-		material_->OpacityMask.Expression = opacityMaskFunction_;
+		{
+			FStringAssetReference assetPath("/Effekseer/MaterialFunctions/EfkOpacity.EfkOpacity");
+			UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
+			opacityFunction_->SetMaterialFunction(func);
+		}
 
+		material_->Opacity.Expression = opacityCullingFunction_;
+		material_->OpacityMask.Expression = opacityMaskCullingFunction_;
+		opacityCullingFunction_->GetInput(0)->Expression = opacityFunction_;
+		opacityCullingFunction_->GetInput(0)->OutputIndex = 0;
 	}
 
 	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) override
@@ -98,7 +110,8 @@ public:
 
 		if (targetInd == effekseerNode_->GetInputPinIndex("OpacityMask"))
 		{
-			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(*opacityMaskFunction_->GetInput(0));
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(*opacityMaskCullingFunction_->GetInput(0));
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(*opacityFunction_->GetInput(1));
 		}
 
 		if (targetInd == effekseerNode_->GetInputPinIndex("Roughness"))
@@ -132,11 +145,12 @@ public:
 		material_->EditorX = x;
 		material_->EditorY = y;
 
+		opacityCullingFunction_->MaterialExpressionEditorX = x;
+		opacityCullingFunction_->MaterialExpressionEditorY = y;
+		opacityMaskCullingFunction_->MaterialExpressionEditorX = x;
+		opacityMaskCullingFunction_->MaterialExpressionEditorY = y;
 		opacityFunction_->MaterialExpressionEditorX = x;
 		opacityFunction_->MaterialExpressionEditorY = y;
-		opacityMaskFunction_->MaterialExpressionEditorX = x;
-		opacityMaskFunction_->MaterialExpressionEditorY = y;
-
 	}
 };
 

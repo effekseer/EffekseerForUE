@@ -156,16 +156,20 @@ Effekseer::TextureData* TextureLoader::Load(const EFK_CHAR* path, ::Effekseer::T
 		textureType != ::Effekseer::TextureType::Distortion) return nullptr;
 
 	auto path_we = GetFileNameWithoutExtension(path);
-	auto epath_ = (const char16_t*)path_we.c_str();
-	auto path_ = (const TCHAR*)epath_;
+	auto path_ = tStr<512>(path_we.c_str());
 
 
 	if (textureType == ::Effekseer::TextureType::Color)
 	{	
 		if (m_requiredToCreateResource)
 		{
-			auto texture = Cast<UTexture2D>(StaticLoadObject(UTexture2D::StaticClass(), NULL, path_));
+			auto texture = Cast<UTexture2D>(StaticLoadObject(UTexture2D::StaticClass(), NULL, path_.c_str()));
 			m_uobject->ColorTextures.Add(texture);
+
+			if (texture == nullptr)
+			{
+				UE_LOG(LogScript, Warning, TEXT("Failed to load %s"), path_.c_str());
+			}
 
 			Effekseer::TextureData* data = new Effekseer::TextureData();
 			data->UserPtr = texture;
@@ -188,8 +192,13 @@ Effekseer::TextureData* TextureLoader::Load(const EFK_CHAR* path, ::Effekseer::T
 	{
 		if (m_requiredToCreateResource)
 		{
-			auto texture = Cast<UTexture2D>(StaticLoadObject(UTexture2D::StaticClass(), NULL, path_));
+			auto texture = Cast<UTexture2D>(StaticLoadObject(UTexture2D::StaticClass(), NULL, path_.c_str()));
 			m_uobject->DistortionTextures.Add(texture);
+
+			if (texture == nullptr)
+			{
+				UE_LOG(LogScript, Warning, TEXT("Failed to load %s"), path_.c_str());
+			}
 
 			Effekseer::TextureData* data = new Effekseer::TextureData();
 			data->UserPtr = texture;
@@ -271,6 +280,10 @@ void* ModelLoader::Load(const EFK_CHAR* path)
 		{
 			return (void*)model->GetNativePtr();
 		}
+		else
+		{
+			UE_LOG(LogScript, Warning, TEXT("Failed to load %s"), path_.c_str());
+		}
 
 		return model;
 	}
@@ -328,12 +341,11 @@ public:
 ::Effekseer::MaterialData* MaterialLoader::Load(const EFK_CHAR* path)
 {
 	auto path_we = GetFileNameWithoutExtension(path);
-	auto epath_ = (const char16_t*)path_we.c_str();
-	auto path_ = (const TCHAR*)epath_;
+	auto path_ = tStr<512>(path_we.c_str());
 
 	if (requiredToCreateResource_)
 	{
-		auto material = Cast<UEffekseerMaterial>(StaticLoadObject(UEffekseerMaterial::StaticClass(), NULL, path_));
+		auto material = Cast<UEffekseerMaterial>(StaticLoadObject(UEffekseerMaterial::StaticClass(), NULL, path_.c_str()));
 		uobject_->Materials.Add(material);
 
 		if (material != nullptr)
@@ -362,6 +374,10 @@ public:
 			}
 
 			return data;
+		}
+		else
+		{
+			UE_LOG(LogScript, Warning, TEXT("Failed to load %s"), path_.c_str());
 		}
 
 		return nullptr;
