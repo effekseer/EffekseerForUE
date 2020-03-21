@@ -267,3 +267,11 @@ LoopExit:;
 	
 	return system_->Play(Effect, loc);
 }
+
+#if WITH_EDITOR
+void UEffekseerEmitterComponent::Preview()
+{
+	Stop();
+	shouldActivate = true;
+}
+#endif

@@ -51,6 +51,11 @@ public:
 
 	virtual void Serialize(FArchive& Ar) override;
 
+#if WITH_EDITOR
+	UFUNCTION(BlueprintCallable, CallInEditor, Category = Effect)
+		void Preview();
+#endif
+
 	UPROPERTY()
 	uint8 bAutoDestroy : 1;
 
