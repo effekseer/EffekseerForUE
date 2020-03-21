@@ -345,7 +345,7 @@ private:
 
 public:
 	ConvertedNodeTextureSample(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
-		: effekseerNode_(effekseerNode), material_(material)
+		: material_(material), effekseerNode_(effekseerNode)
 	{
 		expression_ = NewObject<UMaterialExpressionTextureSample>(material);
 		material->Expressions.Add(expression_);
