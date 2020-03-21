@@ -676,7 +676,7 @@ UMaterial* CreateUE4MaterialFromEffekseerMaterial(const std::shared_ptr<NativeEf
 	originalMaterial->BlendMode = blendMode;
 
 	originalMaterial->TwoSided = 1;
-
+	originalMaterial->OpacityMaskClipValue = 0.0f;
 	originalMaterial->PostEditChange();
 
 	return originalMaterial;

@@ -2,15 +2,15 @@
 #include "EffekseerSystemComponent.h"
 
 
-void UEffekseerEmitterComponent::ApplyParameters()
+void UEffekseerEmitterComponent::ApplyParameters(bool forced)
 {
-	if (AllColor != AllColor_)
+	if (AllColor != AllColor_ || forced)
 	{
 		system_->SetEffectAllColor(handle, AllColor);
 		AllColor_ = AllColor;
 	}
 
-	if (Speed != Speed_)
+	if (Speed != Speed_ || forced)
 	{
 		system_->SetEffectSpeed(handle, Speed);
 		Speed_ = Speed;
@@ -19,14 +19,14 @@ void UEffekseerEmitterComponent::ApplyParameters()
 	bool isDynamicInputChanged = false;
 	for (int32_t i = 0; i < DynamicInput.Num(); i++)
 	{
-		if (DynamicInput[i] != DynamicInput_[i])
+		if (DynamicInput[i] != DynamicInput_[i] || forced)
 		{
 			system_->SetEffectDynamicInput(handle, i, DynamicInput[i]);
 			isDynamicInputChanged = true;
 		}
 	}
 
-	if (isDynamicInputChanged)
+	if (isDynamicInputChanged || forced)
 	{
 		DynamicInput_ = DynamicInput;
 	}
@@ -125,7 +125,7 @@ void UEffekseerEmitterComponent::TickComponent(float DeltaTime, ELevelTick TickT
 
 			shouldActivate = false;
 
-			ApplyParameters();
+			ApplyParameters(true);
 		}
 	}
 
@@ -139,7 +139,7 @@ void UEffekseerEmitterComponent::TickComponent(float DeltaTime, ELevelTick TickT
 			system_->SetEffectRotation(handle, transform.GetRotation().Rotator());
 			system_->SetEffectScaling(handle, transform.GetScale3D());
 
-			ApplyParameters();
+			ApplyParameters(false);
 		}
 		else
 		{

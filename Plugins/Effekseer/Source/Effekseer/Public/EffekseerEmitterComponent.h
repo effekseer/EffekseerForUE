@@ -27,7 +27,7 @@ private:
 	//! HACK for activate
 	bool autoActivateOnActivate_ = false;
 
-	void ApplyParameters();
+	void ApplyParameters(bool forced);
 
 public:
 	UEffekseerEmitterComponent(const FObjectInitializer& ObjectInitializer);
