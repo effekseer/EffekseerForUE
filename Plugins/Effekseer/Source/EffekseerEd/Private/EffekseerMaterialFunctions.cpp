@@ -49,6 +49,8 @@ class ConvertedNodeOutput : public ConvertedNode
 private:
 	UMaterial* material_ = nullptr;
 	std::shared_ptr<EffekseerMaterial::Node> effekseerNode_;
+	UMaterialExpressionPower* baseColorPower_ = nullptr;
+	UMaterialExpressionPower* emissiveColorPower_ = nullptr;
 	UMaterialExpressionMaterialFunctionCall* opacityCullingFunction_ = nullptr;
 	UMaterialExpressionMaterialFunctionCall* opacityMaskCullingFunction_ = nullptr;
 	UMaterialExpressionMaterialFunctionCall* opacityFunction_ = nullptr;
@@ -67,6 +69,10 @@ public:
 		else if (shadingModel == EffekseerMaterial::ShadingModelType::Unlit)
 		{
 			material->SetShadingModel(EMaterialShadingModel::MSM_Unlit);
+		}
+
+		{
+
 		}
 
 		opacityFunction_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
@@ -100,7 +106,22 @@ public:
 	{
 		if (targetInd == effekseerNode_->GetInputPinIndex("BaseColor"))
 		{
-			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(material_->BaseColor);
+			baseColorPower_ = NewObject<UMaterialExpressionPower>(material_);
+			material_->Expressions.Add(baseColorPower_);
+			baseColorPower_->ConstExponent = 2.2f;
+			
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(baseColorPower_->Base);
+			material_->BaseColor.Expression = baseColorPower_;
+		}
+
+		if (targetInd == effekseerNode_->GetInputPinIndex("Emissive"))
+		{
+			emissiveColorPower_ = NewObject<UMaterialExpressionPower>(material_);
+			material_->Expressions.Add(emissiveColorPower_);
+			emissiveColorPower_->ConstExponent = 2.2f;
+
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(emissiveColorPower_->Base);
+			material_->EmissiveColor.Expression = emissiveColorPower_;
 		}
 
 		if (targetInd == effekseerNode_->GetInputPinIndex("Opacity"))
@@ -133,24 +154,31 @@ public:
 		{
 			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(material_->WorldPositionOffset);
 		}
-
-		if (targetInd == effekseerNode_->GetInputPinIndex("Emissive"))
-		{
-			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(material_->EmissiveColor);
-		}
 	}
 
 	void SetEditorPosition(int32_t x, int32_t y) override
 	{
-		material_->EditorX = x;
+		material_->EditorX = x + 200;
 		material_->EditorY = y;
 
+		if (baseColorPower_ != nullptr)
+		{
+			baseColorPower_->MaterialExpressionEditorX = x;
+			baseColorPower_->MaterialExpressionEditorY = y + 50;
+		}
+
+		if (emissiveColorPower_ != nullptr)
+		{
+			emissiveColorPower_->MaterialExpressionEditorX = x;
+			emissiveColorPower_->MaterialExpressionEditorY = y + 50;
+		}
+
 		opacityCullingFunction_->MaterialExpressionEditorX = x;
-		opacityCullingFunction_->MaterialExpressionEditorY = y;
+		opacityCullingFunction_->MaterialExpressionEditorY = y + 200;
 		opacityMaskCullingFunction_->MaterialExpressionEditorX = x;
-		opacityMaskCullingFunction_->MaterialExpressionEditorY = y;
+		opacityMaskCullingFunction_->MaterialExpressionEditorY = y + 250;
 		opacityFunction_->MaterialExpressionEditorX = x;
-		opacityFunction_->MaterialExpressionEditorY = y;
+		opacityFunction_->MaterialExpressionEditorY = y + 300;
 	}
 };
 
@@ -309,15 +337,33 @@ public:
 class ConvertedNodeTextureSample : public ConvertedNode
 {
 private:
+	UMaterial* material_ = nullptr;
 	std::shared_ptr<EffekseerMaterial::Node> effekseerNode_;
 	UMaterialExpressionTextureSample* expression_ = nullptr;
+	UMaterialExpressionMaterialFunctionCall* expressionToLinear_ = nullptr;
+	UMaterialExpressionConstant* expressionConstant_ = nullptr;
 
 public:
 	ConvertedNodeTextureSample(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
-		: effekseerNode_(effekseerNode)
+		: effekseerNode_(effekseerNode), material_(material)
 	{
 		expression_ = NewObject<UMaterialExpressionTextureSample>(material);
 		material->Expressions.Add(expression_);
+
+		{
+			expressionToLinear_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
+			material->Expressions.Add(expressionToLinear_);
+
+			FStringAssetReference assetPath("/Effekseer/MaterialFunctions/EfkToLinear.EfkToLinear");
+			UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
+			expressionToLinear_->SetMaterialFunction(func);
+		}
+
+		for(int i = 0; i < 6; i++)
+		{
+			expressionToLinear_->GetInput(i)->Expression = expression_;
+			expressionToLinear_->GetInput(i)->OutputIndex = i;
+		}
 
 		auto originalTexturePath = effekseerNode_->GetProperty("Texture")->Str;
 
@@ -343,6 +389,7 @@ public:
 				else
 				{
 					expression_->SamplerType = SAMPLERTYPE_LinearColor;
+					MakeLinear();
 				}
 			}
 		}
@@ -363,17 +410,68 @@ public:
 				else
 				{
 					expression_->SamplerType = SAMPLERTYPE_LinearColor;
+					MakeLinear();
 				}
 			}
 		}
 	}
 
-	UMaterialExpression* GetExpression() const override { return expression_; }
+	void MakeLinear()
+	{
+		if (expressionConstant_ == nullptr)
+		{
+			expressionConstant_ = NewObject<UMaterialExpressionConstant>(material_);
+			material_->Expressions.Add(expressionConstant_);
+			expressionToLinear_->GetInput(6)->Expression = expressionConstant_;
+			expressionToLinear_->GetInput(6)->OutputIndex = 0;
+		}
+
+		expressionConstant_->R = 1.0f;
+	}
+
+	void MakeSRGB()
+	{
+		if (expressionConstant_ != nullptr)
+		{
+			expressionConstant_->R = 2.2f;
+		}
+	}
+
+	UMaterialExpression* GetExpression() const override { return expressionToLinear_; }
 
 	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) override
 	{
 		if (targetInd == effekseerNode_->GetInputPinIndex("Texture"))
 		{
+			auto exp = outputNode->GetExpression();
+
+			auto texObj = Cast<UMaterialExpressionTextureObject>(exp);
+			auto texObjParam = Cast<UMaterialExpressionTextureObjectParameter>(exp);
+
+			if (texObj != nullptr)
+			{
+				if (texObj->Texture->SRGB)
+				{
+					MakeSRGB();
+				}
+				else
+				{
+					MakeLinear();
+				}
+			}
+
+			if (texObjParam != nullptr)
+			{
+				if (texObjParam->Texture->SRGB)
+				{
+					MakeSRGB();
+				}
+				else
+				{
+					MakeLinear();
+				}
+			}
+
 			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(expression_->TextureObject);
 		}
 
@@ -385,7 +483,17 @@ public:
 
 	virtual ConvertedNodeOutputConnector GetNodeOutputConnector(int32_t index) const
 	{
-		return ConvertedNodeOutputConnector(expression_, index);
+		return ConvertedNodeOutputConnector(expressionToLinear_, index);
+	}
+
+	int32_t GetExpressionCount() const { return expressionConstant_ != nullptr ? 3: 2; }
+
+	UMaterialExpression* GetExpressions(int32_t ind) const override {
+		if (ind == 0) return expressionToLinear_;
+		if (ind == 1) return expression_;
+		if (ind == 2) return expressionConstant_;
+
+		return nullptr;
 	}
 };
 
@@ -653,7 +761,6 @@ UMaterial* CreateUE4MaterialFromEffekseerMaterial(const std::shared_ptr<NativeEf
 		{
 			auto n = it->second->Create(originalMaterial, context, node);
 			convertedNodes[node->GUID] = n;
-			n->SetEditorPosition(node->Pos.X, node->Pos.Y);
 		}
 	}
 
@@ -671,6 +778,22 @@ UMaterial* CreateUE4MaterialFromEffekseerMaterial(const std::shared_ptr<NativeEf
 		if (convertedNodes.count(inputNode->GUID) == 0) continue;
 
 		convertedNodes[inputNode->GUID]->Connect(link->InputPin->PinIndex, convertedNodes[outputNode->GUID], link->OutputPin->PinIndex);
+	}
+
+	// specify positions(because internal nodes are added while connecting)
+	for (auto node : context->material->GetNodes())
+	{
+		auto it = nodeFactories.find(node->Parameter->TypeName);
+
+		if (it == nodeFactories.end())
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Unsupported node"));
+		}
+		else
+		{
+			auto n = convertedNodes[node->GUID];
+			n->SetEditorPosition(node->Pos.X, node->Pos.Y);
+		}
 	}
 
 	originalMaterial->BlendMode = blendMode;
