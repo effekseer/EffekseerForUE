@@ -214,8 +214,6 @@ Does not support culling settings.
 
 Materials do not have depth ignoring settings.
 
-Some materials do not work. (It will be fixed in the next update.)
-
 ## Todo
 
 - Match of display of Effekseer and UnrealEngine4 of subtraction, distortion
@@ -226,7 +224,7 @@ Some materials do not work. (It will be fixed in the next update.)
 
 ## Release note
 
-### 1.50 (xxxx/xx/xx) 
+### 1.50 (2020/03/18) 
 
 - Support 4.24
 - Support Material partially
