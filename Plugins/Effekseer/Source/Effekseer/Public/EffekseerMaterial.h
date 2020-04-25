@@ -74,12 +74,18 @@ public:
 	UPROPERTY(VisibleAnywhere)
 	TArray<FEffekseerUniformProperty> Uniforms;
 
+#if ENGINE_MINOR_VERSION >= 25
+	TMap<FHashedName, int> UniformHashedNameToIndex;
+#endif
 	UPROPERTY(Transient)
 	TMap<FString, int> UniformNameToIndex;
 
 	UPROPERTY(VisibleAnywhere)
 	TArray<FEffekseerTextureProperty> Textures;
 
+#if ENGINE_MINOR_VERSION >= 25
+	TMap<FHashedName, int> TextureHashedNameToIndex;
+#endif
 	UPROPERTY(Transient)
 	TMap<FString, int> TextureNameToIndex;
 

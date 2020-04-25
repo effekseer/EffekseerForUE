@@ -27,6 +27,11 @@ public:
 
 namespace EffekseerRendererUE4
 {
+#if ENGINE_MINOR_VERSION >= 25
+	using MaterialParameterInfo = FHashedMaterialParameterInfo;
+#else
+	using MaterialParameterInfo = FMaterialParameterInfo;
+#endif
 
 	class FCompatibleMaterialRenderProxy : public FMaterialRenderProxy
 	{
@@ -39,9 +44,9 @@ namespace EffekseerRendererUE4
 		}
 		virtual ~FCompatibleMaterialRenderProxy() = default;
 
-		virtual bool GetParentVectorValue(const FMaterialParameterInfo& ParameterInfo, FLinearColor* OutValue, const FMaterialRenderContext& Context) const { return false; }
-		virtual bool GetParentScalarValue(const FMaterialParameterInfo& ParameterInfo, float* OutValue, const FMaterialRenderContext& Context) const { return false; }
-		virtual bool GetParentTextureValue(const FMaterialParameterInfo& ParameterInfo, const UTexture** OutValue, const FMaterialRenderContext& Context) const { return false; }
+		virtual bool GetParentVectorValue(const MaterialParameterInfo& ParameterInfo, FLinearColor* OutValue, const FMaterialRenderContext& Context) const { return false; }
+		virtual bool GetParentScalarValue(const MaterialParameterInfo& ParameterInfo, float* OutValue, const FMaterialRenderContext& Context) const { return false; }
+		virtual bool GetParentTextureValue(const MaterialParameterInfo& ParameterInfo, const UTexture** OutValue, const FMaterialRenderContext& Context) const { return false; }
 
 #if ENGINE_MINOR_VERSION < 19
 		bool GetVectorValue(const FName ParameterName, FLinearColor* OutValue, const FMaterialRenderContext& Context) const
@@ -65,23 +70,28 @@ namespace EffekseerRendererUE4
 			return GetParentTextureValue(info, OutValue, Context);
 		}
 #else
-		bool GetVectorValue(const FMaterialParameterInfo& ParameterInfo, FLinearColor* OutValue, const FMaterialRenderContext& Context) const
+		bool GetVectorValue(const MaterialParameterInfo& ParameterInfo, FLinearColor* OutValue, const FMaterialRenderContext& Context) const
 		{
 			return  GetParentVectorValue(ParameterInfo, OutValue, Context);
 		}
 
-		bool GetScalarValue(const FMaterialParameterInfo& ParameterInfo, float* OutValue, const FMaterialRenderContext& Context) const
+		bool GetScalarValue(const MaterialParameterInfo& ParameterInfo, float* OutValue, const FMaterialRenderContext& Context) const
 		{
 			return GetParentScalarValue(ParameterInfo, OutValue, Context);
 		}
 
-		bool GetTextureValue(const FMaterialParameterInfo& ParameterInfo, const UTexture** OutValue, const FMaterialRenderContext& Context) const
+		bool GetTextureValue(const MaterialParameterInfo& ParameterInfo, const UTexture** OutValue, const FMaterialRenderContext& Context) const
 		{
 			return GetParentTextureValue(ParameterInfo, OutValue, Context);
 		}
 #endif
 
-#if ENGINE_MINOR_VERSION >= 24
+#if ENGINE_MINOR_VERSION >= 25
+		bool GetTextureValue(const FHashedMaterialParameterInfo& ParameterInfo, const URuntimeVirtualTexture** OutValue, const FMaterialRenderContext& Context) const override
+		{
+			return Parent->GetTextureValue(ParameterInfo, OutValue, Context);
+		}
+#elif ENGINE_MINOR_VERSION >= 24
 		bool GetTextureValue(const FMaterialParameterInfo& ParameterInfo, const URuntimeVirtualTexture** OutValue, const FMaterialRenderContext& Context) const override
 		{
 			return Parent->GetTextureValue(ParameterInfo, OutValue, Context);
@@ -141,9 +151,9 @@ namespace EffekseerRendererUE4
 		}
 
 		const FMaterial* GetParentMaterial(ERHIFeatureLevel::Type InFeatureLevel) const override;
-		bool GetParentVectorValue(const FMaterialParameterInfo& ParameterInfo, FLinearColor* OutValue, const FMaterialRenderContext& Context) const override;
-		bool GetParentScalarValue(const FMaterialParameterInfo& ParameterInfo, float* OutValue, const FMaterialRenderContext& Context) const override;
-		bool GetParentTextureValue(const FMaterialParameterInfo& ParameterInfo, const UTexture** OutValue, const FMaterialRenderContext& Context) const override;
+		bool GetParentVectorValue(const MaterialParameterInfo& ParameterInfo, FLinearColor* OutValue, const FMaterialRenderContext& Context) const override;
+		bool GetParentScalarValue(const MaterialParameterInfo& ParameterInfo, float* OutValue, const FMaterialRenderContext& Context) const override;
+		bool GetParentTextureValue(const MaterialParameterInfo& ParameterInfo, const UTexture** OutValue, const FMaterialRenderContext& Context) const override;
 	};
 
 	const FMaterial* FFileMaterialRenderProxy::GetParentMaterial(ERHIFeatureLevel::Type InFeatureLevel) const
@@ -151,7 +161,7 @@ namespace EffekseerRendererUE4
 		return Parent->GetMaterial(InFeatureLevel);
 	}
 
-	bool FFileMaterialRenderProxy::GetParentVectorValue(const FMaterialParameterInfo& ParameterInfo, FLinearColor* OutValue, const FMaterialRenderContext& Context) const
+	bool FFileMaterialRenderProxy::GetParentVectorValue(const MaterialParameterInfo& ParameterInfo, FLinearColor* OutValue, const FMaterialRenderContext& Context) const
 	{
 		if (isModel_)
 		{
@@ -194,7 +204,12 @@ namespace EffekseerRendererUE4
 			}
 		}
 
+#if ENGINE_MINOR_VERSION >= 25
+		const auto found = effekseerMaterial_->UniformHashedNameToIndex.Find(ParameterInfo.Name);
+#else
 		const auto found = effekseerMaterial_->UniformNameToIndex.Find(ParameterInfo.Name.ToString());
+#endif
+
 		if (found != nullptr)
 		{
 			OutValue->R = uniformBuffer_[(*found) * 4 + 0];
@@ -207,7 +222,7 @@ namespace EffekseerRendererUE4
 		return Parent->GetVectorValue(ParameterInfo GET_MAT_PARAM_NAME, OutValue, Context);
 	}
 
-	bool FFileMaterialRenderProxy::GetParentScalarValue(const FMaterialParameterInfo& ParameterInfo, float* OutValue, const FMaterialRenderContext& Context) const
+	bool FFileMaterialRenderProxy::GetParentScalarValue(const MaterialParameterInfo& ParameterInfo, float* OutValue, const FMaterialRenderContext& Context) const
 	{
 		if (ParameterInfo.Name == FName(TEXT("Model")))
 		{
@@ -215,7 +230,11 @@ namespace EffekseerRendererUE4
 			return true;
 		}
 
+#if ENGINE_MINOR_VERSION >= 25
+		const auto found = effekseerMaterial_->UniformHashedNameToIndex.Find(ParameterInfo.Name);
+#else
 		const auto found = effekseerMaterial_->UniformNameToIndex.Find(ParameterInfo.Name.ToString());
+#endif
 		if (found != nullptr)
 		{
 			*OutValue = uniformBuffer_[(*found) * 4 + 0];
@@ -225,9 +244,13 @@ namespace EffekseerRendererUE4
 		return Parent->GetScalarValue(ParameterInfo GET_MAT_PARAM_NAME, OutValue, Context);
 	}
 
-	bool FFileMaterialRenderProxy::GetParentTextureValue(const FMaterialParameterInfo& ParameterInfo, const UTexture** OutValue, const FMaterialRenderContext& Context) const
+	bool FFileMaterialRenderProxy::GetParentTextureValue(const MaterialParameterInfo& ParameterInfo, const UTexture** OutValue, const FMaterialRenderContext& Context) const
 	{
+#if ENGINE_MINOR_VERSION >= 25
+		const auto found = effekseerMaterial_->TextureHashedNameToIndex.Find(ParameterInfo.Name);
+#else
 		const auto found = effekseerMaterial_->TextureNameToIndex.Find(ParameterInfo.Name.ToString());
+#endif
 		if (found != nullptr)
 		{
 			*OutValue = (UTexture*)Textures[*found];
@@ -249,9 +272,9 @@ namespace EffekseerRendererUE4
 		{}
 
 		const FMaterial* GetParentMaterial(ERHIFeatureLevel::Type InFeatureLevel) const override;
-		bool GetParentVectorValue(const FMaterialParameterInfo& ParameterInfo, FLinearColor* OutValue, const FMaterialRenderContext& Context) const override;
-		bool GetParentScalarValue(const FMaterialParameterInfo& ParameterInfo, float* OutValue, const FMaterialRenderContext& Context) const override;
-		bool GetParentTextureValue(const FMaterialParameterInfo& ParameterInfo, const UTexture** OutValue, const FMaterialRenderContext& Context) const override;
+		bool GetParentVectorValue(const MaterialParameterInfo& ParameterInfo, FLinearColor* OutValue, const FMaterialRenderContext& Context) const override;
+		bool GetParentScalarValue(const MaterialParameterInfo& ParameterInfo, float* OutValue, const FMaterialRenderContext& Context) const override;
+		bool GetParentTextureValue(const MaterialParameterInfo& ParameterInfo, const UTexture** OutValue, const FMaterialRenderContext& Context) const override;
 	};
 
 	const FMaterial* FDistortionMaterialRenderProxy::GetParentMaterial(ERHIFeatureLevel::Type InFeatureLevel) const
@@ -259,12 +282,12 @@ namespace EffekseerRendererUE4
 		return Parent->GetMaterial(InFeatureLevel);
 	}
 
-	bool FDistortionMaterialRenderProxy::GetParentVectorValue(const FMaterialParameterInfo& ParameterInfo, FLinearColor* OutValue, const FMaterialRenderContext& Context) const
+	bool FDistortionMaterialRenderProxy::GetParentVectorValue(const MaterialParameterInfo& ParameterInfo, FLinearColor* OutValue, const FMaterialRenderContext& Context) const
 	{
 		return Parent->GetVectorValue(ParameterInfo GET_MAT_PARAM_NAME, OutValue, Context);
 	}
 
-	bool FDistortionMaterialRenderProxy::GetParentScalarValue(const FMaterialParameterInfo& ParameterInfo, float* OutValue, const FMaterialRenderContext& Context) const
+	bool FDistortionMaterialRenderProxy::GetParentScalarValue(const MaterialParameterInfo& ParameterInfo, float* OutValue, const FMaterialRenderContext& Context) const
 	{
 		if (ParameterInfo.Name == FName(TEXT("DistortionIntensity")))
 		{
@@ -275,7 +298,7 @@ namespace EffekseerRendererUE4
 		return Parent->GetScalarValue(ParameterInfo GET_MAT_PARAM_NAME, OutValue, Context);
 	}
 
-	bool FDistortionMaterialRenderProxy::GetParentTextureValue(const FMaterialParameterInfo& ParameterInfo, const UTexture** OutValue, const FMaterialRenderContext& Context) const
+	bool FDistortionMaterialRenderProxy::GetParentTextureValue(const MaterialParameterInfo& ParameterInfo, const UTexture** OutValue, const FMaterialRenderContext& Context) const
 	{
 		return Parent->GetTextureValue(ParameterInfo GET_MAT_PARAM_NAME, OutValue, Context);
 	}
@@ -299,9 +322,9 @@ namespace EffekseerRendererUE4
 		{}
 
 		const FMaterial* GetParentMaterial(ERHIFeatureLevel::Type InFeatureLevel) const override;
-		bool GetParentVectorValue(const FMaterialParameterInfo& ParameterInfo, FLinearColor* OutValue, const FMaterialRenderContext& Context) const override;
-		bool GetParentScalarValue(const FMaterialParameterInfo& ParameterInfo, float* OutValue, const FMaterialRenderContext& Context) const override;
-		bool GetParentTextureValue(const FMaterialParameterInfo& ParameterInfo, const UTexture** OutValue, const FMaterialRenderContext& Context) const override;
+		bool GetParentVectorValue(const MaterialParameterInfo& ParameterInfo, FLinearColor* OutValue, const FMaterialRenderContext& Context) const override;
+		bool GetParentScalarValue(const MaterialParameterInfo& ParameterInfo, float* OutValue, const FMaterialRenderContext& Context) const override;
+		bool GetParentTextureValue(const MaterialParameterInfo& ParameterInfo, const UTexture** OutValue, const FMaterialRenderContext& Context) const override;
 	};
 
 
@@ -310,7 +333,7 @@ namespace EffekseerRendererUE4
 		return Parent->GetMaterial(InFeatureLevel);
 	}
 
-	bool FModelMaterialRenderProxy::GetParentVectorValue(const FMaterialParameterInfo& ParameterInfo, FLinearColor* OutValue, const FMaterialRenderContext& Context) const
+	bool FModelMaterialRenderProxy::GetParentVectorValue(const MaterialParameterInfo& ParameterInfo, FLinearColor* OutValue, const FMaterialRenderContext& Context) const
 	{
 		if (ParameterInfo.Name == FName(TEXT("UserUV")))
 		{
@@ -341,7 +364,7 @@ namespace EffekseerRendererUE4
 		return Parent->GetVectorValue(ParameterInfo GET_MAT_PARAM_NAME, OutValue, Context);
 	}
 
-	bool FModelMaterialRenderProxy::GetParentScalarValue(const FMaterialParameterInfo& ParameterInfo, float* OutValue, const FMaterialRenderContext& Context) const
+	bool FModelMaterialRenderProxy::GetParentScalarValue(const MaterialParameterInfo& ParameterInfo, float* OutValue, const FMaterialRenderContext& Context) const
 	{
 		if (ParameterInfo.Name == FName(TEXT("DistortionIntensity")))
 		{
@@ -352,7 +375,7 @@ namespace EffekseerRendererUE4
 		return Parent->GetScalarValue(ParameterInfo GET_MAT_PARAM_NAME, OutValue, Context);
 	}
 
-	bool FModelMaterialRenderProxy::GetParentTextureValue(const FMaterialParameterInfo& ParameterInfo, const UTexture** OutValue, const FMaterialRenderContext& Context) const
+	bool FModelMaterialRenderProxy::GetParentTextureValue(const MaterialParameterInfo& ParameterInfo, const UTexture** OutValue, const FMaterialRenderContext& Context) const
 	{
 		return Parent->GetTextureValue(ParameterInfo GET_MAT_PARAM_NAME, OutValue, Context);
 	}
@@ -543,7 +566,7 @@ namespace EffekseerRendererUE4
 	{
 		m_squareMaxCount = squareMaxCount;
 		m_renderState = new RenderState();
-		m_vertexBuffer = new VertexBuffer(sizeof(Vertex) * m_squareMaxCount * 4, true);
+		m_vertexBuffer = new VertexBuffer(EffekseerRenderer::GetMaximumVertexSizeInAllTypes() * m_squareMaxCount * 4, true);
 		stanShader_ = std::unique_ptr<Shader>(new Shader(Effekseer::RendererMaterialType::Default));
 		backDistortedShader_ = std::unique_ptr<Shader>(new Shader(Effekseer::RendererMaterialType::BackDistortion));
 		lightingShader_ = std::unique_ptr<Shader>(new Shader(Effekseer::RendererMaterialType::Lighting));

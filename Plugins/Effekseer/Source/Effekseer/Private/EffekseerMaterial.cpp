@@ -87,6 +87,22 @@ void UEffekseerMaterial::ReassignSearchingMaps()
 	{
 		TextureNameToIndex.Add(Textures[i].Name, i);
 	}
+
+#if ENGINE_MINOR_VERSION >= 25
+	UniformHashedNameToIndex.Reset();
+
+	for (int32_t i = 0; i < Uniforms.Num(); i++)
+	{
+		UniformHashedNameToIndex.Add(Uniforms[i].Name, i);
+	}
+
+	TextureHashedNameToIndex.Reset();
+
+	for (int32_t i = 0; i < Textures.Num(); i++)
+	{
+		TextureHashedNameToIndex.Add(Textures[i].Name, i);
+	}
+#endif
 }
 
 void UEffekseerMaterial::BeginDestroy()

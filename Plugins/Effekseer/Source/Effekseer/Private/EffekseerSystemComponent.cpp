@@ -532,10 +532,15 @@ FEffekseerHandle UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVect
 	if (effect == nullptr) return FEffekseerHandle();
 	if (effect->GetNativePtr() == nullptr) return FEffekseerHandle();
 
-	// システムからの相対位置に変換する。
-	position -= this->RelativeLocation;
+	// Convert to a position relative from the system.
 
-	// 動的にマテリアルを生成する。
+#if ENGINE_MINOR_VERSION >= 25
+	position -= this->GetRelativeLocation();
+#else
+	position -= this->RelativeLocation;
+#endif
+
+	// it generates a material dynamically.
 	UMaterialInstanceConstant* _mats[16];
 	TMap<UTexture2D*, UMaterialInstanceDynamic*>* _matss[8];
 

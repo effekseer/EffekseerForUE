@@ -4,14 +4,16 @@
 
 #undef far
 
-#ifndef	__EFFEKSEERRENDERER_COMMON_UTILS_H__
-#define	__EFFEKSEERRENDERER_COMMON_UTILS_H__
+#ifndef __EFFEKSEERRENDERER_COMMON_UTILS_H__
+#define __EFFEKSEERRENDERER_COMMON_UTILS_H__
 
 #include "EffekseerNative.h"
-#include <assert.h>
-#include <string.h>
-#include <math.h>
+#include <algorithm>
 #include <array>
+#include <assert.h>
+#include <functional>
+#include <math.h>
+#include <string.h>
 
 namespace EffekseerRenderer
 {
@@ -45,6 +47,13 @@ struct DynamicVertex
 #endif
 
 	void SetColor(const VertexColor& color) { Col = color; }
+};
+
+struct DynamicVertexWithCustomData
+{
+	DynamicVertex V;
+	std::array<float, 4> CustomData1;
+	std::array<float, 4> CustomData2;
 };
 
 struct SimpleVertex
@@ -124,7 +133,7 @@ struct VertexDistortion
 
 	float AlphaThreshold;
 #endif
-	
+
 	void SetColor(const ::Effekseer::Color& color)
 	{
 		Col[0] = color.R;
@@ -147,7 +156,7 @@ struct VertexDistortionDX9
 
 	VertexFloat3 Binormal;
 	VertexFloat3 Tangent;
-	
+
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 	float AlphaUV[2];
 
@@ -165,6 +174,14 @@ struct VertexDistortionDX9
 	}
 };
 
+static int32_t GetMaximumVertexSizeInAllTypes()
+{
+	size_t size = sizeof(SimpleVertex);
+	size = (std::max)(size, sizeof(VertexDistortion));
+	size = (std::max)(size, sizeof(DynamicVertexWithCustomData));
+	return static_cast<int32_t>(size);
+};
+
 /**
 	@brief	a view class to access an array with a stride
 */
@@ -178,7 +195,7 @@ template <typename T> struct StrideView
 	int32_t offset_;
 	int32_t elementCount_;
 #endif
-	
+
 	StrideView(void* pointer, int32_t stride, int32_t elementCount)
 		: stride_(stride)
 		, pointer_(reinterpret_cast<uint8_t*>(pointer))
@@ -190,12 +207,13 @@ template <typename T> struct StrideView
 	{
 	}
 
-	T& operator[](int i) const { 
+	T& operator[](int i) const
+	{
 #ifndef NDEBUG
 		assert(i >= 0);
 		assert(i + offset_ < elementCount_);
 #endif
-		return *reinterpret_cast<T*>((pointer_ + stride_ * i)); 
+		return *reinterpret_cast<T*>((pointer_ + stride_ * i));
 	}
 
 	StrideView& operator+=(const int& rhs)
@@ -207,18 +225,19 @@ template <typename T> struct StrideView
 		return *this;
 	}
 
-	void Reset() { 
+	void Reset()
+	{
 #ifndef NDEBUG
 		offset_ = 0;
 #endif
-		pointer_ = pointerOrigin_; 
+		pointer_ = pointerOrigin_;
 	}
 };
 
 /**
 	@brief	a view class to access an array with a stride
 */
-template<> struct StrideView<SimpleVertex>
+template <> struct StrideView<SimpleVertex>
 {
 	static const int32_t stride_ = sizeof(SimpleVertex);
 	uint8_t* pointer_;
@@ -351,19 +370,18 @@ public:
 	Effekseer::Vec3f GetValue(float t) const;
 };
 
-
 void ApplyDepthParameters(::Effekseer::Mat43f& mat,
-					  const ::Effekseer::Vec3f& cameraFront,
-					  const ::Effekseer::Vec3f& cameraPos,
-					::Effekseer::NodeRendererDepthParameter* depthParameter,
-					  bool isRightHand);
-
-void ApplyDepthParameters(::Effekseer::Mat43f& mat,
-					  const ::Effekseer::Vec3f& cameraFront,
-					  const ::Effekseer::Vec3f& cameraPos,
-					  ::Effekseer::Vec3f& scaleValues,
+						  const ::Effekseer::Vec3f& cameraFront,
+						  const ::Effekseer::Vec3f& cameraPos,
 						  ::Effekseer::NodeRendererDepthParameter* depthParameter,
-					  bool isRightHand);
+						  bool isRightHand);
+
+void ApplyDepthParameters(::Effekseer::Mat43f& mat,
+						  const ::Effekseer::Vec3f& cameraFront,
+						  const ::Effekseer::Vec3f& cameraPos,
+						  ::Effekseer::Vec3f& scaleValues,
+						  ::Effekseer::NodeRendererDepthParameter* depthParameter,
+						  bool isRightHand);
 
 void ApplyDepthParameters(::Effekseer::Mat43f& mat,
 						  ::Effekseer::Vec3f& translationValues,
@@ -379,8 +397,7 @@ void ApplyDepthParameters(::Effekseer::Mat44f& mat,
 						  ::Effekseer::NodeRendererDepthParameter* depthParameter,
 						  bool isRightHand);
 
-template <typename Vertex>
-inline void TransformStandardVertexes( Vertex& vertexes, int32_t count, const ::Effekseer::Mat43f& mat )
+template <typename Vertex> inline void TransformStandardVertexes(Vertex& vertexes, int32_t count, const ::Effekseer::Mat43f& mat)
 {
 	using namespace Effekseer;
 
@@ -418,7 +435,7 @@ inline void TransformDistortionVertexes(VertexDistortion& vertexes, int32_t coun
 		SIMD4f iPos = SIMD4f::Load3(&vertexes[i].Pos);
 		SIMD4f iTangent = SIMD4f::Load3(&vertexes[i].Tangent);
 		SIMD4f iBinormal = SIMD4f::Load3(&vertexes[i].Binormal);
-		
+
 		SIMD4f oPos = SIMD4f::MulAddLane<0>(m3, m0, iPos);
 		oPos = SIMD4f::MulAddLane<1>(oPos, m1, iPos);
 		oPos = SIMD4f::MulAddLane<2>(oPos, m2, iPos);
@@ -463,7 +480,8 @@ inline void TransformVertexes(StrideView<DynamicVertex>& v, int32_t count, const
 }
 
 inline void SwapRGBAToBGRA(Effekseer::Color& color)
-{ auto temp = color;
+{
+	auto temp = color;
 	color.B = temp.R;
 	color.R = temp.B;
 }
@@ -624,7 +642,7 @@ struct MaterialShaderParameterGenerator
 	}
 };
 
-}
+} // namespace EffekseerRenderer
 #endif // __EFFEKSEERRENDERER_COMMON_UTILS_H__
 
 #ifndef	__EFFEKSEERRENDERER_RENDERER_H__
@@ -1273,6 +1291,7 @@ protected:
 	bool					m_isDynamic;
 	bool					m_isLock;
 	uint8_t*				m_resource;
+	int32_t stride_ = 2;
 
 public:
 	IndexBufferBase( int maxCount, bool isDynamic );
@@ -1594,7 +1613,7 @@ private:
 	StandardRendererState m_state;
 
 	std::vector<uint8_t> vertexCaches;
-	int32_t renderVertexMaxSize;
+	int32_t squareMaxSize_ = 0;
 
 	bool isDistortionMode_;
 	bool isDynamicVertexMode_ = false;
@@ -1681,16 +1700,13 @@ private:
 public:
 	StandardRenderer(
 		RENDERER* renderer, SHADER* shader, SHADER* shader_distortion)
-		: renderVertexMaxSize(0), isDistortionMode_(false)
+		: squareMaxSize_(renderer->GetSquareMaxCount()), isDistortionMode_(false)
 	{
 		m_renderer = renderer;
 		m_shader = shader;
-		//m_shader_no_texture = shader_no_texture;
 		m_shader_distortion = shader_distortion;
-		//m_shader_no_texture_distortion = shader_no_texture_distortion;
 
 		vertexCaches.reserve(m_renderer->GetVertexBuffer()->GetMaxSize());
-		renderVertexMaxSize = m_renderer->GetVertexBuffer()->GetMaxSize();
 	}
 
 	virtual ~StandardRenderer()
@@ -1735,6 +1751,8 @@ public:
 		stride = CalculateCurrentStride();
 
 		{
+			int32_t renderVertexMaxSize = squareMaxSize_ * stride * 4;
+
 			if (count * stride + (int32_t)vertexCaches.size() > renderVertexMaxSize)
 			{
 				Rendering();
@@ -1786,6 +1804,8 @@ public:
 			{
 				// only sprite
 				int32_t renderBufferSize = (int32_t)vertexCaches.size() - offset;
+
+				int32_t renderVertexMaxSize = squareMaxSize_ * stride * 4;
 
 				if (renderBufferSize > renderVertexMaxSize)
 				{
@@ -5878,6 +5898,8 @@ namespace EffekseerRenderer
 					::Effekseer::Vec3f R;
 					::Effekseer::Vec3f U;
 
+					// It can be optimized because X is only not zero.
+					/*
 					U = axis;
 
 					F = ::Effekseer::Vec3f(m_renderer->GetCameraFrontDirection()).Normalize();
@@ -5893,6 +5915,23 @@ namespace EffekseerRenderer
 					vl.Pos = ToStruct(::Effekseer::Vec3f::Transform(vl.Pos, mat_rot));
 					vm.Pos = ToStruct(::Effekseer::Vec3f::Transform(vm.Pos, mat_rot));
 					vr.Pos = ToStruct(::Effekseer::Vec3f::Transform(vr.Pos,mat_rot));
+					*/
+
+					U = axis;
+					F = m_renderer->GetCameraFrontDirection();
+					R = ::Effekseer::Vec3f::Cross(U, F).Normalize();
+
+					assert(vl.Pos.Y == 0.0f);
+					assert(vr.Pos.Y == 0.0f);
+					assert(vl.Pos.Z == 0.0f);
+					assert(vr.Pos.Z == 0.0f);
+					assert(vm.Pos.X == 0.0f);
+					assert(vm.Pos.Y == 0.0f);
+					assert(vm.Pos.Z == 0.0f);
+
+					vl.Pos = ToStruct(-R * vl.Pos.X + pos);
+					vm.Pos = ToStruct(pos);
+					vr.Pos = ToStruct(-R * vr.Pos.X + pos);
 
 					if (vertexType == VertexType::Distortion)
 					{

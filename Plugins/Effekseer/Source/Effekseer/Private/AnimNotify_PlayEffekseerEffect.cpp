@@ -63,9 +63,16 @@ static void SpawnEmitterAttached(UEffekseerEffect* effekseerEffect, class UScene
 		auto componentToWorld = FTransform(rotation, location);
 		auto parentToWorld = attachToComponent->GetSocketTransform(attachPointName);
 		auto relative = componentToWorld.GetRelativeTransform(parentToWorld);
+
+#if ENGINE_MINOR_VERSION >= 25
+		eec->SetRelativeLocation(location);
+		eec->SetRelativeRotation(relative.GetRotation().Rotator());
+		eec->SetRelativeScale3D(FVector(1.0f));
+#else
 		eec->RelativeLocation = relative.GetLocation();
 		eec->RelativeRotation = relative.GetRotation().Rotator();
 		eec->RelativeScale3D = FVector(1.0f);
+#endif
 	}
 	else
 	{
@@ -75,11 +82,20 @@ static void SpawnEmitterAttached(UEffekseerEffect* effekseerEffect, class UScene
 		if (locationType == EAttachLocation::SnapToTarget)
 		{
 			auto parentToWorld = attachToComponent->GetSocketTransform(attachPointName);
+
+#if ENGINE_MINOR_VERSION >= 25
+			eec->SetRelativeScale3D(parentToWorld.GetSafeScaleReciprocal(parentToWorld.GetScale3D()));
+#else
 			eec->RelativeScale3D = parentToWorld.GetSafeScaleReciprocal(parentToWorld.GetScale3D());
+#endif
 		}
 		else
 		{
+#if ENGINE_MINOR_VERSION >= 25
+			eec->SetRelativeScale3D(FVector(1.0f));
+#else
 			eec->RelativeScale3D = FVector(1.0f);
+#endif
 		}
 	}
 
