@@ -145,6 +145,21 @@ public:
 
 	virtual FPrimitiveViewRelevance GetViewRelevance(const FSceneView* View) const override
 	{
+#if ENGINE_MINOR_VERSION >= 25
+		bool bVisible = true;
+		FPrimitiveViewRelevance Result;
+		Result.bDrawRelevance = IsShown(View);
+		Result.bDynamicRelevance = true;
+		Result.bShadowRelevance = IsShadowCast(View);
+		Result.bOpaque = false;
+		Result.bMasked = false;
+		Result.bSeparateTranslucency = true;
+		Result.bNormalTranslucency = true;
+		Result.bDistortion = true;
+
+		return Result;
+
+#else
 		bool bVisible = true;
 		FPrimitiveViewRelevance Result;
 		Result.bDrawRelevance = IsShown(View);
@@ -157,6 +172,7 @@ public:
 		Result.bDistortionRelevance = true;
 
 		return Result;
+#endif
 	}
 	virtual uint32 GetMemoryFootprint() const { return sizeof(*this) + GetAllocatedSize(); }
 	uint32 GetAllocatedSize() const { return FPrimitiveSceneProxy::GetAllocatedSize(); }
