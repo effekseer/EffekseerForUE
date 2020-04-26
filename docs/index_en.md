@@ -7,6 +7,10 @@
 This is Effekseer plugin for UnrealEngine 4.
 With this plugin, you can play effects created with Effekseer on UnrealEngine 4.
 
+## Important notice
+
+Please reimport model files if you upgrade it from 1.4
+
 ### Environment
 
 #### Version
@@ -223,6 +227,11 @@ Materials do not have depth ignoring settings.
 - Improved ease of use
 
 ## Release note
+
+### 1.52 (2020/04/26) 
+
+- Support 4.25 Preview7
+- Fixed a bug that caused a crash in rare cases.
 
 ### 1.50 (2020/03/18) 
 

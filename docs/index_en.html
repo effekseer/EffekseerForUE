@@ -5,44 +5,33 @@
   <meta name="generator" content="pandoc" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>EffekseerForUnrealEngine4</title>
-  <style>
-    code{white-space: pre-wrap;}
-    span.smallcaps{font-variant: small-caps;}
-    span.underline{text-decoration: underline;}
-    div.column{display: inline-block; vertical-align: top; width: 50%;}
-    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
-    ul.task-list{list-style: none;}
+  <style type="text/css">
+      code{white-space: pre-wrap;}
+      span.smallcaps{font-variant: small-caps;}
+      span.underline{text-decoration: underline;}
+      div.column{display: inline-block; vertical-align: top; width: 50%;}
   </style>
-  <link rel="stylesheet" href="base.css" />
+  <link rel="stylesheet" href="base.css">
   <!--[if lt IE 9]>
     <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
   <![endif]-->
 </head>
 <body>
-<header id="title-block-header">
+<header>
 <h1 class="title">EffekseerForUnrealEngine4</h1>
 </header>
 <div class="main">
-<section class="level2">
 <h2>Overview</h2>
 <p>This is Effekseer plugin for UnrealEngine 4. With this plugin, you can play effects created with Effekseer on UnrealEngine 4.</p>
-<section class="level3">
+<h2>Important notice</h2>
+<p>Please reimport model files if you upgrade it from 1.4</p>
 <h3>Environment</h3>
-<section class="level4">
 <h4>Version</h4>
 <p>UnrealEngine4.23 or later</p>
-</section>
-<section class="level4">
 <h4>Compiler</h4>
 <p>It is necessary to install a compiler suitable for the environment. For example, you need to install VisualStudio 2017 or 2019 on Windows.</p>
-</section>
-<section class="level4">
 <h4>Platform</h4>
 <p>Since platform-specific functions are not used, EffekseerForUnrealEngine4 works on most platforms.</p>
-</section>
-</section>
-</section>
-<section class="level2">
 <h2>Constitution</h2>
 <p>EffekseerForUE4 consists mainly of two components.</p>
 <p>It is <code>EffekseerSystemComponent</code> and <code>EffekseerEmitterComponent</code>.</p>
@@ -50,26 +39,19 @@
 <p>EffekseerEmitterComponent creates and manipulates effects. It is necessary for each effect.</p>
 <p>Besides these, theare are <code>EffekseerEffect</code> asset corresponding to Effekseer’s efk file and <code>EffekseerModel</code> asset corresponding to the Effekseer’s efkmdl file.</p>
 <p>There are also <code>BP_EffekseerSystem</code> and <code>BP_EffekseerEmitter</code> blueprints that makes it easier to use components.</p>
-</section>
-<section class="level2">
 <h2>Sample</h2>
 <p><code>EffekseerForUE4.uproject</code> contains sample levels.</p>
 <p>You can see that Effekseer’s effect is being played.</p>
 <div data-align="center">
 <p><img src="img/ss.png"></p>
 </div>
-</section>
-<section class="level2">
 <h2>Installation and usage</h2>
 <p>This section explains how to install and use EffekseerForUE 4 in your project.</p>
-<section class="level3">
 <h3>1.1. Copying directories</h3>
 <p>You copy the <code>Plugins</code> directory to the same directory as the uproject you created.</p>
 <div data-align="center">
 <p><img src="img/copyFiles.png"></p>
 </div>
-</section>
-<section class="level3">
 <h3>1.2. Adding C ++ code</h3>
 <p>You add some C ++ code to the project. It is no problem even if contents are empty.</p>
 <div data-align="center">
@@ -78,8 +60,6 @@
 <div data-align="center">
 <p><img src="img/classNone.png"></p>
 </div>
-</section>
-<section class="level3">
 <h3>1.3. Enabling Plugin</h3>
 <p>You activate Plugin from UnrealEngine4. If it may be required to restart, you restart UnrealEngine 4.</p>
 <div data-align="center">
@@ -89,8 +69,6 @@
 <div data-align="center">
 <p><img src="img/recompile.png"></p>
 </div>
-</section>
-<section class="level3">
 <h3>1.4. Adding a blueprint</h3>
 <p>You add <code>BP_EffekseerSystem</code> and <code>BP_EffekseerEmitter</code> to the level.</p>
 <p>Since these are in the contents of the plugin, you make the contents of the plugin shown.</p>
@@ -113,8 +91,6 @@
 <div data-align="center">
 <p><img src="img/effekseerEmitter.png"></p>
 </div>
-</section>
-<section class="level3">
 <h3>1.5. Adding assets</h3>
 <p>You add the efk files and textures output from Effekseer to the content.</p>
 <div data-align="center">
@@ -140,22 +116,16 @@
 <div data-align="center">
 <p><img src="img/play.png"></p>
 </div>
-</section>
-<section class="level3">
 <h3>2.1. Components of Effekseer</h3>
 <p>You can also add Effekseer components to other actors. However, since EffekseerSystem is complicated, we recommend that you only use the EffekseerEmitter component.</p>
 <div data-align="center">
 <p><img src="img/addComponent.png"></p>
 </div>
-</section>
-<section class="level3">
 <h3>3.1. Animation Notifications</h3>
 <p>Effects can be played using Animation Notifications. Effects can be played at indicated time in Animation Sequence.</p>
 <div data-align="center">
 <p><img src="img/animNotify.png"></p>
 </div>
-</section>
-<section class="level3">
 <h3>4.1 Network</h3>
 <ul>
 <li>Only Windows</li>
@@ -164,91 +134,67 @@
 <p><img src="img/network.png" width="800"></p>
 <p>You specify the port to be connected from Effekseer fo EffekseerSystemComponent. Make DoStartNetworkAutomatically On or execute StartNetwork in EffekseerSystemComponent. Then you can edit the effect from Effekseer. In order to edit the effect from another computer, it is necessary to open the port with the setting of the firewall. <img src="img/network_ui.png"></p>
 <p>As a limitation, changes to blends or changes to unused images are not applied.</p>
-</section>
-</section>
-<section class="level2">
 <h2>Caution</h2>
 <p>A greyscale image with alpha will display incorrectly.</p>
-</section>
-<section class="level2">
 <h2>Limitation</h2>
 <p>Subtraction, and distortion are different from Effekseer.</p>
 <p>The normal map to the model does not apply.</p>
 <p>If a large number of models are drawn, the speed tends to decrease.</p>
 <p>Does not support culling settings.</p>
 <p>Materials do not have depth ignoring settings.</p>
-</section>
-<section class="level2">
 <h2>Todo</h2>
 <ul>
 <li><p>Match of display of Effekseer and UnrealEngine4 of subtraction, distortion</p></li>
 <li><p>Implementation of model normals</p></li>
 <li><p>Improved ease of use</p></li>
 </ul>
-</section>
-<section class="level2">
 <h2>Release note</h2>
-<section class="level3">
+<h3>1.52 (2020/04/26)</h3>
+<ul>
+<li>Support 4.25 Preview7</li>
+<li>Fixed a bug that caused a crash in rare cases.</li>
+</ul>
 <h3>1.50 (2020/03/18)</h3>
 <ul>
 <li>Support 4.24</li>
 <li>Support Material partially</li>
 <li>Change default parameter (AutoActicate, Scale)</li>
 </ul>
-</section>
-<section class="level3">
 <h3>1.43f (2019/09/16)</h3>
 <ul>
 <li>Support 4.23</li>
 </ul>
-</section>
-<section class="level3">
 <h3>1.43e (2019/07/15)</h3>
 <ul>
 <li>Resupport 4.21 (Compile error has been caused in 4.21)</li>
 </ul>
-</section>
-<section class="level3">
 <h3>1.43d (2019/07/11)</h3>
 <ul>
 <li>Fixed a bug that the application is crashed when a model is rendered in 4.22</li>
 </ul>
-</section>
-<section class="level3">
 <h3>1.43b (2019/05/01)</h3>
 <ul>
 <li>Supported 4.22</li>
 </ul>
-</section>
-<section class="level3">
 <h3>1.43 (2018/03/02)</h3>
 <ul>
 <li><p>Supported 4.21</p></li>
 <li><p>Add network functions</p></li>
 </ul>
-</section>
-<section class="level3">
 <h3>1.40 (2018/09/12)</h3>
 <ul>
 <li><p>Supported 4.20</p></li>
 <li><p>Add functions(Playback speed and color settings)</p></li>
 </ul>
-</section>
-<section class="level3">
 <h3>1.31 (2017/11/20)</h3>
 <ul>
 <li><p>Supported Animation Notifications</p></li>
 <li><p>Fixed many bugs</p></li>
 </ul>
-</section>
-<section class="level3">
 <h3>1.30 (2017/11/01)</h3>
 <ul>
 <li>First release</li>
 </ul>
-</section>
-</section>
-<section class="level2">
 <h2>Lisence</h2>
 <pre>
 
@@ -274,7 +220,6 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 </pre>
-</section>
 </div>
 </body>
 </html>
