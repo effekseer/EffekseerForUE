@@ -5,33 +5,48 @@
   <meta name="generator" content="pandoc" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
   <title>EffekseerForUnrealEngine4</title>
-  <style type="text/css">
-      code{white-space: pre-wrap;}
-      span.smallcaps{font-variant: small-caps;}
-      span.underline{text-decoration: underline;}
-      div.column{display: inline-block; vertical-align: top; width: 50%;}
+  <style>
+    code{white-space: pre-wrap;}
+    span.smallcaps{font-variant: small-caps;}
+    span.underline{text-decoration: underline;}
+    div.column{display: inline-block; vertical-align: top; width: 50%;}
+    div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+    ul.task-list{list-style: none;}
   </style>
-  <link rel="stylesheet" href="base.css">
+  <link rel="stylesheet" href="base.css" />
   <!--[if lt IE 9]>
     <script src="//cdnjs.cloudflare.com/ajax/libs/html5shiv/3.7.3/html5shiv-printshiv.min.js"></script>
   <![endif]-->
 </head>
 <body>
-<header>
+<header id="title-block-header">
 <h1 class="title">EffekseerForUnrealEngine4</h1>
 </header>
 <div class="main">
+<section class="level2">
 <h2>概要</h2>
 <p>これはUnrealEngine4向けのEffekseerプラグインです。 このプラグインを使用すると、UnrealEngine4上でEffekseerで作成したエフェクトを再生できるようになります。</p>
+</section>
+<section class="level2">
 <h2>重要なお知らせ</h2>
 <p>1.4からアップグレードした場合は、モデルファイルを再インポートしてください。</p>
+<section class="level3">
 <h3>動作環境</h3>
+<section class="level4">
 <h4>バージョン</h4>
 <p>UnrealEngine4.23以降</p>
+</section>
+<section class="level4">
 <h4>コンパイラ</h4>
 <p>環境に合わせたコンパイラをインストールする必要があります。 例えば、WindowsではVisualStudio2017、もしくはVisualStudio2019をインストールする必要があります。</p>
+</section>
+<section class="level4">
 <h4>プラットフォーム</h4>
 <p>プラットフォーム固有の機能は使用していないため、 EffekseerForUnrealEngine4はほとんどのプラットフォームで動作します。</p>
+</section>
+</section>
+</section>
+<section class="level2">
 <h2>構成</h2>
 <p>EffekseerForUE4では主に2つのコンポーネントで構成されています。</p>
 <p>それは、<code>EffekseerSystemComponent</code> と <code>EffekseerEmitterComponent</code> です。</p>
@@ -39,19 +54,26 @@
 <p>EffekseerEmitterComponentはエフェクトの生成や操作を行います。エフェクト1つ1つに必要です。</p>
 <p>これらの他に、Effekseerのefkファイルに対応するアセットの<code>EffekseerEffect</code>と Effekseerのefkmdlファイルに対応するアセットの<code>EffekseerModel</code>があります。</p>
 <p>また、コンポーネントを使用しやすくした、<code>BP_EffekseerSystem</code> と <code>BP_EffekseerEmitter</code> のブループリントもあります。</p>
+</section>
+<section class="level2">
 <h2>サンプル</h2>
 <p><code>EffekseerForUE4.uproject</code> にサンプルのレベルが収録されています。</p>
 <p>これを見るとEffekseerのエフェクトが再生されていることがわかります。</p>
 <div data-align="center">
 <p><img src="img/ss.png"></p>
 </div>
+</section>
+<section class="level2">
 <h2>インストール・使用方法</h2>
 <p>ここでは、サンプル以外のプロジェクトでEffekseerForUE4をインストール・使用する方法について説明します。</p>
+<section class="level3">
 <h3>1.1. ディレクトリのコピー</h3>
 <p><code>Plugins</code> のディレクトリをあなたが作成したuprojectと同じディレクトリにコピーします。</p>
 <div data-align="center">
 <p><img src="img/copyFiles.png"></p>
 </div>
+</section>
+<section class="level3">
 <h3>1.2. C++のコードの追加</h3>
 <p>中身は空で問題ないので、何かしらのC++のコードをプロジェクトに追加します。</p>
 <div data-align="center">
@@ -60,6 +82,8 @@
 <div data-align="center">
 <p><img src="img/classNone.png"></p>
 </div>
+</section>
+<section class="level3">
 <h3>1.3. Plugin の有効化</h3>
 <p>UnrealEngine4からPluginを有効化します。再起動を求められる場合があるので、UnrealEngine4を再起動します。</p>
 <div data-align="center">
@@ -69,6 +93,8 @@
 <div data-align="center">
 <p><img src="img/recompile.png"></p>
 </div>
+</section>
+<section class="level3">
 <h3>1.4. ブループリントの追加</h3>
 <p><code>BP_EffekseerSystem</code> と <code>BP_EffekseerEmitter</code> をレベルに追加します。</p>
 <p>これらはプラグインのコンテンツにあるので、プラグインのコンテンツを表示できるようにします。</p>
@@ -91,6 +117,8 @@
 <div data-align="center">
 <p><img src="img/effekseerEmitter.png"></p>
 </div>
+</section>
+<section class="level3">
 <h3>1.5. アセットの追加</h3>
 <p>Effekseerから出力されたefkファイルとテクスチャをコンテンツに追加します。</p>
 <div data-align="center">
@@ -116,16 +144,22 @@
 <div data-align="center">
 <p><img src="img/play.png"></p>
 </div>
+</section>
+<section class="level3">
 <h3>2.1. Effekseerのコンポーネント</h3>
 <p>他のアクターにEffekseerのコンポーネントを追加することもできます。 ただし、EffekseerSystemは複雑なので、EffekseerEmitterのコンポーネントのみ使用することをお勧めします。</p>
 <div data-align="center">
 <p><img src="img/addComponent.png"></p>
 </div>
+</section>
+<section class="level3">
 <h3>3.1. アニメーション通知</h3>
 <p>アニメーション通知でも使用できます。アニメーションシーケンス内で指定した時間にエフェクトを再生できます。</p>
 <div data-align="center">
 <p><img src="img/animNotify.png"></p>
 </div>
+</section>
+<section class="level3">
 <h3>4.1 ネットワーク機能</h3>
 <ul>
 <li>Windowsのみ</li>
@@ -135,67 +169,106 @@
 <p>EffekseerSystemコンポーネントにEffekseerから接続するためのポートを指定します。DoStartNetworkAutomaticallyをOnにするか、EffekseerSystemコンポーネントのStartNetworkを実行します。 そうすると、Effekseerからエフェクトを編集できるようになります。他のコンピューターからエフェクトを編集するためにはファイヤーウォールの設定でポート開放する必要があります。</p>
 <p><img src="img/network_ui.png"></p>
 <p>制限として、ブレンドの変更や使用していない画像への変更は適用されません。</p>
+</section>
+</section>
+<section class="level2">
 <h2>注意</h2>
 <p>α付きのグレースケールの画像は表示がおかしくなります。</p>
+</section>
+<section class="level2">
 <h2>制限</h2>
 <p>減算、歪みはEffekseerでの表示と異なります。</p>
 <p>モデルへの法線マップは適用されません。</p>
 <p>モデルを大量に描画すると速度が低下しやすくなります。</p>
 <p>カリングの設定に対応していません。</p>
 <p>マテリアルは深度を無視する設定が適用されません。</p>
+</section>
+<section class="level2">
 <h2>Todo</h2>
 <ul>
 <li><p>減算、歪みのEffekseerとUnrealEngine4の表示の一致</p></li>
 <li><p>モデルの法線の実装</p></li>
 <li><p>使いやすさの向上</p></li>
 </ul>
+</section>
+<section class="level2">
 <h2>更新履歴</h2>
+<section class="level3">
+<h3>1.52b (2020/05/02)</h3>
+<ul>
+<li>生成方法の線だとパーティクルが表示されない不具合を修正</li>
+</ul>
+</section>
+<section class="level3">
 <h3>1.52a (2020/04/28)</h3>
 <ul>
 <li>約90度に回転したZ軸回転ビルボードの挙動がおかしい不具合を修正</li>
 </ul>
+</section>
+<section class="level3">
 <h3>1.52 (2020/04/26)</h3>
 <ul>
 <li>4.25 Preview7に対応</li>
 <li>稀にクラッシュする不具合を修正</li>
 </ul>
+</section>
+<section class="level3">
 <h3>1.50 (2020/03/18)</h3>
 <ul>
 <li>4.24に対応</li>
 <li>マテリアルに部分的に対応</li>
 <li>デフォルトのパラメーターを変更 (AutoActicate, Scale)</li>
 </ul>
+</section>
+<section class="level3">
 <h3>1.43f (2019/09/16)</h3>
 <ul>
 <li>4.23に対応</li>
 </ul>
+</section>
+<section class="level3">
 <h3>1.43e (2019/07/15)</h3>
 <ul>
 <li>4.21でコンパイルエラーが発生した不具合を修正</li>
 </ul>
+</section>
+<section class="level3">
 <h3>1.43d (2019/07/11)</h3>
 <ul>
 <li>4.22でモデルの描画でクラッシュする不具合を修正</li>
 </ul>
+</section>
+<section class="level3">
 <h3>1.43b (2019/05/01)</h3>
 <ul>
 <li>4.22に対応</li>
 </ul>
+</section>
+<section class="level3">
 <h3>1.43 (2018/03/02)</h3>
 <ul>
 <li><p>4.21に対応</p></li>
 <li><p>ネットワーク機能の追加</p></li>
 </ul>
+</section>
+<section class="level3">
 <h3>1.40 (2018/09/12)</h3>
 <ul>
 <li><p>4.20に対応</p></li>
 <li><p>関数の追加(再生速度、色の設定)</p></li>
 </ul>
+</section>
+<section class="level3">
 <h3>1.31 (2017/11/20)</h3>
 <p>-複数の不具合を修正</p>
 <p>-アニメーション通知に対応</p>
+</section>
+<section class="level3">
 <h3>1.30 (2017/11/01)</h3>
 <p>-公開</p>
+</section>
+</section>
+<section class="level2">
 <h2>ライセンス</h2>
 <pre>
 
@@ -221,6 +294,7 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 </pre>
+</section>
 </div>
 </body>
 </html>

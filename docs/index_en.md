@@ -228,6 +228,10 @@ Materials do not have depth ignoring settings.
 
 ## Release note
 
+### 1.52b (2020/05/02)
+
+- Fixed a bug where particles are not shown with Line of SpawnMethod
+
 ### 1.52a (2020/04/28) 
 
 - Fixed a bug that a behavior of rotated billboard is something wrong when an angle is about 90 degree
