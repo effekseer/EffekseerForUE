@@ -486,6 +486,13 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 
 	effectPtr = effect;
 
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+	if (effect != nullptr)
+	{
+		SetTextureAddressMode(effect->GetRoot());
+	}
+#endif
+
 	// Get information
 	if (effect != nullptr)
 	{
@@ -504,6 +511,9 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 			auto modelParam = node->GetEffectModelParameter();
 
 			UTexture2D* texture = nullptr;
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+			UTexture2D* alphaTexture = nullptr;
+#endif
 
 			if (param.Distortion)
 			{
@@ -512,6 +522,13 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 				{
 					texture = this->DistortionTextures[param.ColorTextureIndex];
 				}
+
+#ifdef __EFFEKSEER_BUIKD_VERSION16__
+				if (0 <= param.AlphaTextureIndex && param.AlphaTextureIndex < this->DistortionTextures.Num())
+				{
+					alphaTexture = this->DistortionTextures[param.AlphaTextureIndex];
+				}
+#endif
 			}
 			else
 			{
@@ -520,10 +537,23 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 				{
 					texture = this->ColorTextures[param.ColorTextureIndex];
 				}
+
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+				if (0 <= param.AlphaTextureIndex && param.AlphaTextureIndex < this->ColorTextures.Num())
+				{
+					alphaTexture = this->ColorTextures[param.ColorTextureIndex];
+				}
+#endif
 			}
 
 			UEffekseerEffectMaterialParameterHolder* mat = NewObject<UEffekseerEffectMaterialParameterHolder>();
 			mat->Texture = texture;
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+			mat->AlphaTexture = alphaTexture;
+			
+			mat->TextureAddressType = static_cast<int32>(param.WrapType);
+			mat->AlphaTextureAddressType = static_cast<int32>(param.AlphaTexWrapType);
+#endif
 			mat->IsDepthTestDisabled = !param.ZTest;
 			mat->AlphaBlend = (EEffekseerAlphaBlendType)param.AlphaBlend;
 			mat->IsLighting = modelParam.Lighting;
@@ -552,6 +582,44 @@ void UEffekseerEffect::ReleaseEffect()
 	ES_SAFE_RELEASE(p);
 	effectPtr = nullptr;
 }
+
+//#ifdef __EFFEKSEER_BUILD_VERSION16__
+void UEffekseerEffect::SetTextureAddressMode(::Effekseer::EffectNode* node)
+{
+	auto SetAtTextureAddressWrap = [](::Effekseer::EffectNode* node, int tex_index, bool is_distotion)
+	{
+		auto texture = (is_distotion == false) ? node->GetEffect()->GetColorImage(tex_index) : node->GetEffect()->GetDistortionImage(tex_index);
+		if (texture == nullptr || ((UTexture2D*)texture->UserPtr) == nullptr)
+		{
+			return;
+		}
+
+		auto u_texture = ((UTexture2D*)texture->UserPtr);
+
+		// ※クランプはマテリアルでUVを計算して行うので、テクスチャはインポート時に強制的にWrapに変更する
+		u_texture->AddressX = TextureAddress::TA_Wrap;
+		u_texture->AddressY = TextureAddress::TA_Wrap;
+
+		u_texture->RefreshSamplerStates();
+	};
+
+	// 再帰
+	for (int i = 0; i < node->GetChildrenCount(); i++)
+	{
+		SetTextureAddressMode(node->GetChild(i));
+	}
+
+	Effekseer::EffectBasicRenderParameter param = node->GetBasicRenderParameter();
+	if (param.ColorTextureIndex >= 0)
+	{
+		SetAtTextureAddressWrap(node, param.ColorTextureIndex, param.Distortion);
+	}
+	if (param.AlphaTextureIndex >= 0)
+	{
+		SetAtTextureAddressWrap(node, param.AlphaTextureIndex, param.Distortion);
+	}
+}
+//#endif
 
 void UEffekseerEffect::Load(const uint8_t* data, int32_t size, const TCHAR* path)
 {

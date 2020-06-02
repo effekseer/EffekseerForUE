@@ -631,6 +631,14 @@ FEffekseerHandle UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVect
 		{
 			auto dynamicMaterial = UMaterialInstanceDynamic::Create(mat, this);
 			dynamicMaterial->SetTextureParameterValue(TEXT("ColorTexture"), m->Texture);
+
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+			dynamicMaterial->SetTextureParameterValue(TEXT("AlphaTexture"), m->AlphaTexture);
+			
+			dynamicMaterial->SetScalarParameterValue(TEXT("TextureTilingType"), m->TextureAddressType);
+			dynamicMaterial->SetScalarParameterValue(TEXT("AlphaTextureTilingType"), m->AlphaTextureAddressType);
+#endif
+
 			Materials.Add(m, dynamicMaterial);
 
 			EffekseerEffectMaterial mkey;
