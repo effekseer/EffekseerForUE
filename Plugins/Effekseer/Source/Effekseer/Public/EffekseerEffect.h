@@ -73,6 +73,10 @@ struct EffekseerEffectMaterial
 {
 	UTexture2D*		Texture = nullptr;
 
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+	UTexture2D*		AlphaTexture = nullptr;
+#endif
+
 	EEffekseerAlphaBlendType	AlphaBlend;
 
 	bool			IsDepthTestDisabled;
@@ -87,6 +91,13 @@ struct EffekseerEffectMaterial
 		{
 			return Texture < rhs.Texture;
 		}
+
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+		if (AlphaTexture != rhs.AlphaTexture)
+		{
+			return AlphaTexture < rhs.AlphaTexture;
+		}
+#endif
 
 		if (AlphaBlend != rhs.AlphaBlend)
 		{

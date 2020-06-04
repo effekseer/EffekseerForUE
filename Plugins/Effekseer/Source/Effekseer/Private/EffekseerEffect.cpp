@@ -541,7 +541,7 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 				if (0 <= param.AlphaTextureIndex && param.AlphaTextureIndex < this->ColorTextures.Num())
 				{
-					alphaTexture = this->ColorTextures[param.ColorTextureIndex];
+					alphaTexture = this->ColorTextures[param.AlphaTextureIndex];
 				}
 #endif
 			}

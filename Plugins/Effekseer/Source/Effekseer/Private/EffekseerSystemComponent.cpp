@@ -643,6 +643,9 @@ FEffekseerHandle UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVect
 
 			EffekseerEffectMaterial mkey;
 			mkey.Texture = m->Texture;
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+			mkey.AlphaTexture = m->AlphaTexture;
+#endif
 			mkey.AlphaBlend = m->AlphaBlend;
 			mkey.IsDepthTestDisabled = m->IsDepthTestDisabled;
 			mkey.IsLighting = m->IsLighting;

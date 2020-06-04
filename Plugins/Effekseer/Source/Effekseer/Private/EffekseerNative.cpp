@@ -7209,7 +7209,11 @@ struct ParameterAlphaCrunch
 #pragma warning(push)
 #pragma warning(disable:4582)
 	ParameterAlphaCrunch()
-	{}
+	{
+		Type = ParameterAlphaCrunch::EType::FIXED;
+		Fixed.RefEq = -1;
+		Fixed.Threshold = 0;
+	}
 #pragma warning(pop)
 
 	~ParameterAlphaCrunch()
@@ -11501,7 +11505,7 @@ EffectModelParameter EffectNodeImplemented::GetEffectModelParameter()
 	if (GetType() == EFFECT_NODE_TYPE_MODEL)
 	{
 		auto t = (EffectNodeModel*)this;
-		param.Lighting = t->Lighting;
+		param.Lighting = RendererCommon.MaterialType == RendererMaterialType::Lighting;
 	}
 
 	return param;
