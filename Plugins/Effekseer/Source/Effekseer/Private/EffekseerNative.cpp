@@ -5886,7 +5886,6 @@ public:
 	void Maginify(float value);
 };
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 class FCurveScalar
 {
 public:
@@ -5898,7 +5897,6 @@ public:
 	float GetValues(float living, float life) const;
 	float GetOffsets(InstanceGlobal& g) const;
 };
-#endif
 
 class FCurveVector2D
 {
@@ -6828,8 +6826,11 @@ struct ParameterRendererCommon
 				pos += sizeof(int);
 
 #ifdef __EFFEKSEER_BUILD_VERSION16__
-				memcpy(&AlphaTextureIndex, pos, sizeof(int));
-				pos += sizeof(int);
+				if (version >= 1600)
+				{
+					memcpy(&AlphaTextureIndex, pos, sizeof(int));
+					pos += sizeof(int);
+				}
 #endif
 			}
 			else
@@ -6886,7 +6887,7 @@ struct ParameterRendererCommon
 		}
 
 #ifdef __EFFEKSEER_BUILD_VERSION16__
-		if (version >= 16)
+		if (version >= 1600)
 		{
 			memcpy(&Filter3Type, pos, sizeof(int));
 			pos += sizeof(int);
@@ -6946,42 +6947,64 @@ struct ParameterRendererCommon
 		pos += sizeof(int);
 
 #ifdef __EFFEKSEER_BUILD_VERSION16__
-		if (version >= 16)
-		{
-			auto LoadUVParameter = [&](const int UVIndex)
+		auto LoadUVParameter = [&](const int UVIndex) {
+			const auto& UVType = UVTypes[UVIndex];
+			auto& UV = UVs[UVIndex];
+
+			if (UVType == UV_DEFAULT)
 			{
-				const auto& UVType = UVTypes[UVIndex];
-				auto& UV = UVs[UVIndex];
+			}
+			else if (UVType == UV_FIXED)
+			{
+				memcpy(&UV.Fixed, pos, sizeof(UV.Fixed));
+				pos += sizeof(UV.Fixed);
+			}
+			else if (UVType == UV_ANIMATION)
+			{
+				memcpy(&UV.Animation.Position, pos, sizeof(UV.Animation.Position));
+				pos += sizeof(UV.Animation.Position);
 
-				if (UVType == UV_DEFAULT)
-				{
-				}
-				else if (UVType == UV_FIXED)
-				{
-					memcpy(&UV.Fixed, pos, sizeof(UV.Fixed));
-					pos += sizeof(UV.Fixed);
-				}
-				else if (UVType == UV_ANIMATION)
-				{
-					memcpy(&UV.Animation, pos, sizeof(UV.Animation));
-					pos += sizeof(UV.Animation);
-				}
-				else if (UVType == UV_SCROLL)
-				{
-					memcpy(&UV.Scroll, pos, sizeof(UV.Scroll));
-					pos += sizeof(UV.Scroll);
-				}
-				else if (UVType == UV_FCURVE)
-				{
-					UV.FCurve.Position = new FCurveVector2D();
-					UV.FCurve.Size = new FCurveVector2D();
-					pos += UV.FCurve.Position->Load(pos, version);
-					pos += UV.FCurve.Size->Load(pos, version);
-				}
-			};
+				memcpy(&UV.Animation.FrameLength, pos, sizeof(UV.Animation.FrameLength));
+				pos += sizeof(UV.Animation.FrameLength);
 
-			LoadUVParameter(0);
+				memcpy(&UV.Animation.FrameCountX, pos, sizeof(UV.Animation.FrameCountX));
+				pos += sizeof(UV.Animation.FrameCountX);
 
+				memcpy(&UV.Animation.FrameCountY, pos, sizeof(UV.Animation.FrameCountY));
+				pos += sizeof(UV.Animation.FrameCountY);
+
+				memcpy(&UV.Animation.LoopType, pos, sizeof(UV.Animation.LoopType));
+				pos += sizeof(UV.Animation.LoopType);
+
+				memcpy(&UV.Animation.StartFrame, pos, sizeof(UV.Animation.StartFrame));
+				pos += sizeof(UV.Animation.StartFrame);
+
+				if (version >= 1600)
+				{
+					memcpy(&UV.Animation.InterpolationType, pos, sizeof(UV.Animation.InterpolationType));
+					pos += sizeof(UV.Animation.InterpolationType);
+				}
+			}
+			else if (UVType == UV_SCROLL)
+			{
+				memcpy(&UV.Scroll, pos, sizeof(UV.Scroll));
+				pos += sizeof(UV.Scroll);
+			}
+			else if (UVType == UV_FCURVE)
+			{
+				UV.FCurve.Position = new FCurveVector2D();
+				UV.FCurve.Size = new FCurveVector2D();
+				pos += UV.FCurve.Position->Load(pos, version);
+				pos += UV.FCurve.Size->Load(pos, version);
+			}
+		};
+
+
+		
+		LoadUVParameter(0);
+
+		if (version >= 1600)
+		{
 			memcpy(&UVTypes[1], pos, sizeof(int));
 			pos += sizeof(int);
 
@@ -7183,8 +7206,15 @@ struct ParameterAlphaCrunch
 		} FCurve;
 	};
 
+#pragma warning(push)
+#pragma warning(disable:4582)
 	ParameterAlphaCrunch()
-	{}
+	{
+		Type = ParameterAlphaCrunch::EType::FIXED;
+		Fixed.RefEq = -1;
+		Fixed.Threshold = 0;
+	}
+#pragma warning(pop)
 
 	~ParameterAlphaCrunch()
 	{
@@ -10464,7 +10494,6 @@ void FCurve::Maginify(float value)
 	}
 }
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 int32_t FCurveScalar::Load(void* data, int32_t version)
 {
 	int32_t size = 0;
@@ -10484,16 +10513,9 @@ int32_t FCurveScalar::Load(void* data, int32_t version)
 	return size;
 }
 
-float FCurveScalar::GetValues(float living, float life) const
-{
-	return S.GetValue(living, life, Timeline);
-}
+float FCurveScalar::GetValues(float living, float life) const { return S.GetValue(living, life, Timeline); }
 
-float FCurveScalar::GetOffsets(InstanceGlobal& g) const
-{
-	return S.GetOffset(g);
-}
-#endif
+float FCurveScalar::GetOffsets(InstanceGlobal& g) const { return S.GetOffset(g); }
 
 int32_t FCurveVector2D::Load(void* data, int32_t version)
 {
@@ -11327,6 +11349,13 @@ void EffectNodeImplemented::LoadParameter(unsigned char*& pos, EffectNode* paren
 			RendererCommon.reset();
 		}
 
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+		if (m_effect->GetVersion() >= 1600)
+		{
+			AlphaCrunch.load(pos, m_effect->GetVersion());
+		}
+#endif
+
 		LoadRendererParameter(pos, m_effect->GetSetting());
 
 		// rescale intensity after 1.5
@@ -11334,10 +11363,6 @@ void EffectNodeImplemented::LoadParameter(unsigned char*& pos, EffectNode* paren
 		RendererCommon.BasicParameter.DistortionIntensity *= m_effect->GetMaginification();
 		RendererCommon.DistortionIntensity *= m_effect->GetMaginification();
 #endif // !__EFFEKSEER_FOR_UE4__
-
-#ifdef __EFFEKSEER_BUILD_VERSION16__
-		AlphaCrunch.load(pos, m_effect->GetVersion());
-#endif
 
 		if (m_effect->GetVersion() >= 1)
 		{
@@ -11440,6 +11465,11 @@ EffectBasicRenderParameter EffectNodeImplemented::GetBasicRenderParameter()
 {
 	EffectBasicRenderParameter param;
 	param.ColorTextureIndex = RendererCommon.ColorTextureIndex;
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+	param.AlphaTextureIndex = RendererCommon.AlphaTextureIndex;
+
+	param.AlphaTexWrapType = RendererCommon.Wrap3Type;
+#endif
 	param.AlphaBlend = RendererCommon.AlphaBlend;
 	param.Distortion = RendererCommon.Distortion;
 	param.DistortionIntensity = RendererCommon.DistortionIntensity;
@@ -11453,6 +11483,11 @@ EffectBasicRenderParameter EffectNodeImplemented::GetBasicRenderParameter()
 void EffectNodeImplemented::SetBasicRenderParameter(EffectBasicRenderParameter param)
 {
 	RendererCommon.ColorTextureIndex = param.ColorTextureIndex;
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+	RendererCommon.AlphaTextureIndex = param.AlphaTextureIndex;
+
+	RendererCommon.Wrap3Type = param.AlphaTexWrapType;
+#endif
 	RendererCommon.AlphaBlend = param.AlphaBlend;
 	RendererCommon.Distortion = param.Distortion;
 	RendererCommon.DistortionIntensity = param.DistortionIntensity;
@@ -11470,7 +11505,7 @@ EffectModelParameter EffectNodeImplemented::GetEffectModelParameter()
 	if (GetType() == EFFECT_NODE_TYPE_MODEL)
 	{
 		auto t = (EffectNodeModel*)this;
-		param.Lighting = t->Lighting;
+		param.Lighting = RendererCommon.MaterialType == RendererMaterialType::Lighting;
 	}
 
 	return param;
@@ -15292,7 +15327,10 @@ void EffectImplemented::UnloadResources(const EFK_CHAR* materialPath)
 		ResetReloadingBackup();
 	}
 
-	factory->OnUnloadingResource(this);
+	if (factory != nullptr)
+	{
+		factory->OnUnloadingResource(this);	
+	}
 }
 
 void EffectImplemented::UnloadResources()
@@ -18689,6 +18727,7 @@ void Instance::Update( float deltaFrame, bool shown )
 		}
 	}
 
+	if(m_pEffectNode->m_effect->GetVersion() >= 1600)
 	{
 		if (m_pEffectNode->AlphaCrunch.Type == ParameterAlphaCrunch::EType::FIXED)
 		{

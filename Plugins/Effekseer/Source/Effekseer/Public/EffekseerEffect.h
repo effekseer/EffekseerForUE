@@ -8,6 +8,13 @@
 #include "EffekseerAlphaBlendType.h"
 #include "EffekseerEffect.generated.h"
 
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+namespace Effekseer
+{
+class EffectNode;
+};
+#endif
+
 UCLASS()
 class EFFEKSEER_API UEffekseerEffectMaterialParameterHolder
 	: public UObject
@@ -17,6 +24,17 @@ public:
 
 	UPROPERTY()
 	UTexture2D*		Texture = nullptr;
+
+//#ifdef __EFFEKSEER_BUILD_VERSION16__
+	UPROPERTY()
+	UTexture2D*		AlphaTexture = nullptr;
+
+	UPROPERTY()
+	int32			TextureAddressType = 0;
+
+	UPROPERTY()
+	int32			AlphaTextureAddressType = 0;
+//#endif
 
 	UPROPERTY()
 	EEffekseerAlphaBlendType	AlphaBlend;
@@ -34,6 +52,11 @@ public:
 	{
 		return
 			Texture == Other->Texture &&
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+			AlphaTexture == Other->AlphaTexture &&
+			TextureAddressType == Other->TextureAddressType &&
+			AlphaTextureAddressType == Other->AlphaTextureAddressType &&
+#endif
 			AlphaBlend == Other->AlphaBlend &&
 			IsDepthTestDisabled == Other->IsDepthTestDisabled &&
 			IsLighting == Other->IsLighting &&
@@ -50,6 +73,10 @@ struct EffekseerEffectMaterial
 {
 	UTexture2D*		Texture = nullptr;
 
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+	UTexture2D*		AlphaTexture = nullptr;
+#endif
+
 	EEffekseerAlphaBlendType	AlphaBlend;
 
 	bool			IsDepthTestDisabled;
@@ -64,6 +91,13 @@ struct EffekseerEffectMaterial
 		{
 			return Texture < rhs.Texture;
 		}
+
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+		if (AlphaTexture != rhs.AlphaTexture)
+		{
+			return AlphaTexture < rhs.AlphaTexture;
+		}
+#endif
 
 		if (AlphaBlend != rhs.AlphaBlend)
 		{
@@ -105,6 +139,11 @@ private:
 
 	void LoadEffect(const uint8_t* data, int32_t size, const TCHAR* path, bool isResourceReset);
 	void ReleaseEffect();
+
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+	void SetTextureAddressMode(::Effekseer::EffectNode* node);
+#endif
+
 public:
 	void Load(const uint8_t* data, int32_t size, const TCHAR* path);
 
