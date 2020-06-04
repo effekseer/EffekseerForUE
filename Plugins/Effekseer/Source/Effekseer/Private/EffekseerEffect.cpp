@@ -583,7 +583,7 @@ void UEffekseerEffect::ReleaseEffect()
 	effectPtr = nullptr;
 }
 
-//#ifdef __EFFEKSEER_BUILD_VERSION16__
+#ifdef __EFFEKSEER_BUILD_VERSION16__
 void UEffekseerEffect::SetTextureAddressMode(::Effekseer::EffectNode* node)
 {
 	auto SetAtTextureAddressWrap = [](::Effekseer::EffectNode* node, int tex_index, bool is_distotion)
@@ -619,7 +619,7 @@ void UEffekseerEffect::SetTextureAddressMode(::Effekseer::EffectNode* node)
 		SetAtTextureAddressWrap(node, param.AlphaTextureIndex, param.Distortion);
 	}
 }
-//#endif
+#endif
 
 void UEffekseerEffect::Load(const uint8_t* data, int32_t size, const TCHAR* path)
 {

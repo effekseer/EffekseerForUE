@@ -140,9 +140,9 @@ private:
 	void LoadEffect(const uint8_t* data, int32_t size, const TCHAR* path, bool isResourceReset);
 	void ReleaseEffect();
 
-//#ifdef __EFFEKSEER_BUILD_VERSION16__
+#ifdef __EFFEKSEER_BUILD_VERSION16__
 	void SetTextureAddressMode(::Effekseer::EffectNode* node);
-//#endif
+#endif
 
 public:
 	void Load(const uint8_t* data, int32_t size, const TCHAR* path);
