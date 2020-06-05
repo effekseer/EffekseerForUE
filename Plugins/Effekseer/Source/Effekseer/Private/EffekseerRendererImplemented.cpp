@@ -310,6 +310,7 @@ namespace EffekseerRendererUE4
 		FLinearColor	uv;
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 		FLinearColor	alphaUV;
+		FLinearColor	flipbookIndexAndNextRate;
 #endif
 		FLinearColor	color;
 		float			distortionIntensity;
@@ -321,12 +322,14 @@ namespace EffekseerRendererUE4
 			const FMaterialRenderProxy* InParent, 
 			FLinearColor uv, 
 			FLinearColor alphaUV, 
+			float flipbookIndexAndNextRate,
 			FLinearColor color, 
 			float distortionIntensity, 
 			Effekseer::CullingType cullingType) :
 			FCompatibleMaterialRenderProxy(InParent),
 			uv(uv),
 			alphaUV(alphaUV),
+			flipbookIndexAndNextRate(FLinearColor(flipbookIndexAndNextRate, 0.0f, 0.0f, 0.0f)),
 			color(color),
 			distortionIntensity(distortionIntensity),
 			cullingType_(cullingType)
@@ -364,6 +367,12 @@ namespace EffekseerRendererUE4
 		if (ParameterInfo.Name == FName(TEXT("AlphaUV")))
 		{
 			*OutValue = alphaUV;
+			return true;
+		}
+
+		if (ParameterInfo.Name == FName(TEXT("ModelFlipbookIndexAndNextRate")))
+		{
+			*OutValue = flipbookIndexAndNextRate;
 			return true;
 		}
 #endif
@@ -570,7 +579,16 @@ namespace EffekseerRendererUE4
 		}
 
 #ifdef __EFFEKSEER_BUILD_VERSION16__
-		m_renderer->DrawModel(model, m_matrixes, m_uv, m_alphaUV, m_colors, m_times, customData1_, customData2_);
+		m_renderer->DrawModel(
+			model, 
+			m_matrixes, 
+			m_uv, 
+			m_alphaUV, 
+			m_flipbookIndexAndNextRate, 
+			m_colors, 
+			m_times, 
+			customData1_, 
+			customData2_);
 #else
 		m_renderer->DrawModel(model, m_matrixes, m_uv, m_colors, m_times, customData1_, customData2_);
 #endif
@@ -1068,6 +1086,7 @@ namespace EffekseerRendererUE4
 				   std::vector<Effekseer::Matrix44>& matrixes, 
 				   std::vector<Effekseer::RectF>& uvs, 
 				   std::vector<Effekseer::RectF>& alphaUVs,
+				   std::vector<float>& flipbookIndexAndNextRates,
 				   std::vector<Effekseer::Color>& colors, 
 				   std::vector<int32_t>& times, 
 				   std::vector<std::array<float, 4>>& customData1, 
@@ -1099,6 +1118,8 @@ namespace EffekseerRendererUE4
 			auto& uvOrigin = uvs[objectIndex];
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 			auto& alphaUVOrigin = alphaUVs[objectIndex];
+
+			auto& flipbookIndexAndNextRate = flipbookIndexAndNextRates[objectIndex];
 #endif
 			auto& colorOrigin = colors[objectIndex];
 
@@ -1191,7 +1212,14 @@ namespace EffekseerRendererUE4
 				else
 				{
 #ifdef __EFFEKSEER_BUILD_VERSION16__
-					proxy = new FModelMaterialRenderProxy(proxy, uv, alphaUV, color, m_distortionIntensity, m_renderState->GetActiveState().CullingType);
+					proxy = new FModelMaterialRenderProxy(
+						proxy, 
+						uv, 
+						alphaUV,
+						flipbookIndexAndNextRate,
+						color, 
+						m_distortionIntensity, 
+						m_renderState->GetActiveState().CullingType);
 #else
 					proxy = new FModelMaterialRenderProxy(proxy, uv, color, m_distortionIntensity, m_renderState->GetActiveState().CullingType);
 #endif
