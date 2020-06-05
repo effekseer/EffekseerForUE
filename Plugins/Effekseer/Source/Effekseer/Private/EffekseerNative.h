@@ -2737,6 +2737,14 @@ struct EffectBasicRenderParameter
 	int32_t				AlphaTextureIndex;
 
 	TextureWrapType		AlphaTexWrapType;
+
+	struct FlipbookParameters
+	{
+		bool Enable;
+		int32_t LoopType;
+		int32_t DivideX;
+		int32_t DivideY;
+	} FlipbookParams;
 #endif
 	AlphaBlendType		AlphaBlend;
 	TextureFilterType	FilterType;

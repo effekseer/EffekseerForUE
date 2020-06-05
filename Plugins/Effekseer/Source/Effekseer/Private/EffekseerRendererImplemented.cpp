@@ -1008,7 +1008,7 @@ namespace EffekseerRendererUE4
 #if ENGINE_MINOR_VERSION < 19
 			FDynamicMeshBuilder meshBuilder;
 #else
-			FDynamicMeshBuilder meshBuilder(m_meshElementCollector->GetFeatureLevel(), 2);
+			FDynamicMeshBuilder meshBuilder(m_meshElementCollector->GetFeatureLevel(), 3);
 #endif
 
 			for (int32_t vi = vertexOffset; vi < vertexOffset + spriteCount * 4; vi++)
@@ -1032,6 +1032,7 @@ namespace EffekseerRendererUE4
 				DynamicVertex.SetTangents(FVector(1, 0, 0), FVector(1, 1, 0), FVector(0, 0, 1));
 				DynamicVertex.TextureCoordinate[0] = FVector2D(v.UV[0], v.UV[1]);
 				DynamicVertex.TextureCoordinate[1] = FVector2D(v.AlphaUV[0], v.AlphaUV[1]);
+				DynamicVertex.TextureCoordinate[2] = FVector2D(v.FlipbookIndexAndNextRate, 0.0f);
 
 				meshBuilder.AddVertex(DynamicVertex);
 #else

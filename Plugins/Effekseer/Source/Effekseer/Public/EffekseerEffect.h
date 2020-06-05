@@ -15,6 +15,26 @@ class EffectNode;
 };
 #endif
 
+USTRUCT()
+struct FFlipbookParameters
+{
+	GENERATED_USTRUCT_BODY()
+	bool Enable = false;
+	int32 LoopType = 0;
+	int32 DivideX = 1;
+	int32 DivideY = 1;
+
+	bool operator==(const FFlipbookParameters& Params)
+	{
+		if (Enable   != Params.Enable) return false;
+		if (LoopType != Params.LoopType) return false;
+		if (DivideX  != Params.DivideX) return false;
+		if (DivideY  != Params.DivideY) return false;
+
+		return true;
+	}
+};
+
 UCLASS()
 class EFFEKSEER_API UEffekseerEffectMaterialParameterHolder
 	: public UObject
@@ -34,6 +54,9 @@ public:
 
 	UPROPERTY()
 	int32			AlphaTextureAddressType = 0;
+
+	UPROPERTY()
+	FFlipbookParameters FlipbookParams;
 //#endif
 
 	UPROPERTY()
@@ -56,6 +79,7 @@ public:
 			AlphaTexture == Other->AlphaTexture &&
 			TextureAddressType == Other->TextureAddressType &&
 			AlphaTextureAddressType == Other->AlphaTextureAddressType &&
+			FlipbookParams == Other->FlipbookParams &&
 #endif
 			AlphaBlend == Other->AlphaBlend &&
 			IsDepthTestDisabled == Other->IsDepthTestDisabled &&
