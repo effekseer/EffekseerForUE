@@ -554,6 +554,10 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 			mat->TextureAddressType = static_cast<int32>(param.WrapType);
 			mat->AlphaTextureAddressType = static_cast<int32>(param.AlphaTexWrapType);
 #endif
+			mat->FlipbookParams.Enable = param.FlipbookParams.Enable;
+			mat->FlipbookParams.LoopType = param.FlipbookParams.LoopType;
+			mat->FlipbookParams.DivideX = param.FlipbookParams.DivideX;
+			mat->FlipbookParams.DivideY = param.FlipbookParams.DivideY;
 			mat->IsDepthTestDisabled = !param.ZTest;
 			mat->AlphaBlend = (EEffekseerAlphaBlendType)param.AlphaBlend;
 			mat->IsLighting = modelParam.Lighting;

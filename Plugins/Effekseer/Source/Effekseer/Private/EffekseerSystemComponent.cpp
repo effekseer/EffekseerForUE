@@ -637,6 +637,8 @@ FEffekseerHandle UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVect
 			
 			dynamicMaterial->SetScalarParameterValue(TEXT("TextureTilingType"), m->TextureAddressType);
 			dynamicMaterial->SetScalarParameterValue(TEXT("AlphaTextureTilingType"), m->AlphaTextureAddressType);
+
+			dynamicMaterial->SetVectorParameterValue(TEXT("FlipbookParameters"), FLinearColor(float(m->FlipbookParams.Enable), m->FlipbookParams.LoopType, m->FlipbookParams.DivideX, m->FlipbookParams.DivideY));
 #endif
 
 			Materials.Add(m, dynamicMaterial);
