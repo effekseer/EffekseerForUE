@@ -226,6 +226,8 @@ namespace EffekseerRendererUE4
 					   std::vector<Effekseer::Matrix44>& matrixes, 
 					   std::vector<Effekseer::RectF>& uvs, 
 					   std::vector<Effekseer::RectF>& alphaUVs,
+					   std::vector<float>& flipbookIndexAndNextRates,
+					   std::vector<float>& alphaThresholds,
 					   std::vector<Effekseer::Color>& colors, 
 					   std::vector<int32_t>& times, 
 					   std::vector<std::array<float, 4>>& customData1, 
