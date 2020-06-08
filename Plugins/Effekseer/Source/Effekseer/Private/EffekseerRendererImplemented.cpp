@@ -311,6 +311,7 @@ namespace EffekseerRendererUE4
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 		FLinearColor	alphaUV;
 		FLinearColor	flipbookIndexAndNextRate;
+		FLinearColor	alphaThreshold;
 #endif
 		FLinearColor	color;
 		float			distortionIntensity;
@@ -319,10 +320,11 @@ namespace EffekseerRendererUE4
 		/** Initialization constructor. */
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 		FModelMaterialRenderProxy(
-			const FMaterialRenderProxy* InParent, 
-			FLinearColor uv, 
-			FLinearColor alphaUV, 
+			const FMaterialRenderProxy* InParent,
+			FLinearColor uv,
+			FLinearColor alphaUV,
 			float flipbookIndexAndNextRate,
+			float alphaThreshold,
 			FLinearColor color, 
 			float distortionIntensity, 
 			Effekseer::CullingType cullingType) :
@@ -330,6 +332,7 @@ namespace EffekseerRendererUE4
 			uv(uv),
 			alphaUV(alphaUV),
 			flipbookIndexAndNextRate(FLinearColor(flipbookIndexAndNextRate, 0.0f, 0.0f, 0.0f)),
+			alphaThreshold(FLinearColor(0.0f, alphaThreshold, 0.0f, 0.0f)),
 			color(color),
 			distortionIntensity(distortionIntensity),
 			cullingType_(cullingType)
@@ -373,6 +376,12 @@ namespace EffekseerRendererUE4
 		if (ParameterInfo.Name == FName(TEXT("ModelFlipbookIndexAndNextRate")))
 		{
 			*OutValue = flipbookIndexAndNextRate;
+			return true;
+		}
+
+		if (ParameterInfo.Name == FName(TEXT("ModelAlphaThreshold")))
+		{
+			*OutValue = alphaThreshold;
 			return true;
 		}
 #endif
@@ -585,6 +594,7 @@ namespace EffekseerRendererUE4
 			m_uv, 
 			m_alphaUV, 
 			m_flipbookIndexAndNextRate, 
+			m_alphaThreshold,
 			m_colors, 
 			m_times, 
 			customData1_, 
@@ -1050,7 +1060,7 @@ namespace EffekseerRendererUE4
 				DynamicVertex.SetTangents(FVector(1, 0, 0), FVector(1, 1, 0), FVector(0, 0, 1));
 				DynamicVertex.TextureCoordinate[0] = FVector2D(v.UV[0], v.UV[1]);
 				DynamicVertex.TextureCoordinate[1] = FVector2D(v.AlphaUV[0], v.AlphaUV[1]);
-				DynamicVertex.TextureCoordinate[2] = FVector2D(v.FlipbookIndexAndNextRate, 0.0f);
+				DynamicVertex.TextureCoordinate[2] = FVector2D(v.FlipbookIndexAndNextRate, v.AlphaThreshold);
 
 				meshBuilder.AddVertex(DynamicVertex);
 #else
@@ -1087,6 +1097,7 @@ namespace EffekseerRendererUE4
 				   std::vector<Effekseer::RectF>& uvs, 
 				   std::vector<Effekseer::RectF>& alphaUVs,
 				   std::vector<float>& flipbookIndexAndNextRates,
+				   std::vector<float>& alphaThresholds,
 				   std::vector<Effekseer::Color>& colors, 
 				   std::vector<int32_t>& times, 
 				   std::vector<std::array<float, 4>>& customData1, 
@@ -1120,6 +1131,7 @@ namespace EffekseerRendererUE4
 			auto& alphaUVOrigin = alphaUVs[objectIndex];
 
 			auto& flipbookIndexAndNextRate = flipbookIndexAndNextRates[objectIndex];
+			auto& alphaThreshold = alphaThresholds[objectIndex];
 #endif
 			auto& colorOrigin = colors[objectIndex];
 
@@ -1217,6 +1229,7 @@ namespace EffekseerRendererUE4
 						uv, 
 						alphaUV,
 						flipbookIndexAndNextRate,
+						alphaThreshold,
 						color, 
 						m_distortionIntensity, 
 						m_renderState->GetActiveState().CullingType);
