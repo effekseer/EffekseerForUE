@@ -15292,7 +15292,10 @@ void EffectImplemented::UnloadResources(const EFK_CHAR* materialPath)
 		ResetReloadingBackup();
 	}
 
-	factory->OnUnloadingResource(this);
+	if (factory != nullptr)
+	{
+		factory->OnUnloadingResource(this);	
+	}
 }
 
 void EffectImplemented::UnloadResources()
@@ -15443,7 +15446,7 @@ void ManagerImplemented::StopStoppingEffects()
 		if (!isRemoving && draw_set.GlobalPointer->GetInstanceCount() == 1)
 		{
 			InstanceContainer* pRootContainer = draw_set.InstanceContainerPointer;
-			InstanceGroup* group = pRootContainer->GetFirstGroup();
+			InstanceGroup* group = pRootContainer != nullptr ? pRootContainer->GetFirstGroup() : nullptr;
 
 			if (group)
 			{
@@ -16365,6 +16368,11 @@ void ManagerImplemented::Flip()
 			DrawSet& ds = it.second;
 			EffectImplemented* effect = (EffectImplemented*)ds.ParameterPointer;
 
+			if (ds.InstanceContainerPointer == nullptr)
+			{
+				continue;
+			}
+
 			if (ds.IsParameterChanged)
 			{
 				if (m_cullingWorld != NULL)
@@ -16583,11 +16591,14 @@ void ManagerImplemented::UpdateHandleInternal(DrawSet& drawSet)
 
 	Preupdate(drawSet);
 
-	drawSet.InstanceContainerPointer->Update(true, drawSet.IsShown);
-
-	if (drawSet.DoUseBaseMatrix)
+	if (drawSet.InstanceContainerPointer != nullptr)
 	{
-		drawSet.InstanceContainerPointer->SetBaseMatrix(true, drawSet.BaseMatrix);
+		drawSet.InstanceContainerPointer->Update(true, drawSet.IsShown);
+
+		if (drawSet.DoUseBaseMatrix)
+		{
+			drawSet.InstanceContainerPointer->SetBaseMatrix(true, drawSet.BaseMatrix);
+		}
 	}
 
 	drawSet.GlobalPointer->EndDeltaFrame();
@@ -16603,8 +16614,13 @@ void ManagerImplemented::Preupdate(DrawSet& drawSet)
 		CreateInstanceContainer(drawSet.ParameterPointer->GetRoot(), drawSet.GlobalPointer, true, drawSet.GlobalMatrix, NULL);
 
 	drawSet.InstanceContainerPointer = pContainer;
-
 	drawSet.IsPreupdated = true;
+
+	if (drawSet.InstanceContainerPointer == nullptr)
+	{
+		drawSet.IsRemoving = true;
+		return;
+	}
 
 	for (int32_t frame = 0; frame < drawSet.StartFrame; frame++)
 	{
@@ -16647,6 +16663,10 @@ void ManagerImplemented::Draw(const Manager::DrawParameter& drawParameter)
 		for (size_t i = 0; i < m_culledObjects.size(); i++)
 		{
 			DrawSet& drawSet = *m_culledObjects[i];
+			if (drawSet.InstanceContainerPointer == nullptr)
+			{
+				continue;
+			}
 
 			if (drawSet.IsShown && drawSet.IsAutoDrawing && ((drawParameter.CameraCullingMask & (1 << drawSet.Layer)) != 0))
 			{
@@ -16672,6 +16692,11 @@ void ManagerImplemented::Draw(const Manager::DrawParameter& drawParameter)
 		for (size_t i = 0; i < m_renderingDrawSets.size(); i++)
 		{
 			DrawSet& drawSet = m_renderingDrawSets[i];
+
+			if (drawSet.InstanceContainerPointer == nullptr)
+			{
+				continue;
+			}
 
 			if (drawSet.IsShown && drawSet.IsAutoDrawing && ((drawParameter.CameraCullingMask & (1 << drawSet.Layer)) != 0))
 			{
@@ -16710,6 +16735,11 @@ void ManagerImplemented::DrawBack(const Manager::DrawParameter& drawParameter)
 		{
 			DrawSet& drawSet = *m_culledObjects[i];
 
+			if (drawSet.InstanceContainerPointer == nullptr)
+			{
+				continue;
+			}
+
 			if (drawSet.IsShown && drawSet.IsAutoDrawing && ((drawParameter.CameraCullingMask & (1 << drawSet.Layer)) != 0))
 			{
 				auto e = (EffectImplemented*)drawSet.ParameterPointer;
@@ -16728,6 +16758,11 @@ void ManagerImplemented::DrawBack(const Manager::DrawParameter& drawParameter)
 		for (size_t i = 0; i < m_renderingDrawSets.size(); i++)
 		{
 			DrawSet& drawSet = m_renderingDrawSets[i];
+
+			if (drawSet.InstanceContainerPointer == nullptr)
+			{
+				continue;
+			}
 
 			if (drawSet.IsShown && drawSet.IsAutoDrawing && ((drawParameter.CameraCullingMask & (1 << drawSet.Layer)) != 0))
 			{
@@ -16760,6 +16795,11 @@ void ManagerImplemented::DrawFront(const Manager::DrawParameter& drawParameter)
 		{
 			DrawSet& drawSet = *m_culledObjects[i];
 
+			if (drawSet.InstanceContainerPointer == nullptr)
+			{
+				continue;
+			}
+
 			if (drawSet.IsShown && drawSet.IsAutoDrawing && ((drawParameter.CameraCullingMask & (1 << drawSet.Layer)) != 0))
 			{
 				if (drawSet.GlobalPointer->RenderedInstanceContainers.size() > 0)
@@ -16785,6 +16825,11 @@ void ManagerImplemented::DrawFront(const Manager::DrawParameter& drawParameter)
 		for (size_t i = 0; i < m_renderingDrawSets.size(); i++)
 		{
 			DrawSet& drawSet = m_renderingDrawSets[i];
+
+			if (drawSet.InstanceContainerPointer == nullptr)
+			{
+				continue;
+			}
 
 			if (drawSet.IsShown && drawSet.IsAutoDrawing && ((drawParameter.CameraCullingMask & (1 << drawSet.Layer)) != 0))
 			{
@@ -16875,6 +16920,11 @@ void ManagerImplemented::DrawHandle(Handle handle, const Manager::DrawParameter&
 	if (it != m_renderingDrawSetMaps.end())
 	{
 		DrawSet& drawSet = it->second;
+
+		if (drawSet.InstanceContainerPointer == nullptr)
+		{
+			return;
+		}
 
 		if (m_culled)
 		{
@@ -16974,6 +17024,11 @@ void ManagerImplemented::DrawHandleFront(Handle handle, const Manager::DrawParam
 		DrawSet& drawSet = it->second;
 		auto e = (EffectImplemented*)drawSet.ParameterPointer;
 
+		if (drawSet.InstanceContainerPointer == nullptr)
+		{
+			return;
+		}
+
 		if (m_culled)
 		{
 			if (m_culledObjectSets.find(drawSet.Self) != m_culledObjectSets.end())
@@ -17042,6 +17097,11 @@ void ManagerImplemented::BeginReloadEffect(Effect* effect, bool doLockThread)
 		if (it.second.ParameterPointer != effect)
 			continue;
 
+		if (it.second.InstanceContainerPointer == nullptr)
+		{
+			continue;
+		}
+
 		// dispose instances
 		it.second.InstanceContainerPointer->RemoveForcibly(true);
 		ReleaseInstanceContainer(it.second.InstanceContainerPointer);
@@ -17057,6 +17117,11 @@ void ManagerImplemented::EndReloadEffect(Effect* effect, bool doLockThread)
 
 		if (ds.ParameterPointer != effect)
 			continue;
+
+		if (it.second.InstanceContainerPointer == nullptr)
+		{
+			continue;
+		}
 
 		auto e = static_cast<EffectImplemented*>(effect);
 		auto pGlobal = ds.GlobalPointer;
