@@ -228,6 +228,11 @@ Materials do not have depth ignoring settings.
 
 ## Release note
 
+### 1.52g (2020/06/09)
+
+- Support 4.25
+- Update Effekseer to 1.52g
+
 ### 1.52b (2020/05/02)
 
 - Fixed a bug where particles are not shown with Line of SpawnMethod
