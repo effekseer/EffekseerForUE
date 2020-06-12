@@ -6600,7 +6600,7 @@ struct ParameterCustomData
 struct ParameterRendererCommon
 {
 #ifdef __EFFEKSEER_BUILD_VERSION16__
-	static const int32_t UVParameterNum = 2;
+	static const int32_t UVParameterNum = 3;
 #endif
 
 	RendererMaterialType MaterialType = RendererMaterialType::Default;
@@ -6614,6 +6614,9 @@ struct ParameterRendererCommon
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 	//! texture index except a file
 	int32_t AlphaTextureIndex = -1;
+
+	//! texture index except a file
+	int32_t UVDistortionTextureIndex = -1;
 #endif
 
 	//! material index in MaterialType::File
@@ -6633,6 +6636,12 @@ struct ParameterRendererCommon
 	TextureFilterType Filter3Type = TextureFilterType::Nearest;
 
 	TextureWrapType Wrap3Type = TextureWrapType::Repeat;
+
+	TextureFilterType Filter4Type = TextureFilterType::Nearest;
+
+	TextureWrapType Wrap4Type = TextureWrapType::Repeat;
+
+	float UVDistortionIntensity = 1.0f;
 #endif
 
 	bool				ZWrite = false;
@@ -6830,6 +6839,9 @@ struct ParameterRendererCommon
 				{
 					memcpy(&AlphaTextureIndex, pos, sizeof(int));
 					pos += sizeof(int);
+
+					memcpy(&UVDistortionTextureIndex, pos, sizeof(int));
+					pos += sizeof(int);
 				}
 #endif
 			}
@@ -6894,11 +6906,21 @@ struct ParameterRendererCommon
 
 			memcpy(&Wrap3Type, pos, sizeof(int));
 			pos += sizeof(int);
+
+
+			memcpy(&Filter4Type, pos, sizeof(int));
+			pos += sizeof(int);
+
+			memcpy(&Wrap4Type, pos, sizeof(int));
+			pos += sizeof(int);
 		}
 		else
 		{
 			Filter3Type = FilterType;
 			Wrap3Type = WrapType;
+
+			Filter4Type = FilterType;
+			Wrap4Type = WrapType;
 		}
 #endif
 
@@ -7005,10 +7027,21 @@ struct ParameterRendererCommon
 
 		if (version >= 1600)
 		{
+			// alpha texture
 			memcpy(&UVTypes[1], pos, sizeof(int));
 			pos += sizeof(int);
 
 			LoadUVParameter(1);
+
+			// uv distortion texture
+			memcpy(&UVTypes[2], pos, sizeof(int));
+			pos += sizeof(int);
+
+			LoadUVParameter(2);
+
+			// uv distortion intensity
+			memcpy(&UVDistortionIntensity, pos, sizeof(int));
+			pos += sizeof(int);
 		}
 
 #else
@@ -7115,11 +7148,13 @@ struct ParameterRendererCommon
 		BasicParameter.TextureFilter2 = Filter2Type;
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 		BasicParameter.TextureFilter3 = Filter3Type;
+		BasicParameter.TextureFilter4 = Filter4Type;
 #endif
 		BasicParameter.TextureWrap1 = WrapType;
 		BasicParameter.TextureWrap2 = Wrap2Type;
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 		BasicParameter.TextureWrap3 = Wrap3Type;
+		BasicParameter.TextureWrap4 = Wrap4Type;
 #endif
 
 		BasicParameter.DistortionIntensity = DistortionIntensity;
@@ -7128,9 +7163,10 @@ struct ParameterRendererCommon
 		BasicParameter.Texture2Index = Texture2Index;
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 		BasicParameter.Texture3Index = AlphaTextureIndex;
-#endif
+		BasicParameter.Texture4Index = UVDistortionTextureIndex;
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
+		BasicParameter.UVDistortionIntensity = UVDistortionIntensity;
+
 		if (UVTypes[0] == UV_ANIMATION)
 		{
 			BasicParameter.EnableInterpolation = (UVs[0].Animation.InterpolationType != UVs[0].Animation.NONE);
@@ -8903,9 +8939,18 @@ private:
 
 		int32_t Layer = 0;
 
+		//! a time (by 1/60) to progress an effect when Update is called 
+		float NextUpdateFrame = 0;
+
+		//! Rate of scale in relation to manager's time
+		float TimeScale = 1.0f;
+
 		//! HACK for GC (Instances must be updated after removing) If you use UpdateHandle, updating instance which is contained removing
 		//! effects is not called. It makes update called forcibly.
 		int32_t UpdateCountAfterRemoving = 0;
+
+		//! a bit mask for group
+		int64_t GroupMask = 0;
 
 		DrawSet(Effect* effect, InstanceContainer* pContainer, InstanceGlobal* pGlobal)
 			: ParameterPointer(effect)
@@ -9200,15 +9245,25 @@ public:
 
 	void SetLayer(Handle handle, int32_t layer) override;
 
+	int64_t GetGroupMask(Handle handle) const override;
+
+	void SetGroupMask(Handle handle, int64_t groupmask) override;
+
 	float GetSpeed(Handle handle) const override;
 
 	void SetSpeed(Handle handle, float speed) override;
+
+	void SetTimeScaleByGroup(int64_t groupmask, float timeScale) override;
+
+	void SetTimeScaleByHandle(Handle handle, float timeScale) override;
 
 	void SetAutoDrawing(Handle handle, bool autoDraw) override;
 
 	void Flip() override;
 
 	void Update(float deltaFrame) override;
+
+	void Update(const UpdateParameter& parameter) override;
 
 	void BeginUpdate() override;
 
@@ -10165,6 +10220,8 @@ private:
 
 	std::array<float, 4> dynamicInputParameters;
 
+	float nextDeltaFrame_ = 0.0f;
+
 	//! placement new
 	static void* operator new(size_t size);
 
@@ -10177,7 +10234,7 @@ private:
 
 public:
 	//! A delta time for next update
-	float NextDeltaFrame = 0.0f;
+	float GetNextDeltaFrame() const;
 
 	void BeginDeltaFrame(float frame);
 
@@ -11467,8 +11524,10 @@ EffectBasicRenderParameter EffectNodeImplemented::GetBasicRenderParameter()
 	param.ColorTextureIndex = RendererCommon.ColorTextureIndex;
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 	param.AlphaTextureIndex = RendererCommon.AlphaTextureIndex;
-
 	param.AlphaTexWrapType = RendererCommon.Wrap3Type;
+
+	param.UVDistortionIndex = RendererCommon.UVDistortionTextureIndex;
+	param.UVDistortionTexWrapType = RendererCommon.Wrap4Type;
 
 	if (RendererCommon.UVTypes[0] == ParameterRendererCommon::UV_ANIMATION)
 	{
@@ -11486,6 +11545,9 @@ EffectBasicRenderParameter EffectNodeImplemented::GetBasicRenderParameter()
 	param.FlipbookParams.DivideX = RendererCommon.UVs[0].Animation.FrameCountX;
 	param.FlipbookParams.DivideY = RendererCommon.UVs[0].Animation.FrameCountY;
 
+	param.MaterialType = RendererCommon.MaterialType;
+
+	param.UVDistortionIntensity = RendererCommon.UVDistortionIntensity;
 #endif
 	param.AlphaBlend = RendererCommon.AlphaBlend;
 	param.Distortion = RendererCommon.Distortion;
@@ -11508,11 +11570,14 @@ void EffectNodeImplemented::SetBasicRenderParameter(EffectBasicRenderParameter p
 	if (param.FlipbookParams.Enable)
 	{
 		RendererCommon.UVTypes[0] = ParameterRendererCommon::UV_ANIMATION;
-		RendererCommon.UVs[0].Animation.InterpolationType = static_cast<decltype(RendererCommon.UVs[0].Animation.InterpolationType)>(param.FlipbookParams.LoopType);
+		RendererCommon.UVs[0].Animation.LoopType = static_cast<decltype(RendererCommon.UVs[0].Animation.LoopType)>(param.FlipbookParams.LoopType);
 		RendererCommon.UVs[0].Animation.FrameCountX = param.FlipbookParams.DivideX;
 		RendererCommon.UVs[0].Animation.FrameCountY = param.FlipbookParams.DivideY;
 	}
+
+	RendererCommon.UVDistortionIntensity = param.UVDistortionIntensity;
 #endif
+
 	RendererCommon.AlphaBlend = param.AlphaBlend;
 	RendererCommon.Distortion = param.Distortion;
 	RendererCommon.DistortionIntensity = param.DistortionIntensity;
@@ -11976,6 +12041,7 @@ void EffectNodeModel::Rendering(const Instance& instance, const Instance* next_i
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 		instanceParameter.UV = instance.GetUV(0);
 		instanceParameter.AlphaUV = instance.GetUV(1);
+		instanceParameter.UVDistortionUV = instance.GetUV(2);
 
 		instanceParameter.FlipbookIndexAndNextRate = instance.m_flipbookIndexAndNextRate;
 
@@ -12314,12 +12380,14 @@ void EffectNodeRibbon::BeginRenderingGroup(InstanceGroup* group, Manager* manage
 		if (group->GetFirst() != nullptr)
 		{
 #ifdef __EFFEKSEER_BUILD_VERSION16__
-			m_instanceParameter.UV = group->GetFirst()->GetUV(0);
-			m_instanceParameter.AlphaUV = group->GetFirst()->GetUV(1);
+			Instance* groupFirst = group->GetFirst();
+			m_instanceParameter.UV = groupFirst->GetUV(0);
+			m_instanceParameter.AlphaUV = groupFirst->GetUV(1);
+			m_instanceParameter.UVDistortionUV = groupFirst->GetUV(2);
 
-			m_instanceParameter.FlipbookIndexAndNextRate = group->GetFirst()->m_flipbookIndexAndNextRate;
+			m_instanceParameter.FlipbookIndexAndNextRate = groupFirst->m_flipbookIndexAndNextRate;
 
-			m_instanceParameter.AlphaThreshold = group->GetFirst()->m_AlphaThreshold;
+			m_instanceParameter.AlphaThreshold = groupFirst->m_AlphaThreshold;
 #else
 			m_instanceParameter.UV = group->GetFirst()->GetUV();
 #endif
@@ -12840,6 +12908,7 @@ void EffectNodeRing::Rendering(const Instance& instance, const Instance* next_in
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 		instanceParameter.UV = instance.GetUV(0);
 		instanceParameter.AlphaUV = instance.GetUV(1);
+		instanceParameter.UVDistortionUV = instance.GetUV(2);
 
 		instanceParameter.FlipbookIndexAndNextRate = instance.m_flipbookIndexAndNextRate;
 
@@ -13435,6 +13504,7 @@ void EffectNodeSprite::Rendering(const Instance& instance, const Instance* next_
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 		instanceParameter.UV = instance.GetUV(0);
 		instanceParameter.AlphaUV = instance.GetUV(1);
+		instanceParameter.UVDistortionUV = instance.GetUV(2);
 
 		instanceParameter.FlipbookIndexAndNextRate = instance.m_flipbookIndexAndNextRate;
 
@@ -13702,12 +13772,14 @@ void EffectNodeTrack::BeginRenderingGroup(InstanceGroup* group, Manager* manager
 		if (group->GetFirst() != nullptr)
 		{
 #ifdef __EFFEKSEER_BUILD_VERSION16__
-			m_instanceParameter.UV = group->GetFirst()->GetUV(0);
-			m_instanceParameter.AlphaUV = group->GetFirst()->GetUV(1);
+			Instance* groupFirst = group->GetFirst();
+			m_instanceParameter.UV = groupFirst->GetUV(0);
+			m_instanceParameter.AlphaUV = groupFirst->GetUV(1);
+			m_instanceParameter.UVDistortionUV = groupFirst->GetUV(2);
 
-			m_instanceParameter.FlipbookIndexAndNextRate = group->GetFirst()->m_flipbookIndexAndNextRate;
+			m_instanceParameter.FlipbookIndexAndNextRate = groupFirst->m_flipbookIndexAndNextRate;
 
-			m_instanceParameter.AlphaThreshold = group->GetFirst()->m_AlphaThreshold;
+			m_instanceParameter.AlphaThreshold = groupFirst->m_AlphaThreshold;
 #else
 			m_instanceParameter.UV = group->GetFirst()->GetUV();
 #endif
@@ -15506,7 +15578,7 @@ void ManagerImplemented::StopStoppingEffects()
 		if (!isRemoving && draw_set.GlobalPointer->GetInstanceCount() == 1)
 		{
 			InstanceContainer* pRootContainer = draw_set.InstanceContainerPointer;
-			InstanceGroup* group = pRootContainer->GetFirstGroup();
+			InstanceGroup* group = pRootContainer != nullptr ? pRootContainer->GetFirstGroup() : nullptr;
 
 			if (group)
 			{
@@ -16358,6 +16430,28 @@ void ManagerImplemented::SetLayer(Handle handle, int32_t layer)
 	}
 }
 
+int64_t ManagerImplemented::GetGroupMask(Handle handle) const
+{
+	auto it = m_DrawSets.find(handle);
+
+	if (it != m_DrawSets.end())
+	{
+		return it->second.GroupMask;
+	}
+
+	return 0;
+}
+
+void ManagerImplemented::SetGroupMask(Handle handle, int64_t groupmask)
+{
+	auto it = m_DrawSets.find(handle);
+
+	if (it != m_DrawSets.end())
+	{
+		it->second.GroupMask = groupmask;
+	}
+}
+
 float ManagerImplemented::GetSpeed(Handle handle) const
 {
 	auto it = m_DrawSets.find(handle);
@@ -16372,6 +16466,27 @@ void ManagerImplemented::SetSpeed(Handle handle, float speed)
 	{
 		m_DrawSets[handle].Speed = speed;
 		m_DrawSets[handle].IsParameterChanged = true;
+	}
+}
+
+void ManagerImplemented::SetTimeScaleByGroup(int64_t groupmask, float timeScale)
+{
+	for (auto& it : m_DrawSets)
+	{
+		if ((it.second.GroupMask & groupmask) != 0)
+		{
+			it.second.TimeScale = timeScale;
+		}
+	}
+}
+
+void ManagerImplemented::SetTimeScaleByHandle(Handle handle, float timeScale)
+{
+	auto it = m_DrawSets.find(handle);
+
+	if (it != m_DrawSets.end())
+	{
+		it->second.TimeScale = timeScale;
 	}
 }
 
@@ -16427,6 +16542,11 @@ void ManagerImplemented::Flip()
 		{
 			DrawSet& ds = it.second;
 			EffectImplemented* effect = (EffectImplemented*)ds.ParameterPointer;
+
+			if (ds.InstanceContainerPointer == nullptr)
+			{
+				continue;
+			}
 
 			if (ds.IsParameterChanged)
 			{
@@ -16526,10 +16646,18 @@ void ManagerImplemented::Update(float deltaFrame)
 
 	BeginUpdate();
 
+	// add frames
 	for (auto& drawSet : m_DrawSets)
 	{
-		float df = drawSet.second.IsPaused ? 0 : deltaFrame * drawSet.second.Speed;
-		drawSet.second.GlobalPointer->BeginDeltaFrame(df);
+		float df = drawSet.second.IsPaused ? 0 : deltaFrame * drawSet.second.Speed * drawSet.second.TimeScale;
+		drawSet.second.NextUpdateFrame += df;
+	}
+
+	// specify delta frames
+	for (auto& drawSet : m_DrawSets)
+	{
+		drawSet.second.GlobalPointer->BeginDeltaFrame(drawSet.second.NextUpdateFrame);
+		drawSet.second.NextUpdateFrame = 0.0f;
 	}
 
 	for (auto& chunks : instanceChunks_)
@@ -16543,6 +16671,93 @@ void ManagerImplemented::Update(float deltaFrame)
 	for (auto& drawSet : m_DrawSets)
 	{
 		UpdateHandleInternal(drawSet.second);
+	}
+
+	EndUpdate();
+
+	// end to measure time
+	m_updateTime = (int)(Effekseer::GetTime() - beginTime);
+}
+
+void ManagerImplemented::Update(const UpdateParameter& parameter)
+{
+	// start to measure time
+	int64_t beginTime = ::Effekseer::GetTime();
+
+	// Hack for GC
+	for (size_t i = 0; i < m_RemovingDrawSets.size(); i++)
+	{
+		for (auto& ds : m_RemovingDrawSets[i])
+		{
+			ds.second.UpdateCountAfterRemoving++;
+		}
+	}
+
+	// add frames
+	float maximumDeltaFrame = 0;
+
+	for (auto& drawSet : m_DrawSets)
+	{
+		float df = drawSet.second.IsPaused ? 0 : parameter.DeltaFrame * drawSet.second.Speed * drawSet.second.TimeScale;
+		drawSet.second.NextUpdateFrame += df;
+
+		maximumDeltaFrame = std::max(maximumDeltaFrame, drawSet.second.NextUpdateFrame);
+	}
+
+	int times = 0;
+
+	if (parameter.UpdateInterval == 0)
+	{
+		times = static_cast<int>(maximumDeltaFrame / parameter.UpdateInterval);
+	}
+
+	// Update once at least
+	if (times == 0)
+	{
+		times = 1;
+	}
+
+	BeginUpdate();
+
+	for (int32_t t = 0; t < times; t++)
+	{
+		// specify delta frames
+		for (auto& drawSet : m_DrawSets)
+		{
+			if (drawSet.second.NextUpdateFrame >= parameter.UpdateInterval)
+			{
+				float idf = 0;
+
+				if (parameter.UpdateInterval > 0)
+				{
+					idf = parameter.UpdateInterval;
+				}
+				else
+				{
+					idf = drawSet.second.NextUpdateFrame;
+				}
+
+				drawSet.second.NextUpdateFrame -= idf;
+				drawSet.second.GlobalPointer->BeginDeltaFrame(idf);
+			}
+			else
+			{
+				drawSet.second.GlobalPointer->BeginDeltaFrame(0);
+			}
+		}
+
+		for (auto& chunks : instanceChunks_)
+		{
+			for (auto chunk : chunks)
+			{
+				chunk->UpdateInstances();
+			}
+		}
+
+		for (auto& drawSet : m_DrawSets)
+		{
+			UpdateHandleInternal(drawSet.second);
+		}
 	}
 
 	EndUpdate();
@@ -16599,8 +16814,11 @@ void ManagerImplemented::UpdateHandle(Handle handle, float deltaFrame)
 			DrawSet& drawSet = it->second;
 
 			{
-				float df = drawSet.IsPaused ? 0 : deltaFrame * drawSet.Speed;
-				drawSet.GlobalPointer->BeginDeltaFrame(df);
+				float df = drawSet.IsPaused ? 0 : deltaFrame * drawSet.Speed * drawSet.TimeScale;
+				drawSet.NextUpdateFrame += df;
+
+				drawSet.GlobalPointer->BeginDeltaFrame(drawSet.NextUpdateFrame);
+				drawSet.NextUpdateFrame = 0.0f;
 			}
 
 			UpdateInstancesByInstanceGlobal(drawSet);
@@ -16646,11 +16864,14 @@ void ManagerImplemented::UpdateHandleInternal(DrawSet& drawSet)
 
 	Preupdate(drawSet);
 
-	drawSet.InstanceContainerPointer->Update(true, drawSet.IsShown);
-
-	if (drawSet.DoUseBaseMatrix)
+	if (drawSet.InstanceContainerPointer != nullptr)
 	{
-		drawSet.InstanceContainerPointer->SetBaseMatrix(true, drawSet.BaseMatrix);
+		drawSet.InstanceContainerPointer->Update(true, drawSet.IsShown);
+
+		if (drawSet.DoUseBaseMatrix)
+		{
+			drawSet.InstanceContainerPointer->SetBaseMatrix(true, drawSet.BaseMatrix);
+		}
 	}
 
 	drawSet.GlobalPointer->EndDeltaFrame();
@@ -16666,8 +16887,13 @@ void ManagerImplemented::Preupdate(DrawSet& drawSet)
 		CreateInstanceContainer(drawSet.ParameterPointer->GetRoot(), drawSet.GlobalPointer, true, drawSet.GlobalMatrix, NULL);
 
 	drawSet.InstanceContainerPointer = pContainer;
-
 	drawSet.IsPreupdated = true;
+
+	if (drawSet.InstanceContainerPointer == nullptr)
+	{
+		drawSet.IsRemoving = true;
+		return;
+	}
 
 	for (int32_t frame = 0; frame < drawSet.StartFrame; frame++)
 	{
@@ -16710,6 +16936,10 @@ void ManagerImplemented::Draw(const Manager::DrawParameter& drawParameter)
 		for (size_t i = 0; i < m_culledObjects.size(); i++)
 		{
 			DrawSet& drawSet = *m_culledObjects[i];
+			if (drawSet.InstanceContainerPointer == nullptr)
+			{
+				continue;
+			}
 
 			if (drawSet.IsShown && drawSet.IsAutoDrawing && ((drawParameter.CameraCullingMask & (1 << drawSet.Layer)) != 0))
 			{
@@ -16735,6 +16965,11 @@ void ManagerImplemented::Draw(const Manager::DrawParameter& drawParameter)
 		for (size_t i = 0; i < m_renderingDrawSets.size(); i++)
 		{
 			DrawSet& drawSet = m_renderingDrawSets[i];
+
+			if (drawSet.InstanceContainerPointer == nullptr)
+			{
+				continue;
+			}
 
 			if (drawSet.IsShown && drawSet.IsAutoDrawing && ((drawParameter.CameraCullingMask & (1 << drawSet.Layer)) != 0))
 			{
@@ -16773,6 +17008,11 @@ void ManagerImplemented::DrawBack(const Manager::DrawParameter& drawParameter)
 		{
 			DrawSet& drawSet = *m_culledObjects[i];
 
+			if (drawSet.InstanceContainerPointer == nullptr)
+			{
+				continue;
+			}
+
 			if (drawSet.IsShown && drawSet.IsAutoDrawing && ((drawParameter.CameraCullingMask & (1 << drawSet.Layer)) != 0))
 			{
 				auto e = (EffectImplemented*)drawSet.ParameterPointer;
@@ -16791,6 +17031,11 @@ void ManagerImplemented::DrawBack(const Manager::DrawParameter& drawParameter)
 		for (size_t i = 0; i < m_renderingDrawSets.size(); i++)
 		{
 			DrawSet& drawSet = m_renderingDrawSets[i];
+
+			if (drawSet.InstanceContainerPointer == nullptr)
+			{
+				continue;
+			}
 
 			if (drawSet.IsShown && drawSet.IsAutoDrawing && ((drawParameter.CameraCullingMask & (1 << drawSet.Layer)) != 0))
 			{
@@ -16823,6 +17068,11 @@ void ManagerImplemented::DrawFront(const Manager::DrawParameter& drawParameter)
 		{
 			DrawSet& drawSet = *m_culledObjects[i];
 
+			if (drawSet.InstanceContainerPointer == nullptr)
+			{
+				continue;
+			}
+
 			if (drawSet.IsShown && drawSet.IsAutoDrawing && ((drawParameter.CameraCullingMask & (1 << drawSet.Layer)) != 0))
 			{
 				if (drawSet.GlobalPointer->RenderedInstanceContainers.size() > 0)
@@ -16848,6 +17098,11 @@ void ManagerImplemented::DrawFront(const Manager::DrawParameter& drawParameter)
 		for (size_t i = 0; i < m_renderingDrawSets.size(); i++)
 		{
 			DrawSet& drawSet = m_renderingDrawSets[i];
+
+			if (drawSet.InstanceContainerPointer == nullptr)
+			{
+				continue;
+			}
 
 			if (drawSet.IsShown && drawSet.IsAutoDrawing && ((drawParameter.CameraCullingMask & (1 << drawSet.Layer)) != 0))
 			{
@@ -16938,6 +17193,11 @@ void ManagerImplemented::DrawHandle(Handle handle, const Manager::DrawParameter&
 	if (it != m_renderingDrawSetMaps.end())
 	{
 		DrawSet& drawSet = it->second;
+
+		if (drawSet.InstanceContainerPointer == nullptr)
+		{
+			return;
+		}
 
 		if (m_culled)
 		{
@@ -17037,6 +17297,11 @@ void ManagerImplemented::DrawHandleFront(Handle handle, const Manager::DrawParam
 		DrawSet& drawSet = it->second;
 		auto e = (EffectImplemented*)drawSet.ParameterPointer;
 
+		if (drawSet.InstanceContainerPointer == nullptr)
+		{
+			return;
+		}
+
 		if (m_culled)
 		{
 			if (m_culledObjectSets.find(drawSet.Self) != m_culledObjectSets.end())
@@ -17105,6 +17370,11 @@ void ManagerImplemented::BeginReloadEffect(Effect* effect, bool doLockThread)
 		if (it.second.ParameterPointer != effect)
 			continue;
 
+		if (it.second.InstanceContainerPointer == nullptr)
+		{
+			continue;
+		}
+
 		// dispose instances
 		it.second.InstanceContainerPointer->RemoveForcibly(true);
 		ReleaseInstanceContainer(it.second.InstanceContainerPointer);
@@ -17120,6 +17390,11 @@ void ManagerImplemented::EndReloadEffect(Effect* effect, bool doLockThread)
 
 		if (ds.ParameterPointer != effect)
 			continue;
+
+		if (it.second.InstanceContainerPointer == nullptr)
+		{
+			continue;
+		}
 
 		auto e = static_cast<EffectImplemented*>(effect);
 		auto pGlobal = ds.GlobalPointer;
@@ -17141,8 +17416,7 @@ void ManagerImplemented::EndReloadEffect(Effect* effect, bool doLockThread)
 		}
 
 		// Create an instance through a container
-		ds.InstanceContainerPointer =
-			CreateInstanceContainer(e->GetRoot(), ds.GlobalPointer, true, ds.GlobalMatrix, NULL);
+		ds.InstanceContainerPointer = CreateInstanceContainer(e->GetRoot(), ds.GlobalPointer, true, ds.GlobalMatrix, NULL);
 
 		// skip
 		for (float f = 0; f < ds.GlobalPointer->GetUpdatedFrame() - 1; f += 1.0f)
@@ -19538,7 +19812,7 @@ void InstanceChunk::UpdateInstances()
 
 			if (instance->m_State == INSTANCE_STATE_ACTIVE)
 			{
-				auto deltaTime = instance->GetInstanceGlobal()->NextDeltaFrame;
+				auto deltaTime = instance->GetInstanceGlobal()->GetNextDeltaFrame();
 				instance->Update(deltaTime, true);
 			}
 			else if (instance->m_State == INSTANCE_STATE_REMOVING)
@@ -19569,7 +19843,7 @@ void InstanceChunk::UpdateInstancesByInstanceGlobal(const InstanceGlobal* global
 
 			if (instance->m_State == INSTANCE_STATE_ACTIVE)
 			{
-				auto deltaTime = global->NextDeltaFrame;
+				auto deltaTime = global->GetNextDeltaFrame();
 				instance->Update(deltaTime, true);
 			}
 			else if (instance->m_State == INSTANCE_STATE_REMOVING)
@@ -19642,12 +19916,14 @@ InstanceGlobal::~InstanceGlobal()
 	
 }
 
-void InstanceGlobal::BeginDeltaFrame(float frame) { NextDeltaFrame = frame; }
+float InstanceGlobal::GetNextDeltaFrame() const { return nextDeltaFrame_; }
+
+void InstanceGlobal::BeginDeltaFrame(float frame) { nextDeltaFrame_ = frame; }
 
 void InstanceGlobal::EndDeltaFrame()
 {
-	m_updatedFrame += NextDeltaFrame;
-	NextDeltaFrame = 0.0f;
+	m_updatedFrame += nextDeltaFrame_;
+	nextDeltaFrame_ = 0.0f;
 }
 
 std::array<float, 4> InstanceGlobal::GetDynamicEquationResult(int32_t index) {

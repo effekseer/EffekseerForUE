@@ -639,6 +639,7 @@ struct NodeRendererBasicParameter
 	int32_t Texture2Index = -1;
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 	int32_t Texture3Index = -1;
+	int32_t Texture4Index = -1;
 #endif
 	float DistortionIntensity = 0.0f;
 	MaterialParameter* MaterialParameterPtr = nullptr;
@@ -651,6 +652,11 @@ struct NodeRendererBasicParameter
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 	TextureFilterType TextureFilter3 = TextureFilterType::Nearest;
 	TextureWrapType TextureWrap3 = TextureWrapType::Repeat;
+
+	TextureFilterType TextureFilter4 = TextureFilterType::Nearest;
+	TextureWrapType TextureWrap4 = TextureWrapType::Repeat;
+
+	float UVDistortionIntensity = 1.0f;
 
 	bool EnableInterpolation = false;
 	int32_t UVLoopType = 0;
@@ -793,7 +799,7 @@ public:
 	{
 		std::vector<std::basic_string<T>> elems;
 
-		int32_t start = 0;
+		size_t start = 0;
 
 		for (size_t i = 0; i < s.size(); i++)
 		{
@@ -980,6 +986,7 @@ public:
 } // namespace Effekseer
 
 #endif // __EFFEKSEER_BASE_H__
+
 
 #ifndef __EFFEKSEER_PARAMETERS_H__
 #define __EFFEKSEER_PARAMETERS_H__
@@ -2735,8 +2742,10 @@ struct EffectBasicRenderParameter
 	int32_t				ColorTextureIndex;
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 	int32_t				AlphaTextureIndex;
-
 	TextureWrapType		AlphaTexWrapType;
+
+	int32_t				UVDistortionIndex;
+	TextureWrapType		UVDistortionTexWrapType;
 
 	struct FlipbookParameters
 	{
@@ -2745,6 +2754,10 @@ struct EffectBasicRenderParameter
 		int32_t DivideX;
 		int32_t DivideY;
 	} FlipbookParams;
+
+	RendererMaterialType MaterialType;
+
+	float UVDistortionIntensity;
 #endif
 	AlphaBlendType		AlphaBlend;
 	TextureFilterType	FilterType;
@@ -2853,6 +2866,7 @@ namespace Effekseer
 //
 //----------------------------------------------------------------------------------
 
+
 /**
 	@brief エフェクト管理クラス
 */
@@ -2860,6 +2874,31 @@ class Manager
 	: public IReference
 {
 public:
+	/**
+		@brief
+		\~English Parameters when a manager is updated
+		\~Japanese マネージャーが更新されるときのパラメーター
+	*/
+	struct UpdateParameter
+	{
+		/**
+			@brief
+			\~English A passing frame
+			\~Japanese 経過するフレーム
+		*/
+		float DeltaFrame = 1.0f;
+
+		/**
+			@brief
+			\~English An update interval
+			\~Japanese 更新間隔
+			@note
+			\~English For example, DeltaTime is 2 and UpdateInterval is 1, an effect is update twice
+			\~Japanese 例えば、DeltaTimeが2でUpdateIntervalが1の場合、エフェクトは2回更新される。
+		*/
+		float UpdateInterval = 1.0f;
+	};
+
 	/**
 	@brief
 		@brief
@@ -3335,6 +3374,20 @@ public:
 	virtual void SetLayer(Handle handle, int32_t layer) = 0;
 
 	/**
+		@brief
+		\~English	Get a bitmask to specify a group
+		\~Japanese	グループを指定するためのビットマスクを取得する。
+	*/
+	virtual int64_t GetGroupMask(Handle handle) const = 0;
+
+	/**
+		@brief
+		\~English	Set a bitmask to specify a group
+		\~Japanese	グループを指定するためのビットマスクを設定する。
+	*/
+	virtual void SetGroupMask(Handle handle, int64_t groupmask) = 0;
+
+	/**
 	@brief
 	\~English	Get a playing speed of particle of effect.
 	\~Japanese	エフェクトのパーティクルの再生スピードを取得する。
@@ -3353,6 +3406,20 @@ public:
 		@param	speed	[in]	スピード
 	*/
 	virtual void SetSpeed( Handle handle, float speed ) = 0;
+
+	/**
+		@brief
+		\~English	Specify a rate of scale in relation to manager's time  by a group.
+		\~Japanese	グループごとにマネージャーに対する時間の拡大率を設定する。
+	*/
+	virtual void SetTimeScaleByGroup(int64_t groupmask, float timeScale) = 0;
+
+	/**
+		@brief
+		\~English	Specify a rate of scale in relation to manager's time  by a handle.
+		\~Japanese	ハンドルごとにマネージャーに対する時間の拡大率を設定する。
+	*/
+	virtual void SetTimeScaleByHandle(Handle handle, float timeScale) = 0;
 
 	/**
 		@brief	エフェクトがDrawで描画されるか設定する。
@@ -3375,6 +3442,17 @@ public:
 		\~Japanese	更新するフレーム数(60fps基準)
 	*/
 	virtual void Update( float deltaFrame = 1.0f ) = 0;
+
+
+	/**
+		@brief
+		\~English	Update all effects.
+		\~Japanese	全てのエフェクトの更新処理を行う。
+		@param	parameter
+		\~English	A parameter for updating effects
+		\~Japanese	エフェクトを更新するためのパラメーター	
+	*/
+	virtual void Update(const UpdateParameter& parameter) = 0;
 
 	/**
 		@brief
@@ -7689,6 +7767,8 @@ public:
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 		RectF		AlphaUV;
 
+		RectF		UVDistortionUV;
+
 		float		FlipbookIndexAndNextRate;
 
 		float		AlphaThreshold;
@@ -7781,6 +7861,8 @@ struct NodeRendererTextureUVTypeParameter;
 			RectF	UV;
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 			RectF	AlphaUV;
+
+			RectF	UVDistortionUV;
 
 			float	FlipbookIndexAndNextRate;
 
@@ -7880,6 +7962,8 @@ public:
 		RectF	UV;
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 		RectF		AlphaUV;
+
+		RectF		UVDistortionUV;
 		
 		float		FlipbookIndexAndNextRate;
 
@@ -7969,6 +8053,8 @@ public:
 		RectF			UV;
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 		RectF			AlphaUV;
+
+		RectF			UVDistortionUV;
 
 		float			FlipbookIndexAndNextRate;
 
@@ -8075,6 +8161,8 @@ struct NodeRendererTextureUVTypeParameter;
 			RectF	UV;
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 			RectF	AlphaUV;
+
+			RectF	UVDistortionUV;
 
 			float	FlipbookIndexAndNextRate;
 
