@@ -513,6 +513,7 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 			UTexture2D* texture = nullptr;
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 			UTexture2D* alphaTexture = nullptr;
+			UTexture2D* uvDistortionTexture = nullptr;
 #endif
 
 			if (param.Distortion)
@@ -527,6 +528,11 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 				if (0 <= param.AlphaTextureIndex && param.AlphaTextureIndex < this->DistortionTextures.Num())
 				{
 					alphaTexture = this->DistortionTextures[param.AlphaTextureIndex];
+				}
+
+				if (0 <= param.UVDistortionIndex && param.UVDistortionIndex < this->DistortionTextures.Num())
+				{
+					uvDistortionTexture = this->DistortionTexturea[param.UVDistortionIndex];
 				}
 #endif
 			}
@@ -543,24 +549,39 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 				{
 					alphaTexture = this->ColorTextures[param.AlphaTextureIndex];
 				}
+
+				if (0 <= param.UVDistortionIndex && param.UVDistortionIndex < this->ColorTextures.Num())
+				{
+					uvDistortionTexture = this->ColorTextures[param.UVDistortionIndex];
+				}
 #endif
 			}
 
 			UEffekseerEffectMaterialParameterHolder* mat = NewObject<UEffekseerEffectMaterialParameterHolder>();
 			mat->Texture = texture;
 #ifdef __EFFEKSEER_BUILD_VERSION16__
-			mat->AlphaTexture = alphaTexture;
-			
 			mat->TextureAddressType = static_cast<int32>(param.WrapType);
+
+			mat->AlphaTexture = alphaTexture;
 			mat->AlphaTextureAddressType = static_cast<int32>(param.AlphaTexWrapType);
-#endif
+
+			mat->UVDistortionTexture = uvDistortionTexture;
+			mat->UVDistortionTextureAddressType = static_cast<int32>(param.UVDistortionTexWrapType);
+
 			mat->FlipbookParams.Enable = param.FlipbookParams.Enable;
 			mat->FlipbookParams.LoopType = param.FlipbookParams.LoopType;
 			mat->FlipbookParams.DivideX = param.FlipbookParams.DivideX;
 			mat->FlipbookParams.DivideY = param.FlipbookParams.DivideY;
+
+			mat->UVDistortionIntensity = param.UVDistortionIntensity;
+#endif
 			mat->IsDepthTestDisabled = !param.ZTest;
 			mat->AlphaBlend = (EEffekseerAlphaBlendType)param.AlphaBlend;
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+			mat->IsLighting = param.MaterialType == ::Effekseer::RendererMaterialType::Lighting;
+#else
 			mat->IsLighting = modelParam.Lighting;
+#endif
 			mat->IsDistorted = param.Distortion;
 
 			this->EffekseerMaterials.Add(mat);

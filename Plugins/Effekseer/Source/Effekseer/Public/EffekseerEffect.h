@@ -47,16 +47,25 @@ public:
 
 //#ifdef __EFFEKSEER_BUILD_VERSION16__
 	UPROPERTY()
-	UTexture2D*		AlphaTexture = nullptr;
+	int32			TextureAddressType = 0;
 
 	UPROPERTY()
-	int32			TextureAddressType = 0;
+	UTexture2D*		AlphaTexture = nullptr;
 
 	UPROPERTY()
 	int32			AlphaTextureAddressType = 0;
 
 	UPROPERTY()
+	UTexture2D*		UVDistortionTexture = nullptr;
+
+	UPROPERTY()
+	int32			UVDistortionTextureAddressType = 0;
+
+	UPROPERTY()
 	FFlipbookParameters FlipbookParams;
+
+	UPROPERTY()
+	float			UVDistortionIntensity = 1.0f;
 //#endif
 
 	UPROPERTY()
@@ -76,10 +85,13 @@ public:
 		return
 			Texture == Other->Texture &&
 #ifdef __EFFEKSEER_BUILD_VERSION16__
-			AlphaTexture == Other->AlphaTexture &&
 			TextureAddressType == Other->TextureAddressType &&
+			AlphaTexture == Other->AlphaTexture &&
 			AlphaTextureAddressType == Other->AlphaTextureAddressType &&
+			UVDistortionTexture == Other->UVDistortionTexture &&
+			UVDistortionTextureAddressType == Other->UVDistortionTextureAddressType &&
 			FlipbookParams == Other->FlipbookParams &&
+			UVDistortionIntensity == Other->UVDistortionIntensity && 
 #endif
 			AlphaBlend == Other->AlphaBlend &&
 			IsDepthTestDisabled == Other->IsDepthTestDisabled &&
@@ -99,6 +111,8 @@ struct EffekseerEffectMaterial
 
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 	UTexture2D*		AlphaTexture = nullptr;
+
+	UTexture2D*		UVDistortionTexture = nullptr;
 #endif
 
 	EEffekseerAlphaBlendType	AlphaBlend;
@@ -120,6 +134,11 @@ struct EffekseerEffectMaterial
 		if (AlphaTexture != rhs.AlphaTexture)
 		{
 			return AlphaTexture < rhs.AlphaTexture;
+		}
+
+		if (UVDistortionTexture != rhs.UVDistortionTexture)
+		{
+			return UVDistortionTexture < rhs.UVDistortionTexture;
 		}
 #endif
 
