@@ -8940,7 +8940,7 @@ private:
 		int32_t Layer = 0;
 
 		//! a time (by 1/60) to progress an effect when Update is called 
-		float NextUpdateFrame = 0;
+		float NextUpdateFrame = 0.0f;
 
 		//! Rate of scale in relation to manager's time
 		float TimeScale = 1.0f;
@@ -16706,7 +16706,7 @@ void ManagerImplemented::Update(const UpdateParameter& parameter)
 
 	int times = 0;
 
-	if (parameter.UpdateInterval == 0)
+	if (parameter.UpdateInterval != 0)
 	{
 		times = static_cast<int>(maximumDeltaFrame / parameter.UpdateInterval);
 	}
