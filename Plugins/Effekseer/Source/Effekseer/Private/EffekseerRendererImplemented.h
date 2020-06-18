@@ -227,6 +227,7 @@ namespace EffekseerRendererUE4
 					   std::vector<Effekseer::RectF>& uvs, 
 					   std::vector<Effekseer::RectF>& alphaUVs,
 					   std::vector<Effekseer::RectF>& uvDistortionUVs,
+					   std::vector<Effekseer::RectF>& blendUVs,
 					   std::vector<float>& flipbookIndexAndNextRates,
 					   std::vector<float>& alphaThresholds,
 					   std::vector<Effekseer::Color>& colors, 

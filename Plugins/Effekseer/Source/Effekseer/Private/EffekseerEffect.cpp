@@ -514,6 +514,7 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 			UTexture2D* alphaTexture = nullptr;
 			UTexture2D* uvDistortionTexture = nullptr;
+			UTexture2D* blendTexture = nullptr;
 #endif
 
 			if (param.Distortion)
@@ -533,6 +534,11 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 				if (0 <= param.UVDistortionIndex && param.UVDistortionIndex < this->DistortionTextures.Num())
 				{
 					uvDistortionTexture = this->DistortionTexturea[param.UVDistortionIndex];
+				}
+
+				if (0 <= param.BlendTextureIndex && parma.BlendTextureIndex < this->DidtortionTextures.Num())
+				{
+					blendTexture = this->DistortionTextures[param.BlendTextureIndex];
 				}
 #endif
 			}
@@ -554,6 +560,11 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 				{
 					uvDistortionTexture = this->ColorTextures[param.UVDistortionIndex];
 				}
+
+				if (0 <= param.BlendTextureIndex && param.BlendTextureIndex < this->ColorTextures.Num())
+				{
+					blendTexture = this->ColorTextures[param.BlendTextureIndex];
+				}
 #endif
 			}
 
@@ -567,6 +578,9 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 
 			mat->UVDistortionTexture = uvDistortionTexture;
 			mat->UVDistortionTextureAddressType = static_cast<int32>(param.UVDistortionTexWrapType);
+			
+			mat->BlendTexture = blendTexture;
+			mat->BlendTextureAddress = static_cast<int32>(param.BlendTexWrapType);
 
 			mat->FlipbookParams.Enable = param.FlipbookParams.Enable;
 			mat->FlipbookParams.LoopType = param.FlipbookParams.LoopType;
@@ -574,6 +588,8 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 			mat->FlipbookParams.DivideY = param.FlipbookParams.DivideY;
 
 			mat->UVDistortionIntensity = param.UVDistortionIntensity;
+
+			mat->TextureBlendType = param.TextureBlendType;
 #endif
 			mat->IsDepthTestDisabled = !param.ZTest;
 			mat->AlphaBlend = (EEffekseerAlphaBlendType)param.AlphaBlend;
