@@ -635,14 +635,18 @@ FEffekseerHandle UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVect
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 			dynamicMaterial->SetTextureParameterValue(TEXT("AlphaTexture"), m->AlphaTexture);
 			dynamicMaterial->SetTextureParameterValue(TEXT("UVDistortionTexture"), m->UVDistortionTexture);
+			dynamicMaterial->SetTextureParameterValue(TEXT("BlendTexture"), m->BlendTexture);
 			
 			dynamicMaterial->SetScalarParameterValue(TEXT("TextureTilingType"), m->TextureAddressType);
 			dynamicMaterial->SetScalarParameterValue(TEXT("AlphaTextureTilingType"), m->AlphaTextureAddressType);
 			dynamicMaterial->SetScalarParameterValue(TEXT("UVDistortionTextureTilingType"), m->UVDistortionTextureAddressType);
+			dynamicMaterial->SetScalarParameterValue(TEXT("BlendTextureTilingType"), m->BlendTextureAddress);
 
 			dynamicMaterial->SetVectorParameterValue(TEXT("FlipbookParameters"), FLinearColor(float(m->FlipbookParams.Enable), m->FlipbookParams.LoopType, m->FlipbookParams.DivideX, m->FlipbookParams.DivideY));
 
 			dynamicMaterial->SetScalarParameterValue(TEXT("UVDistortionIntensity"), m->UVDistortionIntensity);
+
+			dynamicMaterial->SetScalarParameterValue(TEXT("TextureBlendType"), m->TextureBlendType);
 #endif
 
 			Materials.Add(m, dynamicMaterial);
@@ -652,6 +656,7 @@ FEffekseerHandle UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVect
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 			mkey.AlphaTexture = m->AlphaTexture;
 			mkey.UVDistortionTexture = m->UVDistortionTexture;
+			mkey.BlendTexture = m->BlendTexture;
 #endif
 			mkey.AlphaBlend = m->AlphaBlend;
 			mkey.IsDepthTestDisabled = m->IsDepthTestDisabled;

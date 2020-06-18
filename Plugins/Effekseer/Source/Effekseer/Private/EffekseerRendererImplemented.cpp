@@ -311,6 +311,7 @@ namespace EffekseerRendererUE4
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 		FLinearColor	alphaUV;
 		FLinearColor	uvDistortionUV;
+		FLinearColor	blendUV;
 		FLinearColor	flipbookIndexAndNextRate;
 		FLinearColor	alphaThreshold;
 #endif
@@ -325,6 +326,7 @@ namespace EffekseerRendererUE4
 			FLinearColor uv,
 			FLinearColor alphaUV,
 			FLinearColor uvDistortionUV,
+			FLinearColor blendUV,
 			float flipbookIndexAndNextRate,
 			float alphaThreshold,
 			FLinearColor color, 
@@ -334,6 +336,7 @@ namespace EffekseerRendererUE4
 			uv(uv),
 			alphaUV(alphaUV),
 			uvDistortionUV(uvDistortionUV),
+			blendUV(blendUV),
 			flipbookIndexAndNextRate(FLinearColor(flipbookIndexAndNextRate, 0.0f, 0.0f, 0.0f)),
 			alphaThreshold(FLinearColor(0.0f, alphaThreshold, 0.0f, 0.0f)),
 			color(color),
@@ -379,6 +382,12 @@ namespace EffekseerRendererUE4
 		if (ParameterInfo.Name == FName(TEXT("UVDistortionUV")))
 		{
 			*OutValue = uvDistortionUV;
+			return true;
+		}
+
+		if (ParameterInfo.Name == FName(TEXT("BlendUV")))
+		{
+			*OutValue = blendUV;
 			return true;
 		}
 
@@ -574,7 +583,7 @@ namespace EffekseerRendererUE4
 			}
 
 #ifdef __EFFEKSEER_BUILD_VERSION16__
-			Effekseer::TextureData* textures[4] = { nullptr };
+			Effekseer::TextureData* textures[5] = { nullptr };
 
 			textures[0] = (parameter.BasicParameterPtr->Texture1Index >= 0) ? parameter.EffectPointer->GetColorImage(parameter.BasicParameterPtr->Texture1Index) : nullptr;
 			
@@ -582,14 +591,16 @@ namespace EffekseerRendererUE4
 			{
 				textures[2] = (parameter.BasicParameterPtr->Texture3Index >= 0) ? parameter.EffectPointer->GetColorImage(parameter.BasicParameterPtr->Texture3Index) : nullptr;
 				textures[3] = (parameter.BasicParameterPtr->Texture4Index >= 0) ? parameter.EffectPointer->GetColorImage(parameter.BasicParameterPtr->Texture4Index) : nullptr;
+				textures[4] = (parameter.BasicParameterPtr->Texture5Index >= 0) ? parameter.EffectPointer->GetColorImage(parameter.BasicParameterPtr->Texture5Index) : nullptr;
 			}
 			else
 			{
 				textures[1] = (parameter.BasicParameterPtr->Texture3Index >= 0) ? parameter.EffectPointer->GetColorImage(parameter.BasicParameterPtr->Texture3Index) : nullptr;
 				textures[2] = (parameter.BasicParameterPtr->Texture4Index >= 0) ? parameter.EffectPointer->GetColorImage(parameter.BasicParameterPtr->Texture4Index) : nullptr;
+				textures[3] = (parameter.BasicParameterPtr->Texture5Index >= 0) ? parameter.EffectPointer->GetColorImage(parameter.BasicParameterPtr->Texture5Index) : nullptr;
 			}
 
-			m_renderer->SetTextures(nullptr, textures, 4);
+			m_renderer->SetTextures(nullptr, textures, 5);
 #else 
 			Effekseer::TextureData* textures[1];
 
@@ -613,6 +624,7 @@ namespace EffekseerRendererUE4
 			m_uv, 
 			m_alphaUV, 
 			m_uvDistortionUV,
+			m_blendUV,
 			m_flipbookIndexAndNextRate, 
 			m_alphaThreshold,
 			m_colors, 
@@ -986,7 +998,7 @@ namespace EffekseerRendererUE4
 #if ENGINE_MINOR_VERSION < 19
 			FDynamicMeshBuilder meshBuilder;
 #else
-			FDynamicMeshBuilder meshBuilder(m_meshElementCollector->GetFeatureLevel(), 4);
+			FDynamicMeshBuilder meshBuilder(m_meshElementCollector->GetFeatureLevel(), 5);
 #endif
 			for (int32_t vi = vertexOffset; vi < vertexOffset + spriteCount * 4; vi++)
 			{
@@ -1016,7 +1028,8 @@ namespace EffekseerRendererUE4
 				DynamicVertex.TextureCoordinate[0] = FVector2D(v.UV[0], v.UV[1]);
 				DynamicVertex.TextureCoordinate[1] = FVector2D(v.AlphaUV[0], v.AlphaUV[1]);
 				DynamicVertex.TextureCoordinate[2] = FVector2D(v.UVDistortionUV[0], v.UVDistortionUV[1]);
-				DynamicVertex.TextureCoordinate[3] = FVector2D(v.FlipbookIndexAndNextRate, v.AlphaThreshold);
+				DynamicVertex.TextureCoordinate[3] = FVector2D(v.BlendUV[0], v.BlendUV[1]);
+				DynamicVertex.TextureCoordinate[4] = FVector2D(v.FlipbookIndexAndNextRate, v.AlphaThreshold);
 
 				meshBuilder.AddVertex(DynamicVertex);
 #else
@@ -1058,7 +1071,7 @@ namespace EffekseerRendererUE4
 #if ENGINE_MINOR_VERSION < 19
 			FDynamicMeshBuilder meshBuilder;
 #else
-			FDynamicMeshBuilder meshBuilder(m_meshElementCollector->GetFeatureLevel(), 4);
+			FDynamicMeshBuilder meshBuilder(m_meshElementCollector->GetFeatureLevel(), 5);
 #endif
 
 			for (int32_t vi = vertexOffset; vi < vertexOffset + spriteCount * 4; vi++)
@@ -1083,7 +1096,8 @@ namespace EffekseerRendererUE4
 				DynamicVertex.TextureCoordinate[0] = FVector2D(v.UV[0], v.UV[1]);
 				DynamicVertex.TextureCoordinate[1] = FVector2D(v.AlphaUV[0], v.AlphaUV[1]);
 				DynamicVertex.TextureCoordinate[2] = FVector2D(v.UVDistortionUV[0], v.UVDistortionUV[1]);
-				DynamicVertex.TextureCoordinate[3] = FVector2D(v.FlipbookIndexAndNextRate, v.AlphaThreshold);
+				DynamicVertex.TextureCoordinate[3] = FVector2D(v.BlendUV[0], v.BlendUV[1]);
+				DynamicVertex.TextureCoordinate[4] = FVector2D(v.FlipbookIndexAndNextRate, v.AlphaThreshold);
 
 				meshBuilder.AddVertex(DynamicVertex);
 #else
@@ -1120,6 +1134,7 @@ namespace EffekseerRendererUE4
 				   std::vector<Effekseer::RectF>& uvs, 
 				   std::vector<Effekseer::RectF>& alphaUVs,
 				   std::vector<Effekseer::RectF>& uvDistortionUVs,
+				   std::vector<Effekseer::RectF>& blendUVs,
 				   std::vector<float>& flipbookIndexAndNextRates,
 				   std::vector<float>& alphaThresholds,
 				   std::vector<Effekseer::Color>& colors, 
@@ -1154,6 +1169,7 @@ namespace EffekseerRendererUE4
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 			auto& alphaUVOrigin = alphaUVs[objectIndex];
 			auto& uvDistortionUVOrigin = uvDistortionUVs[objectIndex];
+			auto& blendUVOrigin = blendUVs[objectIndex];
 
 			auto& flipbookIndexAndNextRate = flipbookIndexAndNextRates[objectIndex];
 			auto& alphaThreshold = alphaThresholds[objectIndex];
@@ -1171,6 +1187,7 @@ namespace EffekseerRendererUE4
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 			FLinearColor alphaUV = FLinearColor(alphaUVOrigin.X, alphaUVOrigin.Y, alphaUVOrigin.Width, alphaUVOrigin.Height);
 			FLinearColor uvDistortionUV = FLinearColor(uvDistortionUVOrigin.X, uvDistortionUVOrigin.Y, uvDistortionUVOrigin.Width, uvDistortionUVOrigin.Height);
+			FLinearColor blendUV = FLinearColor(blendUVOrigin.X, blendUVOrigin.Y, blendUVOrigin.Width, blendUVOrigin.Height);
 #endif
 			FLinearColor color = FLinearColor(colorOrigin.R / 255.0f, colorOrigin.G / 255.0f, colorOrigin.B / 255.0f, colorOrigin.A / 255.0f);
 			int frameTime = times[objectIndex] % mdl->GetFrameCount();
@@ -1255,6 +1272,7 @@ namespace EffekseerRendererUE4
 						uv, 
 						alphaUV,
 						uvDistortionUV,
+						blendUV,
 						flipbookIndexAndNextRate,
 						alphaThreshold,
 						color, 
@@ -1333,11 +1351,13 @@ namespace EffekseerRendererUE4
 		{
 			m.AlphaTexture = (UTexture2D*)textures_[2];
 			m.UVDistortionTexture = (UTexture2D*)textures_[3];
+			m.BlendTexture = (UTexture2D*)textures_[4];
 		}
 		else
 		{
 			m.AlphaTexture = (UTexture2D*)textures_[1];
 			m.UVDistortionTexture = (UTexture2D*)textures_[2];
+			m.BlendTexture = (UTexture2D*)textures_[3];
 		}
 #endif
 
