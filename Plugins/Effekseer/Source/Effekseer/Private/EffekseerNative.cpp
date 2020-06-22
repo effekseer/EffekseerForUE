@@ -6600,7 +6600,7 @@ struct ParameterCustomData
 struct ParameterRendererCommon
 {
 #ifdef __EFFEKSEER_BUILD_VERSION16__
-	static const int32_t UVParameterNum = 4;
+	static const int32_t UVParameterNum = 5;
 #endif
 
 	RendererMaterialType MaterialType = RendererMaterialType::Default;
@@ -6620,6 +6620,9 @@ struct ParameterRendererCommon
 
 	//! texture index except a file
 	int32_t BlendTextureIndex = -1;
+
+	//! texture index except a file
+	int32_t BlendAlphaTextureIndex = -1;
 #endif
 
 	//! material index in MaterialType::File
@@ -6647,6 +6650,10 @@ struct ParameterRendererCommon
 	TextureFilterType Filter5Type = TextureFilterType::Nearest;
 
 	TextureWrapType Wrap5Type = TextureWrapType::Repeat;
+
+	TextureFilterType Filter6Type = TextureFilterType::Nearest;
+
+	TextureWrapType Wrap6Type = TextureWrapType::Repeat;
 
 	float UVDistortionIntensity = 1.0f;
 
@@ -6832,6 +6839,10 @@ struct ParameterRendererCommon
 		{
 			memcpy(&MaterialType, pos, sizeof(int));
 			pos += sizeof(int);
+			
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+			Distortion = MaterialType == RendererMaterialType::BackDistortion;
+#endif
 
 			if (MaterialType == RendererMaterialType::Default ||
 				MaterialType == RendererMaterialType::BackDistortion ||
@@ -6853,6 +6864,9 @@ struct ParameterRendererCommon
 					pos += sizeof(int);
 
 					memcpy(&BlendTextureIndex, pos, sizeof(int));
+					pos += sizeof(int);
+
+					memcpy(&BlendAlphaTextureIndex, pos, sizeof(int));
 					pos += sizeof(int);
 				}
 #endif
@@ -6931,6 +6945,12 @@ struct ParameterRendererCommon
 
 			memcpy(&Wrap5Type, pos, sizeof(int));
 			pos += sizeof(int);
+
+			memcpy(&Filter6Type, pos, sizeof(int));
+			pos += sizeof(int);
+
+			memcpy(&Wrap6Type, pos, sizeof(int));
+			pos += sizeof(int);
 		}
 		else
 		{
@@ -6942,6 +6962,9 @@ struct ParameterRendererCommon
 
 			Filter5Type = FilterType;
 			Wrap5Type = WrapType;
+
+			Filter6Type = FilterType;
+			Wrap6Type = WrapType;
 		}
 #endif
 
@@ -7073,6 +7096,12 @@ struct ParameterRendererCommon
 			// blend type
 			memcpy(&TextureBlendType, pos, sizeof(int));
 			pos += sizeof(int);
+
+			// blend alpha texture
+			memcpy(&UVTypes[4], pos, sizeof(int));
+			pos += sizeof(int);
+
+			LoadUVParameter(4);
 		}
 
 #else
@@ -7181,6 +7210,7 @@ struct ParameterRendererCommon
 		BasicParameter.TextureFilter3 = Filter3Type;
 		BasicParameter.TextureFilter4 = Filter4Type;
 		BasicParameter.TextureFilter5 = Filter5Type;
+		BasicParameter.TextureFilter6 = Filter6Type;
 #endif
 		BasicParameter.TextureWrap1 = WrapType;
 		BasicParameter.TextureWrap2 = Wrap2Type;
@@ -7188,6 +7218,7 @@ struct ParameterRendererCommon
 		BasicParameter.TextureWrap3 = Wrap3Type;
 		BasicParameter.TextureWrap4 = Wrap4Type;
 		BasicParameter.TextureWrap5 = Wrap5Type;
+		BasicParameter.TextureWrap6 = Wrap6Type;
 #endif
 
 		BasicParameter.DistortionIntensity = DistortionIntensity;
@@ -7198,6 +7229,7 @@ struct ParameterRendererCommon
 		BasicParameter.Texture3Index = AlphaTextureIndex;
 		BasicParameter.Texture4Index = UVDistortionTextureIndex;
 		BasicParameter.Texture5Index = BlendTextureIndex;
+		BasicParameter.Texture6Index = BlendAlphaTextureIndex;
 
 		BasicParameter.UVDistortionIntensity = UVDistortionIntensity;
 
@@ -11568,6 +11600,9 @@ EffectBasicRenderParameter EffectNodeImplemented::GetBasicRenderParameter()
 	param.BlendTextureIndex = RendererCommon.BlendTextureIndex;
 	param.BlendTexWrapType = RendererCommon.Wrap5Type;
 
+	param.BlendAlphaTextureIndex = RendererCommon.BlendAlphaTextureIndex;
+	param.BlendAlphaTexWrapType = RendererCommon.Wrap6Type;
+
 	if (RendererCommon.UVTypes[0] == ParameterRendererCommon::UV_ANIMATION)
 	{
 		if (RendererCommon.UVs[0].Animation.InterpolationType != 0)
@@ -12091,6 +12126,7 @@ void EffectNodeModel::Rendering(const Instance& instance, const Instance* next_i
 		instanceParameter.AlphaUV = instance.GetUV(1);
 		instanceParameter.UVDistortionUV = instance.GetUV(2);
 		instanceParameter.BlendUV = instance.GetUV(3);
+		instanceParameter.BlendAlphaUV = instance.GetUV(4);
 
 		instanceParameter.FlipbookIndexAndNextRate = instance.m_flipbookIndexAndNextRate;
 
@@ -12434,6 +12470,7 @@ void EffectNodeRibbon::BeginRenderingGroup(InstanceGroup* group, Manager* manage
 			m_instanceParameter.AlphaUV = groupFirst->GetUV(1);
 			m_instanceParameter.UVDistortionUV = groupFirst->GetUV(2);
 			m_instanceParameter.BlendUV = groupFirst->GetUV(3);
+			m_instanceParameter.BlendAlphaUV = groupFirst->GetUV(4);
 
 			m_instanceParameter.FlipbookIndexAndNextRate = groupFirst->m_flipbookIndexAndNextRate;
 
@@ -12960,6 +12997,7 @@ void EffectNodeRing::Rendering(const Instance& instance, const Instance* next_in
 		instanceParameter.AlphaUV = instance.GetUV(1);
 		instanceParameter.UVDistortionUV = instance.GetUV(2);
 		instanceParameter.BlendUV = instance.GetUV(3);
+		instanceParameter.BlendAlphaUV = instance.GetUV(4);
 
 		instanceParameter.FlipbookIndexAndNextRate = instance.m_flipbookIndexAndNextRate;
 
@@ -13557,6 +13595,7 @@ void EffectNodeSprite::Rendering(const Instance& instance, const Instance* next_
 		instanceParameter.AlphaUV = instance.GetUV(1);
 		instanceParameter.UVDistortionUV = instance.GetUV(2);
 		instanceParameter.BlendUV = instance.GetUV(3);
+		instanceParameter.BlendAlphaUV = instance.GetUV(4);
 
 		instanceParameter.FlipbookIndexAndNextRate = instance.m_flipbookIndexAndNextRate;
 
@@ -13829,6 +13868,7 @@ void EffectNodeTrack::BeginRenderingGroup(InstanceGroup* group, Manager* manager
 			m_instanceParameter.AlphaUV = groupFirst->GetUV(1);
 			m_instanceParameter.UVDistortionUV = groupFirst->GetUV(2);
 			m_instanceParameter.BlendUV = groupFirst->GetUV(3);
+			m_instanceParameter.BlendAlphaUV = groupFirst->GetUV(4);
 
 			m_instanceParameter.FlipbookIndexAndNextRate = groupFirst->m_flipbookIndexAndNextRate;
 
