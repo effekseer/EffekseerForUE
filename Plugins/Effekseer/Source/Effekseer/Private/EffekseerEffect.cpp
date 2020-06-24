@@ -515,6 +515,7 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 			UTexture2D* alphaTexture = nullptr;
 			UTexture2D* uvDistortionTexture = nullptr;
 			UTexture2D* blendTexture = nullptr;
+			UTexture2D* blendAlphaTexture = nullptr;
 #endif
 
 			if (param.Distortion)
@@ -525,7 +526,7 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 					texture = this->DistortionTextures[param.ColorTextureIndex];
 				}
 
-#ifdef __EFFEKSEER_BUIKD_VERSION16__
+#ifdef __EFFEKSEER_BUILD_VERSION16__
 				if (0 <= param.AlphaTextureIndex && param.AlphaTextureIndex < this->DistortionTextures.Num())
 				{
 					alphaTexture = this->DistortionTextures[param.AlphaTextureIndex];
@@ -533,12 +534,17 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 
 				if (0 <= param.UVDistortionIndex && param.UVDistortionIndex < this->DistortionTextures.Num())
 				{
-					uvDistortionTexture = this->DistortionTexturea[param.UVDistortionIndex];
+					uvDistortionTexture = this->DistortionTextures[param.UVDistortionIndex];
 				}
 
-				if (0 <= param.BlendTextureIndex && parma.BlendTextureIndex < this->DidtortionTextures.Num())
+				if (0 <= param.BlendTextureIndex && param.BlendTextureIndex < this->DistortionTextures.Num())
 				{
 					blendTexture = this->DistortionTextures[param.BlendTextureIndex];
+				}
+
+				if (0 <= param.BlendAlphaTextureIndex && param.BlendAlphaTextureIndex < this->DistortionTextures.Num())
+				{
+					blendAlphaTexture = this->DistortionTextures[param.BlendAlphaTextureIndex];
 				}
 #endif
 			}
@@ -565,6 +571,11 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 				{
 					blendTexture = this->ColorTextures[param.BlendTextureIndex];
 				}
+
+				if (0 <= param.BlendAlphaTextureIndex && param.BlendAlphaTextureIndex < this->ColorTextures.Num())
+				{
+					blendAlphaTexture = this->ColorTextures[param.BlendAlphaTextureIndex];
+				}
 #endif
 			}
 
@@ -581,6 +592,9 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 			
 			mat->BlendTexture = blendTexture;
 			mat->BlendTextureAddress = static_cast<int32>(param.BlendTexWrapType);
+
+			mat->BlendAlphaTexture = blendAlphaTexture;
+			mat->BlendAlphaTextureAddress = static_cast<int32>(param.BlendAlphaTexWrapType);
 
 			mat->FlipbookParams.Enable = param.FlipbookParams.Enable;
 			mat->FlipbookParams.LoopType = param.FlipbookParams.LoopType;
