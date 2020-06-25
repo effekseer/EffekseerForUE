@@ -88,7 +88,8 @@ effekseerHeader.readLines(rootEDir + 'Effekseer.File.h')
 effekseerHeader.readLines(rootEDir + 'Effekseer.DefaultFile.h')
 effekseerHeader.readLines(rootEDir + 'Effekseer.Effect.h')
 effekseerHeader.readLines(rootEDir + 'Effekseer.Manager.h')
-
+effekseerHeader.readLines(rootEDir + 'Effekseer.WorkerThread.h')
+effekseerHeader.readLines(rootEDir + 'Effekseer.Random.h')
 # SIMD
 
 effekseerHeader.readLines(rootEDir + 'SIMD/Effekseer.SIMDType.h')
@@ -263,6 +264,8 @@ effekseerCPP.readLines(rootEDir + 'Effekseer.EffectNodeTrack.cpp')
 
 effekseerCPP.readLines(rootEDir + 'Effekseer.Effect.cpp')
 effekseerCPP.readLines(rootEDir + 'Effekseer.Manager.cpp')
+effekseerCPP.readLines(rootEDir + 'Effekseer.WorkerThread.cpp')
+effekseerCPP.readLines(rootEDir + 'Effekseer.Random.cpp')
 effekseerCPP.readLines(rootEDir + 'Effekseer.IntrusiveList.cpp')
 effekseerCPP.readLines(rootEDir + 'Effekseer.InstanceContainer.cpp')
 effekseerCPP.readLines(rootEDir + 'Effekseer.Instance.cpp')
