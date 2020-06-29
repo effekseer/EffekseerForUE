@@ -516,6 +516,7 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 			UTexture2D* uvDistortionTexture = nullptr;
 			UTexture2D* blendTexture = nullptr;
 			UTexture2D* blendAlphaTexture = nullptr;
+			UTexture2D* blendUVDistortionTexture = nullptr;
 #endif
 
 			if (param.Distortion)
@@ -545,6 +546,11 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 				if (0 <= param.BlendAlphaTextureIndex && param.BlendAlphaTextureIndex < this->DistortionTextures.Num())
 				{
 					blendAlphaTexture = this->DistortionTextures[param.BlendAlphaTextureIndex];
+				}
+
+				if (0 <= param.BlendUVDistortionTextureIndex && param.BlendUVDistortionTextureIndex < this->DistortionTextures.Num())
+				{
+					blendUVDistortionTexture = this->DistortionTextures[param.BlendUVDistortionTextureIndex];
 				}
 #endif
 			}
@@ -576,6 +582,11 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 				{
 					blendAlphaTexture = this->ColorTextures[param.BlendAlphaTextureIndex];
 				}
+
+				if (0 <= param.BlendUVDistortionTextureIndex && param.BlendUVDistortionTextureIndex < this->ColorTextures.Num())
+				{
+					blendUVDistortionTexture = this->ColorTextures[param.BlendUVDistortionTextureIndex];
+				}
 #endif
 			}
 
@@ -596,6 +607,9 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 			mat->BlendAlphaTexture = blendAlphaTexture;
 			mat->BlendAlphaTextureAddress = static_cast<int32>(param.BlendAlphaTexWrapType);
 
+			mat->BlendUVDistortionTexture = blendUVDistortionTexture;
+			mat->BlendUVDistortionTextureAddress = static_cast<int32>(param.BlendUVDistortionTexWrapType);
+
 			mat->FlipbookParams.Enable = param.FlipbookParams.Enable;
 			mat->FlipbookParams.LoopType = param.FlipbookParams.LoopType;
 			mat->FlipbookParams.DivideX = param.FlipbookParams.DivideX;
@@ -604,6 +618,8 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 			mat->UVDistortionIntensity = param.UVDistortionIntensity;
 
 			mat->TextureBlendType = param.TextureBlendType;
+
+			mat->BlendUVDistortionIntensity = param.BlendUVDistortionIntensity;
 #endif
 			mat->IsDepthTestDisabled = !param.ZTest;
 			mat->AlphaBlend = (EEffekseerAlphaBlendType)param.AlphaBlend;
