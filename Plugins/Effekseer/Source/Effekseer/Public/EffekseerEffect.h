@@ -74,6 +74,12 @@ public:
 	int32			BlendAlphaTextureAddress = 0;
 
 	UPROPERTY()
+	UTexture2D*		BlendUVDistortionTexture = nullptr;
+
+	UPROPERTY()
+	int32			BlendUVDistortionTextureAddress = 0;
+
+	UPROPERTY()
 	FFlipbookParameters FlipbookParams;
 
 	UPROPERTY()
@@ -81,6 +87,9 @@ public:
 
 	UPROPERTY()
 	int32			TextureBlendType = -1;
+
+	UPROPERTY()
+	float			BlendUVDistortionIntensity = 1.0f;
 //#endif
 
 	UPROPERTY()
@@ -137,6 +146,8 @@ struct EffekseerEffectMaterial
 	UTexture2D*		BlendTexture = nullptr;
 
 	UTexture2D*		BlendAlphaTexture = nullptr;
+
+	UTexture2D*		BlendUVDistortionTexture = nullptr;
 #endif
 
 	EEffekseerAlphaBlendType	AlphaBlend;
@@ -173,6 +184,11 @@ struct EffekseerEffectMaterial
 		if (BlendAlphaTexture != rhs.BlendAlphaTexture)
 		{
 			return BlendAlphaTexture < rhs.BlendAlphaTexture;
+		}
+
+		if (BlendUVDistortionTexture != rhs.BlendUVDistortionTexture)
+		{
+			return BlendUVDistortionTexture < rhs.BlendUVDistortionTexture;
 		}
 #endif
 

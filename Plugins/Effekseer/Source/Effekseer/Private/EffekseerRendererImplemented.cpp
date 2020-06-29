@@ -313,6 +313,7 @@ namespace EffekseerRendererUE4
 		FLinearColor	uvDistortionUV;
 		FLinearColor	blendUV;
 		FLinearColor	blendAlphaUV;
+		FLinearColor	blendUVDistortionUV;
 		FLinearColor	flipbookIndexAndNextRate;
 		FLinearColor	alphaThreshold;
 #endif
@@ -329,6 +330,7 @@ namespace EffekseerRendererUE4
 			FLinearColor uvDistortionUV,
 			FLinearColor blendUV,
 			FLinearColor blendAlphaUV,
+			FLinearColor blendUVDistortionUV,
 			float flipbookIndexAndNextRate,
 			float alphaThreshold,
 			FLinearColor color, 
@@ -340,6 +342,7 @@ namespace EffekseerRendererUE4
 			uvDistortionUV(uvDistortionUV),
 			blendUV(blendUV),
 			blendAlphaUV(blendAlphaUV),
+			blendUVDistortionUV(blendUVDistortionUV),
 			flipbookIndexAndNextRate(FLinearColor(flipbookIndexAndNextRate, 0.0f, 0.0f, 0.0f)),
 			alphaThreshold(FLinearColor(0.0f, alphaThreshold, 0.0f, 0.0f)),
 			color(color),
@@ -397,6 +400,12 @@ namespace EffekseerRendererUE4
 		if (ParameterInfo.Name == FName(TEXT("BlendAlphaUV")))
 		{
 			*OutValue = blendAlphaUV;
+			return true;
+		}
+
+		if (ParameterInfo.Name == FName(TEXT("BlendUVDistortionUV")))
+		{
+			*OutValue = blendUVDistortionUV;
 			return true;
 		}
 
@@ -592,7 +601,7 @@ namespace EffekseerRendererUE4
 			}
 
 #ifdef __EFFEKSEER_BUILD_VERSION16__
-			Effekseer::TextureData* textures[6] = { nullptr };
+			Effekseer::TextureData* textures[7] = { nullptr };
 
 			if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::BackDistortion)
 			{
@@ -601,6 +610,7 @@ namespace EffekseerRendererUE4
 				textures[3] = (parameter.BasicParameterPtr->Texture4Index >= 0) ? parameter.EffectPointer->GetDistortionImage(parameter.BasicParameterPtr->Texture4Index) : nullptr;
 				textures[4] = (parameter.BasicParameterPtr->Texture5Index >= 0) ? parameter.EffectPointer->GetDistortionImage(parameter.BasicParameterPtr->Texture5Index) : nullptr;
 				textures[5] = (parameter.BasicParameterPtr->Texture6Index >= 0) ? parameter.EffectPointer->GetDistortionImage(parameter.BasicParameterPtr->Texture6Index) : nullptr;
+				textures[6] = (parameter.BasicParameterPtr->Texture7Index >= 0) ? parameter.EffectPointer->GetDistortionImage(parameter.BasicParameterPtr->Texture7Index) : nullptr;
 			}	
 			else if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::Lighting)
 			{
@@ -609,6 +619,7 @@ namespace EffekseerRendererUE4
 				textures[3] = (parameter.BasicParameterPtr->Texture4Index >= 0) ? parameter.EffectPointer->GetColorImage(parameter.BasicParameterPtr->Texture4Index) : nullptr;
 				textures[4] = (parameter.BasicParameterPtr->Texture5Index >= 0) ? parameter.EffectPointer->GetColorImage(parameter.BasicParameterPtr->Texture5Index) : nullptr;
 				textures[5] = (parameter.BasicParameterPtr->Texture6Index >= 0) ? parameter.EffectPointer->GetColorImage(parameter.BasicParameterPtr->Texture6Index) : nullptr;
+				textures[6] = (parameter.BasicParameterPtr->Texture7Index >= 0) ? parameter.EffectPointer->GetColorImage(parameter.BasicParameterPtr->Texture7Index) : nullptr;
 			}
 			else
 			{
@@ -617,9 +628,10 @@ namespace EffekseerRendererUE4
 				textures[2] = (parameter.BasicParameterPtr->Texture4Index >= 0) ? parameter.EffectPointer->GetColorImage(parameter.BasicParameterPtr->Texture4Index) : nullptr;
 				textures[3] = (parameter.BasicParameterPtr->Texture5Index >= 0) ? parameter.EffectPointer->GetColorImage(parameter.BasicParameterPtr->Texture5Index) : nullptr;
 				textures[4] = (parameter.BasicParameterPtr->Texture6Index >= 0) ? parameter.EffectPointer->GetColorImage(parameter.BasicParameterPtr->Texture6Index) : nullptr;
+				textures[5] = (parameter.BasicParameterPtr->Texture7Index >= 0) ? parameter.EffectPointer->GetColorImage(parameter.BasicParameterPtr->Texture7Index) : nullptr;
 			}
 
-			m_renderer->SetTextures(nullptr, textures, 6);
+			m_renderer->SetTextures(nullptr, textures, 7);
 #else 
 			Effekseer::TextureData* textures[1];
 
@@ -645,6 +657,7 @@ namespace EffekseerRendererUE4
 			m_uvDistortionUV,
 			m_blendUV,
 			m_blendAlphaUV,
+			m_blendUVDistortionUV,
 			m_flipbookIndexAndNextRate, 
 			m_alphaThreshold,
 			m_colors, 
@@ -1018,7 +1031,7 @@ namespace EffekseerRendererUE4
 #if ENGINE_MINOR_VERSION < 19
 			FDynamicMeshBuilder meshBuilder;
 #else
-			FDynamicMeshBuilder meshBuilder(m_meshElementCollector->GetFeatureLevel(), 6);
+			FDynamicMeshBuilder meshBuilder(m_meshElementCollector->GetFeatureLevel(), 7);
 #endif
 			for (int32_t vi = vertexOffset; vi < vertexOffset + spriteCount * 4; vi++)
 			{
@@ -1050,7 +1063,8 @@ namespace EffekseerRendererUE4
 				DynamicVertex.TextureCoordinate[2] = FVector2D(v.UVDistortionUV[0], v.UVDistortionUV[1]);
 				DynamicVertex.TextureCoordinate[3] = FVector2D(v.BlendUV[0], v.BlendUV[1]);
 				DynamicVertex.TextureCoordinate[4] = FVector2D(v.BlendAlphaUV[0], v.BlendAlphaUV[1]);
-				DynamicVertex.TextureCoordinate[5] = FVector2D(v.FlipbookIndexAndNextRate, v.AlphaThreshold);
+				DynamicVertex.TextureCoordinate[5] = FVector2D(v.BlendUVDistortionUV[0], v.BlendUVDistortionUV[1]);
+				DynamicVertex.TextureCoordinate[6] = FVector2D(v.FlipbookIndexAndNextRate, v.AlphaThreshold);
 
 				meshBuilder.AddVertex(DynamicVertex);
 #else
@@ -1092,7 +1106,7 @@ namespace EffekseerRendererUE4
 #if ENGINE_MINOR_VERSION < 19
 			FDynamicMeshBuilder meshBuilder;
 #else
-			FDynamicMeshBuilder meshBuilder(m_meshElementCollector->GetFeatureLevel(), 6);
+			FDynamicMeshBuilder meshBuilder(m_meshElementCollector->GetFeatureLevel(), 7);
 #endif
 
 			for (int32_t vi = vertexOffset; vi < vertexOffset + spriteCount * 4; vi++)
@@ -1119,7 +1133,8 @@ namespace EffekseerRendererUE4
 				DynamicVertex.TextureCoordinate[2] = FVector2D(v.UVDistortionUV[0], v.UVDistortionUV[1]);
 				DynamicVertex.TextureCoordinate[3] = FVector2D(v.BlendUV[0], v.BlendUV[1]);
 				DynamicVertex.TextureCoordinate[4] = FVector2D(v.BlendAlphaUV[0], v.BlendAlphaUV[1]);
-				DynamicVertex.TextureCoordinate[5] = FVector2D(v.FlipbookIndexAndNextRate, v.AlphaThreshold);
+				DynamicVertex.TextureCoordinate[5] = FVector2D(v.BlendUVDistortionUV[0], v.BlendUVDistortionUV[1]);
+				DynamicVertex.TextureCoordinate[6] = FVector2D(v.FlipbookIndexAndNextRate, v.AlphaThreshold);
 
 				meshBuilder.AddVertex(DynamicVertex);
 #else
@@ -1158,6 +1173,7 @@ namespace EffekseerRendererUE4
 				   std::vector<Effekseer::RectF>& uvDistortionUVs,
 				   std::vector<Effekseer::RectF>& blendUVs,
 				   std::vector<Effekseer::RectF>& blendAlphaUVs,
+				   std::vector<Effekseer::RectF>& blendUVDistortionUVs,
 				   std::vector<float>& flipbookIndexAndNextRates,
 				   std::vector<float>& alphaThresholds,
 				   std::vector<Effekseer::Color>& colors, 
@@ -1194,6 +1210,7 @@ namespace EffekseerRendererUE4
 			auto& uvDistortionUVOrigin = uvDistortionUVs[objectIndex];
 			auto& blendUVOrigin = blendUVs[objectIndex];
 			auto& blendAlphaUVOrigin = blendAlphaUVs[objectIndex];
+			auto& blendUVDistortionUVOrigin = blendUVDistortionUVs[objectIndex];
 
 			auto& flipbookIndexAndNextRate = flipbookIndexAndNextRates[objectIndex];
 			auto& alphaThreshold = alphaThresholds[objectIndex];
@@ -1213,6 +1230,7 @@ namespace EffekseerRendererUE4
 			FLinearColor uvDistortionUV = FLinearColor(uvDistortionUVOrigin.X, uvDistortionUVOrigin.Y, uvDistortionUVOrigin.Width, uvDistortionUVOrigin.Height);
 			FLinearColor blendUV = FLinearColor(blendUVOrigin.X, blendUVOrigin.Y, blendUVOrigin.Width, blendUVOrigin.Height);
 			FLinearColor blendAlphaUV = FLinearColor(blendAlphaUVOrigin.X, blendAlphaUVOrigin.Y, blendAlphaUVOrigin.Width, blendAlphaUVOrigin.Height);
+			FLinearColor blendUVDistortionUV = FLinearColor(blendUVDistortionUVOrigin.X, blendUVDistortionUVOrigin.Y, blendUVDistortionUVOrigin.Width, blendUVDistortionUVOrigin.Height);
 #endif
 			FLinearColor color = FLinearColor(colorOrigin.R / 255.0f, colorOrigin.G / 255.0f, colorOrigin.B / 255.0f, colorOrigin.A / 255.0f);
 			int frameTime = times[objectIndex] % mdl->GetFrameCount();
@@ -1299,6 +1317,7 @@ namespace EffekseerRendererUE4
 						uvDistortionUV,
 						blendUV,
 						blendAlphaUV,
+						blendUVDistortionUV,
 						flipbookIndexAndNextRate,
 						alphaThreshold,
 						color, 
@@ -1379,6 +1398,7 @@ namespace EffekseerRendererUE4
 			m.UVDistortionTexture = (UTexture2D*)textures_[3];
 			m.BlendTexture = (UTexture2D*)textures_[4];
 			m.BlendAlphaTexture = (UTexture2D*)textures_[5];
+			m.BlendUVDistortionTexture = (UTexture2D*)textures_[6];
 		}
 		else
 		{
@@ -1386,6 +1406,7 @@ namespace EffekseerRendererUE4
 			m.UVDistortionTexture = (UTexture2D*)textures_[2];
 			m.BlendTexture = (UTexture2D*)textures_[3];
 			m.BlendAlphaTexture = (UTexture2D*)textures_[4];
+			m.BlendUVDistortionTexture = (UTexture2D*)textures_[5];
 		}
 #endif
 
