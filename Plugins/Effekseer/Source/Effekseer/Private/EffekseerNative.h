@@ -2892,6 +2892,15 @@ struct EffectBasicRenderParameter
 	int32_t TextureBlendType;
 
 	float BlendUVDistortionIntensity;
+
+	bool EnableFalloff;
+	struct
+	{
+		int32_t ColorBlendType;
+		float BeginColor[4];
+		float EndColor[4];
+		int32_t Pow = 1;
+	} FalloffParam;
 #endif
 	AlphaBlendType AlphaBlend;
 	TextureFilterType FilterType;
@@ -8341,6 +8350,27 @@ namespace Effekseer
 class ModelRenderer
 {
 public:
+	struct FalloffParameter
+	{
+		enum BlendType
+		{
+			Add = 0,
+			Sub = 1,
+			Mul = 2,
+		} ColorBlendType;
+		Color BeginColor;
+		Color EndColor;
+		int32_t Pow;
+
+		FalloffParameter()
+		{
+			ColorBlendType = BlendType::Add;
+			BeginColor = Color(255, 255, 255, 255);
+			EndColor = Color(255, 255, 255, 255);
+			Pow = 1;
+		}
+	};
+
 	struct NodeParameter
 	{
 		Effect* EffectPointer;
@@ -8364,6 +8394,11 @@ public:
 
 		NodeRendererDepthParameter* DepthParameterPtr = nullptr;
 		NodeRendererBasicParameter* BasicParameterPtr = nullptr;
+
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+		bool EnableFalloff;
+		FalloffParameter FalloffParam;
+#endif
 
 		// RendererMaterialType MaterialType = RendererMaterialType::Default;
 		// MaterialParameter* MaterialParameterPtr = nullptr;

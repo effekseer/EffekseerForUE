@@ -652,6 +652,12 @@ FEffekseerHandle UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVect
 			dynamicMaterial->SetScalarParameterValue(TEXT("TextureBlendType"), m->TextureBlendType);
 
 			dynamicMaterial->SetScalarParameterValue(TEXT("BlendUVDistortionIntensity"), m->BlendUVDistortionIntensity);
+
+			dynamicMaterial->SetScalarParameterValue(TEXT("EnableFalloff"), static_cast<float>(m->EnableFalloff));
+			dynamicMaterial->SetScalarParameterValue(TEXT("FalloffBlendType"), static_cast<float>(m->FalloffParam.ColorBlendType));
+			dynamicMaterial->SetVectorParameterValue(TEXT("BeginColor"), m->FalloffParam.BeginColor);
+			dynamicMaterial->SetVectorParameterValue(TEXT("EndColor"), m->FalloffParam.EndColor);
+			dynamicMaterial->SetScalarParameterValue(TEXT("FalloffPow"), static_cast<float>(m->FalloffParam.Pow));
 #endif
 
 			Materials.Add(m, dynamicMaterial);

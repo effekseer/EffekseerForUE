@@ -8049,6 +8049,11 @@ public:
 
 	StandardColorParameter AllColor;
 
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+	bool EnableFalloff;
+	ModelRenderer::FalloffParameter FalloffParam;
+#endif
+
 	EffectNodeModel(Effect* effect, unsigned char*& pos)
 		: EffectNodeImplemented(effect, pos)
 	{
@@ -12169,6 +12174,27 @@ EffectBasicRenderParameter EffectNodeImplemented::GetBasicRenderParameter()
 	param.TextureBlendType = RendererCommon.TextureBlendType;
 
 	param.BlendUVDistortionIntensity = RendererCommon.BlendUVDistortionIntensity;
+
+	if (GetType() == eEffectNodeType::EFFECT_NODE_TYPE_MODEL)
+	{
+		EffectNodeModel* pNodeModel = reinterpret_cast<EffectNodeModel*>(this);
+		param.EnableFalloff = pNodeModel->EnableFalloff;
+		param.FalloffParam.ColorBlendType = static_cast<int32_t>(pNodeModel->FalloffParam.ColorBlendType);
+		param.FalloffParam.BeginColor[0] = static_cast<float>(pNodeModel->FalloffParam.BeginColor.R) / 255.0f;
+		param.FalloffParam.BeginColor[1] = static_cast<float>(pNodeModel->FalloffParam.BeginColor.G) / 255.0f;
+		param.FalloffParam.BeginColor[2] = static_cast<float>(pNodeModel->FalloffParam.BeginColor.B) / 255.0f;
+		param.FalloffParam.BeginColor[3] = static_cast<float>(pNodeModel->FalloffParam.BeginColor.A) / 255.0f;
+		param.FalloffParam.EndColor[0] = static_cast<float>(pNodeModel->FalloffParam.EndColor.R / 255.0f);
+		param.FalloffParam.EndColor[1] = static_cast<float>(pNodeModel->FalloffParam.EndColor.G / 255.0f);
+		param.FalloffParam.EndColor[2] = static_cast<float>(pNodeModel->FalloffParam.EndColor.B / 255.0f);
+		param.FalloffParam.EndColor[3] = static_cast<float>(pNodeModel->FalloffParam.EndColor.A / 255.0f);
+		param.FalloffParam.Pow = pNodeModel->FalloffParam.Pow;
+	}
+	else
+	{
+		param.EnableFalloff = false;
+	}
+
 #endif
 	param.AlphaBlend = RendererCommon.AlphaBlend;
 	param.Distortion = RendererCommon.Distortion;
@@ -12618,6 +12644,19 @@ void EffectNodeModel::LoadRendererParameter(unsigned char*& pos, Setting* settin
 	pos += sizeof(int);
 
 	AllColor.load(pos, m_effect->GetVersion());
+
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+	int FalloffFlag = 0;
+	memcpy(&FalloffFlag, pos, sizeof(int));
+	pos += sizeof(int);
+	EnableFalloff = (FalloffFlag == 1);
+
+	if (EnableFalloff)
+	{
+		memcpy(&FalloffParam, pos, sizeof(ModelRenderer::FalloffParameter));
+		pos += sizeof(ModelRenderer::FalloffParameter);
+	}
+#endif
 }
 
 //----------------------------------------------------------------------------------
@@ -12646,6 +12685,12 @@ void EffectNodeModel::BeginRendering(int32_t count, Manager* manager)
 		// nodeParameter.IsDepthOffsetScaledWithParticleScale = DepthValues.IsDepthOffsetScaledWithParticleScale;
 
 		nodeParameter.BasicParameterPtr = &RendererCommon.BasicParameter;
+
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+		nodeParameter.EnableFalloff = EnableFalloff;
+		nodeParameter.FalloffParam = FalloffParam;
+#endif
+
 		renderer->BeginRendering(nodeParameter, count, m_userData);
 	}
 }
@@ -12676,6 +12721,11 @@ void EffectNodeModel::Rendering(const Instance& instance, const Instance* next_i
 		// nodeParameter.IsDepthOffsetScaledWithCamera = DepthValues.IsDepthOffsetScaledWithCamera;
 		// nodeParameter.IsDepthOffsetScaledWithParticleScale = DepthValues.IsDepthOffsetScaledWithParticleScale;
 		nodeParameter.BasicParameterPtr = &RendererCommon.BasicParameter;
+
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+		nodeParameter.EnableFalloff = EnableFalloff;
+		nodeParameter.FalloffParam = FalloffParam;
+#endif
 
 		ModelRenderer::InstanceParameter instanceParameter;
 		instanceParameter.SRTMatrix43 = instance.GetGlobalMatrix43();
@@ -12744,6 +12794,12 @@ void EffectNodeModel::EndRendering(Manager* manager)
 		// nodeParameter.IsDepthOffsetScaledWithParticleScale = DepthValues.IsDepthOffsetScaledWithParticleScale;
 
 		nodeParameter.BasicParameterPtr = &RendererCommon.BasicParameter;
+
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+		nodeParameter.EnableFalloff = EnableFalloff;
+		nodeParameter.FalloffParam = FalloffParam;
+#endif
+
 		renderer->EndRendering(nodeParameter, m_userData);
 	}
 }
