@@ -90,6 +90,24 @@ public:
 
 	UPROPERTY()
 	float			BlendUVDistortionIntensity = 1.0f;
+
+	UPROPERTY()
+	bool			EnableFalloff = false;
+
+	struct
+	{
+		UPROPERTY()
+		int32			ColorBlendType = 0;
+
+		UPROPERTY()
+		FLinearColor	BeginColor;
+
+		UPROPERTY()
+		FLinearColor	EndColor;
+
+		UPROPERTY()
+		int32			Pow = 1;
+	} FalloffParam;
 //#endif
 
 	UPROPERTY()

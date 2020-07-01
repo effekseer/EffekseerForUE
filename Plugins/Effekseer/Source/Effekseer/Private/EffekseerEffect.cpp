@@ -518,7 +518,6 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 			UTexture2D* blendAlphaTexture = nullptr;
 			UTexture2D* blendUVDistortionTexture = nullptr;
 #endif
-
 			if (param.Distortion)
 			{
 				if (0 <= param.ColorTextureIndex &&
@@ -620,6 +619,12 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 			mat->TextureBlendType = param.TextureBlendType;
 
 			mat->BlendUVDistortionIntensity = param.BlendUVDistortionIntensity;
+
+			mat->EnableFalloff = param.EnableFalloff;
+			mat->FalloffParam.ColorBlendType = param.FalloffParam.ColorBlendType;
+			mat->FalloffParam.BeginColor = FLinearColor(param.FalloffParam.BeginColor[0], param.FalloffParam.BeginColor[1], param.FalloffParam.BeginColor[2], param.FalloffParam.BeginColor[3]);
+			mat->FalloffParam.EndColor = FLinearColor(param.FalloffParam.EndColor[0], param.FalloffParam.EndColor[1], param.FalloffParam.EndColor[2], param.FalloffParam.EndColor[3]);
+			mat->FalloffParam.Pow = param.FalloffParam.Pow;
 #endif
 			mat->IsDepthTestDisabled = !param.ZTest;
 			mat->AlphaBlend = (EEffekseerAlphaBlendType)param.AlphaBlend;

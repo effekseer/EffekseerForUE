@@ -3205,6 +3205,26 @@ struct ModelRendererPixelConstantBuffer
 			};
 		};
 	} ModelBlendTextureParameter;
+
+	float CameraFrontDirection[4];
+
+	struct
+	{
+		union {
+			float Buffer[4];
+
+			struct
+			{
+				float Enable;
+				float ColorBlendType;
+				float Pow;
+			};
+		};
+
+		float BeginColor[4];
+		float EndColor[4];
+
+	} FalloffParameter;
 #endif
 };
 
@@ -4095,6 +4115,18 @@ public:
 				pcb->ModelUVDistortionParameter.BlendIntensity = param.BasicParameterPtr->BlendUVDistortionIntensity;
 
 				pcb->ModelBlendTextureParameter.BlendType = param.BasicParameterPtr->TextureBlendType;
+
+				::Effekseer::Vector3D CameraFront = renderer->GetCameraFrontDirection();
+				pcb->CameraFrontDirection[0] = -CameraFront.X;
+				pcb->CameraFrontDirection[1] = -CameraFront.Y;
+				pcb->CameraFrontDirection[2] = -CameraFront.Z;
+				pcb->CameraFrontDirection[3] = 0.0f;
+
+				pcb->FalloffParameter.Enable = static_cast<float>(param.EnableFalloff);
+				pcb->FalloffParameter.ColorBlendType = static_cast<float>(param.FalloffParam.ColorBlendType);
+				pcb->FalloffParameter.Pow = static_cast<float>(param.FalloffParam.Pow);
+				ColorToFloat4(param.FalloffParam.BeginColor, pcb->FalloffParameter.BeginColor);
+				ColorToFloat4(param.FalloffParam.EndColor, pcb->FalloffParameter.EndColor);
 #endif
 			}
 		}
