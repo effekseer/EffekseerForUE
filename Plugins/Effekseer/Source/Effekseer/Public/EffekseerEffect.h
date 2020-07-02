@@ -108,6 +108,9 @@ public:
 		UPROPERTY()
 		int32			Pow = 1;
 	} FalloffParam;
+
+	UPROPERTY()
+	int32			EmissiveScaling = 1;
 //#endif
 
 	UPROPERTY()

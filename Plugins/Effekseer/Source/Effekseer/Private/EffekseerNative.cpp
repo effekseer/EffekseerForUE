@@ -6996,6 +6996,8 @@ struct ParameterRendererCommon
 	TextureWrapType Wrap7Type = TextureWrapType::Repeat;
 
 	float BlendUVDistortionIntensity = 1.0f;
+
+	int32_t EmissiveScaling = 1;
 #endif
 
 	bool ZWrite = false;
@@ -7179,6 +7181,12 @@ struct ParameterRendererCommon
 
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 			Distortion = MaterialType == RendererMaterialType::BackDistortion;
+
+			if (MaterialType == RendererMaterialType::Default || MaterialType == RendererMaterialType::Lighting)
+			{
+				memcpy(&EmissiveScaling, pos, sizeof(int));
+				pos += sizeof(int);
+			}
 #endif
 
 			if (MaterialType == RendererMaterialType::Default || MaterialType == RendererMaterialType::BackDistortion ||
@@ -7605,6 +7613,8 @@ struct ParameterRendererCommon
 		{
 			BasicParameter.EnableInterpolation = false;
 		}
+
+		BasicParameter.EmissiveScaling = EmissiveScaling;
 #endif
 
 		if (BasicParameter.MaterialType == RendererMaterialType::File)
@@ -12194,6 +12204,8 @@ EffectBasicRenderParameter EffectNodeImplemented::GetBasicRenderParameter()
 	{
 		param.EnableFalloff = false;
 	}
+
+	param.EmissiveScaling = RendererCommon.EmissiveScaling;
 
 #endif
 	param.AlphaBlend = RendererCommon.AlphaBlend;
