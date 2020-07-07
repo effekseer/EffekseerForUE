@@ -627,6 +627,10 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 			mat->FalloffParam.Pow = param.FalloffParam.Pow;
 
 			mat->EmissiveScaling = param.EmissiveScaling;
+
+			mat->EdgeParams.Color = FLinearColor(param.EdgeParam.Color[0], param.EdgeParam.Color[1], param.EdgeParam.Color[2], param.EdgeParam.Color[3]);
+			mat->EdgeParams.Threshold = param.EdgeParam.Threshold;
+			mat->EdgeParams.ColorScaling = param.EdgeParam.ColorScaling;
 #endif
 			mat->IsDepthTestDisabled = !param.ZTest;
 			mat->AlphaBlend = (EEffekseerAlphaBlendType)param.AlphaBlend;

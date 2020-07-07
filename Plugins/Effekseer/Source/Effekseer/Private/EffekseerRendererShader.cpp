@@ -17,7 +17,7 @@ namespace EffekseerRendererUE4
 		, type_(type)
 	{
 		vertexConstantBuffer.resize(sizeof(::Effekseer::Matrix44) * 4);
-		pixelConstantBuffer.resize(sizeof(float) * 4 * 5);
+		pixelConstantBuffer.resize(sizeof(float) * 4 * 9);
 	}
 
 	Shader::~Shader()

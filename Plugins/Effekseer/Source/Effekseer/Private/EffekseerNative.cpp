@@ -6166,6 +6166,371 @@ FileWriter* DefaultFileInterface::OpenWrite(const EFK_CHAR* path)
   //
   //----------------------------------------------------------------------------------
 
+
+
+namespace Effekseer
+{
+
+/**
+	TODO
+	Implement rotation
+	Check falloff specification
+*/
+
+struct ForceFieldCommonParameter
+{
+	Vec3f Position;
+	Vec3f PreviousVelocity;
+	Vec3f PreviousSumVelocity;
+	Vec3f FieldCenter;
+	Mat44f FieldRotation;
+	bool IsFieldRotated = false;
+};
+
+struct ForceFieldFalloffCommonParameter
+{
+	float Power = 0.0f;
+	float MinDistance = 0.0f;
+	float MaxDistance = 0.0f;
+};
+
+struct ForceFieldFalloffSphereParameter
+{
+};
+
+struct ForceFieldFalloffTubeParameter
+{
+	float RadiusPower = 0.0f;
+	float MinRadius = 0.0f;
+	float MaxRadius = 0.0f;
+};
+
+struct ForceFieldFalloffConeParameter
+{
+	float AnglePower = 0.0f;
+	float MinAngle = 0.0f;
+	float MaxAngle = 0.0f;
+};
+
+struct ForceFieldForceParameter
+{
+	// Shape
+	float Power;
+	bool Gravitation;
+};
+
+struct ForceFieldWindParameter
+{
+	// Shape
+	float Power;
+};
+
+struct ForceFieldVortexParameter
+{
+	// Shape
+	float Power;
+};
+
+struct ForceFieldMagineticParameter
+{
+	// Shape
+	float Power;
+};
+
+struct ForceFieldTurbulenceParameter
+{
+	float Power;
+	CurlNoise Noise;
+
+	ForceFieldTurbulenceParameter(int32_t seed, float scale, float strength, int octave);
+};
+
+struct ForceFieldDragParameter
+{
+	float Power;
+};
+
+class ForceFieldFalloff
+{
+public:
+	//! Sphare
+	float GetPower(float power,
+				   const ForceFieldCommonParameter& ffc,
+				   const ForceFieldFalloffCommonParameter& fffc,
+				   const ForceFieldFalloffSphereParameter& fffs)
+	{
+		auto localPos = ffc.Position - ffc.FieldCenter;
+		auto distance = localPos.GetLength();
+		if (distance > fffc.MaxDistance)
+		{
+			return 0.0f;
+		}
+
+		if (distance < fffc.MinDistance)
+		{
+			return 0.0f;
+		}
+
+		return power / powf(distance - fffc.MinDistance, fffc.Power);
+	}
+
+	//! Tube
+	float GetPower(float power,
+				   const ForceFieldCommonParameter& ffc,
+				   const ForceFieldFalloffCommonParameter& fffc,
+				   const ForceFieldFalloffTubeParameter& ffft)
+	{
+		// Sphere
+		auto localPos = ffc.Position - ffc.FieldCenter;
+		auto distance = localPos.GetLength();
+		if (distance > fffc.MaxDistance)
+		{
+			return 0.0f;
+		}
+
+		if (distance < fffc.MinDistance)
+		{
+			return 0.0f;
+		}
+
+		// Tube
+		auto tubePos = localPos;
+		tubePos.SetY(0);
+
+		auto tubeRadius = tubePos.GetLength();
+
+		if (tubeRadius > ffft.MaxRadius)
+		{
+			return 0.0f;
+		}
+
+		if (tubeRadius < ffft.MinRadius)
+		{
+			return 0.0f;
+		}
+
+		return power / powf(distance, fffc.Power) / powf(tubeRadius - ffft.MinRadius, ffft.RadiusPower);
+	}
+
+	float GetPower(float power,
+				   const ForceFieldCommonParameter& ffc,
+				   const ForceFieldFalloffCommonParameter& fffc,
+				   const ForceFieldFalloffConeParameter& ffft)
+	{
+		auto localPos = ffc.Position - ffc.FieldCenter;
+		auto distance = localPos.GetLength();
+		if (distance > fffc.MaxDistance)
+		{
+			return 0.0f;
+		}
+
+		if (distance < fffc.MinDistance)
+		{
+			return 0.0f;
+		}
+
+		auto tubePos = localPos;
+		tubePos.SetY(0);
+
+		auto tubeRadius = tubePos.GetLength();
+
+		auto angle = fabs(PI / 2.0f - atan2(localPos.GetY(), tubeRadius));
+
+		if (angle > ffft.MaxAngle)
+		{
+			return 0.0f;
+		}
+
+		if (angle < ffft.MinAngle)
+		{
+			return 0.0f;
+		}
+
+		const auto e = 0.000001f;
+		return power / powf(distance, fffc.Power) / powf((angle - ffft.MinAngle) / (ffft.MaxAngle - ffft.MinAngle + e), ffft.AnglePower);
+	}
+};
+
+class ForceField
+{
+public:
+	/**
+		@brief	Force
+	*/
+	Vec3f GetAcceleration(const ForceFieldCommonParameter& ffc, const ForceFieldForceParameter& ffp)
+	{
+		float eps = 0.0000001f;
+		auto localPos = ffc.Position - ffc.FieldCenter;
+		auto distance = localPos.GetLength() + eps;
+		auto dir = localPos / distance;
+
+		if (ffp.Gravitation)
+		{
+			return dir * ffp.Power / distance;
+		}
+
+		return dir * ffp.Power;
+	}
+
+	/**
+		@brief	Wind
+	*/
+	Vec3f GetAcceleration(const ForceFieldCommonParameter& ffc, const ForceFieldWindParameter& ffp)
+	{
+		auto dir = Vec3f(0, 1, 0);
+		return dir * ffp.Power;
+	}
+
+	/**
+		@brief	Vortex
+	*/
+	Vec3f GetAcceleration(const ForceFieldCommonParameter& ffc, const ForceFieldVortexParameter& ffp)
+	{
+		float eps = 0.0000001f;
+		auto localPos = ffc.Position - ffc.FieldCenter;
+		localPos.SetY(0.0f);
+		auto distance = localPos.GetLength();
+
+		if (distance < eps)
+			return Vec3f(0.0f, 0.0f, 0.0f);
+		if (abs(ffp.Power) < eps)
+			return Vec3f(0.0f, 0.0f, 0.0f);
+
+		localPos /= distance;
+
+		auto axis = Vec3f(0, 1, 0);
+		Vec3f front = Vec3f::Cross(axis, localPos);
+
+		auto direction = 1.0f;
+		if (ffp.Power < 0)
+			direction = -1.0f;
+
+		auto xlen = ffp.Power / distance * (ffp.Power / 2.0f);
+		auto flen = sqrt(ffp.Power * ffp.Power - xlen * xlen);
+		return (front * flen - localPos * xlen) * direction - ffc.PreviousVelocity;
+	}
+
+	/**
+		@brief	Maginetic
+	*/
+	Vec3f GetAcceleration(const ForceFieldCommonParameter& ffc, const ForceFieldMagineticParameter& ffp)
+	{
+		float eps = 0.0000001f;
+		auto localPos = ffc.Position - ffc.FieldCenter;
+		auto distance = localPos.GetLength() + eps;
+		auto dir = localPos / distance;
+
+		auto forceDir = Vec3f::Cross(ffc.PreviousSumVelocity, dir);
+
+		if (forceDir.GetSquaredLength() < 0.01f)
+			return Vec3f(0.0f, 0.0f, 0.0f);
+
+		return forceDir * ffp.Power;
+	}
+
+	/**
+		@brief	Turbulence
+	*/
+	Vec3f GetAcceleration(const ForceFieldCommonParameter& ffc, const ForceFieldTurbulenceParameter& ffp)
+	{
+		auto localPos = ffc.Position - ffc.FieldCenter;
+		auto vel = ffp.Noise.Get(localPos) * ffp.Power;
+		auto acc = vel - ffc.PreviousVelocity;
+		return acc;
+	}
+
+	/**
+		@brief	Drag
+	*/
+	Vec3f GetAcceleration(const ForceFieldCommonParameter& ffc, const ForceFieldDragParameter& ffp)
+	{
+		return -ffc.PreviousSumVelocity * ffp.Power;
+	}
+};
+
+enum class LocalForceFieldFalloffType : int32_t
+{
+	None = 0,
+	Sphere = 1,
+	Tube = 2,
+	Cone = 3,
+};
+
+enum class LocalForceFieldType : int32_t
+{
+	None = 0,
+	Force = 2,
+	Wind = 3,
+	Vortex = 4,
+	Maginetic = 5,
+	Turbulence = 1,
+	Drag = 7,
+};
+
+struct LocalForceFieldTurbulenceParameterOld
+{
+	float Strength = 0.1f;
+	CurlNoise Noise;
+
+	LocalForceFieldTurbulenceParameterOld(int32_t seed, float scale, float strength, int octave);
+};
+
+//! TODO Replace
+struct LocalForceFieldParameterOld
+{
+	std::unique_ptr<LocalForceFieldTurbulenceParameterOld> Turbulence;
+
+	bool Load(uint8_t*& pos, int32_t version);
+};
+
+struct LocalForceFieldElementParameter
+{
+	Vector3D Position;
+	Mat44f Rotation;
+	Mat44f InvRotation;
+	bool IsRotated;
+
+	std::unique_ptr<ForceFieldForceParameter> Force;
+	std::unique_ptr<ForceFieldWindParameter> Wind;
+	std::unique_ptr<ForceFieldVortexParameter> Vortex;
+	std::unique_ptr<ForceFieldMagineticParameter> Maginetic;
+	std::unique_ptr<ForceFieldTurbulenceParameter> Turbulence;
+	std::unique_ptr<ForceFieldDragParameter> Drag;
+
+	std::unique_ptr<ForceFieldFalloffCommonParameter> FalloffCommon;
+	std::unique_ptr<ForceFieldFalloffSphereParameter> FalloffSphere;
+	std::unique_ptr<ForceFieldFalloffTubeParameter> FalloffTube;
+	std::unique_ptr<ForceFieldFalloffConeParameter> FalloffCone;
+
+	bool HasValue = false;
+
+	bool Load(uint8_t*& pos, int32_t version);
+};
+
+struct LocalForceFieldParameter
+{
+	std::array<LocalForceFieldElementParameter, LocalFieldSlotMax> LocalForceFields;
+
+	bool HasValue = false;
+
+	bool Load(uint8_t*& pos, int32_t version);
+};
+
+struct LocalForceFieldInstance
+{
+	std::array<Vec3f, LocalFieldSlotMax> Velocities;
+
+	Vec3f VelocitySum;
+	Vec3f ModifyLocation;
+
+	void Update(const LocalForceFieldParameter& parameter, const Vec3f& location, float magnification);
+
+	void Reset();
+};
+
+} // namespace Effekseer
+
+
 #ifndef __EFFEKSEER_FCURVES_H__
 #define __EFFEKSEER_FCURVES_H__
 
@@ -6327,7 +6692,8 @@ public:
 		Parameter_DWORD = 0x7fffffff,
 	} type;
 
-	union {
+	union
+	{
 		struct
 		{
 			Color all;
@@ -6505,27 +6871,6 @@ struct ParameterTranslationEasing
 //
 //----------------------------------------------------------------------------------
 
-enum class LocalForceFieldType : int32_t
-{
-	None = 0,
-	Turbulence = 1,
-};
-
-struct LocalForceFieldTurbulenceParameter
-{
-	float Strength = 0.1f;
-	CurlNoise Noise;
-
-	LocalForceFieldTurbulenceParameter(int32_t seed, float scale, float strength, int octave);
-};
-
-struct LocalForceFieldParameter
-{
-	std::unique_ptr<LocalForceFieldTurbulenceParameter> Turbulence;
-
-	bool Load(uint8_t*& pos, int32_t version);
-};
-
 enum class LocationAbsType : int32_t
 {
 	None = 0,
@@ -6537,7 +6882,8 @@ struct LocationAbsParameter
 {
 	LocationAbsType type = LocationAbsType::None;
 
-	union {
+	union
+	{
 		struct
 		{
 
@@ -6729,7 +7075,8 @@ struct ParameterGenerationLocation
 		Order = 1,
 	};
 
-	union {
+	union
+	{
 		struct
 		{
 			random_vector3d location;
@@ -6857,7 +7204,8 @@ struct ParameterCustomData
 {
 	ParameterCustomDataType Type = ParameterCustomDataType::None;
 
-	union {
+	union
+	{
 		ParameterCustomDataFixed Fixed;
 		ParameterCustomDataRandom Random;
 		ParameterCustomDataEasing Easing;
@@ -7071,7 +7419,8 @@ struct ParameterRendererCommon
 		vector2d Speed;
 	};
 
-	union {
+	union
+	{
 		struct
 		{
 		} Default;
@@ -7635,7 +7984,7 @@ struct ParameterRendererCommon
 };
 
 #ifdef __EFFEKSEER_BUILD_VERSION16__
-struct ParameterAlphaCrunch
+struct ParameterAlphaCutoff
 {
 	enum EType : int32_t
 	{
@@ -7647,7 +7996,8 @@ struct ParameterAlphaCrunch
 		FPI = FOUR_POINT_INTERPOLATION,
 	} Type;
 
-	union {
+	union
+	{
 		struct
 		{
 			int32_t RefEq;
@@ -7677,17 +8027,21 @@ struct ParameterAlphaCrunch
 		} FCurve;
 	};
 
+	float EdgeThreshold;
+	Color EdgeColor;
+	int32_t EdgeColorScaling;
+
 #pragma warning(push)
 #pragma warning(disable : 4582)
-	ParameterAlphaCrunch()
+	ParameterAlphaCutoff()
 	{
-		Type = ParameterAlphaCrunch::EType::FIXED;
+		Type = ParameterAlphaCutoff::EType::FIXED;
 		Fixed.RefEq = -1;
 		Fixed.Threshold = 0;
 	}
 #pragma warning(pop)
 
-	~ParameterAlphaCrunch()
+	~ParameterAlphaCutoff()
 	{
 		if (Type == EType::F_CURVE)
 		{
@@ -7706,22 +8060,31 @@ struct ParameterAlphaCrunch
 
 		switch (Type)
 		{
-		case Effekseer::ParameterAlphaCrunch::EType::FIXED:
+		case Effekseer::ParameterAlphaCutoff::EType::FIXED:
 			memcpy(&Fixed, pos, BufferSize);
 			break;
-		case Effekseer::ParameterAlphaCrunch::EType::FPI:
+		case Effekseer::ParameterAlphaCutoff::EType::FPI:
 			memcpy(&FourPointInterpolation, pos, BufferSize);
 			break;
-		case Effekseer::ParameterAlphaCrunch::EType::EASING:
+		case Effekseer::ParameterAlphaCutoff::EType::EASING:
 			memcpy(&Easing, pos, BufferSize);
 			break;
-		case Effekseer::ParameterAlphaCrunch::EType::F_CURVE:
+		case Effekseer::ParameterAlphaCutoff::EType::F_CURVE:
 			FCurve.Threshold = new FCurveScalar();
 			FCurve.Threshold->Load(pos, version);
 			break;
 		}
 
 		pos += BufferSize;
+
+		memcpy(&EdgeThreshold, pos, sizeof(int32_t));
+		pos += sizeof(int32_t);
+
+		memcpy(&EdgeColor, pos, sizeof(Color));
+		pos += sizeof(int32_t);
+
+		memcpy(&EdgeColorScaling, pos, sizeof(int32_t));
+		pos += sizeof(int32_t);
 	}
 };
 #endif
@@ -7856,7 +8219,11 @@ public:
 	ParameterTranslationEasing TranslationEasing;
 	FCurveVector3D* TranslationFCurve;
 
-	std::array<LocalForceFieldParameter, LocalFieldSlotMax> LocalForceFields;
+#ifdef OLD_LF
+	std::array<LocalForceFieldParameterOld, LocalFieldSlotMax> LocalForceFieldsOld;
+#else
+	LocalForceFieldParameter LocalForceField;
+#endif
 	LocationAbsParameter LocationAbs;
 
 	ParameterRotationType RotationType;
@@ -7883,7 +8250,7 @@ public:
 	ParameterRendererCommon RendererCommon;
 
 #ifdef __EFFEKSEER_BUILD_VERSION16__
-	ParameterAlphaCrunch AlphaCrunch;
+	ParameterAlphaCutoff AlphaCutoff;
 #endif
 
 	ParameterSoundType SoundType;
@@ -10264,7 +10631,8 @@ namespace Effekseer
 
 struct InstanceCustomData
 {
-	union {
+	union
+	{
 		struct
 		{
 			Vec2f start;
@@ -10335,16 +10703,20 @@ public:
 	Vec3f m_GlobalRevisionLocation;
 	Vec3f m_GlobalRevisionVelocity;
 
+#ifdef OLD_LF
 	//! for noise
 	Vec3f modifyWithNoise_;
-
+#else
+	LocalForceFieldInstance localForceField_;
+#endif
 	// Color for binding
 	Color ColorInheritance;
 
 	// Parent color
 	Color ColorParent;
 
-	union {
+	union
+	{
 		struct
 		{
 			Vec3f location;
@@ -10370,7 +10742,8 @@ public:
 
 	} translation_values;
 
-	union {
+	union
+	{
 		struct
 		{
 			Vec3f rotation;
@@ -10394,7 +10767,8 @@ public:
 			float rotation;
 			Vec3f axis;
 
-			union {
+			union
+			{
 				struct
 				{
 					float rotation;
@@ -10417,7 +10791,8 @@ public:
 
 	} rotation_values;
 
-	union {
+	union
+	{
 		struct
 		{
 			Vec3f scale;
@@ -10457,7 +10832,8 @@ public:
 	} scaling_values;
 
 	// 描画
-	union {
+	union
+	{
 		EffectNodeSprite::InstanceValues sprite;
 		EffectNodeRibbon::InstanceValues ribbon;
 		EffectNodeRing::InstanceValues ring;
@@ -10466,7 +10842,8 @@ public:
 	} rendererValues;
 
 	// 音
-	union {
+	union
+	{
 		int32_t delay;
 	} soundValues;
 
@@ -10555,7 +10932,8 @@ public:
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 	float m_flipbookIndexAndNextRate;
 
-	union {
+	union
+	{
 		struct
 		{
 		} fixed;
@@ -10581,7 +10959,7 @@ public:
 			float offset;
 		} fcurve;
 
-	} alpha_crunch_values;
+	} alpha_cutoff_values;
 
 	float m_AlphaThreshold;
 #endif
@@ -11334,44 +11712,6 @@ std::array<float, 4> FCurveVectorColor::GetOffsets(IRandObject& gl) const
 namespace Effekseer
 {
 
-LocalForceFieldTurbulenceParameter::LocalForceFieldTurbulenceParameter(int32_t seed, float scale, float strength, int octave)
-	: Noise(seed)
-{
-	Noise.Octave = octave;
-	Noise.Scale = scale;
-	Strength = strength;
-}
-
-bool LocalForceFieldParameter::Load(uint8_t*& pos, int32_t version)
-{
-	auto br = BinaryReader<false>(pos, std::numeric_limits<int>::max());
-
-	LocalForceFieldType type{};
-	br.Read(type);
-
-	if (type == LocalForceFieldType::Turbulence)
-	{
-		int32_t seed{};
-		float scale{};
-		float strength{};
-		int octave{};
-
-		br.Read(seed);
-		br.Read(scale);
-		br.Read(strength);
-		br.Read(octave);
-
-		scale = 1.0f / scale;
-
-		Turbulence =
-			std::unique_ptr<LocalForceFieldTurbulenceParameter>(new LocalForceFieldTurbulenceParameter(seed, scale, strength, octave));
-	}
-
-	pos += br.GetOffset();
-
-	return true;
-}
-
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
@@ -11590,14 +11930,18 @@ void EffectNodeImplemented::LoadParameter(unsigned char*& pos, EffectNode* paren
 		// Local force field
 		if (ef->GetVersion() >= 1500)
 		{
+#ifdef OLD_LF
 			int32_t count = 0;
 			memcpy(&count, pos, sizeof(int));
 			pos += sizeof(int);
 
 			for (int32_t i = 0; i < count; i++)
 			{
-				LocalForceFields[i].Load(pos, ef->GetVersion());
+				LocalForceFieldsOld[i].Load(pos, ef->GetVersion());
 			}
+#else
+			LocalForceField.Load(pos, ef->GetVersion());
+#endif
 		}
 
 		memcpy(&LocationAbs.type, pos, sizeof(int));
@@ -12023,7 +12367,13 @@ void EffectNodeImplemented::LoadParameter(unsigned char*& pos, EffectNode* paren
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 		if (m_effect->GetVersion() >= 1600)
 		{
-			AlphaCrunch.load(pos, m_effect->GetVersion());
+			AlphaCutoff.load(pos, m_effect->GetVersion());
+			RendererCommon.BasicParameter.EdgeThreshold = AlphaCutoff.EdgeThreshold;
+			RendererCommon.BasicParameter.EdgeColor[0] = AlphaCutoff.EdgeColor.R;
+			RendererCommon.BasicParameter.EdgeColor[1] = AlphaCutoff.EdgeColor.G;
+			RendererCommon.BasicParameter.EdgeColor[2] = AlphaCutoff.EdgeColor.B;
+			RendererCommon.BasicParameter.EdgeColor[3] = AlphaCutoff.EdgeColor.A;
+			RendererCommon.BasicParameter.EdgeColorScaling = AlphaCutoff.EdgeColorScaling;
 		}
 #endif
 
@@ -12206,6 +12556,13 @@ EffectBasicRenderParameter EffectNodeImplemented::GetBasicRenderParameter()
 	}
 
 	param.EmissiveScaling = RendererCommon.EmissiveScaling;
+
+	param.EdgeParam.Color[0] = static_cast<float>(AlphaCutoff.EdgeColor.R) / 255.0f;
+	param.EdgeParam.Color[1] = static_cast<float>(AlphaCutoff.EdgeColor.G) / 255.0f;
+	param.EdgeParam.Color[2] = static_cast<float>(AlphaCutoff.EdgeColor.B) / 255.0f;
+	param.EdgeParam.Color[3] = static_cast<float>(AlphaCutoff.EdgeColor.A) / 255.0f;
+	param.EdgeParam.Threshold = AlphaCutoff.EdgeThreshold;
+	param.EdgeParam.ColorScaling = AlphaCutoff.EdgeColorScaling;
 
 #endif
 	param.AlphaBlend = RendererCommon.AlphaBlend;
@@ -16416,7 +16773,7 @@ void ManagerImplemented::GCDrawSet(bool isRemovingManager)
 			ES_SAFE_RELEASE(drawset.ParameterPointer);
 			ES_SAFE_DELETE(drawset.GlobalPointer);
 
-			if (m_cullingWorld != NULL)
+			if (m_cullingWorld != NULL && drawset.CullingObjectPointer != nullptr)
 			{
 				m_cullingWorld->RemoveObject(drawset.CullingObjectPointer);
 				Culling3D::SafeRelease(drawset.CullingObjectPointer);
@@ -16483,7 +16840,14 @@ InstanceContainer* ManagerImplemented::CreateInstanceContainer(
 
 	for (int i = 0; i < pEffectNode->GetChildrenCount(); i++)
 	{
-		pContainer->AddChild(CreateInstanceContainer(pEffectNode->GetChild(i), pGlobal, false, Matrix43(), nullptr));
+		auto child = CreateInstanceContainer(pEffectNode->GetChild(i), pGlobal, false, Matrix43(), nullptr);
+		if (child == nullptr)
+		{
+			ReleaseInstanceContainer(pContainer);
+			return nullptr;
+		}
+
+		pContainer->AddChild(child);
 	}
 
 	if (isRoot)
@@ -18666,6 +19030,8 @@ void InstanceContainer::AddChild(InstanceContainer* pContainter)
 
 InstanceContainer* InstanceContainer::GetChild(int index)
 {
+	assert(index < static_cast<int32_t>(m_Children.size()));
+
 	auto it = m_Children.begin();
 	for (int i = 0; i < index; i++)
 	{
@@ -19388,7 +19754,11 @@ void Instance::FirstUpdate()
 	m_GlobalPosition = parentMatrix.GetTranslation();
 	m_GlobalRevisionLocation = Vec3f(0.0f, 0.0f, 0.0f);
 	m_GlobalRevisionVelocity = Vec3f(0.0f, 0.0f, 0.0f);
+#ifdef OLD_LF
 	modifyWithNoise_ = Vec3f(0.0f, 0.0f, 0.0f);
+#else
+	localForceField_.Reset();
+#endif
 	m_GenerationLocation = Mat43f::Identity;
 
 	// 親の初期化
@@ -19892,40 +20262,40 @@ void Instance::FirstUpdate()
 		}
 	}
 
-	// Alpha Crunch
-	if (m_pEffectNode->AlphaCrunch.Type == ParameterAlphaCrunch::EType::FIXED)
+	// Alpha Cutoff
+	if (m_pEffectNode->AlphaCutoff.Type == ParameterAlphaCutoff::EType::FIXED)
 	{
-		if (m_pEffectNode->AlphaCrunch.Fixed.RefEq < 0)
+		if (m_pEffectNode->AlphaCutoff.Fixed.RefEq < 0)
 		{
-			m_AlphaThreshold = m_pEffectNode->AlphaCrunch.Fixed.Threshold;
+			m_AlphaThreshold = m_pEffectNode->AlphaCutoff.Fixed.Threshold;
 		}
 	}
-	else if (m_pEffectNode->AlphaCrunch.Type == ParameterAlphaCrunch::EType::FPI)
+	else if (m_pEffectNode->AlphaCutoff.Type == ParameterAlphaCutoff::EType::FPI)
 	{
-		auto& fpiValue = alpha_crunch_values.four_point_interpolation;
-		auto& nodeAlphaCrunchValue = m_pEffectNode->AlphaCrunch.FourPointInterpolation;
+		auto& fpiValue = alpha_cutoff_values.four_point_interpolation;
+		auto& nodeAlphaCutoffValue = m_pEffectNode->AlphaCutoff.FourPointInterpolation;
 
-		fpiValue.begin_threshold = nodeAlphaCrunchValue.BeginThreshold.getValue(rand);
-		fpiValue.transition_frame = nodeAlphaCrunchValue.TransitionFrameNum.getValue(rand);
-		fpiValue.no2_threshold = nodeAlphaCrunchValue.No2Threshold.getValue(rand);
-		fpiValue.no3_threshold = nodeAlphaCrunchValue.No3Threshold.getValue(rand);
-		fpiValue.transition_frame2 = nodeAlphaCrunchValue.TransitionFrameNum2.getValue(rand);
-		fpiValue.end_threshold = nodeAlphaCrunchValue.EndThreshold.getValue(rand);
+		fpiValue.begin_threshold = nodeAlphaCutoffValue.BeginThreshold.getValue(rand);
+		fpiValue.transition_frame = nodeAlphaCutoffValue.TransitionFrameNum.getValue(rand);
+		fpiValue.no2_threshold = nodeAlphaCutoffValue.No2Threshold.getValue(rand);
+		fpiValue.no3_threshold = nodeAlphaCutoffValue.No3Threshold.getValue(rand);
+		fpiValue.transition_frame2 = nodeAlphaCutoffValue.TransitionFrameNum2.getValue(rand);
+		fpiValue.end_threshold = nodeAlphaCutoffValue.EndThreshold.getValue(rand);
 	}
-	else if (m_pEffectNode->AlphaCrunch.Type == ParameterAlphaCrunch::EType::EASING)
+	else if (m_pEffectNode->AlphaCutoff.Type == ParameterAlphaCutoff::EType::EASING)
 	{
-		auto& easingValue = alpha_crunch_values.easing;
-		auto& nodeAlphaCrunchValue = m_pEffectNode->AlphaCrunch.Easing;
+		auto& easingValue = alpha_cutoff_values.easing;
+		auto& nodeAlphaCutoffValue = m_pEffectNode->AlphaCutoff.Easing;
 
-		easingValue.start = nodeAlphaCrunchValue.Threshold.start.getValue(rand);
-		easingValue.end = nodeAlphaCrunchValue.Threshold.end.getValue(rand);
+		easingValue.start = nodeAlphaCutoffValue.Threshold.start.getValue(rand);
+		easingValue.end = nodeAlphaCutoffValue.Threshold.end.getValue(rand);
 	}
-	else if (m_pEffectNode->AlphaCrunch.Type == ParameterAlphaCrunch::EType::F_CURVE)
+	else if (m_pEffectNode->AlphaCutoff.Type == ParameterAlphaCutoff::EType::F_CURVE)
 	{
-		auto& fcurveValue = alpha_crunch_values.fcurve;
-		auto& nodeAlphaCrunchValue = m_pEffectNode->AlphaCrunch.FCurve;
+		auto& fcurveValue = alpha_cutoff_values.fcurve;
+		auto& nodeAlphaCutoffValue = m_pEffectNode->AlphaCutoff.FCurve;
 
-		fcurveValue.offset = nodeAlphaCrunchValue.Threshold->GetOffsets(rand);
+		fcurveValue.offset = nodeAlphaCutoffValue.Threshold->GetOffsets(rand);
 	}
 #else
 	if (m_pEffectNode->RendererCommon.UVType == ParameterRendererCommon::UV_ANIMATION)
@@ -20042,8 +20412,13 @@ void Instance::Update(float deltaFrame, bool shown)
 	{
 		CalculateMatrix(deltaFrame);
 	}
-	else if (m_pEffectNode->LocationAbs.type != LocationAbsType::None || m_pEffectNode->LocalForceFields[0].Turbulence != nullptr ||
-			 m_pEffectNode->LocalForceFields[1].Turbulence != nullptr || m_pEffectNode->LocalForceFields[2].Turbulence != nullptr)
+	else if (m_pEffectNode->LocationAbs.type != LocationAbsType::None
+#ifdef OLD_LF
+			 || m_pEffectNode->LocalForceFieldsOld[0].Turbulence != nullptr || m_pEffectNode->LocalForceFieldsOld[1].Turbulence != nullptr || m_pEffectNode->LocalForceFieldsOld[2].Turbulence != nullptr
+#else
+			 || m_pEffectNode->LocalForceField.HasValue
+#endif
+	)
 	{
 		// If attraction forces are not default, updating is needed in each frame.
 		CalculateMatrix(deltaFrame);
@@ -20180,25 +20555,25 @@ void Instance::Update(float deltaFrame, bool shown)
 		auto instanceGlobal = this->m_pContainer->GetRootInstance();
 		auto& rand = m_randObject;
 
-		if (m_pEffectNode->AlphaCrunch.Type == ParameterAlphaCrunch::EType::FIXED)
+		if (m_pEffectNode->AlphaCutoff.Type == ParameterAlphaCutoff::EType::FIXED)
 		{
-			if (m_pEffectNode->AlphaCrunch.Fixed.RefEq >= 0)
+			if (m_pEffectNode->AlphaCutoff.Fixed.RefEq >= 0)
 			{
-				auto alphaThreshold = static_cast<float>(m_pEffectNode->AlphaCrunch.Fixed.Threshold);
+				auto alphaThreshold = static_cast<float>(m_pEffectNode->AlphaCutoff.Fixed.Threshold);
 				ApplyEq(alphaThreshold,
 						effect,
 						instanceGlobal,
 						&rand,
-						m_pEffectNode->AlphaCrunch.Fixed.RefEq,
+						m_pEffectNode->AlphaCutoff.Fixed.RefEq,
 						alphaThreshold);
 
 				m_AlphaThreshold = alphaThreshold;
 			}
 		}
-		else if (m_pEffectNode->AlphaCrunch.Type == ParameterAlphaCrunch::EType::FPI)
+		else if (m_pEffectNode->AlphaCutoff.Type == ParameterAlphaCutoff::EType::FPI)
 		{
 			float t = m_LivingTime / m_LivedTime;
-			auto val = alpha_crunch_values.four_point_interpolation;
+			auto val = alpha_cutoff_values.four_point_interpolation;
 
 			float p[4][2] = {0.0f,
 							 val.begin_threshold,
@@ -20219,15 +20594,15 @@ void Instance::Update(float deltaFrame, bool shown)
 				}
 			}
 		}
-		else if (m_pEffectNode->AlphaCrunch.Type == ParameterAlphaCrunch::EType::EASING)
+		else if (m_pEffectNode->AlphaCutoff.Type == ParameterAlphaCutoff::EType::EASING)
 		{
-			m_AlphaThreshold = m_pEffectNode->AlphaCrunch.Easing.Threshold.getValue(
-				alpha_crunch_values.easing.start, alpha_crunch_values.easing.end, m_LivingTime / m_LivedTime);
+			m_AlphaThreshold = m_pEffectNode->AlphaCutoff.Easing.Threshold.getValue(
+				alpha_cutoff_values.easing.start, alpha_cutoff_values.easing.end, m_LivingTime / m_LivedTime);
 		}
-		else if (m_pEffectNode->AlphaCrunch.Type == ParameterAlphaCrunch::EType::F_CURVE)
+		else if (m_pEffectNode->AlphaCutoff.Type == ParameterAlphaCutoff::EType::F_CURVE)
 		{
-			auto fcurve = m_pEffectNode->AlphaCrunch.FCurve.Threshold->GetValues(m_LivingTime, m_LivedTime);
-			m_AlphaThreshold = fcurve + alpha_crunch_values.fcurve.offset;
+			auto fcurve = m_pEffectNode->AlphaCutoff.FCurve.Threshold->GetValues(m_LivingTime, m_LivedTime);
+			m_AlphaThreshold = fcurve + alpha_cutoff_values.fcurve.offset;
 			m_AlphaThreshold /= 100.0f;
 		}
 	}
@@ -20409,9 +20784,10 @@ void Instance::CalculateMatrix(float deltaFrame)
 			currentLocalPosition = localPosition;
 		}
 
+#ifdef OLD_LF
 		currentLocalPosition += modifyWithNoise_;
 
-		for (const auto& field : m_pEffectNode->LocalForceFields)
+		for (const auto& field : m_pEffectNode->LocalForceFieldsOld)
 		{
 			if (field.Turbulence != nullptr)
 			{
@@ -20419,6 +20795,10 @@ void Instance::CalculateMatrix(float deltaFrame)
 				modifyWithNoise_ += field.Turbulence->Noise.Get(currentLocalPosition / mag) * field.Turbulence->Strength * mag;
 			}
 		}
+#else
+		currentLocalPosition += localForceField_.ModifyLocation;
+		localForceField_.Update(m_pEffectNode->LocalForceField, currentLocalPosition, m_pEffectNode->GetEffect()->GetMaginification());
+#endif
 
 		/* 描画部分の更新 */
 		m_pEffectNode->UpdateRenderedInstance(*this, m_pManager);
@@ -20450,12 +20830,19 @@ void Instance::CalculateMatrix(float deltaFrame)
 
 			m_GlobalMatrix43 *= m_GenerationLocation;
 			assert(m_GlobalMatrix43.IsValid());
-
+#ifdef OLD_LF
 			m_GlobalMatrix43 *= Mat43f::Translation(modifyWithNoise_);
+#else
+			m_GlobalMatrix43 *= Mat43f::Translation(localForceField_.ModifyLocation);
+#endif
 		}
 		else
 		{
+#ifdef OLD_LF
 			localPosition += modifyWithNoise_;
+#else
+			localPosition += localForceField_.ModifyLocation;
+#endif
 
 			m_GlobalMatrix43 = Mat43f::SRT(localScaling, MatRot, localPosition);
 			assert(m_GlobalMatrix43.IsValid());
@@ -21647,6 +22034,337 @@ std::array<float, 4> InternalScript::Execute(const std::array<float, 4>& externa
 	}
 
 	return ret;
+}
+
+} // namespace Effekseer
+
+namespace Effekseer
+{
+
+ForceFieldTurbulenceParameter::ForceFieldTurbulenceParameter(int32_t seed, float scale, float strength, int octave)
+	: Noise(seed)
+{
+	Noise.Octave = octave;
+	Noise.Scale = scale;
+	Power = strength;
+}
+
+LocalForceFieldTurbulenceParameterOld::LocalForceFieldTurbulenceParameterOld(int32_t seed, float scale, float strength, int octave)
+	: Noise(seed)
+{
+	Noise.Octave = octave;
+	Noise.Scale = scale;
+	Strength = strength;
+}
+
+bool LocalForceFieldParameterOld::Load(uint8_t*& pos, int32_t version)
+{
+	auto br = BinaryReader<false>(pos, std::numeric_limits<int>::max());
+
+	LocalForceFieldType type{};
+	br.Read(type);
+
+	if (type == LocalForceFieldType::Turbulence)
+	{
+		int32_t seed{};
+		float scale{};
+		float strength{};
+		int octave{};
+
+		br.Read(seed);
+		br.Read(scale);
+		br.Read(strength);
+		br.Read(octave);
+
+		scale = 1.0f / scale;
+
+		Turbulence = std::unique_ptr<LocalForceFieldTurbulenceParameterOld>(
+			new LocalForceFieldTurbulenceParameterOld(seed, scale, strength, octave));
+	}
+
+	pos += br.GetOffset();
+
+	return true;
+}
+
+bool LocalForceFieldElementParameter::Load(uint8_t*& pos, int32_t version)
+{
+	auto br = BinaryReader<false>(pos, std::numeric_limits<int>::max());
+
+	LocalForceFieldType type{};
+	br.Read(type);
+
+	HasValue = true;
+	float power = 1.0f;
+
+	if (version >= 1600)
+	{
+		br.Read(power);
+
+		br.Read(Position.X);
+		br.Read(Position.Y);
+		br.Read(Position.Z);
+
+		Vector3D rotation;
+		br.Read(rotation.X);
+		br.Read(rotation.Y);
+		br.Read(rotation.Z);
+
+		IsRotated = rotation.X != 0.0f || rotation.Y != 0.0f || rotation.Z != 0.0f;
+
+		if (IsRotated)
+		{
+			Rotation = Mat44f::RotationZXY(rotation.Z, rotation.X, rotation.Y);
+			Matrix44 invMat;
+			InvRotation = Mat44f(Matrix44::Inverse(invMat, ToStruct(Rotation)));
+		}
+	}
+
+	if (type == LocalForceFieldType::Force)
+	{
+		int gravitation = 0;
+		br.Read(gravitation);
+
+		// convert it by frames
+		power /= 60.0f;
+
+		auto ff = new ForceFieldForceParameter();
+		ff->Power = power;
+		ff->Gravitation = gravitation > 0;
+		Force = std::unique_ptr<ForceFieldForceParameter>(ff);
+	}
+	else if (type == LocalForceFieldType::Wind)
+	{
+		// convert it by frames
+		power /= 60.0f;
+
+		auto ff = new ForceFieldWindParameter();
+		ff->Power = power;
+		Wind = std::unique_ptr<ForceFieldWindParameter>(ff);
+	}
+	else if (type == LocalForceFieldType::Vortex)
+	{
+		// convert it by frames
+		power /= 60.0f;
+
+		auto ff = new ForceFieldVortexParameter();
+		ff->Power = power;
+		Vortex = std::unique_ptr<ForceFieldVortexParameter>(ff);
+	}
+	else if (type == LocalForceFieldType::Maginetic)
+	{
+		// convert it by frames
+		power /= 60.0f;
+
+		auto ff = new ForceFieldMagineticParameter();
+		ff->Power = power;
+		Maginetic = std::unique_ptr<ForceFieldMagineticParameter>(ff);
+	}
+	else if (type == LocalForceFieldType::Turbulence)
+	{
+		int32_t seed{};
+		float scale{};
+		float strength{};
+		int octave{};
+
+		br.Read(seed);
+		br.Read(scale);
+		br.Read(strength);
+		br.Read(octave);
+
+		scale = 1.0f / scale;
+
+		Turbulence = std::unique_ptr<ForceFieldTurbulenceParameter>(new ForceFieldTurbulenceParameter(seed, scale, strength, octave));
+	}
+	else if (type == LocalForceFieldType::Drag)
+	{
+		// convert it by frames
+		power /= 60.0f;
+
+		auto ff = new ForceFieldDragParameter();
+		ff->Power = power;
+		Drag = std::unique_ptr<ForceFieldDragParameter>(ff);
+	}
+	else
+	{
+		HasValue = false;
+	}
+
+	if (version >= 1600)
+	{
+		LocalForceFieldFalloffType ffType{};
+		br.Read(ffType);
+
+		if (ffType != LocalForceFieldFalloffType::None)
+		{
+			FalloffCommon = std::make_unique<ForceFieldFalloffCommonParameter>();
+			br.Read(FalloffCommon->Power);
+			br.Read(FalloffCommon->MaxDistance);
+			br.Read(FalloffCommon->MinDistance);
+		}
+
+		if (ffType == LocalForceFieldFalloffType::None)
+		{
+		}
+		else if (ffType == LocalForceFieldFalloffType::Sphere)
+		{
+			FalloffSphere = std::make_unique<ForceFieldFalloffSphereParameter>();
+		}
+		else if (ffType == LocalForceFieldFalloffType::Tube)
+		{
+			FalloffTube = std::make_unique<ForceFieldFalloffTubeParameter>();
+			br.Read(FalloffTube->RadiusPower);
+			br.Read(FalloffTube->MaxRadius);
+			br.Read(FalloffTube->MinRadius);
+		}
+		else if (ffType == LocalForceFieldFalloffType::Cone)
+		{
+			FalloffCone = std::make_unique<ForceFieldFalloffConeParameter>();
+			br.Read(FalloffCone->AnglePower);
+			br.Read(FalloffCone->MaxAngle);
+			br.Read(FalloffCone->MinAngle);
+		}
+		else
+		{
+			assert(0);
+		}
+	}
+	else
+	{
+		IsRotated = false;
+	}
+
+	pos += br.GetOffset();
+
+	return true;
+}
+
+bool LocalForceFieldParameter::Load(uint8_t*& pos, int32_t version)
+{
+	int32_t count = 0;
+	memcpy(&count, pos, sizeof(int));
+	pos += sizeof(int);
+
+	for (int32_t i = 0; i < count; i++)
+	{
+		if (!LocalForceFields[i].Load(pos, version))
+		{
+			return false;
+		}
+	}
+
+	for (auto& ff : LocalForceFields)
+	{
+		if (ff.HasValue)
+		{
+			HasValue = true;
+		}
+	}
+
+	return true;
+}
+
+void LocalForceFieldInstance::Update(const LocalForceFieldParameter& parameter, const Vec3f& location, float magnification)
+{
+	for (size_t i = 0; i < parameter.LocalForceFields.size(); i++)
+	{
+		auto& field = parameter.LocalForceFields[i];
+		if (!field.HasValue)
+		{
+			continue;
+		}
+
+		ForceFieldCommonParameter ffcp;
+		ffcp.FieldCenter = parameter.LocalForceFields[i].Position;
+		ffcp.Position = location / magnification;
+		ffcp.PreviousSumVelocity = VelocitySum;
+		ffcp.PreviousVelocity = Velocities[i];
+		ffcp.IsFieldRotated = field.IsRotated;
+
+		if (field.IsRotated)
+		{
+			ffcp.PreviousSumVelocity = Vec3f::Transform(VelocitySum, field.InvRotation);
+			ffcp.PreviousVelocity = Vec3f::Transform(Velocities[i], field.InvRotation);
+			ffcp.Position = Vec3f::Transform(ffcp.Position, field.InvRotation);
+		}
+
+		ForceField ff;
+
+		Vec3f acc = Vec3f(0, 0, 0);
+		if (field.Force != nullptr)
+		{
+			acc = ff.GetAcceleration(ffcp, *field.Force) * magnification;
+		}
+
+		if (field.Wind != nullptr)
+		{
+			acc = ff.GetAcceleration(ffcp, *field.Wind) * magnification;
+		}
+
+		if (field.Vortex != nullptr)
+		{
+			acc = ff.GetAcceleration(ffcp, *field.Vortex) * magnification;
+		}
+
+		if (field.Maginetic != nullptr)
+		{
+			acc = ff.GetAcceleration(ffcp, *field.Maginetic) * magnification;
+		}
+
+		if (field.Turbulence != nullptr)
+		{
+			acc = ff.GetAcceleration(ffcp, *field.Turbulence) * magnification;
+		}
+
+		if (field.Drag != nullptr)
+		{
+			acc = ff.GetAcceleration(ffcp, *field.Drag) * magnification;
+		}
+
+		float power = 1.0f;
+		if (field.FalloffCommon != nullptr && field.FalloffCone != nullptr)
+		{
+			ForceFieldFalloff fff;
+			power = fff.GetPower(power, ffcp, *field.FalloffCommon, *field.FalloffCone);
+		}
+
+		if (field.FalloffCommon != nullptr && field.FalloffSphere != nullptr)
+		{
+			ForceFieldFalloff fff;
+			power = fff.GetPower(power, ffcp, *field.FalloffCommon, *field.FalloffSphere);
+		}
+
+		if (field.FalloffCommon != nullptr && field.FalloffTube != nullptr)
+		{
+			ForceFieldFalloff fff;
+			power = fff.GetPower(power, ffcp, *field.FalloffCommon, *field.FalloffTube);
+		}
+
+		acc *= power;
+
+		if (field.IsRotated)
+		{
+			acc = Vec3f::Transform(acc, field.Rotation);
+		}
+
+		Velocities[i] += acc;
+	}
+
+	VelocitySum = Vec3f(0, 0, 0);
+
+	for (size_t i = 0; i < parameter.LocalForceFields.size(); i++)
+	{
+		VelocitySum += Velocities[i];
+	}
+
+	ModifyLocation += VelocitySum;
+}
+
+void LocalForceFieldInstance::Reset()
+{
+	Velocities.fill(Vec3f(0, 0, 0));
+	VelocitySum = Vec3f(0, 0, 0);
+	ModifyLocation = Vec3f(0, 0, 0);
 }
 
 } // namespace Effekseer

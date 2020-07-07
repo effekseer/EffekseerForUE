@@ -53,6 +53,8 @@ namespace UnrealBuildTool.Rules
 					// ... add any modules that your module loads dynamically here ...
 				}
 				);
+
+            Definitions.Add("__EFFEKSEER_FOR_UE4__");
 		}
 	}
 }

@@ -151,6 +151,10 @@ const int32_t TextureSlotMax = 8;
 
 const int32_t LocalFieldSlotMax = 4;
 
+#ifndef __EFFEKSEER_FOR_UE4__
+const float PI = 3.141592653589;
+#endif
+
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
@@ -706,6 +710,10 @@ struct NodeRendererBasicParameter
 	int32_t FlipbookDivideY = 1;
 
 	int32_t EmissiveScaling = 1;
+
+	float EdgeThreshold = 0.0f;
+	uint8_t EdgeColor[4] = { 0 };
+	int32_t EdgeColorScaling = 1;
 #endif
 };
 
@@ -2905,6 +2913,13 @@ struct EffectBasicRenderParameter
 	} FalloffParam;
 
 	int32_t EmissiveScaling;
+
+	struct
+	{
+		float Color[4];
+		float Threshold;
+		int32_t ColorScaling;
+	} EdgeParam;
 
 #endif
 	AlphaBlendType AlphaBlend;
