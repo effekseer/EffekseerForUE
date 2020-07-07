@@ -35,6 +35,24 @@ struct FFlipbookParameters
 	}
 };
 
+USTRUCT()
+struct FEdgeParameters
+{
+	GENERATED_USTRUCT_BODY()
+	FLinearColor Color;
+	float Threshold = 0;
+	int32_t ColorScaling = 1;
+
+	bool operator==(const FEdgeParameters& Params)
+	{
+		if (Color != Params.Color) return false;
+		if (Threshold  != Params.Threshold) return false;
+		if (ColorScaling  != Params.ColorScaling) return false;
+
+		return true;
+	}
+};
+
 UCLASS()
 class EFFEKSEER_API UEffekseerEffectMaterialParameterHolder
 	: public UObject
@@ -111,6 +129,9 @@ public:
 
 	UPROPERTY()
 	int32			EmissiveScaling = 1;
+
+	UPROPERTY()
+	FEdgeParameters	EdgeParams;
 //#endif
 
 	UPROPERTY()

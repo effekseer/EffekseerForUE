@@ -660,6 +660,10 @@ FEffekseerHandle UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVect
 			dynamicMaterial->SetScalarParameterValue(TEXT("FalloffPow"), static_cast<float>(m->FalloffParam.Pow));
 
 			dynamicMaterial->SetScalarParameterValue(TEXT("EmissiveScaling"), m->EmissiveScaling);
+
+			dynamicMaterial->SetVectorParameterValue(TEXT("EdgeColor"), m->EdgeParams.Color);
+			dynamicMaterial->SetScalarParameterValue(TEXT("EdgeThreshold"), m->EdgeParams.Threshold);
+			dynamicMaterial->SetScalarParameterValue(TEXT("EdgeColorScaling"), static_cast<float>(m->EdgeParams.ColorScaling));
 #endif
 
 			Materials.Add(m, dynamicMaterial);

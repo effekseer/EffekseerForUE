@@ -235,6 +235,8 @@ effekseerCPP.readLines(rootEDir + 'Effekseer.DefaultEffectLoader.cpp')
 effekseerCPP.readLines(rootEDir + 'Effekseer.DefaultFile.h')
 effekseerCPP.readLines(rootEDir + 'Effekseer.DefaultFile.cpp')
 
+effekseerCPP.readLines(rootEDir + 'ForceField/ForceFields.h')
+
 effekseerCPP.readLines(rootEDir + 'Effekseer.FCurves.h')
 effekseerCPP.readLines(rootEDir + 'Effekseer.EffectNode.h')
 effekseerCPP.readLines(rootEDir + 'Effekseer.EffectNodeModel.h')
@@ -273,6 +275,7 @@ effekseerCPP.readLines(rootEDir + 'Effekseer.InstanceChunk.cpp')
 effekseerCPP.readLines(rootEDir + 'Effekseer.InstanceGlobal.cpp')
 effekseerCPP.readLines(rootEDir + 'Effekseer.InstanceGroup.cpp')
 effekseerCPP.readLines(rootEDir + 'Effekseer.InternalScript.cpp')
+effekseerCPP.readLines(rootEDir + 'ForceField/ForceFields.cpp')
 
 effekseerCPP.readLines(rootEDir + 'Effekseer.Setting.cpp')
 
