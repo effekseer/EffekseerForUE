@@ -231,6 +231,7 @@ Materials do not have depth ignoring settings.
 ### 1.52h (2020/07/08)
 
 - Update Effekseer to 1.52h
+- Fixed a bug that Step node behavior is different from Effekseer Material
 
 ### 1.52g (2020/06/09)
 
