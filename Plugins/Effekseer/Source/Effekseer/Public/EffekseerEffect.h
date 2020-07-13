@@ -5,6 +5,9 @@
 #include "UObject/Object.h"
 #include "EffekseerModel.h"
 #include "EffekseerMaterial.h"
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+#include "EffekseerCurve.h"
+#endif
 #include "EffekseerAlphaBlendType.h"
 #include "EffekseerEffect.generated.h"
 
@@ -304,6 +307,9 @@ public:
 
 	UPROPERTY(VisibleAnywhere)
 	TArray<UEffekseerMaterial*>	Materials;
+
+	UPROPERTY(VisibleAnywhere)
+	TArray<UEffekseerCurve*> Curves;
 
 	UPROPERTY(Transient)
 	TArray<UEffekseerEffectMaterialParameterHolder*>	EffekseerMaterials;
