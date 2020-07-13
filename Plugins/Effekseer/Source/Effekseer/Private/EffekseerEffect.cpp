@@ -436,12 +436,99 @@ void MaterialLoader::Unload(::Effekseer::MaterialData* data)
 	ES_SAFE_DELETE(data);
 }
 
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+class CurveLoader 
+	: public Effekseer::CurveLoader
+{
+private:
+	UEffekseerEffect* m_uobject;
+	bool m_requiredToCreateResource = false;
+	int32_t m_loadingIndex = 0;
+
+public:
+	CurveLoader(::Effekseer::FileInterface* fileInterface = NULL);
+	virtual ~CurveLoader();
+
+public:
+	void* Load(const EFK_CHAR* path) override;
+	void Unload(void* data) override;
+	void SetUObject(UEffekseerEffect* uobject, bool requiredToCreateResource)
+	{
+		m_uobject = uobject;
+
+		m_requiredToCreateResource = requiredToCreateResource;
+		if (!requiredToCreateResource)
+		{
+			m_loadingIndex = 0;
+		}
+	}
+};
+
+CurveLoader::CurveLoader(::Effekseer::FileInterface* fileInterface)
+{
+}
+
+CurveLoader::~CurveLoader()
+{
+}
+
+void* CurveLoader::Load(const EFK_CHAR* path)
+{
+	auto path_we = GetFileNameWithoutExtension(path);
+	auto epath_ = (const char16_t*)path_we.c_str();
+	auto path_ = tStr<512>(epath_);
+
+	if (m_requiredToCreateResource)
+	{
+		auto curve = Cast<UEffekseerCurve>(StaticLoadObject(UEffekseerCurve::StaticClass(), NULL, path_.c_str()));
+		m_uobject->Curves.Add(curve);
+
+		if (curve != nullptr)
+		{
+			return (void*)curve->GetNativePtr();
+		}
+		else
+		{
+			UE_LOG(LogScript, Warning, TEXT("Failed to load %s"), path_.c_str());
+		}
+
+		return curve;
+	}
+	else
+	{
+		if (m_uobject->Curves.Num() <= m_loadingIndex) return nullptr;
+
+		auto o = m_uobject->Curves[m_loadingIndex];
+		m_loadingIndex++;
+
+		if (o != nullptr)
+		{
+			return (void*)o->GetNativePtr();
+		}
+
+		return o;
+	}
+}
+
+void CurveLoader::Unload(void* data)
+{
+	if (data != NULL)
+	{
+
+	}
+}
+
+#endif
+
 static ::Effekseer::Setting* CreateSetting()
 {
 	auto setting = ::Effekseer::Setting::Create();
 	setting->SetTextureLoader(new TextureLoader());
 	setting->SetModelLoader(new ModelLoader());
 	setting->SetMaterialLoader(new MaterialLoader());
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+	setting->SetCurveLoader(new CurveLoader());
+#endif
 	return setting;
 }
 
@@ -459,6 +546,9 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 		this->DistortionTextures.Reset();
 		this->Models.Reset();
 		this->Materials.Reset();
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+		this->Curves.Reset();
+#endif
 	}
 
 	auto textureLoader = (TextureLoader*)setting->GetTextureLoader();
@@ -469,6 +559,11 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 
 	auto materialLoader = (MaterialLoader*)setting->GetMaterialLoader();
 	materialLoader->SetUObject(this, isResourceReset);
+
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+	auto curveLoader = (CurveLoader*)setting->GetCurveLoader();
+	curveLoader->SetUObject(this, isResourceReset);
+#endif
 
 	auto rootPath = uPath.c_str();
 	EFK_CHAR parentPath[300];
