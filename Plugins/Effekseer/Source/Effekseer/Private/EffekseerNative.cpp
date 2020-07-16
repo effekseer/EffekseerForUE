@@ -6833,6 +6833,7 @@ enum ParameterTranslationType
 	ParameterTranslationType_FCurve = 3,
 #if __EFFEKSEER_BUILD_VERSION16__
 	ParameterTranslationType_NurbsCurve = 4,
+	ParameterTranslationType_ViewOffset = 5,
 #endif
 
 	ParameterTranslationType_None = 0x7fffffff - 1,
@@ -6877,6 +6878,11 @@ struct ParameterTranslationNurbsCurve
 	float Scale;
 	float MoveSpeed;
 	int32_t LoopType;
+};
+
+struct ParameterTranslationViewOffset
+{
+	random_float distance;
 };
 #endif
 
@@ -8233,6 +8239,7 @@ public:
 	FCurveVector3D* TranslationFCurve;
 #if __EFFEKSEER_BUILD_VERSION16__
 	ParameterTranslationNurbsCurve TranslationNurbsCurve;
+	ParameterTranslationViewOffset TranslationViewOffset;
 #endif
 
 #ifdef OLD_LF
@@ -10783,6 +10790,13 @@ public:
 			Vec3f offset;
 		} fcruve;
 
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+		struct
+		{
+			float distance;
+		} view_offset;
+#endif
+
 	} translation_values;
 
 	union
@@ -11939,6 +11953,11 @@ void EffectNodeImplemented::LoadParameter(unsigned char*& pos, EffectNode* paren
 		{
 			memcpy(&TranslationNurbsCurve, pos, sizeof(ParameterTranslationNurbsCurve));
 			pos += sizeof(ParameterTranslationNurbsCurve);
+		}
+		else if (TranslationType == ParameterTranslationType_ViewOffset)
+		{
+			memcpy(&TranslationViewOffset, pos, sizeof(ParameterTranslationViewOffset));
+			pos += sizeof(ParameterTranslationViewOffset);
 		}
 #endif
 
@@ -13108,6 +13127,8 @@ void EffectNodeModel::BeginRendering(int32_t count, Manager* manager)
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 		nodeParameter.EnableFalloff = EnableFalloff;
 		nodeParameter.FalloffParam = FalloffParam;
+
+		nodeParameter.EnableViewOffset = (TranslationType == ParameterTranslationType_ViewOffset);
 #endif
 
 		renderer->BeginRendering(nodeParameter, count, m_userData);
@@ -13144,6 +13165,8 @@ void EffectNodeModel::Rendering(const Instance& instance, const Instance* next_i
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 		nodeParameter.EnableFalloff = EnableFalloff;
 		nodeParameter.FalloffParam = FalloffParam;
+
+		nodeParameter.EnableViewOffset = (TranslationType == ParameterTranslationType_ViewOffset);
 #endif
 
 		ModelRenderer::InstanceParameter instanceParameter;
@@ -13161,6 +13184,11 @@ void EffectNodeModel::Rendering(const Instance& instance, const Instance* next_i
 		instanceParameter.FlipbookIndexAndNextRate = instance.m_flipbookIndexAndNextRate;
 
 		instanceParameter.AlphaThreshold = instance.m_AlphaThreshold;
+
+		if (nodeParameter.EnableViewOffset == true)
+		{
+			instanceParameter.ViewOffsetDistance = instance.translation_values.view_offset.distance;
+		}
 #else
 		instanceParameter.UV = instance.GetUV();
 #endif
@@ -13217,6 +13245,8 @@ void EffectNodeModel::EndRendering(Manager* manager)
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 		nodeParameter.EnableFalloff = EnableFalloff;
 		nodeParameter.FalloffParam = FalloffParam;
+
+		nodeParameter.EnableViewOffset = (TranslationType == ParameterTranslationType_ViewOffset);
 #endif
 
 		renderer->EndRendering(nodeParameter, m_userData);
@@ -13479,6 +13509,9 @@ void EffectNodeRibbon::BeginRendering(int32_t count, Manager* manager)
 		m_nodeParameter.BasicParameterPtr = &RendererCommon.BasicParameter;
 		m_nodeParameter.TextureUVTypeParameterPtr = &TextureUVType;
 		m_nodeParameter.IsRightHand = manager->GetCoordinateSystem() == CoordinateSystem::RH;
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+		m_nodeParameter.EnableViewOffset = (TranslationType == ParameterTranslationType_ViewOffset);
+#endif
 		renderer->BeginRendering(m_nodeParameter, count, m_userData);
 	}
 }
@@ -13505,6 +13538,11 @@ void EffectNodeRibbon::BeginRenderingGroup(InstanceGroup* group, Manager* manage
 			m_instanceParameter.FlipbookIndexAndNextRate = groupFirst->m_flipbookIndexAndNextRate;
 
 			m_instanceParameter.AlphaThreshold = groupFirst->m_AlphaThreshold;
+
+			if (m_nodeParameter.EnableViewOffset)
+			{
+				m_instanceParameter.ViewOffsetDistance = groupFirst->translation_values.view_offset.distance;
+			}
 #else
 			m_instanceParameter.UV = group->GetFirst()->GetUV();
 #endif
@@ -13954,6 +13992,10 @@ void EffectNodeRing::BeginRendering(int32_t count, Manager* manager)
 		nodeParameter.StartingFade = Shape.StartingFade;
 		nodeParameter.EndingFade = Shape.EndingFade;
 
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+		nodeParameter.EnableViewOffset = (TranslationType == ParameterTranslationType_ViewOffset);
+#endif
+
 		renderer->BeginRendering(nodeParameter, count, m_userData);
 	}
 }
@@ -13978,6 +14020,10 @@ void EffectNodeRing::Rendering(const Instance& instance, const Instance* next_in
 		nodeParameter.BasicParameterPtr = &RendererCommon.BasicParameter;
 		nodeParameter.StartingFade = Shape.StartingFade;
 		nodeParameter.EndingFade = Shape.EndingFade;
+
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+		nodeParameter.EnableViewOffset = (TranslationType == ParameterTranslationType_ViewOffset);
+#endif
 
 		Color _outerColor;
 		Color _centerColor;
@@ -14030,6 +14076,11 @@ void EffectNodeRing::Rendering(const Instance& instance, const Instance* next_in
 		instanceParameter.FlipbookIndexAndNextRate = instance.m_flipbookIndexAndNextRate;
 
 		instanceParameter.AlphaThreshold = instance.m_AlphaThreshold;
+
+		if (instance.m_pEffectNode->TranslationType == ParameterTranslationType_ViewOffset)
+		{
+			instanceParameter.ViewOffsetDistance = instance.translation_values.view_offset.distance;
+		}
 #else
 		instanceParameter.UV = instance.GetUV();
 #endif
@@ -14519,6 +14570,10 @@ void EffectNodeSprite::BeginRendering(int32_t count, Manager* manager)
 
 		nodeParameter.ZSort = DepthValues.ZSort;
 
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+		nodeParameter.EnableViewOffset = (TranslationType == ParameterTranslationType_ViewOffset);
+#endif
+
 		renderer->BeginRendering(nodeParameter, count, m_userData);
 	}
 }
@@ -14545,6 +14600,10 @@ void EffectNodeSprite::Rendering(const Instance& instance, const Instance* next_
 		nodeParameter.BasicParameterPtr = &RendererCommon.BasicParameter;
 
 		nodeParameter.ZSort = DepthValues.ZSort;
+
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+		nodeParameter.EnableViewOffset = (TranslationType == ParameterTranslationType_ViewOffset);
+#endif
 
 		SpriteRenderer::InstanceParameter instanceParameter;
 		instanceParameter.AllColor = instValues._color;
@@ -14618,6 +14677,11 @@ void EffectNodeSprite::Rendering(const Instance& instance, const Instance* next_
 		instanceParameter.FlipbookIndexAndNextRate = instance.m_flipbookIndexAndNextRate;
 
 		instanceParameter.AlphaThreshold = instance.m_AlphaThreshold;
+
+		if (nodeParameter.EnableViewOffset)
+		{
+			instanceParameter.ViewOffsetDistance = instance.translation_values.view_offset.distance;
+		}
 #else
 		instanceParameter.UV = instance.GetUV();
 #endif
@@ -14854,6 +14918,9 @@ void EffectNodeTrack::BeginRendering(int32_t count, Manager* manager)
 		m_nodeParameter.BasicParameterPtr = &RendererCommon.BasicParameter;
 		m_nodeParameter.TextureUVTypeParameterPtr = &TextureUVType;
 		m_nodeParameter.IsRightHand = manager->GetCoordinateSystem() == CoordinateSystem::RH;
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+		m_nodeParameter.EnableViewOffset = (TranslationType == ParameterTranslationType_ViewOffset);
+#endif
 		renderer->BeginRendering(m_nodeParameter, count, m_userData);
 	}
 }
@@ -14885,6 +14952,11 @@ void EffectNodeTrack::BeginRenderingGroup(InstanceGroup* group, Manager* manager
 			m_instanceParameter.FlipbookIndexAndNextRate = groupFirst->m_flipbookIndexAndNextRate;
 
 			m_instanceParameter.AlphaThreshold = groupFirst->m_AlphaThreshold;
+			
+			if (m_nodeParameter.EnableViewOffset == true)
+			{
+				m_instanceParameter.ViewOffsetDistance = groupFirst->translation_values.view_offset.distance;
+			}
 #else
 			m_instanceParameter.UV = group->GetFirst()->GetUV();
 #endif
@@ -20034,6 +20106,12 @@ void Instance::FirstUpdate()
 
 		translation_values.fcruve.offset = m_pEffectNode->TranslationFCurve->GetOffsets(rand);
 	}
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+	else if (m_pEffectNode->TranslationType == ParameterTranslationType_ViewOffset)
+	{
+		translation_values.view_offset.distance = m_pEffectNode->TranslationViewOffset.distance.getValue(rand);
+	}
+#endif
 
 	// Rotation
 	if (m_pEffectNode->RotationType == ParameterRotationType_Fixed)
@@ -20911,6 +20989,10 @@ void Instance::CalculateMatrix(float deltaFrame)
 				localPosition = {0, 0, 0};
 			}
 		}
+		else if (m_pEffectNode->TranslationType == ParameterTranslationType_ViewOffset)
+		{
+			localPosition = { 0, 0, 0 };
+		}
 #endif
 
 		if (!m_pEffectNode->GenerationLocation.EffectsRotation)
@@ -21074,8 +21156,16 @@ void Instance::CalculateMatrix(float deltaFrame)
 			assert(m_GlobalMatrix43.IsValid());
 		}
 
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+		if(m_pEffectNode->TranslationType != ParameterTranslationType_ViewOffset)
+		{ 
+			m_GlobalMatrix43 *= m_ParentMatrix;
+			assert(m_GlobalMatrix43.IsValid());
+		}
+#else
 		m_GlobalMatrix43 *= m_ParentMatrix;
 		assert(m_GlobalMatrix43.IsValid());
+#endif
 
 		if (m_pEffectNode->LocationAbs.type != LocationAbsType::None)
 		{
