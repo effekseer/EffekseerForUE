@@ -6446,6 +6446,13 @@ public:
 	{
 		return -ffc.PreviousSumVelocity * ffp.Power;
 	}
+
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+	Vec3f GetDragedVelocity(const Vec3f& velocity, const ForceFieldDragParameter& ffp)
+	{
+		return -velocity * ffp.Power;
+	}
+#endif
 };
 
 enum class LocalForceFieldFalloffType : int32_t
@@ -6524,6 +6531,10 @@ struct LocalForceFieldInstance
 	Vec3f ModifyLocation;
 
 	void Update(const LocalForceFieldParameter& parameter, const Vec3f& location, float magnification);
+
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+	void DraggedVelocity(Vec3f& outAcceleration, const LocalForceFieldParameter& parameter, float deltaFrame);
+#endif
 
 	void Reset();
 };
@@ -6831,7 +6842,7 @@ enum ParameterTranslationType
 	ParameterTranslationType_PVA = 1,
 	ParameterTranslationType_Easing = 2,
 	ParameterTranslationType_FCurve = 3,
-#if __EFFEKSEER_BUILD_VERSION16__
+#ifdef __EFFEKSEER_BUILD_VERSION16__
 	ParameterTranslationType_NurbsCurve = 4,
 	ParameterTranslationType_ViewOffset = 5,
 #endif
@@ -6862,6 +6873,9 @@ struct ParameterTranslationPVA
 	random_vector3d location;
 	random_vector3d velocity;
 	random_vector3d acceleration;
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+	bool EnableAffectedDrag;
+#endif
 };
 
 struct ParameterTranslationEasing
@@ -6871,7 +6885,7 @@ struct ParameterTranslationEasing
 	easing_vector3d location;
 };
 
-#if __EFFEKSEER_BUILD_VERSION16__
+#ifdef __EFFEKSEER_BUILD_VERSION16__
 struct ParameterTranslationNurbsCurve
 {
 	int32_t Index;
@@ -8237,7 +8251,7 @@ public:
 	ParameterTranslationPVA TranslationPVA;
 	ParameterTranslationEasing TranslationEasing;
 	FCurveVector3D* TranslationFCurve;
-#if __EFFEKSEER_BUILD_VERSION16__
+#ifdef __EFFEKSEER_BUILD_VERSION16__
 	ParameterTranslationNurbsCurve TranslationNurbsCurve;
 	ParameterTranslationViewOffset TranslationViewOffset;
 #endif
@@ -9449,7 +9463,7 @@ public:
 	HolderCollection<void*> sounds;
 	HolderCollection<void*> models;
 	HolderCollection<MaterialData*> materials;
-#if __EFFEKSEER_BUILD_VERSION16__
+#ifdef __EFFEKSEER_BUILD_VERSION16__
 	HolderCollection<void*> curves;
 #endif
 };
@@ -9505,7 +9519,7 @@ protected:
 	EFK_CHAR** materialPaths_ = nullptr;
 	MaterialData** materials_ = nullptr;
 
-#if __EFFEKSEER_BUILD_VERSION16__
+#ifdef __EFFEKSEER_BUILD_VERSION16__
 	int32_t curveCount_ = 0;
 	EFK_CHAR** curvePaths_ = nullptr;
 	void** curves_ = nullptr;
@@ -9669,7 +9683,7 @@ public:
 
 	const EFK_CHAR* GetMaterialPath(int n) const override;
 
-#if __EFFEKSEER_BUILD_VERSION16__
+#ifdef __EFFEKSEER_BUILD_VERSION16__
 	void* GetCurve(int n) const override;
 	
 	int32_t GetCurveCount() const override;
@@ -9685,7 +9699,7 @@ public:
 
 	void SetMaterial(int32_t index, MaterialData* data) override;
 
-#if __EFFEKSEER_BUILD_VERSION16__
+#ifdef __EFFEKSEER_BUILD_VERSION16__
 	void SetCurve(int32_t index, void* data) override;
 #endif
 
@@ -10050,7 +10064,7 @@ public:
 
 	void SetMaterialLoader(MaterialLoader* loader) override;
 
-#if __EFFEKSEER_BUILD_VERSION16__
+#ifdef __EFFEKSEER_BUILD_VERSION16__
 	CurveLoader* GetCurveLoader() override;
 
 	void SetCurveLoader(CurveLoader* loader) override;
@@ -10764,6 +10778,11 @@ public:
 
 	// Parent color
 	Color ColorParent;
+
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+	Vec3f PrevLocalPosition;
+	Vec3f PrevAcceleration;
+#endif
 
 	union
 	{
@@ -11906,7 +11925,8 @@ void EffectNodeImplemented::LoadParameter(unsigned char*& pos, EffectNode* paren
 		}
 		else if (TranslationType == ParameterTranslationType_PVA)
 		{
-			if (ef->GetVersion() >= 14)
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+			if (ef->GetVersion() >= 1600)
 			{
 				memcpy(&size, pos, sizeof(int));
 				pos += sizeof(int);
@@ -11915,11 +11935,29 @@ void EffectNodeImplemented::LoadParameter(unsigned char*& pos, EffectNode* paren
 				pos += size;
 			}
 			else
+#endif
+			if (ef->GetVersion() >= 14)
+			{
+				memcpy(&size, pos, sizeof(int));
+				pos += sizeof(int);
+#ifndef __EFFEKSEER_BUILD_VERSION16__
+				assert(size == sizeof(ParameterTranslationPVA));
+#endif
+				memcpy(&TranslationPVA, pos, size);
+				pos += size;
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+				TranslationPVA.EnableAffectedDrag = false;
+#endif
+			}
+			else
 			{
 				memcpy(&size, pos, sizeof(int));
 				pos += sizeof(int);
 				memcpy(&TranslationPVA.location, pos, size);
 				pos += size;
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+				TranslationPVA.EnableAffectedDrag = false;
+#endif
 			}
 		}
 		else if (TranslationType == ParameterTranslationType_Easing)
@@ -11948,7 +11986,7 @@ void EffectNodeImplemented::LoadParameter(unsigned char*& pos, EffectNode* paren
 			TranslationFCurve = new FCurveVector3D();
 			pos += TranslationFCurve->Load(pos, m_effect->GetVersion());
 		}
-#if __EFFEKSEER_BUILD_VERSION16__
+#ifdef __EFFEKSEER_BUILD_VERSION16__
 		else if (TranslationType == ParameterTranslationType_NurbsCurve)
 		{
 			memcpy(&TranslationNurbsCurve, pos, sizeof(ParameterTranslationNurbsCurve));
@@ -15202,7 +15240,7 @@ void EffectNodeTrack::LoadValues(TrackSizeParameter& param, unsigned char*& pos)
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-#if __EFFEKSEER_BUILD_VERSION16__
+#ifdef __EFFEKSEER_BUILD_VERSION16__
 #endif
 
 
@@ -15339,7 +15377,7 @@ void EffectFactory::SetMaterial(Effect* effect, int32_t index, MaterialData* dat
 	effect_->materials_[index] = data;
 }
 
-#if __EFFEKSEER_BUILD_VERSION16__
+#ifdef __EFFEKSEER_BUILD_VERSION16__
 void EffectFactory::SetCurve(Effect* effect, int32_t index, void* data)
 {
 	auto effect_ = static_cast<EffectImplemented*>(effect);
@@ -15380,7 +15418,7 @@ void EffectFactory::OnLoadingResource(Effect* effect, const void* data, int32_t 
 	auto soundLoader = effect->GetSetting()->GetSoundLoader();
 	auto modelLoader = effect->GetSetting()->GetModelLoader();
 	auto materialLoader = effect->GetSetting()->GetMaterialLoader();
-#if __EFFEKSEER_BUILD_VERSION16__
+#ifdef __EFFEKSEER_BUILD_VERSION16__
 	auto curveLoader = effect->GetSetting()->GetCurveLoader();
 #endif
 
@@ -15450,7 +15488,7 @@ void EffectFactory::OnLoadingResource(Effect* effect, const void* data, int32_t 
 		}
 	}
 
-#if __EFFEKSEER_BUILD_VERSION16__
+#ifdef __EFFEKSEER_BUILD_VERSION16__
 	if (curveLoader != nullptr)
 	{
 		for (auto i = 0; i < effect->GetCurveCount(); i++)
@@ -15471,7 +15509,7 @@ void EffectFactory::OnUnloadingResource(Effect* effect)
 	auto soundLoader = effect->GetSetting()->GetSoundLoader();
 	auto modelLoader = effect->GetSetting()->GetModelLoader();
 	auto materialLoader = effect->GetSetting()->GetMaterialLoader();
-#if __EFFEKSEER_BUILD_VERSION16__
+#ifdef __EFFEKSEER_BUILD_VERSION16__
 	auto curveLoader = effect->GetSetting()->GetCurveLoader();
 #endif
 
@@ -15523,7 +15561,7 @@ void EffectFactory::OnUnloadingResource(Effect* effect)
 		}
 	}
 
-#if __EFFEKSEER_BUILD_VERSION16__
+#ifdef __EFFEKSEER_BUILD_VERSION16__
 	if (curveLoader != nullptr)
 	{
 		for (auto i = 0; i < effect->GetCurveCount(); i++)
@@ -16364,7 +16402,7 @@ const EFK_CHAR* EffectImplemented::GetMaterialPath(int n) const
 	return materialPaths_[n];
 }
 
-#if __EFFEKSEER_BUILD_VERSION16__
+#ifdef __EFFEKSEER_BUILD_VERSION16__
 void* EffectImplemented::GetCurve(int n) const
 {
 	return curves_[n];
@@ -16457,7 +16495,7 @@ void EffectImplemented::SetMaterial(int32_t index, MaterialData* data)
 	materials_[index] = data;
 }
 
-#if __EFFEKSEER_BUILD_VERSION16__
+#ifdef __EFFEKSEER_BUILD_VERSION16__
 void EffectImplemented::SetCurve(int32_t index, void* data)
 {
 	auto curveLoader = GetSetting()->GetCurveLoader();
@@ -16681,7 +16719,7 @@ void EffectImplemented::ReloadResources(const void* data, int32_t size, const EF
 			}
 		}
 
-#if __EFFEKSEER_BUILD_VERSION16__
+#ifdef __EFFEKSEER_BUILD_VERSION16__
 		for (int32_t ind = 0; ind < curveCount_; ind++)
 		{
 			EFK_CHAR fullPath[512];
@@ -16775,7 +16813,7 @@ void EffectImplemented::UnloadResources(const EFK_CHAR* materialPath)
 			reloadingBackup->materials.Push(fullPath, materials_[ind]);
 		}
 
-#if __EFFEKSEER_BUILD_VERSION16__
+#ifdef __EFFEKSEER_BUILD_VERSION16__
 		for (int32_t ind = 0; ind < curveCount_; ind++)
 		{
 			if (curves_[ind] == nullptr)
@@ -17536,7 +17574,7 @@ void ManagerImplemented::SetMaterialLoader(MaterialLoader* loader)
 	m_setting->SetMaterialLoader(loader);
 }
 
-#if __EFFEKSEER_BUILD_VERSION16__
+#ifdef __EFFEKSEER_BUILD_VERSION16__
 CurveLoader* ManagerImplemented::GetCurveLoader()
 {
 	return m_setting->GetCurveLoader();
@@ -19575,7 +19613,7 @@ InstanceGlobal* InstanceContainer::GetRootInstance()
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-#if __EFFEKSEER_BUILD_VERSION16__
+#ifdef __EFFEKSEER_BUILD_VERSION16__
 #endif
 
 //----------------------------------------------------------------------------------
@@ -19940,6 +19978,11 @@ void Instance::Initialize(Instance* parent, int32_t instanceNumber, const Mat43f
 		maxGenerationChildrenCount = flexibleMaxGenerationChildrenCount_;
 		m_nextGenerationTime = m_flexibleNextGenerationTime;
 	}
+
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+	PrevLocalPosition = Vec3f(0, 0, 0);
+	PrevAcceleration = Vec3f(0, 0, 0);
+#endif
 }
 
 //----------------------------------------------------------------------------------
@@ -20079,6 +20122,10 @@ void Instance::FirstUpdate()
 						   m_pEffectNode->DynamicFactor.Tra,
 						   m_pEffectNode->DynamicFactor.TraInv);
 		translation_values.random.acceleration = rva.getValue(rand);
+
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+		PrevLocalPosition = translation_values.random.location;
+#endif
 	}
 	else if (m_pEffectNode->TranslationType == ParameterTranslationType_Easing)
 	{
@@ -20937,9 +20984,26 @@ void Instance::CalculateMatrix(float deltaFrame)
 		}
 		else if (m_pEffectNode->TranslationType == ParameterTranslationType_PVA)
 		{
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+			localPosition = PrevLocalPosition;
+
+			Vec3f CurrentVelocity = ((translation_values.random.velocity * m_LivingTime) + (translation_values.random.acceleration * m_LivingTime * m_LivingTime * 0.5f)) - PrevAcceleration;
+			localPosition += CurrentVelocity;
+			PrevAcceleration += CurrentVelocity;
+
+			if (m_pEffectNode->TranslationPVA.EnableAffectedDrag == true)
+			{
+				localForceField_.DraggedVelocity(translation_values.random.velocity, m_pEffectNode->LocalForceField, deltaFrame);
+				localForceField_.DraggedVelocity(translation_values.random.acceleration, m_pEffectNode->LocalForceField, deltaFrame);
+				localForceField_.DraggedVelocity(PrevAcceleration, m_pEffectNode->LocalForceField, deltaFrame);
+			}
+
+			PrevLocalPosition = localPosition;
+#else
 			/* 現在位置 = 初期座標 + (初期速度 * t) + (初期加速度 * t * t * 0.5)*/
 			localPosition = translation_values.random.location + (translation_values.random.velocity * m_LivingTime) +
 							(translation_values.random.acceleration * (m_LivingTime * m_LivingTime * 0.5f));
+#endif
 		}
 		else if (m_pEffectNode->TranslationType == ParameterTranslationType_Easing)
 		{
@@ -20952,7 +21016,7 @@ void Instance::CalculateMatrix(float deltaFrame)
 			auto fcurve = m_pEffectNode->TranslationFCurve->GetValues(m_LivingTime, m_LivedTime);
 			localPosition = fcurve + translation_values.fcruve.offset;
 		}
-#if __EFFEKSEER_BUILD_VERSION16__
+#ifdef __EFFEKSEER_BUILD_VERSION16__
 		else if (m_pEffectNode->TranslationType == ParameterTranslationType_NurbsCurve)
 		{
 			auto& NurbsCurveParam = m_pEffectNode->TranslationNurbsCurve;
@@ -22676,6 +22740,25 @@ void LocalForceFieldInstance::Update(const LocalForceFieldParameter& parameter, 
 	ModifyLocation += VelocitySum;
 }
 
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+void LocalForceFieldInstance::DraggedVelocity(Vec3f& outAcceleration, const LocalForceFieldParameter& parameter, float deltaFrame)
+{
+	for (auto& field : parameter.LocalForceFields)
+	{
+		if (!field.HasValue)
+		{
+			continue;
+		}
+
+		if (field.Drag != nullptr)
+		{
+			ForceField ff;
+			outAcceleration += ff.GetDragedVelocity(outAcceleration, *field.Drag) * deltaFrame;
+		}
+	}
+}
+#endif
+
 void LocalForceFieldInstance::Reset()
 {
 	Velocities.fill(Vec3f(0, 0, 0));
@@ -22690,7 +22773,7 @@ void LocalForceFieldInstance::Reset()
 //----------------------------------------------------------------------------------
 
 
-#if __EFFEKSEER_BUILD_VERSION16__
+#ifdef __EFFEKSEER_BUILD_VERSION16__
 #endif
 
 
@@ -22710,7 +22793,7 @@ Setting::Setting()
 	, m_textureLoader(NULL)
 	, m_soundLoader(NULL)
 	, m_modelLoader(NULL)
-#if __EFFEKSEER_BUILD_VERSION16__
+#ifdef __EFFEKSEER_BUILD_VERSION16__
 	, m_curveLoader(NULL)
 #endif
 {
@@ -22734,7 +22817,7 @@ Setting::~Setting()
 	ES_SAFE_DELETE(m_soundLoader);
 	ES_SAFE_DELETE(m_modelLoader);
 	ES_SAFE_DELETE(m_materialLoader);
-#if __EFFEKSEER_BUILD_VERSION16__
+#ifdef __EFFEKSEER_BUILD_VERSION16__
 	ES_SAFE_DELETE(m_curveLoader);
 #endif
 }
@@ -22842,7 +22925,7 @@ void Setting::SetMaterialLoader(MaterialLoader* loader)
 	m_materialLoader = loader;
 }
 
-#if __EFFEKSEER_BUILD_VERSION16__
+#ifdef __EFFEKSEER_BUILD_VERSION16__
 CurveLoader* Setting::GetCurveLoader()
 {
 	return m_curveLoader;
