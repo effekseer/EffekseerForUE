@@ -80,7 +80,7 @@ public:
 
 		for (std::size_t i{}; i < 256; ++i)
 		{
-			auto target = GetRand(0, 255);
+			auto target = static_cast<std::size_t>(GetRand(0, 255));
 			std::swap(p[i], p[target]);
 		}
 
@@ -8859,6 +8859,7 @@ private:
 		bool DoUseBaseMatrix;
 		bool GoingToStop;
 		bool GoingToStopRoot;
+		int RandomSeed = 0;
 		EffectInstanceRemovingCallback RemovingCallback;
 
 		Mat43f BaseMatrix;
@@ -8946,9 +8947,9 @@ private:
 
 	// buffers which is allocated while initializing
 	// 初期化中に確保されたバッファ
-	std::unique_ptr<InstanceChunk[]> reservedChunksBuffer_;
-	std::unique_ptr<uint8_t[]> reservedGroupBuffer_;
-	std::unique_ptr<uint8_t[]> reservedContainerBuffer_;
+	CustomAlignedVector<InstanceChunk> reservedChunksBuffer_;
+	CustomAlignedVector<uint8_t> reservedGroupBuffer_;
+	CustomAlignedVector<uint8_t> reservedContainerBuffer_;
 
 	// pooled instances. Thease are not used and waiting to be used.
 	// プールされたインスタンス。使用されておらず、使用されてるのを待っている。
@@ -10181,6 +10182,8 @@ public:
 	*/
 	float GetUpdatedFrame();
 
+	void ResetUpdatedFrame();
+
 	InstanceContainer* GetRootContainer() const;
 	void SetRootContainer( InstanceContainer* container );
 
@@ -10222,7 +10225,7 @@ namespace Effekseer
 	@note
 	インスタンスコンテナ内でさらにインスタンスをグループ化するクラス
 */
-class InstanceGroup
+class alignas(32) InstanceGroup
 {
 friend class InstanceContainer;
 friend class ManagerImplemented;
@@ -14676,6 +14679,8 @@ float EffectImplemented::GetMaginification() const
 //----------------------------------------------------------------------------------
 bool EffectImplemented::Load( void* pData, int size, float mag, const EFK_CHAR* materialPath, ReloadingThreadType reloadingThreadType)
 {
+	ES_SAFE_RELEASE(factory);
+
 	if(m_setting != nullptr)
 	{
 		for (int i = 0; i < m_setting->GetEffectFactoryCount(); i++)
@@ -15016,7 +15021,7 @@ bool EffectImplemented::Reload( void* data, int32_t size, const EFK_CHAR* materi
 	std::array<Manager*, 1> managers;
 	managers[0] = m_pManager;
 
-	return Reload( managers.data(), managers.size(), data, size, materialPath, reloadingThreadType);
+	return Reload( managers.data(), static_cast<int32_t>(managers.size()), data, size, materialPath, reloadingThreadType);
 }
 
 //----------------------------------------------------------------------------------
@@ -15029,7 +15034,7 @@ bool EffectImplemented::Reload( const EFK_CHAR* path, const EFK_CHAR* materialPa
 	std::array<Manager*, 1> managers;
 	managers[0] = m_pManager;
 
-	return Reload(managers.data(), managers.size(), path, materialPath, reloadingThreadType);
+	return Reload(managers.data(), static_cast<int32_t>(managers.size()), path, materialPath, reloadingThreadType);
 }
 
 //----------------------------------------------------------------------------------
@@ -15046,7 +15051,8 @@ bool EffectImplemented::Reload( Manager** managers, int32_t managersCount, void*
 
 	for( int32_t i = 0; i < managersCount; i++)
 	{
-		((ManagerImplemented*)managers[i])->BeginReloadEffect( this, lockCount == 0);
+		auto manager = static_cast<ManagerImplemented*>(managers[i]);
+		manager->BeginReloadEffect( this, lockCount == 0);
 		lockCount++;
 	}
 
@@ -15067,7 +15073,8 @@ bool EffectImplemented::Reload( Manager** managers, int32_t managersCount, void*
 	for( int32_t i = 0; i < managersCount; i++)
 	{
 		lockCount--;
-		((ManagerImplemented*)managers[i])->EndReloadEffect( this, lockCount == 0);
+		auto manager = static_cast<ManagerImplemented*>(managers[i]);
+		manager->EndReloadEffect( this, lockCount == 0);
 	}
 
 	return false;
@@ -15102,7 +15109,8 @@ bool EffectImplemented::Reload( Manager** managers, int32_t managersCount, const
 
 	for( int32_t i = 0; i < managersCount; i++)
 	{
-		((ManagerImplemented*)&(managers[i]))->BeginReloadEffect( this, lockCount == 0);
+		auto manager = static_cast<ManagerImplemented*>(managers[i]);
+		manager->BeginReloadEffect(this, lockCount == 0);
 		lockCount++;
 	}
 
@@ -15114,8 +15122,11 @@ bool EffectImplemented::Reload( Manager** managers, int32_t managersCount, const
 	for( int32_t i = 0; i < managersCount; i++)
 	{
 		lockCount--;
-		((ManagerImplemented*)&(managers[i]))->EndReloadEffect( this, lockCount == 0);
+		auto manager = static_cast<ManagerImplemented*>(managers[i]);
+		manager->EndReloadEffect(this, lockCount == 0);
 	}
+
+	eLoader->Unload(data, size);
 
 	return false;
 }
@@ -15700,10 +15711,10 @@ ManagerImplemented::ManagerImplemented(int instance_max, bool autoFlip)
 	m_renderingDrawSets.reserve(64);
 
 	int chunk_max = (m_instance_max + InstanceChunk::InstancesOfChunk - 1) / InstanceChunk::InstancesOfChunk;
-	reservedChunksBuffer_.reset(new InstanceChunk[chunk_max]);
-	for (int i = 0; i < chunk_max; i++)
+	reservedChunksBuffer_.resize(chunk_max);
+	for (auto& chunk : reservedChunksBuffer_)
 	{
-		pooledChunks_.push(&reservedChunksBuffer_[i]);
+		pooledChunks_.push(&chunk);
 	}
 	for (auto& chunks : instanceChunks_)
 	{
@@ -15712,17 +15723,17 @@ ManagerImplemented::ManagerImplemented(int instance_max, bool autoFlip)
 	std::fill(creatableChunkOffsets_.begin(), creatableChunkOffsets_.end(), 0);
 
 	// Pooling InstanceGroup
-	reservedGroupBuffer_.reset(new uint8_t[instance_max * sizeof(InstanceGroup)]);
+	reservedGroupBuffer_.resize(instance_max * sizeof(InstanceGroup));
 	for (int i = 0; i < instance_max; i++)
 	{
 		pooledGroups_.push((InstanceGroup*)&reservedGroupBuffer_[i * sizeof(InstanceGroup)]);
 	}
 
 	// Pooling InstanceGroup
-	reservedContainerBuffer_.reset(new uint8_t[instance_max * sizeof(InstanceGroup)]);
+	reservedContainerBuffer_.resize(instance_max * sizeof(InstanceContainer));
 	for (int i = 0; i < instance_max; i++)
 	{
-		pooledContainers_.push((InstanceContainer*)&reservedContainerBuffer_[i * sizeof(InstanceGroup)]);
+		pooledContainers_.push((InstanceContainer*)&reservedContainerBuffer_[i * sizeof(InstanceContainer)]);
 	}
 
 	m_setting->SetEffectLoader(new DefaultEffectLoader());
@@ -16875,14 +16886,17 @@ Handle ManagerImplemented::Play(Effect* effect, const Vector3D& position, int32_
 	// Create root
 	InstanceGlobal* pGlobal = new InstanceGlobal();
 
+	int32_t randomSeed = 0;
 	if (e->m_defaultRandomSeed >= 0)
 	{
-		pGlobal->SetSeed(e->m_defaultRandomSeed);
+		randomSeed = e->m_defaultRandomSeed;
 	}
 	else
 	{
-		pGlobal->SetSeed(GetRandFunc()());
+		randomSeed = GetRandFunc()();
 	}
+
+	pGlobal->SetSeed(randomSeed);
 
 	pGlobal->dynamicInputParameters = e->defaultDynamicInputs;
 
@@ -16902,6 +16916,7 @@ Handle ManagerImplemented::Play(Effect* effect, const Vector3D& position, int32_
 
 	drawSet.IsParameterChanged = true;
 	drawSet.StartFrame = startFrame;
+	drawSet.RandomSeed = randomSeed;
 
 	return handle;
 }
@@ -17113,6 +17128,7 @@ void ManagerImplemented::BeginReloadEffect(Effect* effect, bool doLockThread)
 		it.second.InstanceContainerPointer->RemoveForcibly(true);
 		ReleaseInstanceContainer(it.second.InstanceContainerPointer);
 		it.second.InstanceContainerPointer = NULL;
+		ES_SAFE_RELEASE(it.second.CullingObjectPointer);
 	}
 }
 
@@ -17125,7 +17141,7 @@ void ManagerImplemented::EndReloadEffect(Effect* effect, bool doLockThread)
 		if (ds.ParameterPointer != effect)
 			continue;
 
-		if (it.second.InstanceContainerPointer == nullptr)
+		if (it.second.InstanceContainerPointer != nullptr)
 		{
 			continue;
 		}
@@ -17134,14 +17150,7 @@ void ManagerImplemented::EndReloadEffect(Effect* effect, bool doLockThread)
 		auto pGlobal = ds.GlobalPointer;
 
 		// reallocate
-		if (e->m_defaultRandomSeed >= 0)
-		{
-			pGlobal->SetSeed(e->m_defaultRandomSeed);
-		}
-		else
-		{
-			pGlobal->SetSeed(GetRandFunc()());
-		}
+		pGlobal->SetSeed(ds.RandomSeed);
 
 		pGlobal->RenderedInstanceContainers.resize(e->renderingNodesCount);
 		for (size_t i = 0; i < pGlobal->RenderedInstanceContainers.size(); i++)
@@ -17149,34 +17158,60 @@ void ManagerImplemented::EndReloadEffect(Effect* effect, bool doLockThread)
 			pGlobal->RenderedInstanceContainers[i] = nullptr;
 		}
 
+		auto frame = ds.GlobalPointer->GetUpdatedFrame();
+
+		ds.IsPreupdated = false;
+		ds.IsParameterChanged = true;
+		ds.StartFrame = 0;
+		ds.GoingToStop = false;
+		ds.GoingToStopRoot = false;
+		ds.IsRemoving = false;
+		pGlobal->ResetUpdatedFrame();
+
 		// Create an instance through a container
-		ds.InstanceContainerPointer =
-			CreateInstanceContainer(e->GetRoot(), ds.GlobalPointer, true, ds.GlobalMatrix, NULL);
+		//ds.InstanceContainerPointer =
+		//	CreateInstanceContainer(e->GetRoot(), ds.GlobalPointer, true, ds.GlobalMatrix, NULL);
+		auto isShown = ds.IsShown;
+		ds.IsShown = false;
+
+		Preupdate(ds);
 
 		// skip
-		for (float f = 0; f < ds.GlobalPointer->GetUpdatedFrame() - 1; f += 1.0f)
+		for (float f = 0; f < frame - 1; f += 1.0f)
 		{
 			ds.GlobalPointer->BeginDeltaFrame(1.0f);
 
 			UpdateInstancesByInstanceGlobal(ds);
+			UpdateHandleInternal(ds);
 
-			ds.InstanceContainerPointer->Update(true, false);
+			//UpdateInstancesByInstanceGlobal(ds);
+
+			//ds.InstanceContainerPointer->Update(true, false);
 			ds.GlobalPointer->EndDeltaFrame();
 		}
+
+		ds.IsShown = isShown;
 
 		ds.GlobalPointer->BeginDeltaFrame(1.0f);
 
 		UpdateInstancesByInstanceGlobal(ds);
+		UpdateHandleInternal(ds);
 
-		ds.InstanceContainerPointer->Update(true, ds.IsShown);
+		//UpdateInstancesByInstanceGlobal(ds);
+
+		//ds.InstanceContainerPointer->Update(true, ds.IsShown);
 		ds.GlobalPointer->EndDeltaFrame();
 	}
+
+	Flip();
 
 	if (doLockThread)
 	{
 		m_renderingMutex.unlock();
 		m_isLockedWithRenderingMutex = false;
 	}
+
+	//Update(0);
 }
 
 void ManagerImplemented::CreateCullingWorld(float xsize, float ysize, float zsize, int32_t layerCount)
@@ -19719,6 +19754,8 @@ float InstanceGlobal::GetUpdatedFrame()
 	return m_updatedFrame;
 }
 
+void InstanceGlobal::ResetUpdatedFrame() { m_updatedFrame = 0.0f; }
+
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
@@ -20219,20 +20256,28 @@ std::array<float, 4> InternalScript::Execute(const std::array<float, 4>& externa
 			else if (type == OperatorType::Div)
 				registers[index] = tempInputs[0] / tempInputs[1];
 			else if (type == OperatorType::Sine)
-				registers[index] = sin(tempInputs[0]);
+			{
+				registers[index] = sin(tempInputs[j]);
+			}
 			else if (type == OperatorType::Cos)
-				registers[index] = cos(tempInputs[0]);
+			{
+				registers[index] = cos(tempInputs[j]);
+			}
 			else if (type == OperatorType::UnaryAdd)
+			{
 				registers[index] = tempInputs[0];
+			}
 			else if (type == OperatorType::UnarySub)
+			{
 				registers[index] = -tempInputs[0];
+			}
 			else if (type == OperatorType::Rand)
 			{
 				registers[index] = randFuncCallback(userData);
 			}
 			else if (type == OperatorType::Rand_WithSeed)
 			{
-				registers[index] = randSeedFuncCallback(userData, tempInputs[0]);
+				registers[index] = randSeedFuncCallback(userData, tempInputs[j]);
 			}
 			else if (type == OperatorType::Constant)
 			{

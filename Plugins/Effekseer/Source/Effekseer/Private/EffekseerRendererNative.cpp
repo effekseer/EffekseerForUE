@@ -152,6 +152,36 @@ Effekseer::Vec3f SplineGenerator::GetValue(float t) const
 	return a[j] + (b[j] + (c[j] + d[j] * dt) * dt) * dt;
 }
 
+static void FastScale(::Effekseer::Mat43f& mat, float scale)
+{
+	float x = mat.X.GetW();
+	float y = mat.Y.GetW();
+	float z = mat.Z.GetW();
+
+	mat.X *= scale;
+	mat.Y *= scale;
+	mat.Z *= scale;
+
+	mat.X.SetW(x);
+	mat.Y.SetW(y);
+	mat.Z.SetW(z);
+}
+
+static void FastScale(::Effekseer::Mat44f& mat, float scale)
+{
+	float x = mat.X.GetW();
+	float y = mat.Y.GetW();
+	float z = mat.Z.GetW();
+
+	mat.X *= scale;
+	mat.Y *= scale;
+	mat.Z *= scale;
+
+	mat.X.SetW(x);
+	mat.Y.SetW(y);
+	mat.Z.SetW(z);
+}
+
 void ApplyDepthParameters(::Effekseer::Mat43f& mat,
 						  const ::Effekseer::Vec3f& cameraFront,
 						  const ::Effekseer::Vec3f& cameraPos,
@@ -183,8 +213,7 @@ void ApplyDepthParameters(::Effekseer::Mat43f& mat,
 			if (cl != 0.0)
 			{
 				auto scale = (cl - offset) / cl;
-				mat *= scale;
-				mat.SetTranslation(c);
+				FastScale(mat, scale);
 			}
 		}
 
@@ -212,8 +241,7 @@ void ApplyDepthParameters(::Effekseer::Mat43f& mat,
 		if (cl != 0.0)
 		{
 			auto scale = cl / 32.0f * (1.0f - depthParameter->SuppressionOfScalingByDepth) + depthParameter->SuppressionOfScalingByDepth;
-			mat *= scale;
-			mat.SetTranslation(t);
+			FastScale(mat, scale);
 		}
 	}
 }
@@ -316,8 +344,7 @@ void ApplyDepthParameters(::Effekseer::Mat43f& mat,
 			if (cl != 0.0)
 			{
 				auto scale = (cl - offset) / cl;
-				mat *= scale;
-				mat.SetTranslation(t);
+				FastScale(mat, scale);
 			}
 		}
 
@@ -344,8 +371,7 @@ void ApplyDepthParameters(::Effekseer::Mat43f& mat,
 		if (cl != 0.0)
 		{
 			auto scale = cl / 32.0f * (1.0f - depthParameter->SuppressionOfScalingByDepth) + depthParameter->SuppressionOfScalingByDepth;
-			mat *= scale;
-			mat.SetTranslation(t);
+			FastScale(mat, scale);
 		}
 	}
 }
@@ -381,8 +407,7 @@ void ApplyDepthParameters(::Effekseer::Mat44f& mat,
 			if (cl != 0.0)
 			{
 				auto scale = (cl - offset) / cl;
-				mat *= scale;
-				mat.SetTranslation(t);
+				FastScale(mat, scale);
 			}
 		}
 
@@ -409,8 +434,7 @@ void ApplyDepthParameters(::Effekseer::Mat44f& mat,
 		if (cl != 0.0)
 		{
 			auto scale = cl / 32.0f * (1.0f - depthParameter->SuppressionOfScalingByDepth) + depthParameter->SuppressionOfScalingByDepth;
-			mat *= scale;
-			mat.SetTranslation(t);
+			FastScale(mat, scale);
 		}
 	}
 }

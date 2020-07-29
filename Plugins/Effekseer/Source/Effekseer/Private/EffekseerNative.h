@@ -348,6 +348,67 @@ inline int32_t ConvertUtf16ToUtf8( int8_t* dst, int32_t dst_size, const int16_t*
 }
 
 /**
+	@brief    Convert UTF8 into UTF16
+	@param    dst    a pointer to destination buffer
+	@param    dst_size    a length of destination buffer
+	@param    src            a source buffer
+	@return    length except 0
+*/
+inline int32_t ConvertUtf8ToUtf16(char16_t* dst, int32_t dst_size, const char* src)
+{
+	int32_t i, code = 0;
+	int8_t c0, c1, c2 = 0;
+	int8_t* srci = reinterpret_cast<int8_t*>(const_cast<char*>(src));
+	if (dst_size == 0)
+		return 0;
+
+	dst_size -= 1;
+
+	for (i = 0; i < dst_size; i++)
+	{
+		uint16_t wc;
+
+		c0 = *srci;
+		srci++;
+		if (c0 == '\0')
+		{
+			break;
+		}
+		// convert UTF8 to UTF16
+		code = (uint8_t)c0 >> 4;
+		if (code <= 7)
+		{
+			// 8bit character
+			wc = c0;
+		}
+		else if (code >= 12 && code <= 13)
+		{
+			// 16bit  character
+			c1 = *srci;
+			srci++;
+			wc = ((c0 & 0x1F) << 6) | (c1 & 0x3F);
+		}
+		else if (code == 14)
+		{
+			// 24bit character
+			c1 = *srci;
+			srci++;
+			c2 = *srci;
+			srci++;
+			wc = ((c0 & 0x0F) << 12) | ((c1 & 0x3F) << 6) | (c2 & 0x3F);
+		}
+		else
+		{
+			continue;
+		}
+		dst[i] = wc;
+	}
+	dst[i] = 0;
+	return i;
+}
+
+
+/**
 	@brief	文字コードを変換する。(UTF8 -> UTF16)
 	@param	dst	[out]	出力配列の先頭ポインタ
 	@param	dst_size	[in]	出力配列の長さ
@@ -1116,8 +1177,8 @@ template <class T> struct CustomAllocator
 
 	template <class U> CustomAllocator(const CustomAllocator<U>&) {}
 
-	T* allocate(std::size_t n) { return reinterpret_cast<T*>(GetMallocFunc()(sizeof(T) * n)); }
-	void deallocate(T* p, std::size_t n) { GetFreeFunc()(p, sizeof(T) * n); }
+	T* allocate(std::size_t n) { return reinterpret_cast<T*>(GetMallocFunc()(sizeof(T) * static_cast<uint32_t>(n))); }
+	void deallocate(T* p, std::size_t n) { GetFreeFunc()(p, sizeof(T) * static_cast<uint32_t>(n)); }
 };
 
 template <class T> struct CustomAlignedAllocator
@@ -1128,8 +1189,8 @@ template <class T> struct CustomAlignedAllocator
 
 	template <class U> CustomAlignedAllocator(const CustomAlignedAllocator<U>&) {}
 
-	T* allocate(std::size_t n) { return reinterpret_cast<T*>(GetAlignedMallocFunc()(sizeof(T) * n, 16)); }
-	void deallocate(T* p, std::size_t n) { GetAlignedFreeFunc()(p, sizeof(T) * n); }
+	T* allocate(std::size_t n) { return reinterpret_cast<T*>(GetAlignedMallocFunc()(sizeof(T) * static_cast<uint32_t>(n), 16)); }
+	void deallocate(T* p, std::size_t n) { GetAlignedFreeFunc()(p, sizeof(T) * static_cast<uint32_t>(n)); }
 };
 
 template <class T, class U> bool operator==(const CustomAllocator<T>&, const CustomAllocator<U>&) { return true; }
