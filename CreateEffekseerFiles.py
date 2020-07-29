@@ -129,6 +129,9 @@ effekseerHeader.readLines(rootEDir + 'Effekseer.MaterialLoader.h')
 
 effekseerHeader.readLines(rootEDir + 'Effekseer.Model.h')
 
+effekseerHeader.readLines(rootEDir + 'Effekseer.Curve.h')
+effekseerHeader.readLines(rootEDir + 'Effekseer.CurveLoader.h')
+
 effekseerHeader.readLines(rootEDir + 'Sound/Effekseer.SoundPlayer.h')
 
 effekseerHeader.readLines(rootEDir + 'Effekseer.SoundLoader.h')

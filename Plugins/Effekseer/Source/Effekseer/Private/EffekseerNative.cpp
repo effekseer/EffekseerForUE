@@ -6831,6 +6831,10 @@ enum ParameterTranslationType
 	ParameterTranslationType_PVA = 1,
 	ParameterTranslationType_Easing = 2,
 	ParameterTranslationType_FCurve = 3,
+#if __EFFEKSEER_BUILD_VERSION16__
+	ParameterTranslationType_NurbsCurve = 4,
+	ParameterTranslationType_ViewOffset = 5,
+#endif
 
 	ParameterTranslationType_None = 0x7fffffff - 1,
 
@@ -6866,6 +6870,21 @@ struct ParameterTranslationEasing
 	RefMinMax RefEqE;
 	easing_vector3d location;
 };
+
+#if __EFFEKSEER_BUILD_VERSION16__
+struct ParameterTranslationNurbsCurve
+{
+	int32_t Index;
+	float Scale;
+	float MoveSpeed;
+	int32_t LoopType;
+};
+
+struct ParameterTranslationViewOffset
+{
+	random_float distance;
+};
+#endif
 
 //----------------------------------------------------------------------------------
 //
@@ -8218,6 +8237,10 @@ public:
 	ParameterTranslationPVA TranslationPVA;
 	ParameterTranslationEasing TranslationEasing;
 	FCurveVector3D* TranslationFCurve;
+#if __EFFEKSEER_BUILD_VERSION16__
+	ParameterTranslationNurbsCurve TranslationNurbsCurve;
+	ParameterTranslationViewOffset TranslationViewOffset;
+#endif
 
 #ifdef OLD_LF
 	std::array<LocalForceFieldParameterOld, LocalFieldSlotMax> LocalForceFieldsOld;
@@ -9426,6 +9449,9 @@ public:
 	HolderCollection<void*> sounds;
 	HolderCollection<void*> models;
 	HolderCollection<MaterialData*> materials;
+#if __EFFEKSEER_BUILD_VERSION16__
+	HolderCollection<void*> curves;
+#endif
 };
 
 /**
@@ -9478,6 +9504,12 @@ protected:
 	int32_t materialCount_ = 0;
 	EFK_CHAR** materialPaths_ = nullptr;
 	MaterialData** materials_ = nullptr;
+
+#if __EFFEKSEER_BUILD_VERSION16__
+	int32_t curveCount_ = 0;
+	EFK_CHAR** curvePaths_ = nullptr;
+	void** curves_ = nullptr;
+#endif
 
 	std::u16string name_;
 	std::basic_string<EFK_CHAR> m_materialPath;
@@ -9637,6 +9669,14 @@ public:
 
 	const EFK_CHAR* GetMaterialPath(int n) const override;
 
+#if __EFFEKSEER_BUILD_VERSION16__
+	void* GetCurve(int n) const override;
+	
+	int32_t GetCurveCount() const override;
+
+	const EFK_CHAR* GetCurvePath(int n) const override;
+#endif
+
 	void SetTexture(int32_t index, TextureType type, TextureData* data) override;
 
 	void SetSound(int32_t index, void* data) override;
@@ -9644,6 +9684,10 @@ public:
 	void SetModel(int32_t index, void* data) override;
 
 	void SetMaterial(int32_t index, MaterialData* data) override;
+
+#if __EFFEKSEER_BUILD_VERSION16__
+	void SetCurve(int32_t index, void* data) override;
+#endif
 
 	/**
 		@brief	エフェクトのリロードを行う。
@@ -10005,6 +10049,12 @@ public:
 	MaterialLoader* GetMaterialLoader() override;
 
 	void SetMaterialLoader(MaterialLoader* loader) override;
+
+#if __EFFEKSEER_BUILD_VERSION16__
+	CurveLoader* GetCurveLoader() override;
+
+	void SetCurveLoader(CurveLoader* loader) override;
+#endif
 
 	void StopEffect(Handle handle) override;
 
@@ -10739,6 +10789,13 @@ public:
 		{
 			Vec3f offset;
 		} fcruve;
+
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+		struct
+		{
+			float distance;
+		} view_offset;
+#endif
 
 	} translation_values;
 
@@ -11891,6 +11948,18 @@ void EffectNodeImplemented::LoadParameter(unsigned char*& pos, EffectNode* paren
 			TranslationFCurve = new FCurveVector3D();
 			pos += TranslationFCurve->Load(pos, m_effect->GetVersion());
 		}
+#if __EFFEKSEER_BUILD_VERSION16__
+		else if (TranslationType == ParameterTranslationType_NurbsCurve)
+		{
+			memcpy(&TranslationNurbsCurve, pos, sizeof(ParameterTranslationNurbsCurve));
+			pos += sizeof(ParameterTranslationNurbsCurve);
+		}
+		else if (TranslationType == ParameterTranslationType_ViewOffset)
+		{
+			memcpy(&TranslationViewOffset, pos, sizeof(ParameterTranslationViewOffset));
+			pos += sizeof(ParameterTranslationViewOffset);
+		}
+#endif
 
 		/* 位置拡大処理 */
 		if (ef->IsDyanamicMagnificationValid())
@@ -13058,6 +13127,8 @@ void EffectNodeModel::BeginRendering(int32_t count, Manager* manager)
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 		nodeParameter.EnableFalloff = EnableFalloff;
 		nodeParameter.FalloffParam = FalloffParam;
+
+		nodeParameter.EnableViewOffset = (TranslationType == ParameterTranslationType_ViewOffset);
 #endif
 
 		renderer->BeginRendering(nodeParameter, count, m_userData);
@@ -13094,6 +13165,8 @@ void EffectNodeModel::Rendering(const Instance& instance, const Instance* next_i
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 		nodeParameter.EnableFalloff = EnableFalloff;
 		nodeParameter.FalloffParam = FalloffParam;
+
+		nodeParameter.EnableViewOffset = (TranslationType == ParameterTranslationType_ViewOffset);
 #endif
 
 		ModelRenderer::InstanceParameter instanceParameter;
@@ -13111,6 +13184,11 @@ void EffectNodeModel::Rendering(const Instance& instance, const Instance* next_i
 		instanceParameter.FlipbookIndexAndNextRate = instance.m_flipbookIndexAndNextRate;
 
 		instanceParameter.AlphaThreshold = instance.m_AlphaThreshold;
+
+		if (nodeParameter.EnableViewOffset == true)
+		{
+			instanceParameter.ViewOffsetDistance = instance.translation_values.view_offset.distance;
+		}
 #else
 		instanceParameter.UV = instance.GetUV();
 #endif
@@ -13167,6 +13245,8 @@ void EffectNodeModel::EndRendering(Manager* manager)
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 		nodeParameter.EnableFalloff = EnableFalloff;
 		nodeParameter.FalloffParam = FalloffParam;
+
+		nodeParameter.EnableViewOffset = (TranslationType == ParameterTranslationType_ViewOffset);
 #endif
 
 		renderer->EndRendering(nodeParameter, m_userData);
@@ -13429,6 +13509,9 @@ void EffectNodeRibbon::BeginRendering(int32_t count, Manager* manager)
 		m_nodeParameter.BasicParameterPtr = &RendererCommon.BasicParameter;
 		m_nodeParameter.TextureUVTypeParameterPtr = &TextureUVType;
 		m_nodeParameter.IsRightHand = manager->GetCoordinateSystem() == CoordinateSystem::RH;
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+		m_nodeParameter.EnableViewOffset = (TranslationType == ParameterTranslationType_ViewOffset);
+#endif
 		renderer->BeginRendering(m_nodeParameter, count, m_userData);
 	}
 }
@@ -13455,6 +13538,11 @@ void EffectNodeRibbon::BeginRenderingGroup(InstanceGroup* group, Manager* manage
 			m_instanceParameter.FlipbookIndexAndNextRate = groupFirst->m_flipbookIndexAndNextRate;
 
 			m_instanceParameter.AlphaThreshold = groupFirst->m_AlphaThreshold;
+
+			if (m_nodeParameter.EnableViewOffset)
+			{
+				m_instanceParameter.ViewOffsetDistance = groupFirst->translation_values.view_offset.distance;
+			}
 #else
 			m_instanceParameter.UV = group->GetFirst()->GetUV();
 #endif
@@ -13904,6 +13992,10 @@ void EffectNodeRing::BeginRendering(int32_t count, Manager* manager)
 		nodeParameter.StartingFade = Shape.StartingFade;
 		nodeParameter.EndingFade = Shape.EndingFade;
 
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+		nodeParameter.EnableViewOffset = (TranslationType == ParameterTranslationType_ViewOffset);
+#endif
+
 		renderer->BeginRendering(nodeParameter, count, m_userData);
 	}
 }
@@ -13928,6 +14020,10 @@ void EffectNodeRing::Rendering(const Instance& instance, const Instance* next_in
 		nodeParameter.BasicParameterPtr = &RendererCommon.BasicParameter;
 		nodeParameter.StartingFade = Shape.StartingFade;
 		nodeParameter.EndingFade = Shape.EndingFade;
+
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+		nodeParameter.EnableViewOffset = (TranslationType == ParameterTranslationType_ViewOffset);
+#endif
 
 		Color _outerColor;
 		Color _centerColor;
@@ -13980,6 +14076,11 @@ void EffectNodeRing::Rendering(const Instance& instance, const Instance* next_in
 		instanceParameter.FlipbookIndexAndNextRate = instance.m_flipbookIndexAndNextRate;
 
 		instanceParameter.AlphaThreshold = instance.m_AlphaThreshold;
+
+		if (instance.m_pEffectNode->TranslationType == ParameterTranslationType_ViewOffset)
+		{
+			instanceParameter.ViewOffsetDistance = instance.translation_values.view_offset.distance;
+		}
 #else
 		instanceParameter.UV = instance.GetUV();
 #endif
@@ -14469,6 +14570,10 @@ void EffectNodeSprite::BeginRendering(int32_t count, Manager* manager)
 
 		nodeParameter.ZSort = DepthValues.ZSort;
 
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+		nodeParameter.EnableViewOffset = (TranslationType == ParameterTranslationType_ViewOffset);
+#endif
+
 		renderer->BeginRendering(nodeParameter, count, m_userData);
 	}
 }
@@ -14495,6 +14600,10 @@ void EffectNodeSprite::Rendering(const Instance& instance, const Instance* next_
 		nodeParameter.BasicParameterPtr = &RendererCommon.BasicParameter;
 
 		nodeParameter.ZSort = DepthValues.ZSort;
+
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+		nodeParameter.EnableViewOffset = (TranslationType == ParameterTranslationType_ViewOffset);
+#endif
 
 		SpriteRenderer::InstanceParameter instanceParameter;
 		instanceParameter.AllColor = instValues._color;
@@ -14568,6 +14677,11 @@ void EffectNodeSprite::Rendering(const Instance& instance, const Instance* next_
 		instanceParameter.FlipbookIndexAndNextRate = instance.m_flipbookIndexAndNextRate;
 
 		instanceParameter.AlphaThreshold = instance.m_AlphaThreshold;
+
+		if (nodeParameter.EnableViewOffset)
+		{
+			instanceParameter.ViewOffsetDistance = instance.translation_values.view_offset.distance;
+		}
 #else
 		instanceParameter.UV = instance.GetUV();
 #endif
@@ -14804,6 +14918,9 @@ void EffectNodeTrack::BeginRendering(int32_t count, Manager* manager)
 		m_nodeParameter.BasicParameterPtr = &RendererCommon.BasicParameter;
 		m_nodeParameter.TextureUVTypeParameterPtr = &TextureUVType;
 		m_nodeParameter.IsRightHand = manager->GetCoordinateSystem() == CoordinateSystem::RH;
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+		m_nodeParameter.EnableViewOffset = (TranslationType == ParameterTranslationType_ViewOffset);
+#endif
 		renderer->BeginRendering(m_nodeParameter, count, m_userData);
 	}
 }
@@ -14835,6 +14952,11 @@ void EffectNodeTrack::BeginRenderingGroup(InstanceGroup* group, Manager* manager
 			m_instanceParameter.FlipbookIndexAndNextRate = groupFirst->m_flipbookIndexAndNextRate;
 
 			m_instanceParameter.AlphaThreshold = groupFirst->m_AlphaThreshold;
+			
+			if (m_nodeParameter.EnableViewOffset == true)
+			{
+				m_instanceParameter.ViewOffsetDistance = groupFirst->translation_values.view_offset.distance;
+			}
 #else
 			m_instanceParameter.UV = group->GetFirst()->GetUV();
 #endif
@@ -15080,6 +15202,8 @@ void EffectNodeTrack::LoadValues(TrackSizeParameter& param, unsigned char*& pos)
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
+#if __EFFEKSEER_BUILD_VERSION16__
+#endif
 
 
 //----------------------------------------------------------------------------------
@@ -15215,6 +15339,15 @@ void EffectFactory::SetMaterial(Effect* effect, int32_t index, MaterialData* dat
 	effect_->materials_[index] = data;
 }
 
+#if __EFFEKSEER_BUILD_VERSION16__
+void EffectFactory::SetCurve(Effect* effect, int32_t index, void* data)
+{
+	auto effect_ = static_cast<EffectImplemented*>(effect);
+	assert(0 <= index && index < effect_->curveCount_);
+	effect_->curves_[index] = data;
+}
+#endif
+
 void EffectFactory::SetLoadingParameter(Effect* effect, ReferenceObject* parameter)
 {
 	auto effect_ = static_cast<EffectImplemented*>(effect);
@@ -15247,6 +15380,9 @@ void EffectFactory::OnLoadingResource(Effect* effect, const void* data, int32_t 
 	auto soundLoader = effect->GetSetting()->GetSoundLoader();
 	auto modelLoader = effect->GetSetting()->GetModelLoader();
 	auto materialLoader = effect->GetSetting()->GetMaterialLoader();
+#if __EFFEKSEER_BUILD_VERSION16__
+	auto curveLoader = effect->GetSetting()->GetCurveLoader();
+#endif
 
 	if (textureLoader != nullptr)
 	{
@@ -15313,6 +15449,20 @@ void EffectFactory::OnLoadingResource(Effect* effect, const void* data, int32_t 
 			SetMaterial(effect, i, resource);
 		}
 	}
+
+#if __EFFEKSEER_BUILD_VERSION16__
+	if (curveLoader != nullptr)
+	{
+		for (auto i = 0; i < effect->GetCurveCount(); i++)
+		{
+			EFK_CHAR fullPath[512];
+			PathCombine(fullPath, materialPath, effect->GetCurvePath(i));
+			
+			auto resource = curveLoader->Load(fullPath);
+			SetCurve(effect, i, resource);
+		}
+	}
+#endif
 }
 
 void EffectFactory::OnUnloadingResource(Effect* effect)
@@ -15321,6 +15471,9 @@ void EffectFactory::OnUnloadingResource(Effect* effect)
 	auto soundLoader = effect->GetSetting()->GetSoundLoader();
 	auto modelLoader = effect->GetSetting()->GetModelLoader();
 	auto materialLoader = effect->GetSetting()->GetMaterialLoader();
+#if __EFFEKSEER_BUILD_VERSION16__
+	auto curveLoader = effect->GetSetting()->GetCurveLoader();
+#endif
 
 	if (textureLoader != nullptr)
 	{
@@ -15369,6 +15522,17 @@ void EffectFactory::OnUnloadingResource(Effect* effect)
 			SetMaterial(effect, i, nullptr);
 		}
 	}
+
+#if __EFFEKSEER_BUILD_VERSION16__
+	if (curveLoader != nullptr)
+	{
+		for (auto i = 0; i < effect->GetCurveCount(); i++)
+		{
+			curveLoader->Unload(effect->GetCurve(i));
+			SetCurve(effect, i, nullptr);
+		}
+	}
+#endif
 }
 
 const char* EffectFactory::GetName() const
@@ -15624,6 +15788,31 @@ bool EffectImplemented::LoadBody(const uint8_t* data, int32_t size, float mag)
 	{
 		defaultDynamicInputs.fill(0);
 	}
+
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+	if (m_version >= 16)
+	{
+		// curve
+		binaryReader.Read(curveCount_, 0, elementCountMax);
+
+		if (curveCount_ > 0)
+		{
+			curvePaths_ = new EFK_CHAR*[curveCount_];
+			curves_ = new void*[curveCount_];
+
+			for (int i = 0; i < curveCount_; i++)
+			{
+				int length = 0;
+				binaryReader.Read(length, 0, elementCountMax);
+
+				curvePaths_[i] = new EFK_CHAR[length];
+				binaryReader.Read(curvePaths_[i], length);
+
+				curves_[i] = nullptr;
+			}
+		}
+	}
+#endif
 
 	if (m_version >= 13)
 	{
@@ -16175,6 +16364,22 @@ const EFK_CHAR* EffectImplemented::GetMaterialPath(int n) const
 	return materialPaths_[n];
 }
 
+#if __EFFEKSEER_BUILD_VERSION16__
+void* EffectImplemented::GetCurve(int n) const
+{
+	return curves_[n];
+}
+
+int32_t EffectImplemented::GetCurveCount() const
+{
+	return curveCount_;
+}
+
+const EFK_CHAR* EffectImplemented::GetCurvePath(int n) const
+{
+	return curvePaths_[n];
+}
+#endif
 void EffectImplemented::SetTexture(int32_t index, TextureType type, TextureData* data)
 {
 	auto textureLoader = GetSetting()->GetTextureLoader();
@@ -16251,6 +16456,21 @@ void EffectImplemented::SetMaterial(int32_t index, MaterialData* data)
 
 	materials_[index] = data;
 }
+
+#if __EFFEKSEER_BUILD_VERSION16__
+void EffectImplemented::SetCurve(int32_t index, void* data)
+{
+	auto curveLoader = GetSetting()->GetCurveLoader();
+	assert(0 <= index && index < curveCount_);
+
+	if (curveLoader != nullptr)
+	{
+		curveLoader->Unload(GetCurve(index));
+	}
+
+	curves_[index] = data;
+}
+#endif
 
 bool EffectImplemented::Reload(void* data, int32_t size, const EFK_CHAR* materialPath, ReloadingThreadType reloadingThreadType)
 {
@@ -16461,6 +16681,20 @@ void EffectImplemented::ReloadResources(const void* data, int32_t size, const EF
 			}
 		}
 
+#if __EFFEKSEER_BUILD_VERSION16__
+		for (int32_t ind = 0; ind < curveCount_; ind++)
+		{
+			EFK_CHAR fullPath[512];
+			PathCombine(fullPath, matPath, curvePaths_[ind]);
+
+			void* value = nullptr;
+			if (reloadingBackup->curves.Pop(fullPath, value))
+			{
+				curves_[ind] = value;
+			}
+		}
+#endif
+
 		return;
 	}
 
@@ -16540,6 +16774,18 @@ void EffectImplemented::UnloadResources(const EFK_CHAR* materialPath)
 			PathCombine(fullPath, matPath, materialPaths_[ind]);
 			reloadingBackup->materials.Push(fullPath, materials_[ind]);
 		}
+
+#if __EFFEKSEER_BUILD_VERSION16__
+		for (int32_t ind = 0; ind < curveCount_; ind++)
+		{
+			if (curves_[ind] == nullptr)
+				continue;
+
+			EFK_CHAR fullPath[512];
+			PathCombine(fullPath, matPath, curvePaths_[ind]);
+			reloadingBackup->curves.Push(fullPath, curves_[ind]);
+		}
+#endif
 
 		return;
 	}
@@ -17289,6 +17535,18 @@ void ManagerImplemented::SetMaterialLoader(MaterialLoader* loader)
 {
 	m_setting->SetMaterialLoader(loader);
 }
+
+#if __EFFEKSEER_BUILD_VERSION16__
+CurveLoader* ManagerImplemented::GetCurveLoader()
+{
+	return m_setting->GetCurveLoader();
+}
+
+void ManagerImplemented::SetCurveLoader(CurveLoader* loader)
+{
+	m_setting->SetCurveLoader(loader);
+}
+#endif
 
 void ManagerImplemented::StopEffect(Handle handle)
 {
@@ -19317,6 +19575,8 @@ InstanceGlobal* InstanceContainer::GetRootInstance()
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
+#if __EFFEKSEER_BUILD_VERSION16__
+#endif
 
 //----------------------------------------------------------------------------------
 //
@@ -19846,6 +20106,12 @@ void Instance::FirstUpdate()
 
 		translation_values.fcruve.offset = m_pEffectNode->TranslationFCurve->GetOffsets(rand);
 	}
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+	else if (m_pEffectNode->TranslationType == ParameterTranslationType_ViewOffset)
+	{
+		translation_values.view_offset.distance = m_pEffectNode->TranslationViewOffset.distance.getValue(rand);
+	}
+#endif
 
 	// Rotation
 	if (m_pEffectNode->RotationType == ParameterRotationType_Fixed)
@@ -20686,6 +20952,48 @@ void Instance::CalculateMatrix(float deltaFrame)
 			auto fcurve = m_pEffectNode->TranslationFCurve->GetValues(m_LivingTime, m_LivedTime);
 			localPosition = fcurve + translation_values.fcruve.offset;
 		}
+#if __EFFEKSEER_BUILD_VERSION16__
+		else if (m_pEffectNode->TranslationType == ParameterTranslationType_NurbsCurve)
+		{
+			auto& NurbsCurveParam = m_pEffectNode->TranslationNurbsCurve;
+			
+			if (NurbsCurveParam.Index != -1)
+			{	
+				Curve* curve = static_cast<Curve*>(m_pEffectNode->m_effect->GetCurve(NurbsCurveParam.Index));
+				float moveSpeed = NurbsCurveParam.MoveSpeed;
+				int32_t loopType = NurbsCurveParam.LoopType;
+
+				float speed = 1.0f / (curve->GetLength() * NurbsCurveParam.Scale);
+
+				float t = speed * m_LivingTime * moveSpeed;
+
+				switch (loopType)
+				{
+				default:
+				case 0:
+				t = fmod(t, 1.0f);
+				break;
+
+				case 1:
+				if (t > 1.0f)
+				{
+					t = 1.0f;
+				}
+				break;
+				}
+
+				localPosition = curve->CalcuratePoint(t, NurbsCurveParam.Scale * m_pEffectNode->m_effect->GetMaginification());
+			}
+			else
+			{
+				localPosition = {0, 0, 0};
+			}
+		}
+		else if (m_pEffectNode->TranslationType == ParameterTranslationType_ViewOffset)
+		{
+			localPosition = { 0, 0, 0 };
+		}
+#endif
 
 		if (!m_pEffectNode->GenerationLocation.EffectsRotation)
 		{
@@ -20848,8 +21156,16 @@ void Instance::CalculateMatrix(float deltaFrame)
 			assert(m_GlobalMatrix43.IsValid());
 		}
 
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+		if(m_pEffectNode->TranslationType != ParameterTranslationType_ViewOffset)
+		{ 
+			m_GlobalMatrix43 *= m_ParentMatrix;
+			assert(m_GlobalMatrix43.IsValid());
+		}
+#else
 		m_GlobalMatrix43 *= m_ParentMatrix;
 		assert(m_GlobalMatrix43.IsValid());
+#endif
 
 		if (m_pEffectNode->LocationAbs.type != LocationAbsType::None)
 		{
@@ -22374,6 +22690,8 @@ void LocalForceFieldInstance::Reset()
 //----------------------------------------------------------------------------------
 
 
+#if __EFFEKSEER_BUILD_VERSION16__
+#endif
 
 
 
@@ -22392,6 +22710,9 @@ Setting::Setting()
 	, m_textureLoader(NULL)
 	, m_soundLoader(NULL)
 	, m_modelLoader(NULL)
+#if __EFFEKSEER_BUILD_VERSION16__
+	, m_curveLoader(NULL)
+#endif
 {
 	auto effectFactory = new EffectFactory();
 	effectFactories.push_back(effectFactory);
@@ -22413,6 +22734,9 @@ Setting::~Setting()
 	ES_SAFE_DELETE(m_soundLoader);
 	ES_SAFE_DELETE(m_modelLoader);
 	ES_SAFE_DELETE(m_materialLoader);
+#if __EFFEKSEER_BUILD_VERSION16__
+	ES_SAFE_DELETE(m_curveLoader);
+#endif
 }
 
 //----------------------------------------------------------------------------------
@@ -22517,6 +22841,19 @@ void Setting::SetMaterialLoader(MaterialLoader* loader)
 	ES_SAFE_DELETE(m_materialLoader);
 	m_materialLoader = loader;
 }
+
+#if __EFFEKSEER_BUILD_VERSION16__
+CurveLoader* Setting::GetCurveLoader()
+{
+	return m_curveLoader;
+}
+
+void Setting::SetCurveLoader(CurveLoader* loader)
+{
+	ES_SAFE_DELETE(m_curveLoader);
+	m_curveLoader = loader;
+}
+#endif
 
 void Setting::AddEffectFactory(EffectFactory* effectFactory)
 {

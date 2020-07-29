@@ -689,6 +689,16 @@ void ApplyDepthParameters(::Effekseer::Mat44f& mat,
 						  ::Effekseer::NodeRendererDepthParameter* depthParameter,
 						  bool isRightHand);
 
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+void ApplyViewOffset(::Effekseer::Mat43f& mat,
+					 const ::Effekseer::Mat44f& camera,
+					 float distance);
+
+void ApplyViewOffset(::Effekseer::Mat44f& mat,
+					 const ::Effekseer::Mat44f& camera,
+					 float distance);
+#endif
+
 template <typename Vertex>
 inline void TransformStandardVertexes(Vertex& vertexes, int32_t count, const ::Effekseer::Mat43f& mat)
 {
@@ -3339,6 +3349,7 @@ protected:
 	std::vector<Effekseer::RectF> blendUVDistortionUVSorted_;
 	std::vector<float> flipbookIndexAndNextRateSorted_;
 	std::vector<float> alphaThresholdSorted_;
+	std::vector<float> viewOffsetDistanceSorted_;
 #endif
 	std::vector<Effekseer::Color> colorsSorted_;
 	std::vector<int32_t> timesSorted_;
@@ -3355,6 +3366,7 @@ protected:
 	std::vector<Effekseer::RectF> m_blendUVDistortionUV;
 	std::vector<float> m_flipbookIndexAndNextRate;
 	std::vector<float> m_alphaThreshold;
+	std::vector<float> m_viewOffsetDistance;
 #endif
 	std::vector<Effekseer::Color> m_colors;
 	std::vector<int32_t> m_times;
@@ -3445,6 +3457,8 @@ protected:
 			blendUVSorted_.resize(m_matrixes.size());
 			blendAlphaUVSorted_.resize(m_matrixes.size());
 			flipbookIndexAndNextRateSorted_.resize(m_matrixes.size());
+			alphaThresholdSorted_.resize(m_matrixes.size());
+			viewOffsetDistanceSorted_.resize(m_matrixes.size());
 #endif
 			colorsSorted_.resize(m_matrixes.size());
 			timesSorted_.resize(m_matrixes.size());
@@ -3471,6 +3485,7 @@ protected:
 				blendUVDistortionUVSorted_[keyValues_[i].Value] = m_blendUVDistortionUV[i];
 				flipbookIndexAndNextRateSorted_[keyValues_[i].Value] = m_flipbookIndexAndNextRate[i];
 				alphaThresholdSorted_[keyValues_[i].Value] = m_alphaThreshold[i];
+				viewOffsetDistanceSorted_[keyValues_[i].Value] = m_viewOffsetDistance[i];
 #endif
 				colorsSorted_[keyValues_[i].Value] = m_colors[i];
 				timesSorted_[keyValues_[i].Value] = m_times[i];
@@ -3502,6 +3517,7 @@ protected:
 			m_blendUVDistortionUV = blendUVDistortionUVSorted_;
 			m_flipbookIndexAndNextRate = flipbookIndexAndNextRateSorted_;
 			m_alphaThreshold = alphaThresholdSorted_;
+			m_viewOffsetDistance = viewOffsetDistanceSorted_;
 #endif
 			m_colors = colorsSorted_;
 			m_times = timesSorted_;
@@ -3646,6 +3662,7 @@ public:
 		m_blendUVDistortionUV.clear();
 		m_flipbookIndexAndNextRate.clear();
 		m_alphaThreshold.clear();
+		m_viewOffsetDistance.clear();
 #endif
 		m_colors.clear();
 		m_times.clear();
@@ -3662,6 +3679,7 @@ public:
 		blendUVDistortionUVSorted_.clear();
 		flipbookIndexAndNextRateSorted_.clear();
 		alphaThresholdSorted_.clear();
+		viewOffsetDistanceSorted_.clear();
 #endif
 		colorsSorted_.clear();
 		timesSorted_.clear();
@@ -3728,6 +3746,7 @@ public:
 		m_blendUVDistortionUV.push_back(instanceParameter.BlendUVDistortionUV);
 		m_flipbookIndexAndNextRate.push_back(instanceParameter.FlipbookIndexAndNextRate);
 		m_alphaThreshold.push_back(instanceParameter.AlphaThreshold);
+		m_viewOffsetDistance.push_back(instanceParameter.ViewOffsetDistance);
 #endif
 		m_colors.push_back(instanceParameter.AllColor);
 		m_times.push_back(instanceParameter.Time);
@@ -4273,6 +4292,12 @@ public:
 
 					// DepthParameter
 					::Effekseer::Mat44f modelMatrix = vcb->ModelMatrix[num];
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+					if (param.EnableViewOffset)
+					{
+						ApplyViewOffset(modelMatrix, renderer->GetCameraMatrix(), m_viewOffsetDistance[loop + num]);
+					}
+#endif
 					ApplyDepthParameters(modelMatrix,
 										 renderer->GetCameraFrontDirection(),
 										 renderer->GetCameraPosition(),
@@ -4368,6 +4393,12 @@ public:
 
 				// DepthParameters
 				::Effekseer::Mat44f modelMatrix = vcb->ModelMatrix[0];
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+				if (param.EnableViewOffset == true)
+				{
+					ApplyViewOffset(modelMatrix, renderer->GetCameraMatrix(), m_viewOffsetDistance[0]);
+				}
+#endif
 				ApplyDepthParameters(modelMatrix,
 									 renderer->GetCameraFrontDirection(),
 									 renderer->GetCameraPosition(),
@@ -4879,6 +4910,12 @@ protected:
 				if (parameter.ViewpointDependent)
 				{
 					::Effekseer::Mat43f mat = param.SRTMatrix43;
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+					if (parameter.EnableViewOffset == true)
+					{
+						ApplyViewOffset(mat, camera, param.ViewOffsetDistance);
+					}
+#endif
 					::Effekseer::Vec3f s;
 					::Effekseer::Mat43f r;
 					::Effekseer::Vec3f t;
@@ -4927,6 +4964,13 @@ protected:
 				else
 				{
 					::Effekseer::Mat43f mat = param.SRTMatrix43;
+
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+					if (parameter.EnableViewOffset == true)
+					{
+						ApplyViewOffset(mat, camera, param.ViewOffsetDistance);
+					}
+#endif
 
 					ApplyDepthParameters(mat,
 										 m_renderer->GetCameraFrontDirection(),
@@ -4989,6 +5033,12 @@ protected:
 				if (parameter.ViewpointDependent)
 				{
 					::Effekseer::Mat43f mat = param.SRTMatrix43;
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+					if (parameter.EnableViewOffset == true)
+					{
+						ApplyViewOffset(mat, camera, param.ViewOffsetDistance);
+					}
+#endif
 					::Effekseer::Vec3f s;
 					::Effekseer::Mat43f r;
 					::Effekseer::Vec3f t;
@@ -5049,6 +5099,13 @@ protected:
 					else
 					{
 						::Effekseer::Mat43f mat = param.SRTMatrix43;
+
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+						if (parameter.EnableViewOffset == true)
+						{
+							ApplyViewOffset(mat, camera, param.ViewOffsetDistance);
+						}
+#endif
 
 						ApplyDepthParameters(mat,
 											 m_renderer->GetCameraFrontDirection(),
@@ -5691,7 +5748,22 @@ protected:
 			Effekseer::Vec3f R;
 			Effekseer::Vec3f F;
 
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+			if (parameter.EnableViewOffset)
+			{
+				Effekseer::Mat43f instMat = instanceParameter.SRTMatrix43;
+
+				ApplyViewOffset(instMat, camera, instanceParameter.ViewOffsetDistance);
+
+				CalcBillboard(parameter.Billboard, mat43, s, R, F, instMat, m_renderer->GetCameraFrontDirection());
+			}
+			else
+			{
+				CalcBillboard(parameter.Billboard, mat43, s, R, F, instanceParameter.SRTMatrix43, m_renderer->GetCameraFrontDirection());
+			}
+#else
 			CalcBillboard(parameter.Billboard, mat43, s, R, F, instanceParameter.SRTMatrix43, m_renderer->GetCameraFrontDirection());
+#endif
 
 			ApplyDepthParameters(mat43,
 								 m_renderer->GetCameraFrontDirection(),
@@ -5712,6 +5784,13 @@ protected:
 		else if (parameter.Billboard == ::Effekseer::BillboardType::Fixed)
 		{
 			mat43 = instanceParameter.SRTMatrix43;
+
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+			if (parameter.EnableViewOffset)
+			{
+				ApplyViewOffset(mat43, camera, instanceParameter.ViewOffsetDistance);
+			}
+#endif
 
 			ApplyDepthParameters(mat43,
 								 m_renderer->GetCameraFrontDirection(),
@@ -6598,7 +6677,22 @@ protected:
 			Effekseer::Vec3f R;
 			Effekseer::Vec3f F;
 
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+			if (parameter.EnableViewOffset == true)
+			{
+				Effekseer::Mat43f instMat = instanceParameter.SRTMatrix43;
+
+				ApplyViewOffset(instMat, camera, instanceParameter.ViewOffsetDistance);
+				
+				CalcBillboard(parameter.Billboard, mat_rot, s, R, F, instMat, m_renderer->GetCameraFrontDirection());
+			}
+			else
+			{
+				CalcBillboard(parameter.Billboard, mat_rot, s, R, F, instanceParameter.SRTMatrix43, m_renderer->GetCameraFrontDirection());
+			}
+#else
 			CalcBillboard(parameter.Billboard, mat_rot, s, R, F, instanceParameter.SRTMatrix43, m_renderer->GetCameraFrontDirection());
+#endif
 
 			for (int i = 0; i < 4; i++)
 			{
@@ -6633,6 +6727,13 @@ protected:
 		else if (parameter.Billboard == ::Effekseer::BillboardType::Fixed)
 		{
 			auto mat = instanceParameter.SRTMatrix43;
+
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+			if (parameter.EnableViewOffset == true)
+			{
+				ApplyViewOffset(mat, camera, instanceParameter.ViewOffsetDistance);
+			}
+#endif
 
 			ApplyDepthParameters(mat,
 								 m_renderer->GetCameraFrontDirection(),
@@ -7293,6 +7394,13 @@ protected:
 
 				auto mat = param.SRTMatrix43;
 
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+				if (parameter.EnableViewOffset == true)
+				{
+					ApplyViewOffset(mat, camera, param.ViewOffsetDistance);
+				}
+#endif
+
 				ApplyDepthParameters(mat,
 									 m_renderer->GetCameraFrontDirection(),
 									 m_renderer->GetCameraPosition(),
@@ -7316,6 +7424,13 @@ protected:
 			for (int32_t sploop = 0; sploop < parameter.SplineDivision; sploop++)
 			{
 				auto mat = param.SRTMatrix43;
+
+#ifdef __EFFEKSEER_BUILD_VERSION16__
+				if (parameter.EnableViewOffset == true)
+				{
+					ApplyViewOffset(mat, camera, param.ViewOffsetDistance);
+				}
+#endif
 
 				::Effekseer::Vec3f s;
 				::Effekseer::Mat43f r;
