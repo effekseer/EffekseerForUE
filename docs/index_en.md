@@ -228,6 +228,10 @@ Materials do not have depth ignoring settings.
 
 ## Release note
 
+### 1.52j (2020/08/02)
+
+- Update Effekseer to 1.52j
+
 ### 1.52i (2020/07/30)
 
 - Update Effekseer to 1.52i
