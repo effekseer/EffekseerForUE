@@ -230,8 +230,8 @@ Materials do not have depth ignoring settings.
 
 ### 1.52k (2020/08/13)
 
+- Fixed a bug that Sampler is not supported in a material
 - Update Effekseer to 1.52k
-
 
 ### 1.52j (2020/08/02)
 

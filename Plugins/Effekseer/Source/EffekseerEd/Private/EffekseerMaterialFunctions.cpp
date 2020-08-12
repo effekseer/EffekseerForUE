@@ -359,6 +359,21 @@ public:
 			expressionToLinear_->SetMaterialFunction(func);
 		}
 
+
+		// Sampler
+		{
+			auto sampler = static_cast<EffekseerMaterial::TextureSamplerType>(static_cast<int>(effekseerNode_->GetProperty("Sampler")->Floats[0]));
+
+			if (sampler == EffekseerMaterial::TextureSamplerType::Repeat)
+			{
+				expression_->SamplerSource = ESamplerSourceMode::SSM_Wrap_WorldGroupSettings;
+			}
+			else if (sampler == EffekseerMaterial::TextureSamplerType::Wrap)
+			{
+				expression_->SamplerSource = ESamplerSourceMode::SSM_Clamp_WorldGroupSettings;
+			}
+		}
+
 		for(int i = 0; i < 6; i++)
 		{
 			expressionToLinear_->GetInput(i)->Expression = expression_;
