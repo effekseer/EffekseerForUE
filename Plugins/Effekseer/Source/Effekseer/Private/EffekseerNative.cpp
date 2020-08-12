@@ -13916,6 +13916,15 @@ static void PathCombine(EFK_CHAR* dst, const EFK_CHAR* src1, const EFK_CHAR* src
 		for( len2 = 0; src2[len2] != L'\0'; len2++ ) {}
 		memcpy( &dst[len1], src2, len2 * sizeof(EFK_CHAR) );
 	}
+    
+    for(int i = 0; i < len1 + len2; i++)
+    {
+        if(dst[i] == u'\\')
+        {
+            dst[i] = u'/';
+        }
+    }
+    
 	dst[len1 + len2] = L'\0';
 }
 
@@ -15048,13 +15057,17 @@ bool EffectImplemented::Reload( Manager** managers, int32_t managersCount, void*
 
 	const EFK_CHAR* matPath = materialPath != NULL ? materialPath : m_materialPath.c_str();
 	
-	int lockCount = 0;
-
 	for( int32_t i = 0; i < managersCount; i++)
 	{
+		// to call only once
+		for (int32_t j = 0; j < i; j++)
+		{
+			if (managers[i] == managers[j])
+				continue;
+		}
+
 		auto manager = static_cast<ManagerImplemented*>(managers[i]);
-		manager->BeginReloadEffect( this, lockCount == 0);
-		lockCount++;
+		manager->BeginReloadEffect( this, true);
 	}
 
 	// HACK for scale
@@ -15073,9 +15086,15 @@ bool EffectImplemented::Reload( Manager** managers, int32_t managersCount, void*
 
 	for( int32_t i = 0; i < managersCount; i++)
 	{
-		lockCount--;
+		// to call only once
+		for (int32_t j = 0; j < i; j++)
+		{
+			if (managers[i] == managers[j])
+				continue;
+		}
+
 		auto manager = static_cast<ManagerImplemented*>(managers[i]);
-		manager->EndReloadEffect( this, lockCount == 0);
+		manager->EndReloadEffect( this, true);
 	}
 
 	return false;
@@ -20586,13 +20605,23 @@ void Mat43f::GetSRT(Vec3f& s, Mat43f& r, Vec3f& t) const
 	SIMD4f y2 = Y * Y;
 	SIMD4f z2 = Z * Z;
 	SIMD4f s2 = x2 + y2 + z2;
-	SIMD4f rsq = SIMD4f::Rsqrt(s2);
-	rsq.SetW(0.0f);
 
-	s = SIMD4f(1.0f) / rsq;
-	r.X = X * rsq;
-	r.Y = Y * rsq;
-	r.Z = Z * rsq;
+	if (Vec3f(s2).IsZero())
+	{
+		s = Vec3f(0.0f);
+		r = Mat43f::Identity;
+	}
+	else
+	{
+		SIMD4f rsq = SIMD4f::Rsqrt(s2);
+		rsq.SetW(0.0f);
+
+		s = SIMD4f(1.0f) / rsq;
+		r.X = X * rsq;
+		r.Y = Y * rsq;
+		r.Z = Z * rsq;
+	}
+
 	t = Vec3f(X.GetW(), Y.GetW(), Z.GetW());
 }
 
