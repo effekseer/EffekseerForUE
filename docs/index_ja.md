@@ -229,6 +229,7 @@ EffekseerSystemコンポーネントにEffekseerから接続するためのポ�
 ### 1.52k (2020/08/13)
 
 - マテリアル内のサンプラーをサポートしてなかった不具合を修正
+- VertexColorNodeがVector4を返していた不具合を修正
 - Effekseer1.52kに更新
 
 ### 1.52j (2020/08/02)
