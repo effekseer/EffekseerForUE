@@ -65,7 +65,6 @@ class ConvertedNodePanner : public ConvertedNode
 private:
 	std::shared_ptr<EffekseerMaterial::Node> effekseerNode_;
 	UMaterialExpressionPanner* expression_ = nullptr;
-	UMaterialExpressionMaterialFunctionCall* loopUV_ = nullptr;
 
 public:
 	ConvertedNodePanner(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
@@ -79,27 +78,9 @@ public:
 		expression_->SpeedX = effekseerNode_->GetProperty("Speed")->Floats[0];
 		expression_->SpeedY = effekseerNode_->GetProperty("Speed")->Floats[1];
 		expression_->ConstCoordinate = index;
-
-		loopUV_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
-		material->Expressions.Add(loopUV_);
-
-		FStringAssetReference assetPath("/Effekseer/MaterialFunctions/EfkPannerLoopUV.EfkPannerLoopUV");
-		UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
-		loopUV_->SetMaterialFunction(func);
-
-		loopUV_->GetInput(0)->Expression = expression_;
-		loopUV_->GetInput(0)->OutputIndex = 0;
 	}
 
-	UMaterialExpression* GetExpression() const override { return loopUV_; }
-
-	UMaterialExpression* GetExpressions(int32_t ind) const override {
-		if (ind == 0) return loopUV_;
-		if (ind == 1) return expression_;
-		return nullptr;
-	}
-
-	int32_t GetExpressionCount() const { return 2; }
+	UMaterialExpression* GetExpression() const override { return expression_; }
 
 	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) override
 	{
