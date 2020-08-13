@@ -126,72 +126,32 @@ using ConvertedNodePixelNormalWS = ConvertedNodeSimple<UMaterialExpressionPixelN
 class ConvertedNodeVertexColor : public ConvertedNode
 {
 private:
-	UMaterialExpressionComponentMask* expressionR_ = nullptr;
-	UMaterialExpressionComponentMask* expressionG_ = nullptr;
-	UMaterialExpressionComponentMask* expressionB_ = nullptr;
-	UMaterialExpressionComponentMask* expressionA_ = nullptr;
 	UMaterialExpressionMaterialFunctionCall* function_ = nullptr;
 
 public:
 	ConvertedNodeVertexColor(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
 	{
-		expressionR_ = NewObject<UMaterialExpressionComponentMask>(material);
-		material->Expressions.Add(expressionR_);
-
-		expressionG_ = NewObject<UMaterialExpressionComponentMask>(material);
-		material->Expressions.Add(expressionG_);
-
-		expressionB_ = NewObject<UMaterialExpressionComponentMask>(material);
-		material->Expressions.Add(expressionB_);
-
-		expressionA_ = NewObject<UMaterialExpressionComponentMask>(material);
-		material->Expressions.Add(expressionA_);
-
 		function_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
 		material->Expressions.Add(function_);
 
 		FStringAssetReference assetPath("/Effekseer/MaterialFunctions/EfkVertexColor.EfkVertexColor");
 		UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
 		function_->SetMaterialFunction(func);
-
-		expressionR_->Input.Expression = function_;
-		expressionR_->R = 1;
-		expressionR_->G = 0;
-		expressionR_->B = 0;
-		expressionR_->A = 0;
-
-		expressionG_->Input.Expression = function_;
-		expressionG_->R = 0;
-		expressionG_->G = 1;
-		expressionG_->B = 0;
-		expressionG_->A = 0;
-
-		expressionB_->Input.Expression = function_;
-		expressionB_->R = 0;
-		expressionB_->G = 0;
-		expressionB_->B = 1;
-		expressionB_->A = 0;
-
-		expressionA_->Input.Expression = function_;
-		expressionA_->R = 0;
-		expressionA_->G = 0;
-		expressionA_->B = 0;
-		expressionA_->A = 1;
-
 	}
 
 	UMaterialExpression* GetExpression() const override { return function_; }
 
 	UMaterialExpression* GetExpressions(int32_t ind) const override {
 		if (ind == 0) return function_;
-		if (ind == 1) return expressionR_;
-		if (ind == 2) return expressionG_;
-		if (ind == 3) return expressionB_;
-		if (ind == 4) return expressionA_;
 		return nullptr;
 	}
 
-	int32_t GetExpressionCount() const { return 5; }
+	int32_t GetExpressionCount() const { return 1; }
+
+	ConvertedNodeOutputConnector GetNodeOutputConnector(int32_t index) const override
+	{
+		return ConvertedNodeOutputConnector(function_, index);
+	}
 };
 
 class ConvertedNodeObjectScale : public ConvertedNode
