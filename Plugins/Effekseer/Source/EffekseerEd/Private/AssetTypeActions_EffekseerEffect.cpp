@@ -7,6 +7,23 @@ UClass* FAssetTypeActions_EffekseerEffect::GetSupportedClass() const
 	return UEffekseerEffect::StaticClass();
 }
 
+bool FAssetTypeActions_EffekseerEffect::IsImportedAsset() const
+{
+	return true;
+}
+
+void FAssetTypeActions_EffekseerEffect::GetResolvedSourceFilePaths(const TArray<UObject*>& TypeAssets, TArray<FString>& OutSourceFilePaths) const
+{
+	for (auto& Asset : TypeAssets)
+	{
+		const auto asset = CastChecked<UEffekseerEffect>(Asset);
+		if (asset->AssetImportData)
+		{
+			asset->AssetImportData->ExtractFilenames(OutSourceFilePaths);
+		}
+	}
+}
+
 void FAssetTypeActions_EffekseerEffect::GetActions(
 	const TArray<UObject*>& InObjects, FMenuBuilder& MenuBuilder)
 {
