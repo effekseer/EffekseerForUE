@@ -374,7 +374,7 @@ public:
 			}
 		}
 
-		for(int i = 0; i < 6; i++)
+		for(int i = 0; i < 5; i++)
 		{
 			expressionToLinear_->GetInput(i)->Expression = expression_;
 			expressionToLinear_->GetInput(i)->OutputIndex = i;
@@ -397,14 +397,17 @@ public:
 
 			if (texture != nullptr)
 			{
-				if (texture->SRGB)
+				if (texture->IsNormalMap())
+				{
+					expression_->SamplerType = SAMPLERTYPE_Normal;
+				}
+				else if (texture->SRGB)
 				{
 					expression_->SamplerType = SAMPLERTYPE_Color;
 				}
 				else
 				{
 					expression_->SamplerType = SAMPLERTYPE_LinearColor;
-					MakeLinear();
 				}
 			}
 		}
@@ -418,14 +421,17 @@ public:
 
 			if (texture != nullptr)
 			{
-				if (texture->SRGB)
+				if (texture->IsNormalMap())
+				{
+					expression_->SamplerType = SAMPLERTYPE_Normal;
+				}
+				else if (texture->SRGB)
 				{
 					expression_->SamplerType = SAMPLERTYPE_Color;
 				}
 				else
 				{
 					expression_->SamplerType = SAMPLERTYPE_LinearColor;
-					MakeLinear();
 				}
 			}
 		}
@@ -543,7 +549,11 @@ public:
 
 			if (texture != nullptr)
 			{
-				if (texture->SRGB)
+				if (texture->IsNormalMap())
+				{
+					expression_->SamplerType = SAMPLERTYPE_Normal;
+				}
+				else if (texture->SRGB)
 				{
 					expression_->SamplerType = SAMPLERTYPE_Color;
 				}
@@ -563,7 +573,11 @@ public:
 
 			if (texture != nullptr)
 			{
-				if (texture->SRGB)
+				if (texture->IsNormalMap())
+				{
+					expression_->SamplerType = SAMPLERTYPE_Normal;
+				}
+				else if (texture->SRGB)
 				{
 					expression_->SamplerType = SAMPLERTYPE_Color;
 				}
@@ -611,7 +625,11 @@ public:
 
 			if (texture != nullptr)
 			{
-				if (texture->SRGB)
+				if (texture->IsNormalMap())
+				{
+					expression_->SamplerType = SAMPLERTYPE_Normal;
+				}
+				else if (texture->SRGB)
 				{
 					expression_->SamplerType = SAMPLERTYPE_Color;
 				}
@@ -631,7 +649,11 @@ public:
 
 			if (texture != nullptr)
 			{
-				if (texture->SRGB)
+				if (texture->IsNormalMap())
+				{
+					expression_->SamplerType = SAMPLERTYPE_Normal;
+				}
+				else if (texture->SRGB)
 				{
 					expression_->SamplerType = SAMPLERTYPE_Color;
 				}
