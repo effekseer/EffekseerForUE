@@ -6,6 +6,7 @@
 #include "Materials/Material.h"
 #include "EffekseerAlphaBlendType.h"
 #include "EditorFramework/AssetImportData.h"
+#include "Runtime/Launch/Resources/Version.h"
 #include "EffekseerMaterial.generated.h"
 
 namespace Effekseer
