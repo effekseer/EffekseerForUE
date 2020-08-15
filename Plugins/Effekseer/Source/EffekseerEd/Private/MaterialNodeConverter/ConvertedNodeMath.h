@@ -180,6 +180,8 @@ public:
 	{
 #if ENGINE_MINOR_VERSION >= 19 // TODO Check correct version
 		expression_ = NewObject<UMaterialExpressionArctangent2>(material);
+#else
+		UE_LOG(LogTemp, Warning, TEXT("atan2 is unsupported"));
 #endif
 		material->Expressions.Add(expression_);
 
@@ -213,6 +215,11 @@ public:
 
 	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) override
 	{
+		if (expression_ == nullptr)
+		{
+			return;
+		}
+
 		if (targetInd == effekseerNode_->GetInputPinIndex("Y"))
 		{
 			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(expression_->Y);
