@@ -526,7 +526,7 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 			mat->Texture = texture;
 			mat->IsDepthTestDisabled = !param.ZTest;
 			mat->AlphaBlend = (EEffekseerAlphaBlendType)param.AlphaBlend;
-			mat->IsLighting = modelParam.Lighting;
+			mat->IsLighting = param.MaterialType == Effekseer::RendererMaterialType::Lighting;
 			mat->IsDistorted = param.Distortion;
 
 			this->EffekseerMaterials.Add(mat);

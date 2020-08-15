@@ -18,6 +18,7 @@ namespace EffekseerRendererUE4
 
 	using Vertex = EffekseerRenderer::SimpleVertex;
 	using VertexDistortion = EffekseerRenderer::VertexDistortion;
+	using VertexLighting = EffekseerRenderer::DynamicVertex;	// TODO change it in 1.6
 
 	typedef ::Effekseer::ModelRenderer::NodeParameter efkModelNodeParam;
 	typedef ::Effekseer::ModelRenderer::InstanceParameter efkModelInstanceParam;

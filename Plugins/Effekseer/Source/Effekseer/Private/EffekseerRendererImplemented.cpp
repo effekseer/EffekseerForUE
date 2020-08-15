@@ -935,7 +935,83 @@ namespace EffekseerRendererUE4
 					si * 4 + 2,
 					si * 4 + 1,
 					si * 4 + 3);
+			}
+
+#if ENGINE_MINOR_VERSION < 22
+			auto proxy = mat->GetRenderProxy(false);
+#else
+			auto proxy = mat->GetRenderProxy();
+#endif
+			proxy = new FDistortionMaterialRenderProxy(proxy, m_distortionIntensity);
+			m_meshElementCollector->RegisterOneFrameMaterialProxy(proxy);
+
+			meshBuilder.GetMesh(m_localToWorld, proxy, SDPG_World, false, false, m_viewIndex, *m_meshElementCollector);
 		}
+		else if (m_currentShader->GetType() == Effekseer::RendererMaterialType::Lighting)
+		{
+			auto intensity = ((float*)m_currentShader->GetPixelConstantBuffer())[0];
+			SetDistortionIntensity(intensity);
+
+			VertexLighting* vs = (VertexLighting*)m_vertexBuffer->GetResource();
+
+#if ENGINE_MINOR_VERSION < 19
+			FDynamicMeshBuilder meshBuilder;
+#else
+			FDynamicMeshBuilder meshBuilder(m_meshElementCollector->GetFeatureLevel());
+#endif
+			for (int32_t vi = vertexOffset; vi < vertexOffset + spriteCount * 4; vi++)
+			{
+				auto& v = vs[vi];
+
+				if (isSingleRing)
+				{
+					Effekseer::Matrix44 trans;
+					trans.Translation(v.Pos.X, v.Pos.Y, v.Pos.Z);
+					Effekseer::Matrix44::Mul(trans, trans, ringMat);
+					v.Pos.X = trans.Values[3][0];
+					v.Pos.Y = trans.Values[3][1];
+					v.Pos.Z = trans.Values[3][2];
+				}
+
+
+				FDynamicMeshVertex meshVert;
+
+				auto normal = UnpackVector3DF(v.Normal);
+				auto tangent = UnpackVector3DF(v.Tangent);
+				Effekseer::Vector3D binormal;
+				Effekseer::Vector3D::Cross(binormal, normal, tangent);
+
+				meshVert.Position = FVector(v.Pos.X, v.Pos.Z, v.Pos.Y);
+				meshVert.Color = FColor(v.Col.R, v.Col.G, v.Col.B, v.Col.A);
+
+#if ENGINE_MINOR_VERSION < 19
+				meshVert.TextureCoordinate = FVector2D(v.UV1[0], v.UV1[1]);
+
+#else
+				meshVert.TextureCoordinate[0] = FVector2D(v.UV1[0], v.UV1[1]);
+				meshVert.TextureCoordinate[1] = FVector2D(v.UV2[0], v.UV2[1]);
+#endif
+
+				meshVert.SetTangents(
+					FVector(binormal.X, binormal.Z, binormal.Y),
+					FVector(tangent.X, tangent.Z, tangent.Y),
+					FVector(normal.X, normal.Z, normal.Y));
+
+				meshBuilder.AddVertex(meshVert);
+			}
+
+			for (int32_t si = 0; si < spriteCount; si++)
+			{
+				meshBuilder.AddTriangle(
+					si * 4 + 0,
+					si * 4 + 1,
+					si * 4 + 2);
+
+				meshBuilder.AddTriangle(
+					si * 4 + 2,
+					si * 4 + 1,
+					si * 4 + 3);
+			}
 
 #if ENGINE_MINOR_VERSION < 22
 			auto proxy = mat->GetRenderProxy(false);
