@@ -464,6 +464,14 @@ namespace EffekseerRendererUE4
 		EffekseerInternalModel* model = (EffekseerInternalModel*)parameter.EffectPointer->GetModel(parameter.ModelIndex);
 		if (model == nullptr) return;
 
+		if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::File)
+		{
+			Effekseer::MaterialData* material =
+				parameter.EffectPointer->GetMaterial(parameter.BasicParameterPtr->MaterialParameterPtr->MaterialIndex);
+			if (material == nullptr)
+				return;
+		}
+
 		::EffekseerRenderer::RenderStateBase::State& state = m_renderer->GetRenderState()->Push();
 		state.DepthTest = parameter.ZTest;
 		state.DepthWrite = parameter.ZWrite;
