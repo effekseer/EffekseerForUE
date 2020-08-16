@@ -230,6 +230,12 @@ Materials do not have depth ignoring settings.
 
 ### 1.52k (2020/08/13)
 
+- Fixed a bug where R and G of Texture Sample node were switched.
+- Fixed a bug where a material compile error would occur under certain circumstances
+- Fixed a bug where lighting parameters were not supported
+- Fixed a bug that prevented re-importation.
+- Fixed a bug where images of normals could not be loaded with materials.
+- Supports material wrapping and repeats
 - Fixed a bug that Sampler is not supported in a material
 - Fixed a bug where VertexColorNode return Vector4
 - Update Effekseer to 1.52k
