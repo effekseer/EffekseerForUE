@@ -393,6 +393,11 @@ public:
 
 	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) override
 	{
+		if (targetInd == effekseerNode_->GetInputPinIndex("Input"))
+		{
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(expression_->Input);
+		}
+
 		if (targetInd == effekseerNode_->GetInputPinIndex("Min"))
 		{
 			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(expression_->Min);
