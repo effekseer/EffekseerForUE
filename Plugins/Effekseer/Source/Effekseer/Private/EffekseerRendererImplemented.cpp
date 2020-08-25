@@ -563,7 +563,33 @@ namespace EffekseerRendererUE4
 
 		SortTemporaryValues(m_renderer, parameter);
 
-		Shader* shader = m_renderer->GetShader(true, param.BasicParameterPtr->MaterialType);
+		EffekseerRenderer::StandardRendererShaderType type;
+		if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::Default && isAdvanced_)
+		{
+			type = EffekseerRenderer::StandardRendererShaderType::AdvancedUnlit;
+		}
+		else if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::Lighting && isAdvanced_)
+		{
+			type = EffekseerRenderer::StandardRendererShaderType::AdvancedLit;
+		}
+		else if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::BackDistortion && isAdvanced_)
+		{
+			type = EffekseerRenderer::StandardRendererShaderType::AdvancedBackDistortion;
+		}
+		else if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::Default)
+		{
+			type = EffekseerRenderer::StandardRendererShaderType::Unlit;
+		}
+		else if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::Lighting)
+		{
+			type = EffekseerRenderer::StandardRendererShaderType::Lit;
+		}
+		else if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::BackDistortion)
+		{
+			type = EffekseerRenderer::StandardRendererShaderType::BackDistortion;
+		}
+
+		Shader* shader = m_renderer->GetShader(type);
 
 		if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::File &&
 			param.BasicParameterPtr->MaterialParameterPtr != nullptr &&
@@ -712,10 +738,7 @@ namespace EffekseerRendererUE4
 		backDistortedShader_ = std::unique_ptr<Shader>(new Shader(Effekseer::RendererMaterialType::BackDistortion));
 		lightingShader_ = std::unique_ptr<Shader>(new Shader(Effekseer::RendererMaterialType::Lighting));
 
-		m_standardRenderer = new EffekseerRenderer::StandardRenderer<RendererImplemented, Shader, Vertex, VertexDistortion>(
-			this,
-			nullptr,
-			nullptr);
+		m_standardRenderer = new EffekseerRenderer::StandardRenderer<RendererImplemented, Shader>(this);
 
 		return true;
 	}
@@ -787,17 +810,17 @@ namespace EffekseerRendererUE4
 
 	::Effekseer::SpriteRenderer* RendererImplemented::CreateSpriteRenderer()
 	{
-		return new ::EffekseerRenderer::SpriteRendererBase<RendererImplemented, Vertex, VertexDistortion>(this);
+		return new ::EffekseerRenderer::SpriteRendererBase<RendererImplemented, false>(this);
 	}
 
 	::Effekseer::RibbonRenderer* RendererImplemented::CreateRibbonRenderer()
 	{
-		return new ::EffekseerRenderer::RibbonRendererBase<RendererImplemented, Vertex, VertexDistortion>(this);
+		return new ::EffekseerRenderer::RibbonRendererBase<RendererImplemented, false>(this);
 	}
 
 	::Effekseer::RingRenderer* RendererImplemented::CreateRingRenderer()
 	{
-		return new ::EffekseerRenderer::RingRendererBase<RendererImplemented, Vertex, VertexDistortion>(this);
+		return new ::EffekseerRenderer::RingRendererBase<RendererImplemented, false>(this);
 	}
 
 	::Effekseer::ModelRenderer* RendererImplemented::CreateModelRenderer()
@@ -807,7 +830,7 @@ namespace EffekseerRendererUE4
 
 	::Effekseer::TrackRenderer* RendererImplemented::CreateTrackRenderer()
 	{
-		return new ::EffekseerRenderer::TrackRendererBase<RendererImplemented, Vertex, VertexDistortion>(this);
+		return new ::EffekseerRenderer::TrackRendererBase<RendererImplemented, false>(this);
 	}
 
 	::Effekseer::TextureLoader* RendererImplemented::CreateTextureLoader(::Effekseer::FileInterface* fileInterface)
@@ -849,7 +872,7 @@ namespace EffekseerRendererUE4
 		return nullptr;
 	}
 
-	EffekseerRenderer::StandardRenderer<RendererImplemented, Shader, Vertex, VertexDistortion>* RendererImplemented::GetStandardRenderer()
+	EffekseerRenderer::StandardRenderer<RendererImplemented, Shader>* RendererImplemented::GetStandardRenderer()
 	{
 		return m_standardRenderer;
 	}
@@ -1061,7 +1084,7 @@ namespace EffekseerRendererUE4
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 				FDynamicMeshVertex DynamicVertex;
 				DynamicVertex.Position = FVector(v.Pos.X, v.Pos.Z, v.Pos.Y);
-				DynamicVertex.Color = FColor(v.Col[0], v.Col[1], v.Col[2], v.Col[3]);
+				DynamicVertex.Color = FColor(v.Col.R, v.Col.G, v.Col.B, v.Col.A);
 				DynamicVertex.SetTangents(
 					FVector(v.Binormal.X, v.Binormal.Z ,v.Binormal.Y), 
 					FVector(v.Tangent.X, v.Tangent.Z, v.Tangent.Y), 
@@ -1210,7 +1233,7 @@ namespace EffekseerRendererUE4
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 				FDynamicMeshVertex DynamicVertex;
 				DynamicVertex.Position = FVector(v.Pos.X, v.Pos.Z, v.Pos.Y);
-				DynamicVertex.Color = FColor(v.Col[0], v.Col[1], v.Col[2], v.Col[3]);
+				DynamicVertex.Color = FColor(v.Col.R, v.Col.G, v.Col.B, v.Col.A);
 				DynamicVertex.SetTangents(FVector(1, 0, 0), FVector(1, 1, 0), FVector(0, 0, 1));
 				DynamicVertex.TextureCoordinate[0] = FVector2D(v.UV[0], v.UV[1]);
 				DynamicVertex.TextureCoordinate[1] = FVector2D(v.AlphaUV[0], v.AlphaUV[1]);
@@ -1506,17 +1529,17 @@ namespace EffekseerRendererUE4
 		return mat;
 	}
 
-	Shader* RendererImplemented::GetShader(bool useTexture, ::Effekseer::RendererMaterialType materialType) const
+	Shader* RendererImplemented::GetShader(::EffekseerRenderer::StandardRendererShaderType materialType) const
 	{
-		if (materialType == ::Effekseer::RendererMaterialType::BackDistortion)
+		if (materialType == ::EffekseerRenderer::StandardRendererShaderType::AdvancedBackDistortion)
 		{
 			return backDistortedShader_.get();
 		}
-		else if (materialType == ::Effekseer::RendererMaterialType::Lighting)
+		else if (materialType == ::EffekseerRenderer::StandardRendererShaderType::AdvancedLit)
 		{
 			return lightingShader_.get();
 		}
-		else if (materialType == ::Effekseer::RendererMaterialType::Default)
+		else if (materialType == ::EffekseerRenderer::StandardRendererShaderType::AdvancedUnlit)
 		{
 			return stanShader_.get();
 		}
