@@ -16,6 +16,7 @@ namespace EffekseerRendererUE4
 		Effekseer::RendererMaterialType type_;
 		std::vector<uint8_t>	vertexConstantBuffer;
 		std::vector<uint8_t>	pixelConstantBuffer;
+		bool isAdvancedMaterial_ = false;
 
 	public:
 
@@ -24,7 +25,7 @@ namespace EffekseerRendererUE4
 		*/
 		Shader(UEffekseerMaterial* material, bool isModel, bool isRefraction);
 
-		Shader(Effekseer::RendererMaterialType type);
+		Shader(Effekseer::RendererMaterialType type, bool isAdvancedMaterial);
 
 		virtual ~Shader();
 
@@ -46,6 +47,9 @@ namespace EffekseerRendererUE4
 
 		Effekseer::RendererMaterialType GetType() const;
 
+		bool IsAdvancedMaterial() const;
+
 		UEffekseerMaterial* GetEffekseerMaterial() const;
+
 	};
 }

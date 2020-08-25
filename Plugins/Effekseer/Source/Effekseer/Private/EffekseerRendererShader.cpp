@@ -12,9 +12,10 @@ namespace EffekseerRendererUE4
 		pixelConstantBuffer.resize(parameterGenerator_.PixelShaderUniformBufferSize);
 	}
 
-	Shader::Shader(Effekseer::RendererMaterialType type)
+	Shader::Shader(Effekseer::RendererMaterialType type, bool isAdvancedMaterial)
 		: parameterGenerator_(::Effekseer::Material(), false, 0, 1)
 		, type_(type)
+		, isAdvancedMaterial_(isAdvancedMaterial)
 	{
 		vertexConstantBuffer.resize(sizeof(::Effekseer::Matrix44) * 4);
 		pixelConstantBuffer.resize(sizeof(float) * 4 * 9);
@@ -28,6 +29,11 @@ namespace EffekseerRendererUE4
 	Effekseer::RendererMaterialType Shader::GetType() const
 	{
 		return type_;
+	}
+
+	bool Shader::IsAdvancedMaterial() const
+	{
+		return isAdvancedMaterial_; 
 	}
 
 	UEffekseerMaterial* Shader::GetEffekseerMaterial() const

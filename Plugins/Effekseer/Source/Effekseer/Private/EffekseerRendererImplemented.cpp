@@ -705,9 +705,12 @@ namespace EffekseerRendererUE4
 		m_squareMaxCount = squareMaxCount;
 		m_renderState = new RenderState();
 		m_vertexBuffer = new VertexBuffer(EffekseerRenderer::GetMaximumVertexSizeInAllTypes() * m_squareMaxCount * 4, true);
-		stanShader_ = std::unique_ptr<Shader>(new Shader(Effekseer::RendererMaterialType::Default));
-		backDistortedShader_ = std::unique_ptr<Shader>(new Shader(Effekseer::RendererMaterialType::BackDistortion));
-		lightingShader_ = std::unique_ptr<Shader>(new Shader(Effekseer::RendererMaterialType::Lighting));
+		stanShader_ = std::unique_ptr<Shader>(new Shader(Effekseer::RendererMaterialType::Default, false));
+		backDistortedShader_ = std::unique_ptr<Shader>(new Shader(Effekseer::RendererMaterialType::BackDistortion, false));
+		lightingShader_ = std::unique_ptr<Shader>(new Shader(Effekseer::RendererMaterialType::Lighting, false));
+		stanShaderAd_ = std::unique_ptr<Shader>(new Shader(Effekseer::RendererMaterialType::Default, true));
+		backDistortedShaderAd_ = std::unique_ptr<Shader>(new Shader(Effekseer::RendererMaterialType::BackDistortion, true));
+		lightingShaderAd_ = std::unique_ptr<Shader>(new Shader(Effekseer::RendererMaterialType::Lighting, true));
 
 		m_standardRenderer = new EffekseerRenderer::StandardRenderer<RendererImplemented, Shader>(this);
 
@@ -1480,13 +1483,25 @@ namespace EffekseerRendererUE4
 	{
 		if (materialType == ::EffekseerRenderer::StandardRendererShaderType::AdvancedBackDistortion)
 		{
-			return backDistortedShader_.get();
+			return backDistortedShaderAd_.get();
 		}
 		else if (materialType == ::EffekseerRenderer::StandardRendererShaderType::AdvancedLit)
 		{
-			return lightingShader_.get();
+			return lightingShaderAd_.get();
 		}
 		else if (materialType == ::EffekseerRenderer::StandardRendererShaderType::AdvancedUnlit)
+		{
+			return stanShaderAd_.get();
+		}
+		else if (materialType == ::EffekseerRenderer::StandardRendererShaderType::BackDistortion)
+		{
+			return backDistortedShader_.get();
+		}
+		else if (materialType == ::EffekseerRenderer::StandardRendererShaderType::Lit)
+		{
+			return lightingShader_.get();
+		}
+		else if (materialType == ::EffekseerRenderer::StandardRendererShaderType::Unlit)
 		{
 			return stanShader_.get();
 		}

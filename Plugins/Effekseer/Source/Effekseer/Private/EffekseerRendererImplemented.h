@@ -61,6 +61,10 @@ namespace EffekseerRendererUE4
 		std::unique_ptr<Shader> backDistortedShader_;
 		std::unique_ptr<Shader> lightingShader_;
 
+		std::unique_ptr<Shader> stanShaderAd_;
+		std::unique_ptr<Shader> backDistortedShaderAd_;
+		std::unique_ptr<Shader> lightingShaderAd_;
+
 		Shader*					m_currentShader = nullptr;
 		RenderState*			m_renderState = nullptr;
 
