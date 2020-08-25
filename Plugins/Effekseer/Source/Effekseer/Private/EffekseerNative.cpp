@@ -86,7 +86,7 @@ public:
 
 		for (std::size_t i{}; i < 256; ++i)
 		{
-			auto target = GetRand(0, 255);
+			auto target = static_cast<std::size_t>(GetRand(0, 255));
 			std::swap(p[i], p[target]);
 		}
 
@@ -139,7 +139,8 @@ private:
 
 	float MakeGradFast(const Pint hashnum, const float u, const float v) const noexcept
 	{
-		union {
+		union
+		{
 			float f;
 			uint32_t i;
 		} u_bits, v_bits;
@@ -792,7 +793,7 @@ public:
 
 	int32_t GetVertexShaderSize(MaterialShaderType type) const override
 	{
-		return vertexShaders_.at(static_cast<int>(type)).size();
+		return static_cast<int32_t>(vertexShaders_.at(static_cast<int>(type)).size());
 	}
 
 	const uint8_t* GetPixelShaderData(MaterialShaderType type) const override
@@ -802,7 +803,7 @@ public:
 
 	int32_t GetPixelShaderSize(MaterialShaderType type) const override
 	{
-		return pixelShaders_.at(static_cast<int>(type)).size();
+		return static_cast<int32_t>(pixelShaders_.at(static_cast<int>(type)).size());
 	}
 
 	int AddRef() override
@@ -931,7 +932,7 @@ bool CompiledMaterial::Load(const uint8_t* data, int32_t size)
 void CompiledMaterial::Save(std::vector<uint8_t>& dst, uint64_t guid, std::vector<uint8_t>& originalData)
 {
 	dst.reserve(1024 * 64);
-	int32_t offset = 0;
+	size_t offset = 0;
 
 	struct Header
 	{
@@ -952,7 +953,7 @@ void CompiledMaterial::Save(std::vector<uint8_t>& dst, uint64_t guid, std::vecto
 	offset = dst.size();
 
 	// info
-	int32_t platformCount = platforms.size();
+	uint32_t platformCount = static_cast<uint32_t>(platforms.size());
 	dst.resize(dst.size() + sizeof(uint32_t));
 	memcpy(dst.data() + offset, &platformCount, sizeof(uint32_t));
 	offset = dst.size();
@@ -966,7 +967,7 @@ void CompiledMaterial::Save(std::vector<uint8_t>& dst, uint64_t guid, std::vecto
 	}
 
 	// data
-	uint32_t originalDataSize = originalData.size();
+	uint32_t originalDataSize = static_cast<uint32_t>(originalData.size());
 	dst.resize(dst.size() + sizeof(uint32_t));
 	memcpy(dst.data() + offset, &originalDataSize, sizeof(uint32_t));
 	offset = dst.size();
@@ -5755,6 +5756,7 @@ private:
 		Sub = 2,
 		Mul = 3,
 		Div = 4,
+		Mod = 5,
 
 		UnaryAdd = 11,
 		UnarySub = 12,
@@ -5764,6 +5766,8 @@ private:
 
 		Rand = 31,
 		Rand_WithSeed = 32,
+
+		Step = 50,
 	};
 
 private:
@@ -6334,7 +6338,7 @@ public:
 
 		auto tubeRadius = tubePos.GetLength();
 
-		auto angle = fabs(PI / 2.0f - atan2(localPos.GetY(), tubeRadius));
+		auto angle = fabs(EFK_PI / 2.0f - atan2(localPos.GetY(), tubeRadius));
 
 		if (angle > ffft.MaxAngle)
 		{
@@ -6420,10 +6424,17 @@ public:
 		auto distance = localPos.GetLength() + eps;
 		auto dir = localPos / distance;
 
-		auto forceDir = Vec3f::Cross(ffc.PreviousSumVelocity, dir);
-
-		if (forceDir.GetSquaredLength() < 0.01f)
+		auto vecLenSq = ffc.PreviousSumVelocity.GetSquaredLength();
+		if (vecLenSq < eps)
 			return Vec3f(0.0f, 0.0f, 0.0f);
+
+		auto forceDir = Vec3f::Cross(ffc.PreviousSumVelocity / sqrtf(vecLenSq), dir);
+
+		auto forceDirScaleSq = forceDir.GetSquaredLength();
+		if (forceDirScaleSq < 0.01f)
+			return Vec3f(0.0f, 0.0f, 0.0f);
+
+		forceDir /= (sqrtf(forceDirScaleSq));
 
 		return forceDir * ffp.Power;
 	}
@@ -6520,6 +6531,7 @@ struct LocalForceFieldInstance
 {
 	std::array<Vec3f, LocalFieldSlotMax> Velocities;
 
+	Vec3f ExternalVelocity;
 	Vec3f VelocitySum;
 	Vec3f ModifyLocation;
 
@@ -6668,6 +6680,18 @@ enum class BindType : int32_t
 	Always = 2,
 };
 
+enum class TranslationParentBindType : int32_t
+{
+	NotBind = 0,
+	NotBind_Root = 3,
+	WhenCreating = 1,
+	Always = 2,
+	NotBind_FollowParent = 4,
+	WhenCreating_FollowParent = 5,
+};
+
+bool operator==(const TranslationParentBindType& lhs, const BindType& rhs);
+
 /**!
 	@brief indexes of dynamic parameter
 */
@@ -6779,7 +6803,7 @@ struct ParameterCommonValues
 	RefMinMax RefEqGenerationTimeOffset;
 
 	int MaxGeneration = 1;
-	BindType TranslationBindType = BindType::Always;
+	TranslationParentBindType TranslationBindType = TranslationParentBindType::Always;
 	BindType RotationBindType = BindType::Always;
 	BindType ScalingBindType = BindType::Always;
 	int RemoveWhenLifeIsExtinct = 1;
@@ -6822,6 +6846,12 @@ struct ParameterDepthValues
 	}
 };
 
+struct SteeringBehaviorParameter
+{
+	random_float MaxFollowSpeed;
+	random_float SteeringSpeed;
+};
+
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
@@ -6831,10 +6861,8 @@ enum ParameterTranslationType
 	ParameterTranslationType_PVA = 1,
 	ParameterTranslationType_Easing = 2,
 	ParameterTranslationType_FCurve = 3,
-#if __EFFEKSEER_BUILD_VERSION16__
 	ParameterTranslationType_NurbsCurve = 4,
 	ParameterTranslationType_ViewOffset = 5,
-#endif
 
 	ParameterTranslationType_None = 0x7fffffff - 1,
 
@@ -6871,7 +6899,6 @@ struct ParameterTranslationEasing
 	easing_vector3d location;
 };
 
-#if __EFFEKSEER_BUILD_VERSION16__
 struct ParameterTranslationNurbsCurve
 {
 	int32_t Index;
@@ -6884,7 +6911,6 @@ struct ParameterTranslationViewOffset
 {
 	random_float distance;
 };
-#endif
 
 //----------------------------------------------------------------------------------
 //
@@ -7295,9 +7321,7 @@ struct ParameterCustomData
 
 struct ParameterRendererCommon
 {
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 	static const int32_t UVParameterNum = 6;
-#endif
 
 	RendererMaterialType MaterialType = RendererMaterialType::Default;
 
@@ -7307,7 +7331,6 @@ struct ParameterRendererCommon
 	//! texture index except a file
 	int32_t Texture2Index = -1;
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 	//! texture index except a file
 	int32_t AlphaTextureIndex = -1;
 
@@ -7322,7 +7345,6 @@ struct ParameterRendererCommon
 
 	//! texture index except a file
 	int32_t BlendUVDistortionTextureIndex = -1;
-#endif
 
 	//! material index in MaterialType::File
 	MaterialParameter Material;
@@ -7337,7 +7359,6 @@ struct ParameterRendererCommon
 
 	TextureWrapType Wrap2Type = TextureWrapType::Repeat;
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 	TextureFilterType Filter3Type = TextureFilterType::Nearest;
 
 	TextureWrapType Wrap3Type = TextureWrapType::Repeat;
@@ -7365,7 +7386,6 @@ struct ParameterRendererCommon
 	float BlendUVDistortionIntensity = 1.0f;
 
 	int32_t EmissiveScaling = 1;
-#endif
 
 	bool ZWrite = false;
 
@@ -7421,11 +7441,7 @@ struct ParameterRendererCommon
 		UV_FCURVE = 4,
 
 		UV_DWORD = 0x7fffffff,
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 	} UVTypes[UVParameterNum];
-#else
-	} UVType;
-#endif
 
 	/**
 	@brief	UV Parameter
@@ -7467,13 +7483,11 @@ struct ParameterRendererCommon
 
 			random_int StartFrame;
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 			enum
 			{
 				NONE = 0,
 				LERP = 1,
 			} InterpolationType;
-#endif
 
 		} Animation;
 
@@ -7489,31 +7503,21 @@ struct ParameterRendererCommon
 			FCurveVector2D* Position;
 			FCurveVector2D* Size;
 		} FCurve;
-
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 	} UVs[UVParameterNum];
-#else
-	} UV;
-#endif
 
 	ParameterRendererCommon()
 	{
 		FadeInType = FADEIN_OFF;
 		FadeOutType = FADEOUT_OFF;
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 		const int32_t ArraySize = sizeof(UVTypes) / sizeof(UVTypes[0]);
 		for (int32_t i = 0; i < ArraySize; i++)
 		{
 			UVTypes[i] = UV_DEFAULT;
 		}
-#else
-		UVType = UV_DEFAULT;
-#endif
 	}
 
 	~ParameterRendererCommon()
 	{
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 		const int32_t ArraySize = sizeof(UVTypes) / sizeof(UVTypes[0]);
 		for (int32_t i = 0; i < ArraySize; i++)
 		{
@@ -7523,13 +7527,6 @@ struct ParameterRendererCommon
 				ES_SAFE_DELETE(UVs[i].FCurve.Size);
 			}
 		}
-#else
-		if (UVType == UV_FCURVE)
-		{
-			ES_SAFE_DELETE(UV.FCurve.Position);
-			ES_SAFE_DELETE(UV.FCurve.Size);
-		}
-#endif
 	}
 
 	void reset()
@@ -7547,15 +7544,20 @@ struct ParameterRendererCommon
 			memcpy(&MaterialType, pos, sizeof(int));
 			pos += sizeof(int);
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 			Distortion = MaterialType == RendererMaterialType::BackDistortion;
 
 			if (MaterialType == RendererMaterialType::Default || MaterialType == RendererMaterialType::Lighting)
 			{
-				memcpy(&EmissiveScaling, pos, sizeof(int));
-				pos += sizeof(int);
+				if (version >= 1600)
+				{
+					memcpy(&EmissiveScaling, pos, sizeof(int));
+					pos += sizeof(int);
+				}
+				else
+				{
+					EmissiveScaling = 1;
+				}
 			}
-#endif
 
 			if (MaterialType == RendererMaterialType::Default || MaterialType == RendererMaterialType::BackDistortion ||
 				MaterialType == RendererMaterialType::Lighting)
@@ -7566,7 +7568,6 @@ struct ParameterRendererCommon
 				memcpy(&Texture2Index, pos, sizeof(int));
 				pos += sizeof(int);
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 				if (version >= 1600)
 				{
 					memcpy(&AlphaTextureIndex, pos, sizeof(int));
@@ -7584,7 +7585,6 @@ struct ParameterRendererCommon
 					memcpy(&BlendUVDistortionTextureIndex, pos, sizeof(int));
 					pos += sizeof(int);
 				}
-#endif
 			}
 			else
 			{
@@ -7638,7 +7638,6 @@ struct ParameterRendererCommon
 			Wrap2Type = WrapType;
 		}
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 		if (version >= 1600)
 		{
 			memcpy(&Filter3Type, pos, sizeof(int));
@@ -7688,7 +7687,6 @@ struct ParameterRendererCommon
 			Filter7Type = FilterType;
 			Wrap7Type = WrapType;
 		}
-#endif
 
 		if (version >= 5)
 		{
@@ -7727,14 +7725,9 @@ struct ParameterRendererCommon
 			pos += sizeof(FadeOut);
 		}
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 		memcpy(&UVTypes[0], pos, sizeof(int));
-#else
-		memcpy(&UVType, pos, sizeof(int));
-#endif
 		pos += sizeof(int);
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 		auto LoadUVParameter = [&](const int UVIndex) {
 			const auto& UVType = UVTypes[UVIndex];
 			auto& UV = UVs[UVIndex];
@@ -7834,66 +7827,6 @@ struct ParameterRendererCommon
 			pos += sizeof(int);
 		}
 
-#else
-		if (UVType == UV_DEFAULT)
-		{
-		}
-		else if (UVType == UV_FIXED)
-		{
-			memcpy(&UV.Fixed, pos, sizeof(UV.Fixed));
-			pos += sizeof(UV.Fixed);
-		}
-		else if (UVType == UV_ANIMATION)
-		{
-			if (version < 10)
-			{
-				// without start frame
-				memcpy(&UV.Animation, pos, sizeof(UV.Animation) - sizeof(UV.Animation.StartFrame));
-				pos += sizeof(UV.Animation) - sizeof(UV.Animation.StartFrame);
-				UV.Animation.StartFrame.max = 0;
-				UV.Animation.StartFrame.min = 0;
-			}
-			else
-			{
-				memcpy(&UV.Animation, pos, sizeof(UV.Animation));
-				pos += sizeof(UV.Animation);
-			}
-		}
-		else if (UVType == UV_SCROLL)
-		{
-			if (version < 10)
-			{
-				// compatibility
-				UVScroll_09 values;
-				memcpy(&values, pos, sizeof(values));
-				pos += sizeof(values);
-				UV.Scroll.Position.max.x = values.Position.x;
-				UV.Scroll.Position.max.y = values.Position.y;
-				UV.Scroll.Position.min = UV.Scroll.Position.max;
-
-				UV.Scroll.Size.max.x = values.Position.w;
-				UV.Scroll.Size.max.y = values.Position.h;
-				UV.Scroll.Size.min = UV.Scroll.Size.max;
-
-				UV.Scroll.Speed.max.x = values.Speed.x;
-				UV.Scroll.Speed.max.y = values.Speed.y;
-				UV.Scroll.Speed.min = UV.Scroll.Speed.max;
-			}
-			else
-			{
-				memcpy(&UV.Scroll, pos, sizeof(UV.Scroll));
-				pos += sizeof(UV.Scroll);
-			}
-		}
-		else if (UVType == UV_FCURVE)
-		{
-			UV.FCurve.Position = new FCurveVector2D();
-			UV.FCurve.Size = new FCurveVector2D();
-			pos += UV.FCurve.Position->Load(pos, version);
-			pos += UV.FCurve.Size->Load(pos, version);
-		}
-#endif
-
 		if (version >= 10)
 		{
 			memcpy(&ColorBindType, pos, sizeof(int32_t));
@@ -7935,28 +7868,25 @@ struct ParameterRendererCommon
 		BasicParameter.AlphaBlend = AlphaBlend;
 		BasicParameter.TextureFilter1 = FilterType;
 		BasicParameter.TextureFilter2 = Filter2Type;
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 		BasicParameter.TextureFilter3 = Filter3Type;
 		BasicParameter.TextureFilter4 = Filter4Type;
 		BasicParameter.TextureFilter5 = Filter5Type;
 		BasicParameter.TextureFilter6 = Filter6Type;
 		BasicParameter.TextureFilter7 = Filter7Type;
-#endif
+
 		BasicParameter.TextureWrap1 = WrapType;
 		BasicParameter.TextureWrap2 = Wrap2Type;
-#ifdef __EFFEKSEER_BUILD_VERSION16__
+
 		BasicParameter.TextureWrap3 = Wrap3Type;
 		BasicParameter.TextureWrap4 = Wrap4Type;
 		BasicParameter.TextureWrap5 = Wrap5Type;
 		BasicParameter.TextureWrap6 = Wrap6Type;
 		BasicParameter.TextureWrap7 = Wrap7Type;
-#endif
 
 		BasicParameter.DistortionIntensity = DistortionIntensity;
 		BasicParameter.MaterialType = MaterialType;
 		BasicParameter.Texture1Index = ColorTextureIndex;
 		BasicParameter.Texture2Index = Texture2Index;
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 		BasicParameter.Texture3Index = AlphaTextureIndex;
 		BasicParameter.Texture4Index = UVDistortionTextureIndex;
 		BasicParameter.Texture5Index = BlendTextureIndex;
@@ -7983,7 +7913,6 @@ struct ParameterRendererCommon
 		}
 
 		BasicParameter.EmissiveScaling = EmissiveScaling;
-#endif
 
 		if (BasicParameter.MaterialType == RendererMaterialType::File)
 		{
@@ -8002,7 +7931,6 @@ struct ParameterRendererCommon
 	}
 };
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 struct ParameterAlphaCutoff
 {
 	enum EType : int32_t
@@ -8106,7 +8034,6 @@ struct ParameterAlphaCutoff
 		pos += sizeof(int32_t);
 	}
 };
-#endif
 
 //----------------------------------------------------------------------------------
 //
@@ -8232,15 +8159,15 @@ public:
 
 	ParameterCommonValues CommonValues;
 
+	SteeringBehaviorParameter SteeringBehaviorParam;
+
 	ParameterTranslationType TranslationType;
 	ParameterTranslationFixed TranslationFixed;
 	ParameterTranslationPVA TranslationPVA;
 	ParameterTranslationEasing TranslationEasing;
 	FCurveVector3D* TranslationFCurve;
-#if __EFFEKSEER_BUILD_VERSION16__
 	ParameterTranslationNurbsCurve TranslationNurbsCurve;
 	ParameterTranslationViewOffset TranslationViewOffset;
-#endif
 
 #ifdef OLD_LF
 	std::array<LocalForceFieldParameterOld, LocalFieldSlotMax> LocalForceFieldsOld;
@@ -8272,9 +8199,7 @@ public:
 
 	ParameterRendererCommon RendererCommon;
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 	ParameterAlphaCutoff AlphaCutoff;
-#endif
 
 	ParameterSoundType SoundType;
 	ParameterSound Sound;
@@ -8449,10 +8374,8 @@ public:
 
 	StandardColorParameter AllColor;
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 	bool EnableFalloff;
 	ModelRenderer::FalloffParameter FalloffParam;
-#endif
 
 	EffectNodeModel(Effect* effect, unsigned char*& pos)
 		: EffectNodeImplemented(effect, pos)
@@ -9449,9 +9372,7 @@ public:
 	HolderCollection<void*> sounds;
 	HolderCollection<void*> models;
 	HolderCollection<MaterialData*> materials;
-#if __EFFEKSEER_BUILD_VERSION16__
 	HolderCollection<void*> curves;
-#endif
 };
 
 /**
@@ -9464,11 +9385,7 @@ class EffectImplemented : public Effect, public ReferenceObject
 	friend class EffectFactory;
 	friend class Instance;
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 	static const int32_t SupportBinaryVersion = 1600;
-#else
-	static const int32_t SupportBinaryVersion = 1500;
-#endif
 
 protected:
 	ManagerImplemented* m_pManager;
@@ -9505,11 +9422,9 @@ protected:
 	EFK_CHAR** materialPaths_ = nullptr;
 	MaterialData** materials_ = nullptr;
 
-#if __EFFEKSEER_BUILD_VERSION16__
 	int32_t curveCount_ = 0;
 	EFK_CHAR** curvePaths_ = nullptr;
 	void** curves_ = nullptr;
-#endif
 
 	std::u16string name_;
 	std::basic_string<EFK_CHAR> m_materialPath;
@@ -9669,13 +9584,11 @@ public:
 
 	const EFK_CHAR* GetMaterialPath(int n) const override;
 
-#if __EFFEKSEER_BUILD_VERSION16__
 	void* GetCurve(int n) const override;
 	
 	int32_t GetCurveCount() const override;
 
 	const EFK_CHAR* GetCurvePath(int n) const override;
-#endif
 
 	void SetTexture(int32_t index, TextureType type, TextureData* data) override;
 
@@ -9685,9 +9598,7 @@ public:
 
 	void SetMaterial(int32_t index, MaterialData* data) override;
 
-#if __EFFEKSEER_BUILD_VERSION16__
 	void SetCurve(int32_t index, void* data) override;
-#endif
 
 	/**
 		@brief	エフェクトのリロードを行う。
@@ -9767,13 +9678,14 @@ class ManagerImplemented : public Manager, public ReferenceObject
 	friend class InstanceGroup;
 
 private:
-	class DrawSet
+	class alignas(32) DrawSet
 	{
 	public:
 		Effect* ParameterPointer;
 		InstanceContainer* InstanceContainerPointer;
 		InstanceGlobal* GlobalPointer;
 		Culling3D::Object* CullingObjectPointer;
+		int RandomSeed = 0;
 		bool IsPaused;
 		bool IsShown;
 		bool IsAutoDrawing;
@@ -9880,9 +9792,9 @@ private:
 
 	// buffers which is allocated while initializing
 	// 初期化中に確保されたバッファ
-	std::unique_ptr<InstanceChunk[]> reservedChunksBuffer_;
-	std::unique_ptr<uint8_t[]> reservedGroupBuffer_;
-	std::unique_ptr<uint8_t[]> reservedContainerBuffer_;
+	CustomAlignedVector<InstanceChunk> reservedChunksBuffer_;
+	CustomAlignedVector<uint8_t> reservedGroupBuffer_;
+	CustomAlignedVector<uint8_t> reservedContainerBuffer_;
 
 	// pooled instances. Thease are not used and waiting to be used.
 	// プールされたインスタンス。使用されておらず、使用されてるのを待っている。
@@ -9897,16 +9809,16 @@ private:
 	std::array<int32_t, GenerationsMax> creatableChunkOffsets_;
 
 	// playing objects
-	CustomMap<Handle, DrawSet> m_DrawSets;
+	CustomAlignedMap<Handle, DrawSet> m_DrawSets;
 
 	//! objects which are waiting to be disposed
-	std::array<CustomMap<Handle, DrawSet>, 2> m_RemovingDrawSets;
+	std::array<CustomAlignedMap<Handle, DrawSet>, 2> m_RemovingDrawSets;
 
 	//! objects on rendering
-	CustomVector<DrawSet> m_renderingDrawSets;
+	CustomAlignedVector<DrawSet> m_renderingDrawSets;
 
 	//! objects on rendering
-	CustomMap<Handle, DrawSet> m_renderingDrawSetMaps;
+	CustomAlignedMap<Handle, DrawSet> m_renderingDrawSetMaps;
 
 	// mutex for rendering
 	std::mutex m_renderingMutex;
@@ -10050,11 +9962,9 @@ public:
 
 	void SetMaterialLoader(MaterialLoader* loader) override;
 
-#if __EFFEKSEER_BUILD_VERSION16__
 	CurveLoader* GetCurveLoader() override;
 
 	void SetCurveLoader(CurveLoader* loader) override;
-#endif
 
 	void StopEffect(Handle handle) override;
 
@@ -10142,6 +10052,8 @@ public:
 
 	void UpdateHandle(Handle handle, float deltaFrame = 1.0f) override;
 
+	void UpdateHandleToMoveToFrame(Handle handle, float frame) override;
+
 private:
 	void UpdateInstancesByInstanceGlobal(const DrawSet& drawSet);
 
@@ -10152,6 +10064,10 @@ private:
 
 	//! whether container is disabled while rendering because of a distance between the effect and a camera
 	bool IsClippedWithDepth(DrawSet& drawSet, InstanceContainer* container, const Manager::DrawParameter& drawParameter);
+
+	void StopWithoutRemoveDrawSet(DrawSet& drawSet);
+
+	void ResetAndPlayWithDataSet(DrawSet& drawSet, float frame);
 
 public:
 	void Draw(const Manager::DrawParameter& drawParameter) override;
@@ -10719,6 +10635,11 @@ protected:
 	InstanceCustomData customDataValues1;
 	InstanceCustomData customDataValues2;
 
+	Vec3f prevPosition_;
+
+	Vec3f parentPosition_;
+	Vec3f steeringVec_;
+
 public:
 	static const int32_t ChildrenMax = 16;
 
@@ -10765,6 +10686,12 @@ public:
 	// Parent color
 	Color ColorParent;
 
+	struct
+	{
+		float maxFollowSpeed;
+		float steeringSpeed;
+	} followParentParam;
+
 	union
 	{
 		struct
@@ -10790,12 +10717,10 @@ public:
 			Vec3f offset;
 		} fcruve;
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 		struct
 		{
 			float distance;
 		} view_offset;
-#endif
 
 	} translation_values;
 
@@ -10913,7 +10838,6 @@ public:
 	// 生成されてからの時間
 	float m_LivingTime;
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 	//! The time offset for UV animation
 	int32_t uvTimeOffsets[ParameterRendererCommon::UVParameterNum];
 
@@ -10922,16 +10846,6 @@ public:
 
 	// Scroll speed for UV
 	Vec2f uvScrollSpeeds[ParameterRendererCommon::UVParameterNum];
-#else
-	//! The time offset for UV animation
-	int32_t uvTimeOffset = 0;
-
-	// Scroll, FCurve area for UV
-	RectF uvAreaOffset;
-
-	// Scroll speed for UV
-	Vec2f uvScrollSpeed;
-#endif
 
 	// The number of generated chiledren. (fixed size)
 	int32_t m_fixedGeneratedChildrenCount[ChildrenMax];
@@ -10986,7 +10900,6 @@ public:
 	/* 更新番号 */
 	uint32_t m_sequenceNumber;
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 	float m_flipbookIndexAndNextRate;
 
 	union
@@ -11019,7 +10932,6 @@ public:
 	} alpha_cutoff_values;
 
 	float m_AlphaThreshold;
-#endif
 
 	//! calculate dynamic equation and assign a result
 	template <typename T, typename U>
@@ -11107,11 +11019,7 @@ public:
 	/**
 		@brief	UVの位置取得
 	*/
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 	RectF GetUV(const int32_t index) const;
-#else
-	RectF GetUV() const;
-#endif
 
 	//! get custom data
 	std::array<float, 4> GetCustomData(int32_t index) const;
@@ -11137,6 +11045,12 @@ private:
 		@brief	絶対パラメータの反映
 	*/
 	void ModifyMatrixFromLocationAbs(float deltaFrame);
+
+	void ApplyDynamicParameterToFixedLocation();
+
+	void ApplyDynamicParameterToFixedRotation();
+
+	void ApplyDynamicParameterToFixedScaling();
 };
 
 //----------------------------------------------------------------------------------
@@ -11282,15 +11196,11 @@ public:
 
 	void DecInstanceCount();
 
-	/**
-		@brief	全てのインスタンス数を取得
-	*/
 	int GetInstanceCount();
 
-	/**
-		@brief	更新されたフレーム数を取得する。
-	*/
 	float GetUpdatedFrame();
+
+	void ResetUpdatedFrame();
 
 	InstanceContainer* GetRootContainer() const;
 	void SetRootContainer(InstanceContainer* container);
@@ -11329,7 +11239,7 @@ namespace Effekseer
 	@note
 	インスタンスコンテナ内でさらにインスタンスをグループ化するクラス
 */
-class InstanceGroup
+class alignas(32) InstanceGroup
 {
 	friend class InstanceContainer;
 	friend class ManagerImplemented;
@@ -11353,6 +11263,8 @@ private:
 	InstanceGroup(Manager* manager, EffectNode* effectNode, InstanceContainer* container, InstanceGlobal* global);
 
 	~InstanceGroup();
+
+	void NotfyEraseInstance();
 
 public:
 	/**
@@ -11769,6 +11681,11 @@ std::array<float, 4> FCurveVectorColor::GetOffsets(IRandObject& gl) const
 namespace Effekseer
 {
 
+bool operator==(const TranslationParentBindType& lhs, const BindType& rhs)
+{
+	return (lhs == static_cast<TranslationParentBindType>(rhs));
+}
+
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
@@ -11864,7 +11781,8 @@ void EffectNodeImplemented::LoadParameter(unsigned char*& pos, EffectNode* paren
 			pos += size;
 
 			CommonValues.MaxGeneration = param_8.MaxGeneration;
-			CommonValues.TranslationBindType = param_8.TranslationBindType;
+			CommonValues.TranslationBindType = static_cast<TranslationParentBindType>(param_8.TranslationBindType);
+
 			CommonValues.RotationBindType = param_8.RotationBindType;
 			CommonValues.ScalingBindType = param_8.ScalingBindType;
 			CommonValues.RemoveWhenLifeIsExtinct = param_8.RemoveWhenLifeIsExtinct;
@@ -11875,6 +11793,16 @@ void EffectNodeImplemented::LoadParameter(unsigned char*& pos, EffectNode* paren
 			CommonValues.GenerationTime.min = param_8.GenerationTime;
 			CommonValues.GenerationTimeOffset.max = param_8.GenerationTimeOffset;
 			CommonValues.GenerationTimeOffset.min = param_8.GenerationTimeOffset;
+		}
+
+		if (ef->GetVersion() >= 1600)
+		{
+			if (CommonValues.TranslationBindType == TranslationParentBindType::NotBind_FollowParent ||
+				CommonValues.TranslationBindType == TranslationParentBindType::WhenCreating_FollowParent)
+			{
+				memcpy(&SteeringBehaviorParam, pos, sizeof(SteeringBehaviorParameter));
+				pos += sizeof(SteeringBehaviorParameter);
+			}
 		}
 
 		memcpy(&TranslationType, pos, sizeof(int));
@@ -11948,7 +11876,6 @@ void EffectNodeImplemented::LoadParameter(unsigned char*& pos, EffectNode* paren
 			TranslationFCurve = new FCurveVector3D();
 			pos += TranslationFCurve->Load(pos, m_effect->GetVersion());
 		}
-#if __EFFEKSEER_BUILD_VERSION16__
 		else if (TranslationType == ParameterTranslationType_NurbsCurve)
 		{
 			memcpy(&TranslationNurbsCurve, pos, sizeof(ParameterTranslationNurbsCurve));
@@ -11959,7 +11886,6 @@ void EffectNodeImplemented::LoadParameter(unsigned char*& pos, EffectNode* paren
 			memcpy(&TranslationViewOffset, pos, sizeof(ParameterTranslationViewOffset));
 			pos += sizeof(ParameterTranslationViewOffset);
 		}
-#endif
 
 		/* 位置拡大処理 */
 		if (ef->IsDyanamicMagnificationValid())
@@ -12433,7 +12359,6 @@ void EffectNodeImplemented::LoadParameter(unsigned char*& pos, EffectNode* paren
 			RendererCommon.reset();
 		}
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 		if (m_effect->GetVersion() >= 1600)
 		{
 			AlphaCutoff.load(pos, m_effect->GetVersion());
@@ -12443,8 +12368,9 @@ void EffectNodeImplemented::LoadParameter(unsigned char*& pos, EffectNode* paren
 			RendererCommon.BasicParameter.EdgeColor[2] = AlphaCutoff.EdgeColor.B;
 			RendererCommon.BasicParameter.EdgeColor[3] = AlphaCutoff.EdgeColor.A;
 			RendererCommon.BasicParameter.EdgeColorScaling = AlphaCutoff.EdgeColorScaling;
+
+			RendererCommon.BasicParameter.IsAlphaCutoffEnabled = AlphaCutoff.Type != ParameterAlphaCutoff::EType::FIXED || AlphaCutoff.Fixed.Threshold != 0.0f;
 		}
-#endif
 
 		LoadRendererParameter(pos, m_effect->GetSetting());
 
@@ -12564,7 +12490,6 @@ EffectBasicRenderParameter EffectNodeImplemented::GetBasicRenderParameter()
 {
 	EffectBasicRenderParameter param;
 	param.ColorTextureIndex = RendererCommon.ColorTextureIndex;
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 	param.AlphaTextureIndex = RendererCommon.AlphaTextureIndex;
 	param.AlphaTexWrapType = RendererCommon.Wrap3Type;
 
@@ -12632,8 +12557,6 @@ EffectBasicRenderParameter EffectNodeImplemented::GetBasicRenderParameter()
 	param.EdgeParam.Color[3] = static_cast<float>(AlphaCutoff.EdgeColor.A) / 255.0f;
 	param.EdgeParam.Threshold = AlphaCutoff.EdgeThreshold;
 	param.EdgeParam.ColorScaling = AlphaCutoff.EdgeColorScaling;
-
-#endif
 	param.AlphaBlend = RendererCommon.AlphaBlend;
 	param.Distortion = RendererCommon.Distortion;
 	param.DistortionIntensity = RendererCommon.DistortionIntensity;
@@ -12647,7 +12570,6 @@ EffectBasicRenderParameter EffectNodeImplemented::GetBasicRenderParameter()
 void EffectNodeImplemented::SetBasicRenderParameter(EffectBasicRenderParameter param)
 {
 	RendererCommon.ColorTextureIndex = param.ColorTextureIndex;
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 	RendererCommon.AlphaTextureIndex = param.AlphaTextureIndex;
 	RendererCommon.Wrap3Type = param.AlphaTexWrapType;
 
@@ -12669,7 +12591,6 @@ void EffectNodeImplemented::SetBasicRenderParameter(EffectBasicRenderParameter p
 	RendererCommon.UVDistortionIntensity = param.UVDistortionIntensity;
 
 	RendererCommon.TextureBlendType = param.TextureBlendType;
-#endif
 
 	RendererCommon.AlphaBlend = param.AlphaBlend;
 	RendererCommon.Distortion = param.Distortion;
@@ -13083,18 +13004,23 @@ void EffectNodeModel::LoadRendererParameter(unsigned char*& pos, Setting* settin
 
 	AllColor.load(pos, m_effect->GetVersion());
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
-	int FalloffFlag = 0;
-	memcpy(&FalloffFlag, pos, sizeof(int));
-	pos += sizeof(int);
-	EnableFalloff = (FalloffFlag == 1);
-
-	if (EnableFalloff)
+	if (m_effect->GetVersion() >= 1600)
 	{
-		memcpy(&FalloffParam, pos, sizeof(ModelRenderer::FalloffParameter));
-		pos += sizeof(ModelRenderer::FalloffParameter);
+		int FalloffFlag = 0;
+		memcpy(&FalloffFlag, pos, sizeof(int));
+		pos += sizeof(int);
+		EnableFalloff = (FalloffFlag == 1);
+
+		if (EnableFalloff)
+		{
+			memcpy(&FalloffParam, pos, sizeof(ModelRenderer::FalloffParameter));
+			pos += sizeof(ModelRenderer::FalloffParameter);
+		}
 	}
-#endif
+	else
+	{
+		EnableFalloff = false;
+	}
 }
 
 //----------------------------------------------------------------------------------
@@ -13124,12 +13050,9 @@ void EffectNodeModel::BeginRendering(int32_t count, Manager* manager)
 
 		nodeParameter.BasicParameterPtr = &RendererCommon.BasicParameter;
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 		nodeParameter.EnableFalloff = EnableFalloff;
 		nodeParameter.FalloffParam = FalloffParam;
-
 		nodeParameter.EnableViewOffset = (TranslationType == ParameterTranslationType_ViewOffset);
-#endif
 
 		renderer->BeginRendering(nodeParameter, count, m_userData);
 	}
@@ -13162,18 +13085,15 @@ void EffectNodeModel::Rendering(const Instance& instance, const Instance* next_i
 		// nodeParameter.IsDepthOffsetScaledWithParticleScale = DepthValues.IsDepthOffsetScaledWithParticleScale;
 		nodeParameter.BasicParameterPtr = &RendererCommon.BasicParameter;
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 		nodeParameter.EnableFalloff = EnableFalloff;
 		nodeParameter.FalloffParam = FalloffParam;
 
 		nodeParameter.EnableViewOffset = (TranslationType == ParameterTranslationType_ViewOffset);
-#endif
 
 		ModelRenderer::InstanceParameter instanceParameter;
 		instanceParameter.SRTMatrix43 = instance.GetGlobalMatrix43();
 		instanceParameter.Time = (int32_t)instance.m_LivingTime;
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 		instanceParameter.UV = instance.GetUV(0);
 		instanceParameter.AlphaUV = instance.GetUV(1);
 		instanceParameter.UVDistortionUV = instance.GetUV(2);
@@ -13189,9 +13109,7 @@ void EffectNodeModel::Rendering(const Instance& instance, const Instance* next_i
 		{
 			instanceParameter.ViewOffsetDistance = instance.translation_values.view_offset.distance;
 		}
-#else
-		instanceParameter.UV = instance.GetUV();
-#endif
+
 		CalcCustomData(&instance, instanceParameter.CustomData1, instanceParameter.CustomData2);
 
 		Color _color;
@@ -13242,12 +13160,10 @@ void EffectNodeModel::EndRendering(Manager* manager)
 
 		nodeParameter.BasicParameterPtr = &RendererCommon.BasicParameter;
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 		nodeParameter.EnableFalloff = EnableFalloff;
 		nodeParameter.FalloffParam = FalloffParam;
 
 		nodeParameter.EnableViewOffset = (TranslationType == ParameterTranslationType_ViewOffset);
-#endif
 
 		renderer->EndRendering(nodeParameter, m_userData);
 	}
@@ -13509,9 +13425,8 @@ void EffectNodeRibbon::BeginRendering(int32_t count, Manager* manager)
 		m_nodeParameter.BasicParameterPtr = &RendererCommon.BasicParameter;
 		m_nodeParameter.TextureUVTypeParameterPtr = &TextureUVType;
 		m_nodeParameter.IsRightHand = manager->GetCoordinateSystem() == CoordinateSystem::RH;
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 		m_nodeParameter.EnableViewOffset = (TranslationType == ParameterTranslationType_ViewOffset);
-#endif
+
 		renderer->BeginRendering(m_nodeParameter, count, m_userData);
 	}
 }
@@ -13526,7 +13441,6 @@ void EffectNodeRibbon::BeginRenderingGroup(InstanceGroup* group, Manager* manage
 
 		if (group->GetFirst() != nullptr)
 		{
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 			Instance* groupFirst = group->GetFirst();
 			m_instanceParameter.UV = groupFirst->GetUV(0);
 			m_instanceParameter.AlphaUV = groupFirst->GetUV(1);
@@ -13543,9 +13457,7 @@ void EffectNodeRibbon::BeginRenderingGroup(InstanceGroup* group, Manager* manage
 			{
 				m_instanceParameter.ViewOffsetDistance = groupFirst->translation_values.view_offset.distance;
 			}
-#else
-			m_instanceParameter.UV = group->GetFirst()->GetUV();
-#endif
+
 			CalcCustomData(group->GetFirst(), m_instanceParameter.CustomData1, m_instanceParameter.CustomData2);
 		}
 
@@ -13992,9 +13904,7 @@ void EffectNodeRing::BeginRendering(int32_t count, Manager* manager)
 		nodeParameter.StartingFade = Shape.StartingFade;
 		nodeParameter.EndingFade = Shape.EndingFade;
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 		nodeParameter.EnableViewOffset = (TranslationType == ParameterTranslationType_ViewOffset);
-#endif
 
 		renderer->BeginRendering(nodeParameter, count, m_userData);
 	}
@@ -14021,9 +13931,7 @@ void EffectNodeRing::Rendering(const Instance& instance, const Instance* next_in
 		nodeParameter.StartingFade = Shape.StartingFade;
 		nodeParameter.EndingFade = Shape.EndingFade;
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 		nodeParameter.EnableViewOffset = (TranslationType == ParameterTranslationType_ViewOffset);
-#endif
 
 		Color _outerColor;
 		Color _centerColor;
@@ -14065,7 +13973,6 @@ void EffectNodeRing::Rendering(const Instance& instance, const Instance* next_in
 		instanceParameter.CenterColor = _centerColor;
 		instanceParameter.InnerColor = _innerColor;
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 		instanceParameter.UV = instance.GetUV(0);
 		instanceParameter.AlphaUV = instance.GetUV(1);
 		instanceParameter.UVDistortionUV = instance.GetUV(2);
@@ -14081,9 +13988,6 @@ void EffectNodeRing::Rendering(const Instance& instance, const Instance* next_in
 		{
 			instanceParameter.ViewOffsetDistance = instance.translation_values.view_offset.distance;
 		}
-#else
-		instanceParameter.UV = instance.GetUV();
-#endif
 
 		CalcCustomData(&instance, instanceParameter.CustomData1, instanceParameter.CustomData2);
 
@@ -14570,9 +14474,7 @@ void EffectNodeSprite::BeginRendering(int32_t count, Manager* manager)
 
 		nodeParameter.ZSort = DepthValues.ZSort;
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 		nodeParameter.EnableViewOffset = (TranslationType == ParameterTranslationType_ViewOffset);
-#endif
 
 		renderer->BeginRendering(nodeParameter, count, m_userData);
 	}
@@ -14601,9 +14503,7 @@ void EffectNodeSprite::Rendering(const Instance& instance, const Instance* next_
 
 		nodeParameter.ZSort = DepthValues.ZSort;
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 		nodeParameter.EnableViewOffset = (TranslationType == ParameterTranslationType_ViewOffset);
-#endif
 
 		SpriteRenderer::InstanceParameter instanceParameter;
 		instanceParameter.AllColor = instValues._color;
@@ -14666,7 +14566,6 @@ void EffectNodeSprite::Rendering(const Instance& instance, const Instance* next_
 			instanceParameter.Positions[3] = SpritePosition.fixed.ur;
 		}
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 		instanceParameter.UV = instance.GetUV(0);
 		instanceParameter.AlphaUV = instance.GetUV(1);
 		instanceParameter.UVDistortionUV = instance.GetUV(2);
@@ -14682,9 +14581,7 @@ void EffectNodeSprite::Rendering(const Instance& instance, const Instance* next_
 		{
 			instanceParameter.ViewOffsetDistance = instance.translation_values.view_offset.distance;
 		}
-#else
-		instanceParameter.UV = instance.GetUV();
-#endif
+
 		CalcCustomData(&instance, instanceParameter.CustomData1, instanceParameter.CustomData2);
 
 		renderer->Rendering(nodeParameter, instanceParameter, m_userData);
@@ -14918,9 +14815,8 @@ void EffectNodeTrack::BeginRendering(int32_t count, Manager* manager)
 		m_nodeParameter.BasicParameterPtr = &RendererCommon.BasicParameter;
 		m_nodeParameter.TextureUVTypeParameterPtr = &TextureUVType;
 		m_nodeParameter.IsRightHand = manager->GetCoordinateSystem() == CoordinateSystem::RH;
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 		m_nodeParameter.EnableViewOffset = (TranslationType == ParameterTranslationType_ViewOffset);
-#endif
+
 		renderer->BeginRendering(m_nodeParameter, count, m_userData);
 	}
 }
@@ -14940,7 +14836,6 @@ void EffectNodeTrack::BeginRenderingGroup(InstanceGroup* group, Manager* manager
 
 		if (group->GetFirst() != nullptr)
 		{
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 			Instance* groupFirst = group->GetFirst();
 			m_instanceParameter.UV = groupFirst->GetUV(0);
 			m_instanceParameter.AlphaUV = groupFirst->GetUV(1);
@@ -14957,9 +14852,7 @@ void EffectNodeTrack::BeginRenderingGroup(InstanceGroup* group, Manager* manager
 			{
 				m_instanceParameter.ViewOffsetDistance = groupFirst->translation_values.view_offset.distance;
 			}
-#else
-			m_instanceParameter.UV = group->GetFirst()->GetUV();
-#endif
+
 			CalcCustomData(group->GetFirst(), m_instanceParameter.CustomData1, m_instanceParameter.CustomData2);
 		}
 
@@ -15137,7 +15030,7 @@ void EffectNodeTrack::SetValues(
 	}
 	else if (param.type == StandardColorParameter::FCurve_RGBA)
 	{
-		auto fcurveColors = param.fcurve_rgba.FCurve->GetValues(time, livedTime);
+		auto fcurveColors = param.fcurve_rgba.FCurve->GetValues(static_cast<float>(time), static_cast<float>(livedTime));
 		c.R = (uint8_t)Clamp((value.color.fcurve_rgba.offset[0] + fcurveColors[0]), 255, 0);
 		c.G = (uint8_t)Clamp((value.color.fcurve_rgba.offset[1] + fcurveColors[1]), 255, 0);
 		c.B = (uint8_t)Clamp((value.color.fcurve_rgba.offset[2] + fcurveColors[2]), 255, 0);
@@ -15202,8 +15095,6 @@ void EffectNodeTrack::LoadValues(TrackSizeParameter& param, unsigned char*& pos)
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-#if __EFFEKSEER_BUILD_VERSION16__
-#endif
 
 
 //----------------------------------------------------------------------------------
@@ -15233,6 +15124,15 @@ static void PathCombine(EFK_CHAR* dst, const EFK_CHAR* src1, const EFK_CHAR* src
 		}
 		memcpy(&dst[len1], src2, len2 * sizeof(EFK_CHAR));
 	}
+    
+    for(int i = 0; i < len1 + len2; i++)
+    {
+        if(dst[i] == u'\\')
+        {
+            dst[i] = u'/';
+        }
+    }
+    
 	dst[len1 + len2] = L'\0';
 }
 
@@ -15339,14 +15239,12 @@ void EffectFactory::SetMaterial(Effect* effect, int32_t index, MaterialData* dat
 	effect_->materials_[index] = data;
 }
 
-#if __EFFEKSEER_BUILD_VERSION16__
 void EffectFactory::SetCurve(Effect* effect, int32_t index, void* data)
 {
 	auto effect_ = static_cast<EffectImplemented*>(effect);
 	assert(0 <= index && index < effect_->curveCount_);
 	effect_->curves_[index] = data;
 }
-#endif
 
 void EffectFactory::SetLoadingParameter(Effect* effect, ReferenceObject* parameter)
 {
@@ -15380,9 +15278,7 @@ void EffectFactory::OnLoadingResource(Effect* effect, const void* data, int32_t 
 	auto soundLoader = effect->GetSetting()->GetSoundLoader();
 	auto modelLoader = effect->GetSetting()->GetModelLoader();
 	auto materialLoader = effect->GetSetting()->GetMaterialLoader();
-#if __EFFEKSEER_BUILD_VERSION16__
 	auto curveLoader = effect->GetSetting()->GetCurveLoader();
-#endif
 
 	if (textureLoader != nullptr)
 	{
@@ -15450,7 +15346,6 @@ void EffectFactory::OnLoadingResource(Effect* effect, const void* data, int32_t 
 		}
 	}
 
-#if __EFFEKSEER_BUILD_VERSION16__
 	if (curveLoader != nullptr)
 	{
 		for (auto i = 0; i < effect->GetCurveCount(); i++)
@@ -15462,7 +15357,6 @@ void EffectFactory::OnLoadingResource(Effect* effect, const void* data, int32_t 
 			SetCurve(effect, i, resource);
 		}
 	}
-#endif
 }
 
 void EffectFactory::OnUnloadingResource(Effect* effect)
@@ -15471,9 +15365,7 @@ void EffectFactory::OnUnloadingResource(Effect* effect)
 	auto soundLoader = effect->GetSetting()->GetSoundLoader();
 	auto modelLoader = effect->GetSetting()->GetModelLoader();
 	auto materialLoader = effect->GetSetting()->GetMaterialLoader();
-#if __EFFEKSEER_BUILD_VERSION16__
 	auto curveLoader = effect->GetSetting()->GetCurveLoader();
-#endif
 
 	if (textureLoader != nullptr)
 	{
@@ -15523,7 +15415,6 @@ void EffectFactory::OnUnloadingResource(Effect* effect)
 		}
 	}
 
-#if __EFFEKSEER_BUILD_VERSION16__
 	if (curveLoader != nullptr)
 	{
 		for (auto i = 0; i < effect->GetCurveCount(); i++)
@@ -15532,7 +15423,6 @@ void EffectFactory::OnUnloadingResource(Effect* effect)
 			SetCurve(effect, i, nullptr);
 		}
 	}
-#endif
 }
 
 const char* EffectFactory::GetName() const
@@ -15789,8 +15679,7 @@ bool EffectImplemented::LoadBody(const uint8_t* data, int32_t size, float mag)
 		defaultDynamicInputs.fill(0);
 	}
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
-	if (m_version >= 16)
+	if (m_version >= 1600)
 	{
 		// curve
 		binaryReader.Read(curveCount_, 0, elementCountMax);
@@ -15812,7 +15701,6 @@ bool EffectImplemented::LoadBody(const uint8_t* data, int32_t size, float mag)
 			}
 		}
 	}
-#endif
 
 	if (m_version >= 13)
 	{
@@ -16076,6 +15964,8 @@ float EffectImplemented::GetMaginification() const
 //----------------------------------------------------------------------------------
 bool EffectImplemented::Load(void* pData, int size, float mag, const EFK_CHAR* materialPath, ReloadingThreadType reloadingThreadType)
 {
+	ES_SAFE_RELEASE(factory);
+
 	if (m_setting != nullptr)
 	{
 		for (int i = 0; i < m_setting->GetEffectFactoryCount(); i++)
@@ -16364,7 +16254,6 @@ const EFK_CHAR* EffectImplemented::GetMaterialPath(int n) const
 	return materialPaths_[n];
 }
 
-#if __EFFEKSEER_BUILD_VERSION16__
 void* EffectImplemented::GetCurve(int n) const
 {
 	return curves_[n];
@@ -16379,7 +16268,7 @@ const EFK_CHAR* EffectImplemented::GetCurvePath(int n) const
 {
 	return curvePaths_[n];
 }
-#endif
+
 void EffectImplemented::SetTexture(int32_t index, TextureType type, TextureData* data)
 {
 	auto textureLoader = GetSetting()->GetTextureLoader();
@@ -16457,7 +16346,6 @@ void EffectImplemented::SetMaterial(int32_t index, MaterialData* data)
 	materials_[index] = data;
 }
 
-#if __EFFEKSEER_BUILD_VERSION16__
 void EffectImplemented::SetCurve(int32_t index, void* data)
 {
 	auto curveLoader = GetSetting()->GetCurveLoader();
@@ -16470,7 +16358,6 @@ void EffectImplemented::SetCurve(int32_t index, void* data)
 
 	curves_[index] = data;
 }
-#endif
 
 bool EffectImplemented::Reload(void* data, int32_t size, const EFK_CHAR* materialPath, ReloadingThreadType reloadingThreadType)
 {
@@ -16480,7 +16367,7 @@ bool EffectImplemented::Reload(void* data, int32_t size, const EFK_CHAR* materia
 	std::array<Manager*, 1> managers;
 	managers[0] = m_pManager;
 
-	return Reload(managers.data(), managers.size(), data, size, materialPath, reloadingThreadType);
+	return Reload(managers.data(), static_cast<int32_t>(managers.size()), data, size, materialPath, reloadingThreadType);
 }
 
 //----------------------------------------------------------------------------------
@@ -16494,7 +16381,7 @@ bool EffectImplemented::Reload(const EFK_CHAR* path, const EFK_CHAR* materialPat
 	std::array<Manager*, 1> managers;
 	managers[0] = m_pManager;
 
-	return Reload(managers.data(), managers.size(), path, materialPath, reloadingThreadType);
+	return Reload(managers.data(), static_cast<int32_t>(managers.size()), path, materialPath, reloadingThreadType);
 }
 
 //----------------------------------------------------------------------------------
@@ -16512,12 +16399,17 @@ bool EffectImplemented::Reload(Manager** managers,
 
 	const EFK_CHAR* matPath = materialPath != NULL ? materialPath : m_materialPath.c_str();
 
-	int lockCount = 0;
-
 	for (int32_t i = 0; i < managersCount; i++)
 	{
-		((ManagerImplemented*)managers[i])->BeginReloadEffect(this, lockCount == 0);
-		lockCount++;
+		// to call only once
+		for (int32_t j = 0; j < i; j++)
+		{
+			if (managers[i] == managers[j])
+				continue;
+		}
+
+		auto manager = static_cast<ManagerImplemented*>(managers[i]);
+		manager->BeginReloadEffect( this, true);
 	}
 
 	// HACK for scale
@@ -16536,8 +16428,15 @@ bool EffectImplemented::Reload(Manager** managers,
 
 	for (int32_t i = 0; i < managersCount; i++)
 	{
-		lockCount--;
-		((ManagerImplemented*)managers[i])->EndReloadEffect(this, lockCount == 0);
+		// to call only once
+		for (int32_t j = 0; j < i; j++)
+		{
+			if (managers[i] == managers[j])
+				continue;
+		}
+
+		auto manager = static_cast<ManagerImplemented*>(managers[i]);
+		manager->EndReloadEffect( this, true);
 	}
 
 	return false;
@@ -16575,7 +16474,8 @@ bool EffectImplemented::Reload(
 
 	for (int32_t i = 0; i < managersCount; i++)
 	{
-		((ManagerImplemented*)&(managers[i]))->BeginReloadEffect(this, lockCount == 0);
+		auto manager = static_cast<ManagerImplemented*>(managers[i]);
+		manager->BeginReloadEffect(this, lockCount == 0);
 		lockCount++;
 	}
 
@@ -16587,8 +16487,11 @@ bool EffectImplemented::Reload(
 	for (int32_t i = 0; i < managersCount; i++)
 	{
 		lockCount--;
-		((ManagerImplemented*)&(managers[i]))->EndReloadEffect(this, lockCount == 0);
+		auto manager = static_cast<ManagerImplemented*>(managers[i]);
+		manager->EndReloadEffect(this, lockCount == 0);
 	}
+
+	eLoader->Unload(data, size);
 
 	return false;
 }
@@ -16681,7 +16584,6 @@ void EffectImplemented::ReloadResources(const void* data, int32_t size, const EF
 			}
 		}
 
-#if __EFFEKSEER_BUILD_VERSION16__
 		for (int32_t ind = 0; ind < curveCount_; ind++)
 		{
 			EFK_CHAR fullPath[512];
@@ -16693,7 +16595,6 @@ void EffectImplemented::ReloadResources(const void* data, int32_t size, const EF
 				curves_[ind] = value;
 			}
 		}
-#endif
 
 		return;
 	}
@@ -16775,7 +16676,6 @@ void EffectImplemented::UnloadResources(const EFK_CHAR* materialPath)
 			reloadingBackup->materials.Push(fullPath, materials_[ind]);
 		}
 
-#if __EFFEKSEER_BUILD_VERSION16__
 		for (int32_t ind = 0; ind < curveCount_; ind++)
 		{
 			if (curves_[ind] == nullptr)
@@ -16785,7 +16685,6 @@ void EffectImplemented::UnloadResources(const EFK_CHAR* materialPath)
 			PathCombine(fullPath, matPath, curvePaths_[ind]);
 			reloadingBackup->curves.Push(fullPath, curves_[ind]);
 		}
-#endif
 
 		return;
 	}
@@ -17212,10 +17111,10 @@ ManagerImplemented::ManagerImplemented(int instance_max, bool autoFlip)
 	m_renderingDrawSets.reserve(64);
 
 	int chunk_max = (m_instance_max + InstanceChunk::InstancesOfChunk - 1) / InstanceChunk::InstancesOfChunk;
-	reservedChunksBuffer_.reset(new InstanceChunk[chunk_max]);
-	for (int i = 0; i < chunk_max; i++)
+	reservedChunksBuffer_.resize(chunk_max);
+	for (auto& chunk : reservedChunksBuffer_)
 	{
-		pooledChunks_.push(&reservedChunksBuffer_[i]);
+		pooledChunks_.push(&chunk);
 	}
 	for (auto& chunks : instanceChunks_)
 	{
@@ -17224,17 +17123,17 @@ ManagerImplemented::ManagerImplemented(int instance_max, bool autoFlip)
 	std::fill(creatableChunkOffsets_.begin(), creatableChunkOffsets_.end(), 0);
 
 	// Pooling InstanceGroup
-	reservedGroupBuffer_.reset(new uint8_t[instance_max * sizeof(InstanceGroup)]);
+	reservedGroupBuffer_.resize(instance_max * sizeof(InstanceGroup));
 	for (int i = 0; i < instance_max; i++)
 	{
 		pooledGroups_.push((InstanceGroup*)&reservedGroupBuffer_[i * sizeof(InstanceGroup)]);
 	}
 
 	// Pooling InstanceGroup
-	reservedContainerBuffer_.reset(new uint8_t[instance_max * sizeof(InstanceGroup)]);
+	reservedContainerBuffer_.resize(instance_max * sizeof(InstanceContainer));
 	for (int i = 0; i < instance_max; i++)
 	{
-		pooledContainers_.push((InstanceContainer*)&reservedContainerBuffer_[i * sizeof(InstanceGroup)]);
+		pooledContainers_.push((InstanceContainer*)&reservedContainerBuffer_[i * sizeof(InstanceContainer)]);
 	}
 
 	m_setting->SetEffectLoader(new DefaultEffectLoader());
@@ -17536,7 +17435,6 @@ void ManagerImplemented::SetMaterialLoader(MaterialLoader* loader)
 	m_setting->SetMaterialLoader(loader);
 }
 
-#if __EFFEKSEER_BUILD_VERSION16__
 CurveLoader* ManagerImplemented::GetCurveLoader()
 {
 	return m_setting->GetCurveLoader();
@@ -17546,7 +17444,6 @@ void ManagerImplemented::SetCurveLoader(CurveLoader* loader)
 {
 	m_setting->SetCurveLoader(loader);
 }
-#endif
 
 void ManagerImplemented::StopEffect(Handle handle)
 {
@@ -18350,6 +18247,31 @@ void ManagerImplemented::UpdateHandle(Handle handle, float deltaFrame)
 	}
 }
 
+void ManagerImplemented::UpdateHandleToMoveToFrame(Handle handle, float frame)
+{
+	auto it = m_DrawSets.find(handle);
+	if (it == m_DrawSets.end())
+	{
+		return;
+	}
+
+	DrawSet& drawSet = it->second;
+
+	if (frame < drawSet.GlobalPointer->GetUpdatedFrame())
+	{
+		StopWithoutRemoveDrawSet(drawSet);
+		ResetAndPlayWithDataSet(drawSet, frame);
+	}
+	else
+	{
+		auto updatedFrame = drawSet.GlobalPointer->GetUpdatedFrame();
+		for (int i = 0; i < frame - updatedFrame; i++)
+		{
+			UpdateHandle(handle, 1);
+		}
+	}
+}
+
 void ManagerImplemented::UpdateInstancesByInstanceGlobal(const DrawSet& drawSet)
 {
 	for (auto& chunks : instanceChunks_)
@@ -18451,6 +18373,67 @@ bool ManagerImplemented::IsClippedWithDepth(DrawSet& drawSet, InstanceContainer*
 	{
 		return false;
 	}
+}
+
+void ManagerImplemented::StopWithoutRemoveDrawSet(DrawSet& drawSet)
+{
+	drawSet.InstanceContainerPointer->KillAllInstances(true);
+	drawSet.InstanceContainerPointer->RemoveForcibly(true);
+	ReleaseInstanceContainer(drawSet.InstanceContainerPointer);
+	drawSet.InstanceContainerPointer = nullptr;
+	ES_SAFE_RELEASE(drawSet.CullingObjectPointer);
+}
+
+void ManagerImplemented::ResetAndPlayWithDataSet(DrawSet& drawSet, float frame)
+{
+	auto pGlobal = drawSet.GlobalPointer;
+	auto e = static_cast<EffectImplemented*>(drawSet.ParameterPointer);
+
+	// reallocate
+	pGlobal->GetRandObject().SetSeed(drawSet.RandomSeed);
+
+	pGlobal->RenderedInstanceContainers.resize(e->renderingNodesCount);
+	for (size_t i = 0; i < pGlobal->RenderedInstanceContainers.size(); i++)
+	{
+		pGlobal->RenderedInstanceContainers[i] = nullptr;
+	}
+
+	drawSet.IsPreupdated = false;
+	drawSet.IsParameterChanged = true;
+	drawSet.StartFrame = 0;
+	drawSet.GoingToStop = false;
+	drawSet.GoingToStopRoot = false;
+	drawSet.IsRemoving = false;
+	pGlobal->ResetUpdatedFrame();
+
+	// Create an instance through a container
+	//drawSet.InstanceContainerPointer = CreateInstanceContainer(e->GetRoot(), drawSet.GlobalPointer, true, drawSet.GlobalMatrix, NULL);
+
+	auto isShown = drawSet.IsShown;
+	drawSet.IsShown = false;
+
+	// skip
+	Preupdate(drawSet);
+
+	for (float f = 0; f < frame - 1; f += 1.0f)
+	{
+		drawSet.GlobalPointer->BeginDeltaFrame(1.0f);
+
+		UpdateInstancesByInstanceGlobal(drawSet);
+		UpdateHandleInternal(drawSet);
+		//drawSet.InstanceContainerPointer->Update(true, false);
+		drawSet.GlobalPointer->EndDeltaFrame();
+	}
+
+	drawSet.IsShown = isShown;
+
+	drawSet.GlobalPointer->BeginDeltaFrame(1.0f);
+
+	UpdateInstancesByInstanceGlobal(drawSet);
+	UpdateHandleInternal(drawSet);
+		
+	//drawSet.InstanceContainerPointer->Update(true, drawSet.IsShown);
+	drawSet.GlobalPointer->EndDeltaFrame();
 }
 
 void ManagerImplemented::Draw(const Manager::DrawParameter& drawParameter)
@@ -18678,14 +18661,17 @@ Handle ManagerImplemented::Play(Effect* effect, const Vector3D& position, int32_
 	// Create root
 	InstanceGlobal* pGlobal = new InstanceGlobal();
 
+	int32_t randomSeed = 0;
 	if (e->m_defaultRandomSeed >= 0)
 	{
-		pGlobal->GetRandObject().SetSeed(e->m_defaultRandomSeed);
+		randomSeed = e->m_defaultRandomSeed;
 	}
 	else
 	{
-		pGlobal->GetRandObject().SetSeed(GetRandFunc()());
+		randomSeed = GetRandFunc()();
 	}
+
+	pGlobal->GetRandObject().SetSeed(randomSeed);
 
 	pGlobal->dynamicInputParameters = e->defaultDynamicInputs;
 
@@ -18705,6 +18691,7 @@ Handle ManagerImplemented::Play(Effect* effect, const Vector3D& position, int32_
 
 	drawSet.IsParameterChanged = true;
 	drawSet.StartFrame = startFrame;
+	drawSet.RandomSeed = randomSeed;
 
 	return handle;
 }
@@ -18919,9 +18906,7 @@ void ManagerImplemented::BeginReloadEffect(Effect* effect, bool doLockThread)
 		}
 
 		// dispose instances
-		it.second.InstanceContainerPointer->RemoveForcibly(true);
-		ReleaseInstanceContainer(it.second.InstanceContainerPointer);
-		it.second.InstanceContainerPointer = NULL;
+		StopWithoutRemoveDrawSet(it.second);
 	}
 }
 
@@ -18934,7 +18919,7 @@ void ManagerImplemented::EndReloadEffect(Effect* effect, bool doLockThread)
 		if (ds.ParameterPointer != effect)
 			continue;
 
-		if (it.second.InstanceContainerPointer == nullptr)
+		if (it.second.InstanceContainerPointer != nullptr)
 		{
 			continue;
 		}
@@ -18942,43 +18927,11 @@ void ManagerImplemented::EndReloadEffect(Effect* effect, bool doLockThread)
 		auto e = static_cast<EffectImplemented*>(effect);
 		auto pGlobal = ds.GlobalPointer;
 
-		// reallocate
-		if (e->m_defaultRandomSeed >= 0)
-		{
-			pGlobal->GetRandObject().SetSeed(e->m_defaultRandomSeed);
-		}
-		else
-		{
-			pGlobal->GetRandObject().SetSeed(GetRandFunc()());
-		}
+		ResetAndPlayWithDataSet(ds, ds.GlobalPointer->GetUpdatedFrame());
 
-		pGlobal->RenderedInstanceContainers.resize(e->renderingNodesCount);
-		for (size_t i = 0; i < pGlobal->RenderedInstanceContainers.size(); i++)
-		{
-			pGlobal->RenderedInstanceContainers[i] = nullptr;
-		}
-
-		// Create an instance through a container
-		ds.InstanceContainerPointer = CreateInstanceContainer(e->GetRoot(), ds.GlobalPointer, true, ds.GlobalMatrix, NULL);
-
-		// skip
-		for (float f = 0; f < ds.GlobalPointer->GetUpdatedFrame() - 1; f += 1.0f)
-		{
-			ds.GlobalPointer->BeginDeltaFrame(1.0f);
-
-			UpdateInstancesByInstanceGlobal(ds);
-
-			ds.InstanceContainerPointer->Update(true, false);
-			ds.GlobalPointer->EndDeltaFrame();
-		}
-
-		ds.GlobalPointer->BeginDeltaFrame(1.0f);
-
-		UpdateInstancesByInstanceGlobal(ds);
-
-		ds.InstanceContainerPointer->Update(true, ds.IsShown);
-		ds.GlobalPointer->EndDeltaFrame();
 	}
+
+	Flip();
 
 	if (doLockThread)
 	{
@@ -19205,7 +19158,7 @@ float RandCallback::Rand(void* userData)
 float RandCallback::RandSeed(void* userData, float randSeed)
 {
 	auto seed = static_cast<int32_t>(randSeed * 1024 * 8);
-	return RandLCG(seed);
+	return static_cast<float>(RandLCG(seed));
 }
 
 //----------------------------------------------------------------------------------
@@ -19575,8 +19528,6 @@ InstanceGlobal* InstanceContainer::GetRootInstance()
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-#if __EFFEKSEER_BUILD_VERSION16__
-#endif
 
 //----------------------------------------------------------------------------------
 //
@@ -19735,10 +19686,8 @@ Instance::Instance(Manager* pManager, EffectNode* pEffectNode, InstanceContainer
 	, m_ParentMatrix43Calculated(false)
 	, is_time_step_allowed(false)
 	, m_sequenceNumber(0)
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 	, m_flipbookIndexAndNextRate(0)
 	, m_AlphaThreshold(0.0f)
-#endif
 {
 	m_generatedChildrenCount = m_fixedGeneratedChildrenCount;
 	maxGenerationChildrenCount = fixedMaxGenerationChildrenCount_;
@@ -19765,12 +19714,10 @@ Instance::Instance(Manager* pManager, EffectNode* pEffectNode, InstanceContainer
 		}
 	}
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 	for (auto& it : uvTimeOffsets)
 	{
 		it = 0;
 	}
-#endif
 }
 
 //----------------------------------------------------------------------------------
@@ -19940,6 +19887,8 @@ void Instance::Initialize(Instance* parent, int32_t instanceNumber, const Mat43f
 		maxGenerationChildrenCount = flexibleMaxGenerationChildrenCount_;
 		m_nextGenerationTime = m_flexibleNextGenerationTime;
 	}
+
+	prevPosition_ = Vec3f(0, 0, 0);
 }
 
 //----------------------------------------------------------------------------------
@@ -19972,7 +19921,7 @@ void Instance::FirstUpdate()
 		{
 			auto maxGene = static_cast<float>(pNode->CommonValues.MaxGeneration);
 			ApplyEq(maxGene, effect, instanceGlobal, &rand, pNode->CommonValues.RefEqMaxGeneration, maxGene);
-			maxGenerationChildrenCount[i] = maxGene;
+			maxGenerationChildrenCount[i] = static_cast<int32_t>(maxGene);
 		}
 		else
 		{
@@ -20023,6 +19972,7 @@ void Instance::FirstUpdate()
 
 	// 親の初期化
 	if (parameter->CommonValues.TranslationBindType == BindType::WhenCreating ||
+		parameter->CommonValues.TranslationBindType == TranslationParentBindType::WhenCreating_FollowParent ||
 		parameter->CommonValues.RotationBindType == BindType::WhenCreating ||
 		parameter->CommonValues.ScalingBindType == BindType::WhenCreating)
 	{
@@ -20040,16 +19990,22 @@ void Instance::FirstUpdate()
 		ColorParent = m_pParent->ColorInheritance;
 	}
 
+	steeringVec_ = Vec3f(0, 0, 0);
+
+	if (m_pEffectNode->CommonValues.TranslationBindType == TranslationParentBindType::NotBind_FollowParent ||
+		m_pEffectNode->CommonValues.TranslationBindType == TranslationParentBindType::WhenCreating_FollowParent)
+	{
+		followParentParam.maxFollowSpeed = m_pEffectNode->SteeringBehaviorParam.MaxFollowSpeed.getValue(rand);
+		followParentParam.steeringSpeed = m_pEffectNode->SteeringBehaviorParam.SteeringSpeed.getValue(rand) / 100.0f;
+	}
+
 	// Translation
 	if (m_pEffectNode->TranslationType == ParameterTranslationType_Fixed)
 	{
-		translation_values.fixed.location = ApplyEq(effect,
-													instanceGlobal,
-													&rand,
-													m_pEffectNode->TranslationFixed.RefEq,
-													m_pEffectNode->TranslationFixed.Position,
-													m_pEffectNode->DynamicFactor.Tra,
-													m_pEffectNode->DynamicFactor.TraInv);
+		translation_values.fixed.location = m_pEffectNode->TranslationFixed.Position;
+		ApplyDynamicParameterToFixedLocation();
+
+		prevPosition_ = translation_values.fixed.location;
 	}
 	else if (m_pEffectNode->TranslationType == ParameterTranslationType_PVA)
 	{
@@ -20079,6 +20035,10 @@ void Instance::FirstUpdate()
 						   m_pEffectNode->DynamicFactor.Tra,
 						   m_pEffectNode->DynamicFactor.TraInv);
 		translation_values.random.acceleration = rva.getValue(rand);
+
+		prevPosition_ = translation_values.random.location;
+
+		steeringVec_ = translation_values.random.velocity;
 	}
 	else if (m_pEffectNode->TranslationType == ParameterTranslationType_Easing)
 	{
@@ -20099,30 +20059,65 @@ void Instance::FirstUpdate()
 
 		translation_values.easing.start = rvs.getValue(rand);
 		translation_values.easing.end = rve.getValue(rand);
+
+		prevPosition_ = translation_values.easing.start;
 	}
 	else if (m_pEffectNode->TranslationType == ParameterTranslationType_FCurve)
 	{
 		assert(m_pEffectNode->TranslationFCurve != NULL);
 
 		translation_values.fcruve.offset = m_pEffectNode->TranslationFCurve->GetOffsets(rand);
+
+		prevPosition_ = translation_values.fcruve.offset + m_pEffectNode->TranslationFCurve->GetValues(m_LivingTime, m_LivedTime);
 	}
-#ifdef __EFFEKSEER_BUILD_VERSION16__
+	else if (m_pEffectNode->TranslationType == ParameterTranslationType_NurbsCurve)
+	{
+		// TODO refactoring
+		auto& NurbsCurveParam = m_pEffectNode->TranslationNurbsCurve;
+
+		if (NurbsCurveParam.Index != -1)
+		{
+			Curve* curve = static_cast<Curve*>(m_pEffectNode->m_effect->GetCurve(NurbsCurveParam.Index));
+			float moveSpeed = NurbsCurveParam.MoveSpeed;
+			int32_t loopType = NurbsCurveParam.LoopType;
+
+			float speed = 1.0f / (curve->GetLength() * NurbsCurveParam.Scale);
+
+			float t = speed * m_LivingTime * moveSpeed;
+
+			switch (loopType)
+			{
+			default:
+			case 0:
+				t = fmod(t, 1.0f);
+				break;
+
+			case 1:
+				if (t > 1.0f)
+				{
+					t = 1.0f;
+				}
+				break;
+			}
+
+			prevPosition_ = curve->CalcuratePoint(t, NurbsCurveParam.Scale * m_pEffectNode->m_effect->GetMaginification());
+		}
+		else
+		{
+			prevPosition_ = {0, 0, 0};
+		}
+	}
 	else if (m_pEffectNode->TranslationType == ParameterTranslationType_ViewOffset)
 	{
 		translation_values.view_offset.distance = m_pEffectNode->TranslationViewOffset.distance.getValue(rand);
+		prevPosition_ = {0, 0, 0};
 	}
-#endif
 
 	// Rotation
 	if (m_pEffectNode->RotationType == ParameterRotationType_Fixed)
 	{
-		rotation_values.fixed.rotation = ApplyEq(effect,
-												 instanceGlobal,
-												 &rand,
-												 m_pEffectNode->RotationFixed.RefEq,
-												 m_pEffectNode->RotationFixed.Position,
-												 m_pEffectNode->DynamicFactor.Rot,
-												 m_pEffectNode->DynamicFactor.RotInv);
+		rotation_values.fixed.rotation = m_pEffectNode->RotationFixed.Position;
+		ApplyDynamicParameterToFixedRotation();
 	}
 	else if (m_pEffectNode->RotationType == ParameterRotationType_PVA)
 	{
@@ -20207,13 +20202,8 @@ void Instance::FirstUpdate()
 	// Scaling
 	if (m_pEffectNode->ScalingType == ParameterScalingType_Fixed)
 	{
-		scaling_values.fixed.scale = ApplyEq(effect,
-											 instanceGlobal,
-											 &rand,
-											 m_pEffectNode->ScalingFixed.RefEq,
-											 m_pEffectNode->ScalingFixed.Position,
-											 m_pEffectNode->DynamicFactor.Scale,
-											 m_pEffectNode->DynamicFactor.ScaleInv);
+		scaling_values.fixed.scale = m_pEffectNode->ScalingFixed.Position;
+		ApplyDynamicParameterToFixedScaling();
 	}
 	else if (m_pEffectNode->ScalingType == ParameterScalingType_PVA)
 	{
@@ -20490,7 +20480,6 @@ void Instance::FirstUpdate()
 	}
 
 	// UV
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 	for (int32_t i = 0; i < ParameterRendererCommon::UVParameterNum; i++)
 	{
 		const auto& UVType = m_pEffectNode->RendererCommon.UVTypes[i];
@@ -20542,10 +20531,10 @@ void Instance::FirstUpdate()
 		auto& nodeAlphaCutoffValue = m_pEffectNode->AlphaCutoff.FourPointInterpolation;
 
 		fpiValue.begin_threshold = nodeAlphaCutoffValue.BeginThreshold.getValue(rand);
-		fpiValue.transition_frame = nodeAlphaCutoffValue.TransitionFrameNum.getValue(rand);
+		fpiValue.transition_frame = static_cast<int32_t>(nodeAlphaCutoffValue.TransitionFrameNum.getValue(rand));
 		fpiValue.no2_threshold = nodeAlphaCutoffValue.No2Threshold.getValue(rand);
 		fpiValue.no3_threshold = nodeAlphaCutoffValue.No3Threshold.getValue(rand);
-		fpiValue.transition_frame2 = nodeAlphaCutoffValue.TransitionFrameNum2.getValue(rand);
+		fpiValue.transition_frame2 = static_cast<int32_t>(nodeAlphaCutoffValue.TransitionFrameNum2.getValue(rand));
 		fpiValue.end_threshold = nodeAlphaCutoffValue.EndThreshold.getValue(rand);
 	}
 	else if (m_pEffectNode->AlphaCutoff.Type == ParameterAlphaCutoff::EType::EASING)
@@ -20563,34 +20552,6 @@ void Instance::FirstUpdate()
 
 		fcurveValue.offset = nodeAlphaCutoffValue.Threshold->GetOffsets(rand);
 	}
-#else
-	if (m_pEffectNode->RendererCommon.UVType == ParameterRendererCommon::UV_ANIMATION)
-	{
-		uvTimeOffset = (int32_t)m_pEffectNode->RendererCommon.UV.Animation.StartFrame.getValue(rand);
-		uvTimeOffset *= m_pEffectNode->RendererCommon.UV.Animation.FrameLength;
-	}
-
-	if (m_pEffectNode->RendererCommon.UVType == ParameterRendererCommon::UV_SCROLL)
-	{
-		auto xy = m_pEffectNode->RendererCommon.UV.Scroll.Position.getValue(rand);
-		auto zw = m_pEffectNode->RendererCommon.UV.Scroll.Size.getValue(rand);
-
-		uvAreaOffset.X = xy.GetX();
-		uvAreaOffset.Y = xy.GetY();
-		uvAreaOffset.Width = zw.GetX();
-		uvAreaOffset.Height = zw.GetY();
-
-		uvScrollSpeed = m_pEffectNode->RendererCommon.UV.Scroll.Speed.getValue(rand);
-	}
-
-	if (m_pEffectNode->RendererCommon.UVType == ParameterRendererCommon::UV_FCURVE)
-	{
-		uvAreaOffset.X = m_pEffectNode->RendererCommon.UV.FCurve.Position->X.GetOffset(rand);
-		uvAreaOffset.Y = m_pEffectNode->RendererCommon.UV.FCurve.Position->Y.GetOffset(rand);
-		uvAreaOffset.Width = m_pEffectNode->RendererCommon.UV.FCurve.Size->X.GetOffset(rand);
-		uvAreaOffset.Height = m_pEffectNode->RendererCommon.UV.FCurve.Size->Y.GetOffset(rand);
-	}
-#endif
 
 	// CustomData
 	for (int32_t index = 0; index < 2; index++)
@@ -20764,7 +20725,6 @@ void Instance::Update(float deltaFrame, bool shown)
 		}
 	}
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 	{
 		auto& CommonValue = m_pEffectNode->RendererCommon;
 		auto& UV = CommonValue.UVs[0];
@@ -20872,7 +20832,6 @@ void Instance::Update(float deltaFrame, bool shown)
 			m_AlphaThreshold /= 100.0f;
 		}
 	}
-#endif
 
 	if (killed)
 	{
@@ -20933,6 +20892,8 @@ void Instance::CalculateMatrix(float deltaFrame)
 		}
 		else if (m_pEffectNode->TranslationType == ParameterTranslationType_Fixed)
 		{
+			ApplyDynamicParameterToFixedLocation();
+
 			localPosition = translation_values.fixed.location;
 		}
 		else if (m_pEffectNode->TranslationType == ParameterTranslationType_PVA)
@@ -20952,13 +20913,12 @@ void Instance::CalculateMatrix(float deltaFrame)
 			auto fcurve = m_pEffectNode->TranslationFCurve->GetValues(m_LivingTime, m_LivedTime);
 			localPosition = fcurve + translation_values.fcruve.offset;
 		}
-#if __EFFEKSEER_BUILD_VERSION16__
 		else if (m_pEffectNode->TranslationType == ParameterTranslationType_NurbsCurve)
 		{
 			auto& NurbsCurveParam = m_pEffectNode->TranslationNurbsCurve;
-			
+
 			if (NurbsCurveParam.Index != -1)
-			{	
+			{
 				Curve* curve = static_cast<Curve*>(m_pEffectNode->m_effect->GetCurve(NurbsCurveParam.Index));
 				float moveSpeed = NurbsCurveParam.MoveSpeed;
 				int32_t loopType = NurbsCurveParam.LoopType;
@@ -20971,15 +20931,15 @@ void Instance::CalculateMatrix(float deltaFrame)
 				{
 				default:
 				case 0:
-				t = fmod(t, 1.0f);
-				break;
+					t = fmod(t, 1.0f);
+					break;
 
 				case 1:
-				if (t > 1.0f)
-				{
-					t = 1.0f;
-				}
-				break;
+					if (t > 1.0f)
+					{
+						t = 1.0f;
+					}
+					break;
 				}
 
 				localPosition = curve->CalcuratePoint(t, NurbsCurveParam.Scale * m_pEffectNode->m_effect->GetMaginification());
@@ -20991,9 +20951,46 @@ void Instance::CalculateMatrix(float deltaFrame)
 		}
 		else if (m_pEffectNode->TranslationType == ParameterTranslationType_ViewOffset)
 		{
-			localPosition = { 0, 0, 0 };
+			localPosition = {0, 0, 0};
 		}
-#endif
+
+		// Velocitty
+		Vec3f localVelocity = Vec3f(0, 0, 0);
+		if (m_pEffectNode->LocalForceField.HasValue)
+		{
+			localVelocity = localPosition - prevPosition_;
+		}
+
+		if (m_pEffectNode->CommonValues.TranslationBindType == TranslationParentBindType::NotBind_FollowParent ||
+			m_pEffectNode->CommonValues.TranslationBindType == TranslationParentBindType::WhenCreating_FollowParent)
+		{
+			localPosition = prevPosition_;
+
+			Vec3f worldPos = Vec3f::Transform(localPosition, m_ParentMatrix);
+			Vec3f toTarget = parentPosition_ - worldPos;
+
+			if (toTarget.GetLength() > followParentParam.maxFollowSpeed)
+			{
+				toTarget = toTarget.Normalize();
+				toTarget *= followParentParam.maxFollowSpeed;
+			}
+
+			Vec3f vSteering = toTarget - steeringVec_;
+			vSteering *= followParentParam.steeringSpeed;
+
+			steeringVec_ += vSteering * deltaFrame;
+
+			if (steeringVec_.GetLength() > followParentParam.maxFollowSpeed)
+			{
+				steeringVec_ = steeringVec_.Normalize();
+				steeringVec_ *= followParentParam.maxFollowSpeed;
+			}
+
+			Vec3f followVelocity = steeringVec_ * deltaFrame * m_pEffectNode->m_effect->GetMaginification();
+			localPosition += followVelocity;
+		}
+
+		prevPosition_ = localPosition;
 
 		if (!m_pEffectNode->GenerationLocation.EffectsRotation)
 		{
@@ -21007,6 +21004,8 @@ void Instance::CalculateMatrix(float deltaFrame)
 		}
 		else if (m_pEffectNode->RotationType == ParameterRotationType_Fixed)
 		{
+			ApplyDynamicParameterToFixedRotation();
+
 			localAngle = rotation_values.fixed.rotation;
 		}
 		else if (m_pEffectNode->RotationType == ParameterRotationType_PVA)
@@ -21044,6 +21043,8 @@ void Instance::CalculateMatrix(float deltaFrame)
 		}
 		else if (m_pEffectNode->ScalingType == ParameterScalingType_Fixed)
 		{
+			ApplyDynamicParameterToFixedScaling();
+
 			localScaling = scaling_values.fixed.scale;
 		}
 		else if (m_pEffectNode->ScalingType == ParameterScalingType_PVA)
@@ -21105,6 +21106,7 @@ void Instance::CalculateMatrix(float deltaFrame)
 		}
 #else
 		currentLocalPosition += localForceField_.ModifyLocation;
+		localForceField_.ExternalVelocity = localVelocity;
 		localForceField_.Update(m_pEffectNode->LocalForceField, currentLocalPosition, m_pEffectNode->GetEffect()->GetMaginification());
 #endif
 
@@ -21156,16 +21158,11 @@ void Instance::CalculateMatrix(float deltaFrame)
 			assert(m_GlobalMatrix43.IsValid());
 		}
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
-		if(m_pEffectNode->TranslationType != ParameterTranslationType_ViewOffset)
-		{ 
+		if (m_pEffectNode->TranslationType != ParameterTranslationType_ViewOffset)
+		{
 			m_GlobalMatrix43 *= m_ParentMatrix;
 			assert(m_GlobalMatrix43.IsValid());
 		}
-#else
-		m_GlobalMatrix43 *= m_ParentMatrix;
-		assert(m_GlobalMatrix43.IsValid());
-#endif
 
 		if (m_pEffectNode->LocationAbs.type != LocationAbsType::None)
 		{
@@ -21191,13 +21188,17 @@ void Instance::CalculateParentMatrix(float deltaFrame)
 	// 親の行列を計算
 	m_pParent->CalculateMatrix(deltaFrame);
 
+	parentPosition_ = m_pParent->GetGlobalMatrix43().GetTranslation();
+
 	if (m_pEffectNode->GetType() != EFFECT_NODE_TYPE_ROOT)
 	{
-		BindType tType = m_pEffectNode->CommonValues.TranslationBindType;
+		TranslationParentBindType tType = m_pEffectNode->CommonValues.TranslationBindType;
 		BindType rType = m_pEffectNode->CommonValues.RotationBindType;
 		BindType sType = m_pEffectNode->CommonValues.ScalingBindType;
 
-		if (tType == BindType::WhenCreating && rType == BindType::WhenCreating && sType == BindType::WhenCreating)
+		if (tType == BindType::WhenCreating 
+			|| tType == TranslationParentBindType::WhenCreating_FollowParent
+			&& rType == BindType::WhenCreating && sType == BindType::WhenCreating)
 		{
 			// do not do anything
 		}
@@ -21211,7 +21212,9 @@ void Instance::CalculateParentMatrix(float deltaFrame)
 			Vec3f s, t;
 			Mat43f r;
 
-			if (tType == BindType::WhenCreating)
+			if (tType == BindType::WhenCreating
+				|| tType == TranslationParentBindType::WhenCreating_FollowParent
+				)
 				t = m_ParentMatrix.GetTranslation();
 			else
 				t = ownGroup_->GetParentTranslation();
@@ -21294,6 +21297,48 @@ void Instance::ModifyMatrixFromLocationAbs(float deltaFrame)
 	assert(m_GlobalMatrix43.IsValid());
 }
 
+void Instance::ApplyDynamicParameterToFixedLocation()
+{
+	if (m_pEffectNode->TranslationFixed.RefEq >= 0)
+	{
+		translation_values.fixed.location = ApplyEq(m_pEffectNode->GetEffect(),
+													m_pContainer->GetRootInstance(),
+													&m_randObject,
+													m_pEffectNode->TranslationFixed.RefEq,
+													m_pEffectNode->TranslationFixed.Position,
+													m_pEffectNode->DynamicFactor.Tra,
+													m_pEffectNode->DynamicFactor.TraInv);
+	}
+}
+
+void Instance::ApplyDynamicParameterToFixedRotation()
+{
+	if (m_pEffectNode->RotationFixed.RefEq >= 0)
+	{
+		rotation_values.fixed.rotation = ApplyEq(m_pEffectNode->GetEffect(),
+												 m_pContainer->GetRootInstance(),
+												 &m_randObject,
+												 m_pEffectNode->RotationFixed.RefEq,
+												 m_pEffectNode->RotationFixed.Position,
+												 m_pEffectNode->DynamicFactor.Rot,
+												 m_pEffectNode->DynamicFactor.RotInv);
+	}
+}
+
+void Instance::ApplyDynamicParameterToFixedScaling()
+{
+	if (m_pEffectNode->ScalingFixed.RefEq >= 0)
+	{
+		scaling_values.fixed.scale = ApplyEq(m_pEffectNode->GetEffect(),
+											 m_pContainer->GetRootInstance(),
+											 &m_randObject,
+											 m_pEffectNode->ScalingFixed.RefEq,
+											 m_pEffectNode->ScalingFixed.Position,
+											 m_pEffectNode->DynamicFactor.Scale,
+											 m_pEffectNode->DynamicFactor.ScaleInv);
+	}
+}
+
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
@@ -21331,7 +21376,6 @@ void Instance::Kill()
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 RectF Instance::GetUV(const int32_t index) const
 {
 	RectF uv(0.0f, 0.0f, 1.0f, 1.0f);
@@ -21437,107 +21481,6 @@ RectF Instance::GetUV(const int32_t index) const
 
 	return uv;
 }
-#else
-RectF Instance::GetUV() const
-{
-	RectF uv(0.0f, 0.0f, 1.0f, 1.0f);
-
-	if (m_pEffectNode->RendererCommon.UVType == ParameterRendererCommon::UV_DEFAULT)
-	{
-		return RectF(0.0f, 0.0f, 1.0f, 1.0f);
-	}
-	else if (m_pEffectNode->RendererCommon.UVType == ParameterRendererCommon::UV_FIXED)
-	{
-		uv = RectF(m_pEffectNode->RendererCommon.UV.Fixed.Position.x,
-				   m_pEffectNode->RendererCommon.UV.Fixed.Position.y,
-				   m_pEffectNode->RendererCommon.UV.Fixed.Position.w,
-				   m_pEffectNode->RendererCommon.UV.Fixed.Position.h);
-	}
-	else if (m_pEffectNode->RendererCommon.UVType == ParameterRendererCommon::UV_ANIMATION)
-	{
-		auto time = m_LivingTime + uvTimeOffset;
-
-		int32_t frameNum = (int32_t)(time / m_pEffectNode->RendererCommon.UV.Animation.FrameLength);
-		int32_t frameCount =
-			m_pEffectNode->RendererCommon.UV.Animation.FrameCountX * m_pEffectNode->RendererCommon.UV.Animation.FrameCountY;
-
-		if (m_pEffectNode->RendererCommon.UV.Animation.LoopType == m_pEffectNode->RendererCommon.UV.Animation.LOOPTYPE_ONCE)
-		{
-			if (frameNum >= frameCount)
-			{
-				frameNum = frameCount - 1;
-			}
-		}
-		else if (m_pEffectNode->RendererCommon.UV.Animation.LoopType == m_pEffectNode->RendererCommon.UV.Animation.LOOPTYPE_LOOP)
-		{
-			frameNum %= frameCount;
-		}
-		else if (m_pEffectNode->RendererCommon.UV.Animation.LoopType == m_pEffectNode->RendererCommon.UV.Animation.LOOPTYPE_REVERSELOOP)
-		{
-			bool rev = (frameNum / frameCount) % 2 == 1;
-			frameNum %= frameCount;
-			if (rev)
-			{
-				frameNum = frameCount - 1 - frameNum;
-			}
-		}
-
-		int32_t frameX = frameNum % m_pEffectNode->RendererCommon.UV.Animation.FrameCountX;
-		int32_t frameY = frameNum / m_pEffectNode->RendererCommon.UV.Animation.FrameCountX;
-
-		uv = RectF(m_pEffectNode->RendererCommon.UV.Animation.Position.x + m_pEffectNode->RendererCommon.UV.Animation.Position.w * frameX,
-				   m_pEffectNode->RendererCommon.UV.Animation.Position.y + m_pEffectNode->RendererCommon.UV.Animation.Position.h * frameY,
-				   m_pEffectNode->RendererCommon.UV.Animation.Position.w,
-				   m_pEffectNode->RendererCommon.UV.Animation.Position.h);
-	}
-	else if (m_pEffectNode->RendererCommon.UVType == ParameterRendererCommon::UV_SCROLL)
-	{
-		auto time = (int32_t)m_LivingTime;
-
-		uv = RectF(uvAreaOffset.X + uvScrollSpeed.GetX() * time,
-				   uvAreaOffset.Y + uvScrollSpeed.GetY() * time,
-				   uvAreaOffset.Width,
-				   uvAreaOffset.Height);
-	}
-	else if (m_pEffectNode->RendererCommon.UVType == ParameterRendererCommon::UV_FCURVE)
-	{
-		auto time = (int32_t)m_LivingTime;
-
-		auto fcurvePos = m_pEffectNode->RendererCommon.UV.FCurve.Position->GetValues(m_LivingTime, m_LivedTime);
-		auto fcurveSize = m_pEffectNode->RendererCommon.UV.FCurve.Size->GetValues(m_LivingTime, m_LivedTime);
-
-		uv = RectF(uvAreaOffset.X + fcurvePos.GetX(),
-				   uvAreaOffset.Y + fcurvePos.GetY(),
-				   uvAreaOffset.Width + fcurveSize.GetX(),
-				   uvAreaOffset.Height + fcurveSize.GetY());
-	}
-
-	// For webgl bug (it makes slow if sampling points are too far on WebGL)
-	float far = 4.0;
-
-	if (uv.X < -far && uv.X + uv.Width < -far)
-	{
-		uv.X += (-static_cast<int32_t>(uv.X) - far);
-	}
-
-	if (uv.X > far && uv.X + uv.Width > far)
-	{
-		uv.X -= (static_cast<int32_t>(uv.X) - far);
-	}
-
-	if (uv.Y < -far && uv.Y + uv.Height < -far)
-	{
-		uv.Y += (-static_cast<int32_t>(uv.Y) - far);
-	}
-
-	if (uv.Y > far && uv.Y + uv.Height > far)
-	{
-		uv.Y -= (static_cast<int32_t>(uv.Y) - far);
-	}
-
-	return uv;
-}
-#endif
 
 std::array<float, 4> Instance::GetCustomData(int32_t index) const
 {
@@ -21758,7 +21701,7 @@ namespace Effekseer
 void* InstanceGlobal::operator new(size_t size)
 {
 	assert(sizeof(InstanceGlobal) == size);
-	return GetMallocFunc()(size);
+	return GetMallocFunc()(static_cast<uint32_t>(size));
 }
 
 void InstanceGlobal::operator delete(void* p)
@@ -21835,6 +21778,11 @@ float InstanceGlobal::GetUpdatedFrame()
 	return m_updatedFrame;
 }
 
+void InstanceGlobal::ResetUpdatedFrame()
+{
+	m_updatedFrame = 0.0f;
+}
+
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
@@ -21909,6 +21857,11 @@ InstanceGroup::~InstanceGroup()
 	RemoveForcibly();
 }
 
+void InstanceGroup::NotfyEraseInstance()
+{
+	m_global->DecInstanceCount();
+}
+
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
@@ -21958,7 +21911,7 @@ void InstanceGroup::Update(bool shown)
 		if (instance->m_State != INSTANCE_STATE_ACTIVE)
 		{
 			it = m_instances.erase(it);
-			m_global->DecInstanceCount();
+			NotfyEraseInstance();
 		}
 		else
 		{
@@ -21986,7 +21939,7 @@ void InstanceGroup::SetBaseMatrix(const Mat43f& mat)
 
 void InstanceGroup::SetParentMatrix(const Mat43f& mat)
 {
-	BindType tType = m_effectNode->CommonValues.TranslationBindType;
+	TranslationParentBindType tType = m_effectNode->CommonValues.TranslationBindType;
 	BindType rType = m_effectNode->CommonValues.RotationBindType;
 	BindType sType = m_effectNode->CommonValues.ScalingBindType;
 
@@ -22000,7 +21953,9 @@ void InstanceGroup::SetParentMatrix(const Mat43f& mat)
 	{
 		parentMatrix_ = rootGroup->GetParentMatrix();
 	}
-	else if (tType == BindType::WhenCreating && rType == BindType::WhenCreating && sType == BindType::WhenCreating)
+	else if (tType == BindType::WhenCreating 
+			 || tType == TranslationParentBindType::WhenCreating_FollowParent
+			 && rType == BindType::WhenCreating && sType == BindType::WhenCreating)
 	{
 		// don't do anything
 	}
@@ -22019,6 +21974,10 @@ void InstanceGroup::SetParentMatrix(const Mat43f& mat)
 			parentTranslation_ = rootGroup->GetParentTranslation();
 		}
 		else if (tType == BindType::NotBind)
+		{
+			parentTranslation_ = Vec3f(0.0f, 0.0f, 0.0f);
+		}
+		else if (tType == TranslationParentBindType::NotBind_FollowParent)
 		{
 			parentTranslation_ = Vec3f(0.0f, 0.0f, 0.0f);
 		}
@@ -22068,6 +22027,7 @@ void InstanceGroup::KillAllInstances()
 	{
 		auto instance = m_instances.front();
 		m_instances.pop_front();
+		NotfyEraseInstance();
 
 		if (instance->GetState() == INSTANCE_STATE_ACTIVE)
 		{
@@ -22090,13 +22050,15 @@ namespace Effekseer
 
 bool InternalScript::IsValidOperator(int value) const
 {
-	if (0 <= value && value <= 4)
+	if (0 <= value && value <= 5)
 		return true;
 	if (11 <= value && value <= 12)
 		return true;
 	if (21 <= value && value <= 22)
 		return true;
 	if (31 <= value && value <= 32)
+		return true;
+	if (50 == value)
 		return true;
 
 	return false;
@@ -22185,7 +22147,7 @@ bool InternalScript::Load(uint8_t* data, int size)
 		}
 	}
 
-	reader.Read(operators, size - reader.GetOffset());
+	reader.Read(operators, size - static_cast<int32_t>(reader.GetOffset()));
 
 	if (reader.GetStatus() == BinaryReaderStatus::Failed)
 		return false;
@@ -22267,7 +22229,7 @@ std::array<float, 4> InternalScript::Execute(const std::array<float, 4>& externa
 		return ret;
 	}
 
-	int offset = 0;
+	size_t offset = 0;
 	for (int i = 0; i < operatorCount_; i++)
 	{
 		// type
@@ -22319,21 +22281,39 @@ std::array<float, 4> InternalScript::Execute(const std::array<float, 4>& externa
 				registers[index] = tempInputs[0] * tempInputs[1];
 			else if (type == OperatorType::Div)
 				registers[index] = tempInputs[0] / tempInputs[1];
+			else if (type == OperatorType::Mod)
+			{
+				registers[index] = fmodf(tempInputs[0], tempInputs[1]);
+			}
 			else if (type == OperatorType::Sine)
-				registers[index] = sin(tempInputs[0]);
+			{
+				registers[index] = sinf(tempInputs[j]);
+			}
 			else if (type == OperatorType::Cos)
-				registers[index] = cos(tempInputs[0]);
+			{
+				registers[index] = cosf(tempInputs[j]);
+			}
 			else if (type == OperatorType::UnaryAdd)
+			{
 				registers[index] = tempInputs[0];
+			}
 			else if (type == OperatorType::UnarySub)
+			{
 				registers[index] = -tempInputs[0];
+			}
 			else if (type == OperatorType::Rand)
 			{
 				registers[index] = randFuncCallback(userData);
 			}
 			else if (type == OperatorType::Rand_WithSeed)
 			{
-				registers[index] = randSeedFuncCallback(userData, tempInputs[0]);
+				registers[index] = randSeedFuncCallback(userData, tempInputs[j]);
+			}
+			else if (type == OperatorType::Step)
+			{
+				auto edge = tempInputs[0];
+				auto x = tempInputs[1];
+				registers[index] = x >= edge ? 1.0f : 0.0f;
 			}
 			else if (type == OperatorType::Constant)
 			{
@@ -22593,13 +22573,13 @@ void LocalForceFieldInstance::Update(const LocalForceFieldParameter& parameter, 
 		ForceFieldCommonParameter ffcp;
 		ffcp.FieldCenter = parameter.LocalForceFields[i].Position;
 		ffcp.Position = location / magnification;
-		ffcp.PreviousSumVelocity = VelocitySum;
+		ffcp.PreviousSumVelocity = VelocitySum + ExternalVelocity;
 		ffcp.PreviousVelocity = Velocities[i];
 		ffcp.IsFieldRotated = field.IsRotated;
 
 		if (field.IsRotated)
 		{
-			ffcp.PreviousSumVelocity = Vec3f::Transform(VelocitySum, field.InvRotation);
+			ffcp.PreviousSumVelocity = Vec3f::Transform(VelocitySum + ExternalVelocity, field.InvRotation);
 			ffcp.PreviousVelocity = Vec3f::Transform(Velocities[i], field.InvRotation);
 			ffcp.Position = Vec3f::Transform(ffcp.Position, field.InvRotation);
 		}
@@ -22681,6 +22661,7 @@ void LocalForceFieldInstance::Reset()
 	Velocities.fill(Vec3f(0, 0, 0));
 	VelocitySum = Vec3f(0, 0, 0);
 	ModifyLocation = Vec3f(0, 0, 0);
+	ExternalVelocity = Vec3f(0, 0, 0);
 }
 
 } // namespace Effekseer
@@ -22690,8 +22671,6 @@ void LocalForceFieldInstance::Reset()
 //----------------------------------------------------------------------------------
 
 
-#if __EFFEKSEER_BUILD_VERSION16__
-#endif
 
 
 
@@ -22710,9 +22689,7 @@ Setting::Setting()
 	, m_textureLoader(NULL)
 	, m_soundLoader(NULL)
 	, m_modelLoader(NULL)
-#if __EFFEKSEER_BUILD_VERSION16__
 	, m_curveLoader(NULL)
-#endif
 {
 	auto effectFactory = new EffectFactory();
 	effectFactories.push_back(effectFactory);
@@ -22734,9 +22711,7 @@ Setting::~Setting()
 	ES_SAFE_DELETE(m_soundLoader);
 	ES_SAFE_DELETE(m_modelLoader);
 	ES_SAFE_DELETE(m_materialLoader);
-#if __EFFEKSEER_BUILD_VERSION16__
 	ES_SAFE_DELETE(m_curveLoader);
-#endif
 }
 
 //----------------------------------------------------------------------------------
@@ -22842,7 +22817,6 @@ void Setting::SetMaterialLoader(MaterialLoader* loader)
 	m_materialLoader = loader;
 }
 
-#if __EFFEKSEER_BUILD_VERSION16__
 CurveLoader* Setting::GetCurveLoader()
 {
 	return m_curveLoader;
@@ -22853,7 +22827,6 @@ void Setting::SetCurveLoader(CurveLoader* loader)
 	ES_SAFE_DELETE(m_curveLoader);
 	m_curveLoader = loader;
 }
-#endif
 
 void Setting::AddEffectFactory(EffectFactory* effectFactory)
 {
@@ -22880,7 +22853,7 @@ EffectFactory* Setting::GetEffectFactory(int32_t ind) const
 
 int32_t Setting::GetEffectFactoryCount() const
 {
-	return effectFactories.size();
+	return static_cast<int32_t>(effectFactories.size());
 }
 
 } // namespace Effekseer
@@ -22969,13 +22942,23 @@ void Mat43f::GetSRT(Vec3f& s, Mat43f& r, Vec3f& t) const
 	SIMD4f y2 = Y * Y;
 	SIMD4f z2 = Z * Z;
 	SIMD4f s2 = x2 + y2 + z2;
-	SIMD4f rsq = SIMD4f::Rsqrt(s2);
-	rsq.SetW(0.0f);
 
-	s = SIMD4f(1.0f) / rsq;
-	r.X = X * rsq;
-	r.Y = Y * rsq;
-	r.Z = Z * rsq;
+	if (Vec3f(s2).IsZero())
+	{
+		s = Vec3f(0.0f);
+		r = Mat43f::Identity;
+	}
+	else
+	{
+		SIMD4f rsq = SIMD4f::Rsqrt(s2);
+		rsq.SetW(0.0f);
+
+		s = SIMD4f(1.0f) / rsq;
+		r.X = X * rsq;
+		r.Y = Y * rsq;
+		r.Z = Z * rsq;
+	}
+
 	t = Vec3f(X.GetW(), Y.GetW(), Z.GetW());
 }
 

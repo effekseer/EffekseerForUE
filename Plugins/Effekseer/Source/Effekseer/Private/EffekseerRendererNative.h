@@ -30,7 +30,8 @@ struct DynamicVertex
 	//! packed vector
 	VertexColor Tangent;
 
-	union {
+	union
+	{
 		//! UV1 (for template)
 		float UV[2];
 		float UV1[2];
@@ -66,9 +67,22 @@ struct DynamicVertex
 	{
 	}
 
-	void SetColor(const VertexColor& color)
+	void SetColor(const VertexColor& color, bool flipRGB)
 	{
 		Col = color;
+
+		if (flipRGB)
+		{
+			std::swap(Col.R, Col.B);
+		}
+	}
+
+	void SetTangent(const VertexFloat3& tangent)
+	{
+	}
+
+	void SetBinormal(const VertexFloat3& binormal)
+	{
 	}
 
 	void SetPackedNormal(const VertexColor& normal)
@@ -104,7 +118,8 @@ struct LightingVertex
 	//! packed vector
 	VertexColor Tangent;
 
-	union {
+	union
+	{
 		//! UV1 (for template)
 		float UV[2];
 		float UV1[2];
@@ -112,48 +127,44 @@ struct LightingVertex
 
 	float UV2[2];
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
-	float AlphaUV[2];
-	float UVDistortionUV[2];
-	float BlendUV[2];
-	float BlendAlphaUV[2];
-	float BlendUVDistortionUV[2];
-	float FlipbookIndexAndNextRate;
-	float AlphaThreshold;
-
 	void SetAlphaUV(float value, int index)
 	{
-		AlphaUV[index] = value;
 	}
 	void SetUVDistortionUV(float value, int index)
 	{
-		UVDistortionUV[index] = value;
 	}
 	void SetBlendUV(float value, int index)
 	{
-		BlendUV[index] = value;
 	}
 	void SetBlendAlphaUV(float value, int index)
 	{
-		BlendAlphaUV[index] = value;
 	}
 	void SetBlendUVDistortionUV(float value, int index)
 	{
-		BlendUVDistortionUV[index] = value;
 	}
 	void SetFlipbookIndexAndNextRate(float value)
 	{
-		FlipbookIndexAndNextRate = value;
 	}
 	void SetAlphaThreshold(float value)
 	{
-		AlphaThreshold = value;
 	}
-#endif
 
-	void SetColor(const VertexColor& color)
+	void SetColor(const VertexColor& color, bool flipRGB)
 	{
 		Col = color;
+
+		if (flipRGB)
+		{
+			std::swap(Col.R, Col.B);
+		}
+	}
+
+	void SetTangent(const VertexFloat3& tangent)
+	{
+	}
+
+	void SetBinormal(const VertexFloat3& binormal)
+	{
 	}
 
 	void SetPackedNormal(const VertexColor& normal)
@@ -176,130 +187,53 @@ struct LightingVertex
 struct SimpleVertex
 {
 	VertexFloat3 Pos;
-	uint8_t Col[4];
+	VertexColor Col;
 
-	union {
+	union
+	{
 		float UV[2];
 		//! dummy for template
 		float UV2[2];
 	};
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
-	float AlphaUV[2];
-	float UVDistortionUV[2];
-	float BlendUV[2];
-	float BlendAlphaUV[2];
-	float BlendUVDistortionUV[2];
-	float FlipbookIndexAndNextRate;
-	float AlphaThreshold;
-
 	void SetAlphaUV(float value, int index)
 	{
-		AlphaUV[index] = value;
 	}
 	void SetUVDistortionUV(float value, int index)
 	{
-		UVDistortionUV[index] = value;
 	}
 	void SetBlendUV(float value, int index)
 	{
-		BlendUV[index] = value;
 	}
 	void SetBlendAlphaUV(float value, int index)
 	{
-		BlendAlphaUV[index] = value;
 	}
 	void SetBlendUVDistortionUV(float value, int index)
 	{
-		BlendUVDistortionUV[index] = value;
 	}
 	void SetFlipbookIndexAndNextRate(float value)
 	{
-		FlipbookIndexAndNextRate = value;
 	}
 	void SetAlphaThreshold(float value)
 	{
-		AlphaThreshold = value;
 	}
-#endif
 
-	void SetColor(const ::Effekseer::Color& color)
+	void SetColor(const VertexColor& color, bool flipRGB)
 	{
-		Col[0] = color.R;
-		Col[1] = color.G;
-		Col[2] = color.B;
-		Col[3] = color.A;
+		Col = color;
+
+		if (flipRGB)
+		{
+			std::swap(Col.R, Col.B);
+		}
 	}
 
-	void SetPackedNormal(const VertexColor& normal)
-	{
-	}
-
-	void SetPackedTangent(const VertexColor& tangent)
+	void SetTangent(const VertexFloat3& tangent)
 	{
 	}
 
-	void SetUV2(float u, float v)
+	void SetBinormal(const VertexFloat3& binormal)
 	{
-	}
-};
-
-struct SimpleVertexDX9
-{
-	VertexFloat3 Pos;
-	uint8_t Col[4];
-
-	union {
-		float UV[2];
-		//! dummy for template
-		float UV2[2];
-	};
-
-#ifdef __EFFEKSEER_BUILD_VERSION16__
-	float AlphaUV[2];
-	float UVDistortionUV[2];
-	float BlendUV[2];
-	float BlendAlphaUV[2];
-	float BlendUVDistortionUV[2];
-	float FlipbookIndexAndNextRate;
-	float AlphaThreshold;
-
-	void SetAlphaUV(float value, int index)
-	{
-		AlphaUV[index] = value;
-	}
-	void SetUVDistortionUV(float value, int index)
-	{
-		UVDistortionUV[index] = value;
-	}
-	void SetBlendUV(float value, int index)
-	{
-		BlendUV[index] = value;
-	}
-	void SetBlendAlphaUV(float value, int index)
-	{
-		BlendAlphaUV[index] = value;
-	}
-	void SetBlendUVDistortionUV(float value, int index)
-	{
-		BlendUVDistortionUV[index] = value;
-	}
-	void SetFlipbookIndexAndNextRate(float value)
-	{
-		FlipbookIndexAndNextRate = value;
-	}
-	void SetAlphaThreshold(float value)
-	{
-		AlphaThreshold = value;
-	}
-#endif
-
-	void SetColor(const ::Effekseer::Color& color)
-	{
-		Col[0] = color.B;
-		Col[1] = color.G;
-		Col[2] = color.R;
-		Col[3] = color.A;
 	}
 
 	void SetPackedNormal(const VertexColor& normal)
@@ -318,9 +252,10 @@ struct SimpleVertexDX9
 struct VertexDistortion
 {
 	VertexFloat3 Pos;
-	uint8_t Col[4];
+	VertexColor Col;
 
-	union {
+	union
+	{
 		float UV[2];
 		//! dummy for template
 		float UV2[2];
@@ -329,51 +264,46 @@ struct VertexDistortion
 	VertexFloat3 Binormal;
 	VertexFloat3 Tangent;
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
-	float AlphaUV[2];
-	float UVDistortionUV[2];
-	float BlendUV[2];
-	float BlendAlphaUV[2];
-	float BlendUVDistortionUV[2];
-	float FlipbookIndexAndNextRate;
-	float AlphaThreshold;
-
 	void SetAlphaUV(float value, int index)
 	{
-		AlphaUV[index] = value;
 	}
 	void SetUVDistortionUV(float value, int index)
 	{
-		UVDistortionUV[index] = value;
 	}
 	void SetBlendUV(float value, int index)
 	{
-		BlendUV[index] = value;
 	}
 	void SetBlendAlphaUV(float value, int index)
 	{
-		BlendAlphaUV[index] = value;
 	}
 	void SetBlendUVDistortionUV(float value, int index)
 	{
-		BlendUVDistortionUV[index] = value;
 	}
 	void SetFlipbookIndexAndNextRate(float value)
 	{
-		FlipbookIndexAndNextRate = value;
 	}
 	void SetAlphaThreshold(float value)
 	{
-		AlphaThreshold = value;
 	}
-#endif
 
-	void SetColor(const ::Effekseer::Color& color)
+	void SetColor(const VertexColor& color, bool flipRGB)
 	{
-		Col[0] = color.R;
-		Col[1] = color.G;
-		Col[2] = color.B;
-		Col[3] = color.A;
+		Col = color;
+
+		if (flipRGB)
+		{
+			std::swap(Col.R, Col.B);
+		}
+	}
+
+	void SetTangent(const VertexFloat3& tangent)
+	{
+		Tangent = tangent;
+	}
+
+	void SetBinormal(const VertexFloat3& binormal)
+	{
+		Binormal = binormal;
 	}
 
 	void SetPackedNormal(const VertexColor& normal)
@@ -389,21 +319,24 @@ struct VertexDistortion
 	}
 };
 
-struct VertexDistortionDX9
+struct AdvancedLightingVertex
 {
 	VertexFloat3 Pos;
-	uint8_t Col[4];
+	VertexColor Col;
+	//! packed vector
+	VertexColor Normal;
+	//! packed vector
+	VertexColor Tangent;
 
-	union {
+	union
+	{
+		//! UV1 (for template)
 		float UV[2];
-		//! dummy for template
-		float UV2[2];
+		float UV1[2];
 	};
 
-	VertexFloat3 Binormal;
-	VertexFloat3 Tangent;
+	float UV2[2];
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 	float AlphaUV[2];
 	float UVDistortionUV[2];
 	float BlendUV[2];
@@ -440,14 +373,192 @@ struct VertexDistortionDX9
 	{
 		AlphaThreshold = value;
 	}
-#endif
 
-	void SetColor(const ::Effekseer::Color& color)
+	void SetColor(const VertexColor& color, bool flipRGB)
 	{
-		Col[0] = color.B;
-		Col[1] = color.G;
-		Col[2] = color.R;
-		Col[3] = color.A;
+		Col = color;
+
+		if (flipRGB)
+		{
+			std::swap(Col.R, Col.B);
+		}
+	}
+
+	void SetTangent(const VertexFloat3& tangent)
+	{
+	}
+
+	void SetBinormal(const VertexFloat3& binormal)
+	{
+	}
+
+	void SetPackedNormal(const VertexColor& normal)
+	{
+		Normal = normal;
+	}
+
+	void SetPackedTangent(const VertexColor& tangent)
+	{
+		Tangent = tangent;
+	}
+
+	void SetUV2(float u, float v)
+	{
+		UV2[0] = u;
+		UV2[1] = v;
+	}
+};
+
+struct AdvancedSimpleVertex
+{
+	VertexFloat3 Pos;
+	VertexColor Col;
+
+	union
+	{
+		float UV[2];
+		//! dummy for template
+		float UV2[2];
+	};
+
+	float AlphaUV[2];
+	float UVDistortionUV[2];
+	float BlendUV[2];
+	float BlendAlphaUV[2];
+	float BlendUVDistortionUV[2];
+	float FlipbookIndexAndNextRate;
+	float AlphaThreshold;
+
+	void SetAlphaUV(float value, int index)
+	{
+		AlphaUV[index] = value;
+	}
+	void SetUVDistortionUV(float value, int index)
+	{
+		UVDistortionUV[index] = value;
+	}
+	void SetBlendUV(float value, int index)
+	{
+		BlendUV[index] = value;
+	}
+	void SetBlendAlphaUV(float value, int index)
+	{
+		BlendAlphaUV[index] = value;
+	}
+	void SetBlendUVDistortionUV(float value, int index)
+	{
+		BlendUVDistortionUV[index] = value;
+	}
+	void SetFlipbookIndexAndNextRate(float value)
+	{
+		FlipbookIndexAndNextRate = value;
+	}
+	void SetAlphaThreshold(float value)
+	{
+		AlphaThreshold = value;
+	}
+
+	void SetColor(const VertexColor& color, bool flipRGB)
+	{
+		Col = color;
+
+		if (flipRGB)
+		{
+			std::swap(Col.R, Col.B);
+		}
+	}
+
+	void SetTangent(const VertexFloat3& tangent)
+	{
+	}
+
+	void SetBinormal(const VertexFloat3& binormal)
+	{
+	}
+
+	void SetPackedNormal(const VertexColor& normal)
+	{
+	}
+
+	void SetPackedTangent(const VertexColor& tangent)
+	{
+	}
+
+	void SetUV2(float u, float v)
+	{
+	}
+};
+
+struct AdvancedVertexDistortion
+{
+	VertexFloat3 Pos;
+	VertexColor Col;
+
+	union
+	{
+		float UV[2];
+		//! dummy for template
+		float UV2[2];
+	};
+
+	VertexFloat3 Binormal;
+	VertexFloat3 Tangent;
+
+	float AlphaUV[2];
+	float UVDistortionUV[2];
+	float BlendUV[2];
+	float BlendAlphaUV[2];
+	float BlendUVDistortionUV[2];
+	float FlipbookIndexAndNextRate;
+	float AlphaThreshold;
+
+	void SetAlphaUV(float value, int index)
+	{
+		AlphaUV[index] = value;
+	}
+	void SetUVDistortionUV(float value, int index)
+	{
+		UVDistortionUV[index] = value;
+	}
+	void SetBlendUV(float value, int index)
+	{
+		BlendUV[index] = value;
+	}
+	void SetBlendAlphaUV(float value, int index)
+	{
+		BlendAlphaUV[index] = value;
+	}
+	void SetBlendUVDistortionUV(float value, int index)
+	{
+		BlendUVDistortionUV[index] = value;
+	}
+	void SetFlipbookIndexAndNextRate(float value)
+	{
+		FlipbookIndexAndNextRate = value;
+	}
+	void SetAlphaThreshold(float value)
+	{
+		AlphaThreshold = value;
+	}
+
+	void SetColor(const VertexColor& color, bool flipRGB)
+	{
+		Col = color;
+
+		if (flipRGB)
+		{
+			std::swap(Col.R, Col.B);
+		}
+	}
+
+	void SetTangent(const VertexFloat3& tangent)
+	{
+		Tangent = tangent;
+	}
+
+	void SetBinormal(const VertexFloat3& binormal)
+	{
+		Binormal = binormal;
 	}
 
 	void SetPackedNormal(const VertexColor& normal)
@@ -465,11 +576,64 @@ struct VertexDistortionDX9
 
 static int32_t GetMaximumVertexSizeInAllTypes()
 {
-	size_t size = sizeof(SimpleVertex);
+	size_t size = sizeof(DynamicVertexWithCustomData);
 	size = (std::max)(size, sizeof(VertexDistortion));
-	size = (std::max)(size, sizeof(DynamicVertexWithCustomData));
+	size = (std::max)(size, sizeof(SimpleVertex));
+	size = (std::max)(size, sizeof(LightingVertex));
+	size = (std::max)(size, sizeof(AdvancedVertexDistortion));
+	size = (std::max)(size, sizeof(AdvancedSimpleVertex));
+	size = (std::max)(size, sizeof(AdvancedLightingVertex));
+
 	return static_cast<int32_t>(size);
 };
+
+template <typename T>
+inline bool IsDistortionVertex()
+{
+	return false;
+}
+
+template <>
+inline bool IsDistortionVertex<VertexDistortion>()
+{
+	return true;
+}
+
+template <>
+inline bool IsDistortionVertex<AdvancedVertexDistortion>()
+{
+	return true;
+}
+
+template <typename T>
+inline bool IsDynamicVertex()
+{
+	return false;
+}
+
+template <>
+inline bool IsDynamicVertex<DynamicVertex>()
+{
+	return true;
+}
+
+template <typename T>
+inline bool IsLightingVertex()
+{
+	return false;
+}
+
+template <>
+inline bool IsLightingVertex<LightingVertex>()
+{
+	return true;
+}
+
+template <>
+inline bool IsLightingVertex<AdvancedLightingVertex>()
+{
+	return true;
+}
 
 /**
 	@brief	a view class to access an array with a stride
@@ -504,112 +668,6 @@ struct StrideView
 		assert(i + offset_ < elementCount_);
 #endif
 		return *reinterpret_cast<T*>((pointer_ + stride_ * i));
-	}
-
-	StrideView& operator+=(const int& rhs)
-	{
-#ifndef NDEBUG
-		offset_ += rhs;
-#endif
-		pointer_ += stride_ * rhs;
-		return *this;
-	}
-
-	void Reset()
-	{
-#ifndef NDEBUG
-		offset_ = 0;
-#endif
-		pointer_ = pointerOrigin_;
-	}
-};
-
-/**
-	@brief	a view class to access an array with a stride
-*/
-template <>
-struct StrideView<SimpleVertex>
-{
-	static const int32_t stride_ = sizeof(SimpleVertex);
-	uint8_t* pointer_;
-	uint8_t* pointerOrigin_;
-
-#ifndef NDEBUG
-	int32_t offset_;
-	int32_t elementCount_;
-#endif
-
-	StrideView(void* pointer, int32_t stride, int32_t elementCount)
-		: pointer_(reinterpret_cast<uint8_t*>(pointer))
-		, pointerOrigin_(reinterpret_cast<uint8_t*>(pointer))
-#ifndef NDEBUG
-		, offset_(0)
-		, elementCount_(elementCount)
-#endif
-	{
-		assert(stride_ == stride);
-	}
-
-	SimpleVertex& operator[](int i) const
-	{
-#ifndef NDEBUG
-		assert(i >= 0);
-		assert(i + offset_ < elementCount_);
-#endif
-		return *reinterpret_cast<SimpleVertex*>((pointer_ + stride_ * i));
-	}
-
-	StrideView& operator+=(const int& rhs)
-	{
-#ifndef NDEBUG
-		offset_ += rhs;
-#endif
-		pointer_ += stride_ * rhs;
-		return *this;
-	}
-
-	void Reset()
-	{
-#ifndef NDEBUG
-		offset_ = 0;
-#endif
-		pointer_ = pointerOrigin_;
-	}
-};
-
-/**
-	@brief	a view class to access an array with a stride
-*/
-template <>
-struct StrideView<SimpleVertexDX9>
-{
-	static const int32_t stride_ = sizeof(SimpleVertexDX9);
-	uint8_t* pointer_;
-	uint8_t* pointerOrigin_;
-
-#ifndef NDEBUG
-	int32_t offset_;
-	int32_t elementCount_;
-#endif
-
-	StrideView(void* pointer, int32_t stride, int32_t elementCount)
-		: pointer_(reinterpret_cast<uint8_t*>(pointer))
-		, pointerOrigin_(reinterpret_cast<uint8_t*>(pointer))
-#ifndef NDEBUG
-		, offset_(0)
-		, elementCount_(elementCount)
-#endif
-	{
-		assert(stride_ == stride);
-	}
-
-	SimpleVertexDX9& operator[](int i) const
-	{
-#ifndef NDEBUG
-		assert(i >= 0);
-		assert(i + offset_ < elementCount_);
-#endif
-		return *reinterpret_cast<SimpleVertexDX9*>((pointer_ + stride_ * i));
 	}
 
 	StrideView& operator+=(const int& rhs)
@@ -689,7 +747,6 @@ void ApplyDepthParameters(::Effekseer::Mat44f& mat,
 						  ::Effekseer::NodeRendererDepthParameter* depthParameter,
 						  bool isRightHand);
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 void ApplyViewOffset(::Effekseer::Mat43f& mat,
 					 const ::Effekseer::Mat44f& camera,
 					 float distance);
@@ -697,7 +754,6 @@ void ApplyViewOffset(::Effekseer::Mat43f& mat,
 void ApplyViewOffset(::Effekseer::Mat44f& mat,
 					 const ::Effekseer::Mat44f& camera,
 					 float distance);
-#endif
 
 template <typename Vertex>
 inline void TransformStandardVertexes(Vertex& vertexes, int32_t count, const ::Effekseer::Mat43f& mat)
@@ -762,17 +818,7 @@ inline void TransformVertexes(StrideView<VertexDistortion>& v, int32_t count, co
 	TransformDistortionVertexes(v, count, mat);
 }
 
-inline void TransformVertexes(StrideView<VertexDistortionDX9>& v, int32_t count, const ::Effekseer::Mat43f& mat)
-{
-	TransformDistortionVertexes(v, count, mat);
-}
-
 inline void TransformVertexes(StrideView<SimpleVertex>& v, int32_t count, const ::Effekseer::Mat43f& mat)
-{
-	TransformStandardVertexes(v, count, mat);
-}
-
-inline void TransformVertexes(StrideView<SimpleVertexDX9>& v, int32_t count, const ::Effekseer::Mat43f& mat)
 {
 	TransformStandardVertexes(v, count, mat);
 }
@@ -783,6 +829,21 @@ inline void TransformVertexes(StrideView<DynamicVertex>& v, int32_t count, const
 }
 
 inline void TransformVertexes(StrideView<LightingVertex>& v, int32_t count, const ::Effekseer::Mat43f& mat)
+{
+	TransformStandardVertexes(v, count, mat);
+}
+
+inline void TransformVertexes(StrideView<AdvancedVertexDistortion>& v, int32_t count, const ::Effekseer::Mat43f& mat)
+{
+	TransformDistortionVertexes(v, count, mat);
+}
+
+inline void TransformVertexes(StrideView<AdvancedSimpleVertex>& v, int32_t count, const ::Effekseer::Mat43f& mat)
+{
+	TransformStandardVertexes(v, count, mat);
+}
+
+inline void TransformVertexes(StrideView<AdvancedLightingVertex>& v, int32_t count, const ::Effekseer::Mat43f& mat)
 {
 	TransformStandardVertexes(v, count, mat);
 }
@@ -1666,6 +1727,16 @@ namespace EffekseerRenderer
 //
 //----------------------------------------------------------------------------------
 
+enum class StandardRendererShaderType
+{
+	Unlit,
+	Lit,
+	BackDistortion,
+	AdvancedUnlit,
+	AdvancedLit,
+	AdvancedBackDistortion,
+};
+
 struct StandardRendererState
 {
 	bool DepthTest;
@@ -1681,7 +1752,6 @@ struct StandardRendererState
 	::Effekseer::TextureWrapType TextureWrap1;
 	::Effekseer::TextureFilterType TextureFilter2;
 	::Effekseer::TextureWrapType TextureWrap2;
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 	::Effekseer::TextureFilterType TextureFilter3;
 	::Effekseer::TextureWrapType TextureWrap3;
 	::Effekseer::TextureFilterType TextureFilter4;
@@ -1692,10 +1762,9 @@ struct StandardRendererState
 	::Effekseer::TextureWrapType TextureWrap6;
 	::Effekseer::TextureFilterType TextureFilter7;
 	::Effekseer::TextureWrapType TextureWrap7;
-#endif
+
 	::Effekseer::TextureData* TexturePtr;
 	::Effekseer::TextureData* NormalTexturePtr;
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 	::Effekseer::TextureData* AlphaTexturePtr;
 	::Effekseer::TextureData* UVDistortionTexturePtr;
 	::Effekseer::TextureData* BlendTexturePtr;
@@ -1719,7 +1788,7 @@ struct StandardRendererState
 	float EdgeThreshold;
 	uint8_t EdgeColor[4];
 	int32_t EdgeColorScaling;
-#endif
+	bool IsAlphaCuttoffEnabled = false;
 
 	::Effekseer::RendererMaterialType MaterialType;
 	::Effekseer::MaterialData* MaterialPtr;
@@ -1745,7 +1814,6 @@ struct StandardRendererState
 		TextureWrap1 = ::Effekseer::TextureWrapType::Repeat;
 		TextureFilter2 = ::Effekseer::TextureFilterType::Nearest;
 		TextureWrap2 = ::Effekseer::TextureWrapType::Repeat;
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 		TextureFilter3 = ::Effekseer::TextureFilterType::Nearest;
 		TextureWrap3 = ::Effekseer::TextureWrapType::Repeat;
 		TextureFilter4 = ::Effekseer::TextureFilterType::Nearest;
@@ -1756,18 +1824,15 @@ struct StandardRendererState
 		TextureWrap6 = ::Effekseer::TextureWrapType::Repeat;
 		TextureFilter7 = ::Effekseer::TextureFilterType::Nearest;
 		TextureWrap7 = ::Effekseer::TextureWrapType::Repeat;
-#endif
+
 		TexturePtr = nullptr;
 		NormalTexturePtr = nullptr;
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 		AlphaTexturePtr = nullptr;
 		UVDistortionTexturePtr = nullptr;
 		BlendTexturePtr = nullptr;
 		BlendAlphaTexturePtr = nullptr;
 		BlendUVDistortionTexturePtr = nullptr;
-#endif
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 		EnableInterpolation = 0;
 		UVLoopType = 0;
 		InterpolationType = 0;
@@ -1785,7 +1850,6 @@ struct StandardRendererState
 		EdgeThreshold = 0.0f;
 		EdgeColor[0] = EdgeColor[1] = EdgeColor[2] = EdgeColor[3] = 0;
 		EdgeColorScaling = 1;
-#endif
 
 		MaterialPtr = nullptr;
 
@@ -1795,6 +1859,41 @@ struct StandardRendererState
 		MaterialTextureCount = 0;
 		CustomData1Count = 0;
 		CustomData2Count = 0;
+	}
+
+	bool IsAdvanced() const
+	{
+		// TODO : merge with IsAdvanced in ModelRenderer
+		if (MaterialType == ::Effekseer::RendererMaterialType::File)
+		{
+			return false;
+		}
+
+		if (AlphaTexturePtr != nullptr && AlphaTexturePtr != reinterpret_cast<void*>(0x1))
+			return true;
+
+		if (UVDistortionTexturePtr != nullptr && UVDistortionTexturePtr != reinterpret_cast<void*>(0x1))
+			return true;
+
+		if (BlendTexturePtr != nullptr && BlendTexturePtr != reinterpret_cast<void*>(0x1))
+			return true;
+
+		if (BlendAlphaTexturePtr != nullptr && BlendAlphaTexturePtr != reinterpret_cast<void*>(0x1))
+			return true;
+
+		if (BlendUVDistortionTexturePtr != nullptr && BlendUVDistortionTexturePtr != reinterpret_cast<void*>(0x1))
+			return true;
+
+		if (EnableInterpolation != 0 ||
+			TextureBlendType != -1 ||
+			EdgeThreshold != 0 ||
+			EmissiveScaling != 1.0f ||
+			IsAlphaCuttoffEnabled)
+		{
+			return true;
+		}
+
+		return false;
 	}
 
 	bool operator!=(const StandardRendererState state)
@@ -1819,7 +1918,6 @@ struct StandardRendererState
 			return true;
 		if (TextureWrap2 != state.TextureWrap2)
 			return true;
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 		if (TextureFilter3 != state.TextureFilter3)
 			return true;
 		if (TextureWrap3 != state.TextureWrap3)
@@ -1840,12 +1938,10 @@ struct StandardRendererState
 			return true;
 		if (TextureWrap7 != state.TextureWrap7)
 			return true;
-#endif
 		if (TexturePtr != state.TexturePtr)
 			return true;
 		if (NormalTexturePtr != state.NormalTexturePtr)
 			return true;
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 		if (AlphaTexturePtr != state.AlphaTexturePtr)
 			return true;
 		if (UVDistortionTexturePtr != state.UVDistortionTexturePtr)
@@ -1886,7 +1982,9 @@ struct StandardRendererState
 			return true;
 		if (EdgeColorScaling != state.EdgeColorScaling)
 			return true;
-#endif
+
+		if (IsAlphaCuttoffEnabled != state.IsAlphaCuttoffEnabled)
+			return true;
 		if (MaterialType != state.MaterialType)
 			return true;
 		if (MaterialPtr != state.MaterialPtr)
@@ -1923,14 +2021,12 @@ struct StandardRendererState
 										  Effekseer::MaterialParameter* materialParam,
 										  int32_t colorTextureIndex,
 										  int32_t texture2Index
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 										  ,
 										  int32_t texture3Index,
 										  int32_t texture4Index,
 										  int32_t texture5Index,
 										  int32_t texture6Index,
 										  int32_t texture7Index
-#endif
 	)
 	{
 		if (materialParam != nullptr)
@@ -2005,7 +2101,6 @@ struct StandardRendererState
 				NormalTexturePtr = nullptr;
 			}
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 			if (texture3Index >= 0)
 			{
 				if (Distortion)
@@ -2085,7 +2180,6 @@ struct StandardRendererState
 			{
 				BlendUVDistortionTexturePtr = nullptr;
 			}
-#endif
 
 			Refraction = false;
 			CustomData1Count = 0;
@@ -2094,16 +2188,22 @@ struct StandardRendererState
 	}
 };
 
-template <typename RENDERER, typename SHADER, typename VERTEX, typename VERTEX_DISTORTION>
+template <typename RENDERER, typename SHADER>
 class StandardRenderer
 {
 private:
-	RENDERER* m_renderer;
-	SHADER* m_shader;
-	// SHADER* m_shader_no_texture;
+	enum class RenderingMode
+	{
+		Unlit,
+		Lit,
+		BackDistortion,
+		AdvancedUnlit,
+		AdvancedLit,
+		AdvancedBackDistortion,
+		Material,
+	};
 
-	SHADER* m_shader_distortion;
-	// SHADER* m_shader_no_texture_distortion;
+	RENDERER* m_renderer;
 
 	Effekseer::TextureData* m_texture;
 
@@ -2111,20 +2211,17 @@ private:
 
 	std::vector<uint8_t> vertexCaches;
 	int32_t squareMaxSize_ = 0;
-
-	bool isDistortionMode_;
-	bool isLightningMode_ = false;
-	bool isDynamicVertexMode_ = false;
+	RenderingMode renderingMode_ = RenderingMode::Unlit;
 
 	struct VertexConstantBuffer
 	{
 		Effekseer::Matrix44 constantVSBuffer[2];
 		float uvInversed[4];
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 		struct
 		{
-			union {
+			union
+			{
 				float Buffer[4];
 
 				struct
@@ -2136,15 +2233,14 @@ private:
 				};
 			};
 		} flipbookParameter;
-#endif
 	};
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 	struct PixelConstantBuffer
 	{
 		struct
 		{
-			union {
+			union
+			{
 				float Buffer[4];
 
 				struct
@@ -2157,20 +2253,23 @@ private:
 
 		struct
 		{
-			union {
+			union
+			{
 				float Buffer[4];
 
 				struct
 				{
 					float intensity;
 					float blendIntensity;
+					float uvInversed[2];
 				};
 			};
 		} uvDistortionParameter;
 
 		struct
 		{
-			union {
+			union
+			{
 				float Buffer[4];
 
 				struct
@@ -2182,7 +2281,8 @@ private:
 
 		struct
 		{
-			union {
+			union
+			{
 				float Buffer[4];
 
 				struct
@@ -2196,7 +2296,8 @@ private:
 		{
 			float Color[4];
 
-			union {
+			union
+			{
 				float Buffer[4];
 
 				struct
@@ -2207,17 +2308,16 @@ private:
 			};
 		} edgeParameter;
 	};
-#endif
 
 	struct DistortionPixelConstantBuffer
 	{
 		float scale[4];
 		float uvInversed[4];
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 		struct
 		{
-			union {
+			union
+			{
 				float Buffer[4];
 
 				struct
@@ -2230,20 +2330,23 @@ private:
 
 		struct
 		{
-			union {
+			union
+			{
 				float Buffer[4];
 
 				struct
 				{
 					float intensity;
 					float blendIntensity;
+					float uvInversed[2];
 				};
 			};
 		} uvDistortionParameter;
 
 		struct
 		{
-			union {
+			union
+			{
 				float Buffer[4];
 
 				struct
@@ -2252,7 +2355,6 @@ private:
 				};
 			};
 		} blendTextureParameter;
-#endif
 	};
 
 	void ColorToFloat4(::Effekseer::Color color, float fc[4])
@@ -2270,14 +2372,10 @@ private:
 	}
 
 public:
-	StandardRenderer(RENDERER* renderer, SHADER* shader, SHADER* shader_distortion)
+	StandardRenderer(RENDERER* renderer)
 		: squareMaxSize_(renderer->GetSquareMaxCount())
-		, isDistortionMode_(false)
 	{
 		m_renderer = renderer;
-		m_shader = shader;
-		m_shader_distortion = shader_distortion;
-
 		vertexCaches.reserve(m_renderer->GetVertexBuffer()->GetMaxSize());
 	}
 
@@ -2287,25 +2385,38 @@ public:
 
 	int32_t CalculateCurrentStride() const
 	{
-		int32_t stride = 0;
-		if (isDynamicVertexMode_)
+		size_t stride = 0;
+		if (renderingMode_ == RenderingMode::Material)
 		{
-			stride = (int32_t)sizeof(DynamicVertex);
+			stride = sizeof(DynamicVertex);
 			stride += (m_state.CustomData1Count + m_state.CustomData2Count) * sizeof(float);
 		}
-		else if (isLightningMode_)
+		else if (renderingMode_ == RenderingMode::Lit)
 		{
-			stride = (int32_t)sizeof(LightingVertex);
+			stride = sizeof(LightingVertex);
 		}
-		else if (isDistortionMode_)
+		else if (renderingMode_ == RenderingMode::BackDistortion)
 		{
-			stride = (int32_t)sizeof(VERTEX_DISTORTION);
+			stride = sizeof(VertexDistortion);
 		}
-		else
+		else if (renderingMode_ == RenderingMode::Unlit)
 		{
-			stride = (int32_t)sizeof(VERTEX);
+			stride = sizeof(SimpleVertex);
 		}
-		return stride;
+		else if (renderingMode_ == RenderingMode::AdvancedLit)
+		{
+			stride = sizeof(AdvancedLightingVertex);
+		}
+		else if (renderingMode_ == RenderingMode::AdvancedBackDistortion)
+		{
+			stride = sizeof(AdvancedVertexDistortion);
+		}
+		else if (renderingMode_ == RenderingMode::AdvancedUnlit)
+		{
+			stride = sizeof(AdvancedSimpleVertex);
+		}
+
+		return static_cast<int32_t>(stride);
 	}
 
 	void UpdateStateAndRenderingIfRequired(StandardRendererState state)
@@ -2317,9 +2428,40 @@ public:
 
 		m_state = state;
 
-		isDynamicVertexMode_ = (m_state.MaterialPtr != nullptr && !m_state.MaterialPtr->IsSimpleVertex);
-		isLightningMode_ = m_state.MaterialType == ::Effekseer::RendererMaterialType::Lighting;
-		isDistortionMode_ = m_state.Distortion;
+		bool isAdvanced = m_state.IsAdvanced();
+
+		if (m_state.MaterialPtr != nullptr && !m_state.MaterialPtr->IsSimpleVertex)
+		{
+			renderingMode_ = RenderingMode::Material;
+		}
+		else if (m_state.MaterialType == ::Effekseer::RendererMaterialType::Lighting && isAdvanced)
+		{
+			renderingMode_ = RenderingMode::AdvancedLit;
+		}
+		else if (m_state.MaterialType == ::Effekseer::RendererMaterialType::BackDistortion && isAdvanced)
+		{
+			renderingMode_ = RenderingMode::AdvancedBackDistortion;
+		}
+		else if (m_state.MaterialType == ::Effekseer::RendererMaterialType::Default && isAdvanced)
+		{
+			renderingMode_ = RenderingMode::AdvancedUnlit;
+		}
+		else if (m_state.MaterialType == ::Effekseer::RendererMaterialType::Lighting)
+		{
+			renderingMode_ = RenderingMode::Lit;
+		}
+		else if (m_state.MaterialType == ::Effekseer::RendererMaterialType::BackDistortion)
+		{
+			renderingMode_ = RenderingMode::BackDistortion;
+		}
+		else if (m_state.MaterialType == ::Effekseer::RendererMaterialType::Default)
+		{
+			renderingMode_ = RenderingMode::Unlit;
+		}
+		else
+		{
+			assert(0);
+		}
 	}
 
 	void BeginRenderingAndRenderingIfRequired(int32_t count, int& stride, void*& data)
@@ -2347,13 +2489,11 @@ public:
 		// It is always initialized with the next drawing.
 		m_state.TexturePtr = (Effekseer::TextureData*)0x1;
 		m_state.NormalTexturePtr = (Effekseer::TextureData*)0x1;
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 		m_state.AlphaTexturePtr = (Effekseer::TextureData*)0x1;
 		m_state.UVDistortionTexturePtr = (Effekseer::TextureData*)0x1;
 		m_state.BlendTexturePtr = (Effekseer::TextureData*)0x1;
 		m_state.BlendAlphaTexturePtr = (Effekseer::TextureData*)0x1;
 		m_state.BlendUVDistortionTexturePtr = (Effekseer::TextureData*)0x1;
-#endif
 	}
 
 	const StandardRendererState& GetState()
@@ -2497,7 +2637,35 @@ public:
 		}
 		else
 		{
-			shader_ = m_renderer->GetShader(true, m_state.MaterialType);
+			auto isAdvanced = m_state.IsAdvanced();
+
+			StandardRendererShaderType type;
+			if (m_state.MaterialType == Effekseer::RendererMaterialType::Default && isAdvanced)
+			{
+				type = StandardRendererShaderType::AdvancedUnlit;
+			}
+			else if (m_state.MaterialType == Effekseer::RendererMaterialType::Lighting && isAdvanced)
+			{
+				type = StandardRendererShaderType::AdvancedLit;
+			}
+			else if (m_state.MaterialType == Effekseer::RendererMaterialType::BackDistortion && isAdvanced)
+			{
+				type = StandardRendererShaderType::AdvancedBackDistortion;
+			}
+			else if (m_state.MaterialType == Effekseer::RendererMaterialType::Default)
+			{
+				type = StandardRendererShaderType::Unlit;
+			}
+			else if (m_state.MaterialType == Effekseer::RendererMaterialType::Lighting)
+			{
+				type = StandardRendererShaderType::Lit;
+			}
+			else if (m_state.MaterialType == Effekseer::RendererMaterialType::BackDistortion)
+			{
+				type = StandardRendererShaderType::BackDistortion;
+			}
+
+			shader_ = m_renderer->GetShader(type);
 		}
 
 		RenderStateBase::State& state = m_renderer->GetRenderState()->Push();
@@ -2551,7 +2719,6 @@ public:
 				state.TextureFilterTypes[1] = Effekseer::TextureFilterType::Linear;
 				state.TextureWrapTypes[1] = Effekseer::TextureWrapType::Clamp;
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 				state.TextureFilterTypes[2] = m_state.TextureFilter3;
 				state.TextureWrapTypes[2] = m_state.TextureWrap3;
 
@@ -2566,11 +2733,9 @@ public:
 
 				state.TextureFilterTypes[6] = m_state.TextureFilter7;
 				state.TextureWrapTypes[6] = m_state.TextureWrap7;
-#endif
 			}
 			else
 			{
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 				if (m_state.MaterialType == ::Effekseer::RendererMaterialType::Lighting)
 				{
 					state.TextureFilterTypes[1] = m_state.TextureFilter2;
@@ -2608,17 +2773,9 @@ public:
 					state.TextureFilterTypes[5] = m_state.TextureFilter7;
 					state.TextureWrapTypes[5] = m_state.TextureWrap7;
 				}
-#else
-				state.TextureFilterTypes[1] = m_state.TextureFilter2;
-				state.TextureWrapTypes[1] = m_state.TextureWrap2;
-#endif
 			}
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 			std::array<Effekseer::TextureData*, 7> textures;
-#else
-			std::array<Effekseer::TextureData*, 2> textures;
-#endif
 			textures.fill(nullptr);
 
 			if (m_state.TexturePtr != nullptr && m_state.TexturePtr != (Effekseer::TextureData*)0x01 &&
@@ -2639,8 +2796,6 @@ public:
 				{
 					textures[1] = m_state.NormalTexturePtr;
 				}
-
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 				if (m_state.AlphaTexturePtr != nullptr && m_state.AlphaTexturePtr != (Effekseer::TextureData*)0x01)
 				{
 					textures[2] = m_state.AlphaTexturePtr;
@@ -2687,15 +2842,11 @@ public:
 				}
 
 				m_renderer->SetTextures(shader_, textures.data(), 7);
-#else
-				m_renderer->SetTextures(shader_, textures.data(), 2);
-#endif
 			}
 			else if (distortion)
 			{
 				textures[1] = m_renderer->GetBackground();
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 				if (m_state.AlphaTexturePtr != nullptr && m_state.AlphaTexturePtr != (Effekseer::TextureData*)0x01)
 				{
 					textures[2] = m_state.AlphaTexturePtr;
@@ -2742,13 +2893,9 @@ public:
 				}
 
 				m_renderer->SetTextures(shader_, textures.data(), 7);
-#else
-				m_renderer->SetTextures(shader_, textures.data(), 2);
-#endif
 			}
 			else
 			{
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 				if (m_state.AlphaTexturePtr != nullptr && m_state.AlphaTexturePtr != (Effekseer::TextureData*)0x01)
 				{
 					textures[1] = m_state.AlphaTexturePtr;
@@ -2795,9 +2942,6 @@ public:
 				}
 
 				m_renderer->SetTextures(shader_, textures.data(), 6);
-#else
-				m_renderer->SetTextures(shader_, textures.data(), 1);
-#endif
 			}
 		}
 
@@ -2926,12 +3070,10 @@ public:
 			vcb.uvInversed[0] = uvInversed[0];
 			vcb.uvInversed[1] = uvInversed[1];
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 			vcb.flipbookParameter.enableInterpolation = static_cast<float>(m_state.EnableInterpolation);
 			vcb.flipbookParameter.loopType = static_cast<float>(m_state.UVLoopType);
 			vcb.flipbookParameter.divideX = static_cast<float>(m_state.FlipbookDivideX);
 			vcb.flipbookParameter.divideY = static_cast<float>(m_state.FlipbookDivideY);
-#endif
 
 			m_renderer->SetVertexBufferToShader(&vcb, sizeof(VertexConstantBuffer), 0);
 
@@ -2956,24 +3098,24 @@ public:
 			m_renderer->SetPixelBufferToShader(lightAmbientColor, sizeof(float) * 4, psOffset);
 			psOffset += (sizeof(float) * 4);
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 			PixelConstantBuffer pcb;
 			pcb.flipbookParameter.enableInterpolation = static_cast<float>(m_state.EnableInterpolation);
 			pcb.flipbookParameter.interpolationType = static_cast<float>(m_state.InterpolationType);
 
 			pcb.uvDistortionParameter.intensity = m_state.UVDistortionIntensity;
 			pcb.uvDistortionParameter.blendIntensity = m_state.BlendUVDistortionIntensity;
+			pcb.uvDistortionParameter.uvInversed[0] = uvInversed[0];
+			pcb.uvDistortionParameter.uvInversed[1] = uvInversed[1];
 
-			pcb.blendTextureParameter.blendType = m_state.TextureBlendType;
+			pcb.blendTextureParameter.blendType = static_cast<float>(m_state.TextureBlendType);
 
-			pcb.emissiveScaling = m_state.EmissiveScaling;
+			pcb.emissiveScaling = static_cast<float>(m_state.EmissiveScaling);
 
 			ColorToFloat4(Effekseer::Color(m_state.EdgeColor[0], m_state.EdgeColor[1], m_state.EdgeColor[2], m_state.EdgeColor[3]), pcb.edgeParameter.Color);
 			pcb.edgeParameter.Threshold = m_state.EdgeThreshold;
-			pcb.edgeParameter.ColorScaling = m_state.EdgeColorScaling;
+			pcb.edgeParameter.ColorScaling = static_cast<float>(m_state.EdgeColorScaling);
 
 			m_renderer->SetPixelBufferToShader(&pcb.flipbookParameter, sizeof(PixelConstantBuffer), psOffset);
-#endif
 		}
 		else
 		{
@@ -2985,12 +3127,10 @@ public:
 			vcb.uvInversed[2] = 0.0f;
 			vcb.uvInversed[3] = 0.0f;
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 			vcb.flipbookParameter.enableInterpolation = static_cast<float>(m_state.EnableInterpolation);
 			vcb.flipbookParameter.loopType = static_cast<float>(m_state.UVLoopType);
 			vcb.flipbookParameter.divideX = static_cast<float>(m_state.FlipbookDivideX);
 			vcb.flipbookParameter.divideY = static_cast<float>(m_state.FlipbookDivideY);
-#endif
 
 			m_renderer->SetVertexBufferToShader(&vcb, sizeof(VertexConstantBuffer), 0);
 
@@ -3001,19 +3141,18 @@ public:
 				pcb.uvInversed[0] = uvInversedBack[0];
 				pcb.uvInversed[1] = uvInversedBack[1];
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 				pcb.flipbookParameter.enableInterpolation = static_cast<float>(m_state.EnableInterpolation);
 				pcb.flipbookParameter.interpolationType = static_cast<float>(m_state.InterpolationType);
 
 				pcb.uvDistortionParameter.intensity = m_state.UVDistortionIntensity;
 				pcb.uvDistortionParameter.blendIntensity = m_state.BlendUVDistortionIntensity;
+				pcb.uvDistortionParameter.uvInversed[0] = uvInversed[0];
+				pcb.uvDistortionParameter.uvInversed[1] = uvInversed[1];
 
-				pcb.blendTextureParameter.blendType = m_state.TextureBlendType;
-#endif
+				pcb.blendTextureParameter.blendType = static_cast<float>(m_state.TextureBlendType);
 
 				m_renderer->SetPixelBufferToShader(&pcb, sizeof(DistortionPixelConstantBuffer), 0);
 			}
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 			else
 			{
 				PixelConstantBuffer pcb;
@@ -3022,18 +3161,19 @@ public:
 
 				pcb.uvDistortionParameter.intensity = m_state.UVDistortionIntensity;
 				pcb.uvDistortionParameter.blendIntensity = m_state.BlendUVDistortionIntensity;
+				pcb.uvDistortionParameter.uvInversed[0] = uvInversed[0];
+				pcb.uvDistortionParameter.uvInversed[1] = uvInversed[1];
 
-				pcb.blendTextureParameter.blendType = m_state.TextureBlendType;
+				pcb.blendTextureParameter.blendType = static_cast<float>(m_state.TextureBlendType);
 
-				pcb.emissiveScaling = m_state.EmissiveScaling;
+				pcb.emissiveScaling = static_cast<float>(m_state.EmissiveScaling);
 
 				ColorToFloat4(Effekseer::Color(m_state.EdgeColor[0], m_state.EdgeColor[1], m_state.EdgeColor[2], m_state.EdgeColor[3]), pcb.edgeParameter.Color);
 				pcb.edgeParameter.Threshold = m_state.EdgeThreshold;
-				pcb.edgeParameter.ColorScaling = m_state.EdgeColorScaling;
+				pcb.edgeParameter.ColorScaling = static_cast<float>(m_state.EdgeColorScaling);
 
 				m_renderer->SetPixelBufferToShader(&pcb, sizeof(PixelConstantBuffer), 0);
 			}
-#endif
 		}
 
 		shader_->SetConstantBuffer();
@@ -3091,7 +3231,54 @@ struct ModelRendererVertexConstantBuffer
 	Effekseer::Matrix44 CameraMatrix;
 	Effekseer::Matrix44 ModelMatrix[MODEL_COUNT];
 	float ModelUV[MODEL_COUNT][4];
-#ifdef __EFFEKSEER_BUILD_VERSION16__
+
+	void SetModelFlipbookParameter(float enableInterpolation, float loopType, float divideX, float divideY)
+	{
+	}
+
+	void SetModelAlphaUV(int32_t index, float x, float y, float w, float h)
+	{
+	}
+
+	void SetModelUVDistortionUV(int32_t index, float x, float y, float w, float h)
+	{
+	}
+
+	void SetModelBlendUV(int32_t index, float x, float y, float w, float h)
+	{
+	}
+
+	void SetModelBlendAlphaUV(int32_t index, float x, float y, float w, float h)
+	{
+	}
+
+	void SetModelBlendUVDistortionUV(int32_t index, float x, float y, float w, float h)
+	{
+	}
+
+	void SetModelFlipbookIndexAndNextRate(int32_t index, float value)
+	{
+	}
+
+	void SetModelAlphaThreshold(int32_t index, float value)
+	{
+	}
+
+	float ModelColor[MODEL_COUNT][4];
+
+	float LightDirection[4];
+	float LightColor[4];
+	float LightAmbientColor[4];
+	float UVInversed[4];
+};
+
+template <int MODEL_COUNT>
+struct ModelRendererAdvancedVertexConstantBuffer
+{
+	Effekseer::Matrix44 CameraMatrix;
+	Effekseer::Matrix44 ModelMatrix[MODEL_COUNT];
+	float ModelUV[MODEL_COUNT][4];
+
 	float ModelAlphaUV[MODEL_COUNT][4];
 
 	float ModelUVDistortionUV[MODEL_COUNT][4];
@@ -3104,7 +3291,8 @@ struct ModelRendererVertexConstantBuffer
 
 	struct
 	{
-		union {
+		union
+		{
 			float Buffer[4];
 
 			struct
@@ -3179,7 +3367,6 @@ struct ModelRendererVertexConstantBuffer
 		ModelAlphaThreshold[index][0] = value;
 	}
 
-#endif
 	float ModelColor[MODEL_COUNT][4];
 
 	float LightDirection[4];
@@ -3240,10 +3427,49 @@ struct ModelRendererPixelConstantBuffer
 	float LightColor[4];
 	float LightAmbientColor[4];
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
+	void SetModelFlipbookParameter(float enableInterpolation, float interpolationType)
+	{
+	}
+
+	void SetModelUVDistortionParameter(float intensity, float blendIntensity, const std::array<float, 2>& uvInversed)
+	{
+	}
+
+	void SetModelBlendTextureParameter(float blendType)
+	{
+	}
+
+	void SetCameraFrontDirection(float x, float y, float z)
+	{
+	}
+
+	void SetFalloffParameter(float enable, float colorBlendType, float pow, const std::array<float, 4>& beginColor, const std::array<float, 4>& endColor)
+	{
+	}
+
+	void SetEmissiveScaling(float emissiveScaling)
+	{
+	}
+
+	void SetEdgeColor(const std::array<float, 4>& edgeColor)
+	{
+	}
+
+	void SetEdgeParameter(float threshold, float colorScaling)
+	{
+	}
+};
+
+struct ModelRendererAdvancedPixelConstantBuffer
+{
+	float LightDirection[4];
+	float LightColor[4];
+	float LightAmbientColor[4];
+
 	struct
 	{
-		union {
+		union
+		{
 			float Buffer[4];
 
 			struct
@@ -3256,20 +3482,23 @@ struct ModelRendererPixelConstantBuffer
 
 	struct
 	{
-		union {
+		union
+		{
 			float Buffer[4];
 
 			struct
 			{
 				float Intensity;
 				float BlendIntensity;
+				float UVInversed[2];
 			};
 		};
 	} ModelUVDistortionParameter;
 
 	struct
 	{
-		union {
+		union
+		{
 			float Buffer[4];
 
 			struct
@@ -3283,7 +3512,8 @@ struct ModelRendererPixelConstantBuffer
 
 	struct
 	{
-		union {
+		union
+		{
 			float Buffer[4];
 
 			struct
@@ -3301,9 +3531,10 @@ struct ModelRendererPixelConstantBuffer
 
 	struct
 	{
-		union {
+		union
+		{
 			float Buffer[4];
-			
+
 			struct
 			{
 				float EmissiveScaling;
@@ -3315,7 +3546,8 @@ struct ModelRendererPixelConstantBuffer
 
 	struct
 	{
-		union {
+		union
+		{
 			float Buffer[4];
 
 			struct
@@ -3325,7 +3557,81 @@ struct ModelRendererPixelConstantBuffer
 			};
 		};
 	} EdgeParameter;
-#endif
+
+	void SetModelFlipbookParameter(float enableInterpolation, float interpolationType)
+	{
+		ModelFlipbookParameter.EnableInterpolation;
+		ModelFlipbookParameter.InterpolationType;
+	}
+
+	void SetModelUVDistortionParameter(float intensity, float blendIntensity, const std::array<float, 2>& uvInversed)
+	{
+		ModelUVDistortionParameter.Intensity = intensity;
+		ModelUVDistortionParameter.BlendIntensity = blendIntensity;
+		ModelUVDistortionParameter.UVInversed[0] = uvInversed[0];
+		ModelUVDistortionParameter.UVInversed[1] = uvInversed[1];
+	}
+
+	void SetModelBlendTextureParameter(float blendType)
+	{
+		ModelBlendTextureParameter.BlendType = blendType;
+	}
+
+	void SetCameraFrontDirection(float x, float y, float z)
+	{
+		CameraFrontDirection[0] = x;
+		CameraFrontDirection[1] = y;
+		CameraFrontDirection[2] = z;
+		CameraFrontDirection[3] = 0.0f;
+	}
+
+	void SetFalloffParameter(float enable, float colorBlendType, float pow, const std::array<float, 4>& beginColor, const std::array<float, 4>& endColor)
+	{
+		FalloffParameter.Enable = enable;
+		FalloffParameter.ColorBlendType = colorBlendType;
+		FalloffParameter.Pow = pow;
+
+		for (size_t i = 0; i < 4; i++)
+		{
+			FalloffParameter.BeginColor[i] = beginColor[i];
+		}
+
+		for (size_t i = 0; i < 4; i++)
+		{
+			FalloffParameter.EndColor[i] = endColor[i];
+		}
+	}
+
+	void SetEmissiveScaling(float emissiveScaling)
+	{
+		EmissiveScaling = emissiveScaling;
+	}
+
+	void SetEdgeColor(const std::array<float, 4>& edgeColor)
+	{
+		for (size_t i = 0; i < 4; i++)
+		{
+			EdgeColor[i] = edgeColor[i];
+		}
+	}
+
+	void SetEdgeParameter(float threshold, float colorScaling)
+	{
+		EdgeParameter.Threshold = threshold;
+		EdgeParameter.ColorScaling = colorScaling;
+	}
+};
+
+
+struct ModelRendererDistortionPixelConstantBuffer
+{
+	float DistortionIntencity[4];
+	float UVInversedBack[4];
+
+	//! unused in none advanced renderer
+	float Interpolation[4];
+	float UVDistortion[4];
+	float TextureBlendType[4];
 };
 
 class ModelRendererBase : public ::Effekseer::ModelRenderer, public ::Effekseer::AlignedAllocationPolicy<16>
@@ -3341,7 +3647,6 @@ protected:
 
 	std::vector<Effekseer::Matrix44> matrixesSorted_;
 	std::vector<Effekseer::RectF> uvSorted_;
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 	std::vector<Effekseer::RectF> alphaUVSorted_;
 	std::vector<Effekseer::RectF> uvDistortionUVSorted_;
 	std::vector<Effekseer::RectF> blendUVSorted_;
@@ -3350,7 +3655,7 @@ protected:
 	std::vector<float> flipbookIndexAndNextRateSorted_;
 	std::vector<float> alphaThresholdSorted_;
 	std::vector<float> viewOffsetDistanceSorted_;
-#endif
+
 	std::vector<Effekseer::Color> colorsSorted_;
 	std::vector<int32_t> timesSorted_;
 	std::vector<std::array<float, 4>> customData1Sorted_;
@@ -3358,7 +3663,7 @@ protected:
 
 	std::vector<Effekseer::Matrix44> m_matrixes;
 	std::vector<Effekseer::RectF> m_uv;
-#ifdef __EFFEKSEER_BUILD_VERSION16__
+
 	std::vector<Effekseer::RectF> m_alphaUV;
 	std::vector<Effekseer::RectF> m_uvDistortionUV;
 	std::vector<Effekseer::RectF> m_blendUV;
@@ -3367,7 +3672,7 @@ protected:
 	std::vector<float> m_flipbookIndexAndNextRate;
 	std::vector<float> m_alphaThreshold;
 	std::vector<float> m_viewOffsetDistance;
-#endif
+
 	std::vector<Effekseer::Color> m_colors;
 	std::vector<int32_t> m_times;
 	std::vector<std::array<float, 4>> customData1_;
@@ -3376,12 +3681,25 @@ protected:
 	int32_t customData1Count_ = 0;
 	int32_t customData2Count_ = 0;
 
+	//! TODO : refactor
+	bool isAdvanced_ = false;
+
 	void ColorToFloat4(::Effekseer::Color color, float fc[4])
 	{
 		fc[0] = color.R / 255.0f;
 		fc[1] = color.G / 255.0f;
 		fc[2] = color.B / 255.0f;
 		fc[3] = color.A / 255.0f;
+	}
+
+	std::array<float, 4> ColorToFloat4(::Effekseer::Color color)
+	{
+		std::array<float, 4> fc;
+		fc[0] = color.R / 255.0f;
+		fc[1] = color.G / 255.0f;
+		fc[2] = color.B / 255.0f;
+		fc[3] = color.A / 255.0f;
+		return fc;
 	}
 
 	void VectorToFloat4(const ::Effekseer::Vec3f& v, float fc[4])
@@ -3451,7 +3769,6 @@ protected:
 
 			matrixesSorted_.resize(m_matrixes.size());
 			uvSorted_.resize(m_matrixes.size());
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 			alphaUVSorted_.resize(m_matrixes.size());
 			uvDistortionUVSorted_.resize(m_matrixes.size());
 			blendUVSorted_.resize(m_matrixes.size());
@@ -3459,7 +3776,6 @@ protected:
 			flipbookIndexAndNextRateSorted_.resize(m_matrixes.size());
 			alphaThresholdSorted_.resize(m_matrixes.size());
 			viewOffsetDistanceSorted_.resize(m_matrixes.size());
-#endif
 			colorsSorted_.resize(m_matrixes.size());
 			timesSorted_.resize(m_matrixes.size());
 
@@ -3477,7 +3793,6 @@ protected:
 			{
 				matrixesSorted_[keyValues_[i].Value] = m_matrixes[i];
 				uvSorted_[keyValues_[i].Value] = m_uv[i];
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 				alphaUVSorted_[keyValues_[i].Value] = m_alphaUV[i];
 				uvDistortionUVSorted_[keyValues_[i].Value] = m_uvDistortionUV[i];
 				blendUVSorted_[keyValues_[i].Value] = m_blendUV[i];
@@ -3486,7 +3801,6 @@ protected:
 				flipbookIndexAndNextRateSorted_[keyValues_[i].Value] = m_flipbookIndexAndNextRate[i];
 				alphaThresholdSorted_[keyValues_[i].Value] = m_alphaThreshold[i];
 				viewOffsetDistanceSorted_[keyValues_[i].Value] = m_viewOffsetDistance[i];
-#endif
 				colorsSorted_[keyValues_[i].Value] = m_colors[i];
 				timesSorted_[keyValues_[i].Value] = m_times[i];
 			}
@@ -3509,7 +3823,6 @@ protected:
 
 			m_matrixes = matrixesSorted_;
 			m_uv = uvSorted_;
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 			m_alphaUV = alphaUVSorted_;
 			m_uvDistortionUV = uvDistortionUVSorted_;
 			m_blendUV = blendUVSorted_;
@@ -3518,7 +3831,6 @@ protected:
 			m_flipbookIndexAndNextRate = flipbookIndexAndNextRateSorted_;
 			m_alphaThreshold = alphaThresholdSorted_;
 			m_viewOffsetDistance = viewOffsetDistanceSorted_;
-#endif
 			m_colors = colorsSorted_;
 			m_times = timesSorted_;
 			customData1_ = customData1Sorted_;
@@ -3654,7 +3966,6 @@ public:
 
 		m_matrixes.clear();
 		m_uv.clear();
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 		m_alphaUV.clear();
 		m_uvDistortionUV.clear();
 		m_blendUV.clear();
@@ -3663,7 +3974,6 @@ public:
 		m_flipbookIndexAndNextRate.clear();
 		m_alphaThreshold.clear();
 		m_viewOffsetDistance.clear();
-#endif
 		m_colors.clear();
 		m_times.clear();
 		customData1_.clear();
@@ -3671,7 +3981,6 @@ public:
 
 		matrixesSorted_.clear();
 		uvSorted_.clear();
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 		alphaUVSorted_.clear();
 		uvDistortionUVSorted_.clear();
 		blendUVSorted_.clear();
@@ -3680,7 +3989,6 @@ public:
 		flipbookIndexAndNextRateSorted_.clear();
 		alphaThresholdSorted_.clear();
 		viewOffsetDistanceSorted_.clear();
-#endif
 		colorsSorted_.clear();
 		timesSorted_.clear();
 		customData1Sorted_.clear();
@@ -3702,6 +4010,44 @@ public:
 		}
 
 		renderer->GetStandardRenderer()->ResetAndRenderingIfRequired();
+
+		isAdvanced_ = IsAdvanced(parameter);
+	}
+
+	bool IsAdvanced(const efkModelNodeParam& parameter) const
+	{
+		// TODO : merge with IsAdvanced in StandererdRenderer
+		if (parameter.BasicParameterPtr->MaterialType == ::Effekseer::RendererMaterialType::File)
+		{
+			return false;
+		}
+
+		if (parameter.BasicParameterPtr->Texture3Index >= 0)
+			return true;
+
+		if (parameter.BasicParameterPtr->Texture4Index >= 0)
+			return true;
+
+		if (parameter.BasicParameterPtr->Texture5Index >= 0)
+			return true;
+
+		if (parameter.BasicParameterPtr->Texture6Index >= 0)
+			return true;
+
+		if (parameter.BasicParameterPtr->Texture7Index >= 0)
+			return true;
+
+		if (parameter.BasicParameterPtr->EnableInterpolation ||
+			parameter.BasicParameterPtr->TextureBlendType != -1 ||
+			parameter.BasicParameterPtr->EdgeThreshold != 0 ||
+			parameter.BasicParameterPtr->EmissiveScaling != 1.0f ||
+			parameter.BasicParameterPtr->IsAlphaCutoffEnabled ||
+			parameter.EnableFalloff != 0)
+		{
+			return true;
+		}
+
+		return false;
 	}
 
 	template <typename RENDERER>
@@ -3738,7 +4084,6 @@ public:
 
 		m_matrixes.push_back(ToStruct(mat44));
 		m_uv.push_back(instanceParameter.UV);
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 		m_alphaUV.push_back(instanceParameter.AlphaUV);
 		m_uvDistortionUV.push_back(instanceParameter.UVDistortionUV);
 		m_blendUV.push_back(instanceParameter.BlendUV);
@@ -3747,7 +4092,6 @@ public:
 		m_flipbookIndexAndNextRate.push_back(instanceParameter.FlipbookIndexAndNextRate);
 		m_alphaThreshold.push_back(instanceParameter.AlphaThreshold);
 		m_viewOffsetDistance.push_back(instanceParameter.ViewOffsetDistance);
-#endif
 		m_colors.push_back(instanceParameter.AllColor);
 		m_times.push_back(instanceParameter.Time);
 
@@ -3760,13 +4104,18 @@ public:
 		{
 			customData2_.push_back(instanceParameter.CustomData2);
 		}
+
+		//parameter.BasicParameterPtr
 	}
 
 	template <typename RENDERER, typename SHADER, typename MODEL, bool Instancing, int InstanceCount>
 	void EndRendering_(RENDERER* renderer,
-					   SHADER* shader_lighting_texture_normal,
-					   SHADER* shader_texture,
-					   SHADER* shader_distortion_texture,
+					   SHADER* advanced_shader_lit,
+					   SHADER* advanced_shader_unlit,
+					   SHADER* advanced_shader_distortion,
+					   SHADER* shader_lit,
+					   SHADER* shader_unlit,
+					   SHADER* shader_distortion,
 					   const efkModelNodeParam& param)
 	{
 		if (m_matrixes.size() == 0)
@@ -3796,22 +4145,34 @@ public:
 			if (materialParam != nullptr && materialParam->MaterialIndex >= 0 &&
 				param.EffectPointer->GetMaterial(materialParam->MaterialIndex) != nullptr)
 			{
-				RenderPass<RENDERER, SHADER, MODEL, Instancing, InstanceCount, ModelRendererMaterialVertexConstantBuffer<InstanceCount>>(
-					renderer, shader_lighting_texture_normal, shader_texture, shader_distortion_texture, param, renderPassInd);
+				RenderPass<RENDERER, SHADER, MODEL, Instancing, InstanceCount, ModelRendererMaterialVertexConstantBuffer<InstanceCount>, ModelRendererPixelConstantBuffer>(
+					renderer, advanced_shader_lit, advanced_shader_unlit, advanced_shader_distortion, shader_lit, shader_unlit, shader_distortion, param, renderPassInd);
 			}
 			else
 			{
-				RenderPass<RENDERER, SHADER, MODEL, Instancing, InstanceCount, ModelRendererVertexConstantBuffer<InstanceCount>>(
-					renderer, shader_lighting_texture_normal, shader_texture, shader_distortion_texture, param, renderPassInd);
+				if (isAdvanced_)
+				{
+					RenderPass<RENDERER, SHADER, MODEL, Instancing, InstanceCount, ModelRendererAdvancedVertexConstantBuffer<InstanceCount>, ModelRendererAdvancedPixelConstantBuffer>(
+						renderer, advanced_shader_lit, advanced_shader_unlit, advanced_shader_distortion, shader_lit, shader_unlit, shader_distortion, param, renderPassInd);
+				}
+				else
+				{
+					RenderPass<RENDERER, SHADER, MODEL, Instancing, InstanceCount, ModelRendererVertexConstantBuffer<InstanceCount>, ModelRendererPixelConstantBuffer>(
+						renderer, advanced_shader_lit, advanced_shader_unlit, advanced_shader_distortion, shader_lit, shader_unlit, shader_distortion, param, renderPassInd);
+
+				}
 			}
 		}
 	}
 
-	template <typename RENDERER, typename SHADER, typename MODEL, bool Instancing, int InstanceCount, typename VertexConstantBufferType>
+	template <typename RENDERER, typename SHADER, typename MODEL, bool Instancing, int InstanceCount, typename VertexConstantBufferType, typename PixelConstantBufferType>
 	void RenderPass(RENDERER* renderer,
-					SHADER* shader_lighting_texture_normal,
-					SHADER* shader_texture,
-					SHADER* shader_distortion_texture,
+					SHADER* advanced_shader_lit,
+					SHADER* advanced_shader_unlit,
+					SHADER* advanced_shader_distortion,
+					SHADER* shader_lit,
+					SHADER* shader_unlit,
+					SHADER* shader_distortion,
 					const efkModelNodeParam& param,
 					int32_t renderPassInd)
 	{
@@ -3897,17 +4258,35 @@ public:
 		}
 		else
 		{
-			if (distortion)
+			if (isAdvanced_)
 			{
-				shader_ = shader_distortion_texture;
-			}
-			else if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::Lighting)
-			{
-				shader_ = shader_lighting_texture_normal;
+				if (distortion)
+				{
+					shader_ = advanced_shader_distortion;
+				}
+				else if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::Lighting)
+				{
+					shader_ = advanced_shader_lit;
+				}
+				else
+				{
+					shader_ = advanced_shader_unlit;
+				}
 			}
 			else
 			{
-				shader_ = shader_texture;
+				if (distortion)
+				{
+					shader_ = shader_distortion;
+				}
+				else if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::Lighting)
+				{
+					shader_ = shader_lit;
+				}
+				else
+				{
+					shader_ = shader_unlit;
+				}
 			}
 		}
 
@@ -3932,7 +4311,7 @@ public:
 
 			if (materialParam->MaterialTextures.size() > 0)
 			{
-				textureCount = Effekseer::Min(materialParam->MaterialTextures.size(), ::Effekseer::UserTextureSlotMax);
+				textureCount = Effekseer::Min(static_cast<int32_t>(materialParam->MaterialTextures.size()), ::Effekseer::UserTextureSlotMax);
 
 				auto effect = param.EffectPointer;
 
@@ -3981,13 +4360,7 @@ public:
 		}
 		else
 		{
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 			Effekseer::TextureData* textures[7] = {nullptr};
-#else
-			Effekseer::TextureData* textures[2];
-			textures[0] = nullptr;
-			textures[1] = nullptr;
-#endif
 
 			if (distortion)
 			{
@@ -4002,7 +4375,6 @@ public:
 
 				textures[1] = renderer->GetBackground();
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 				if (param.BasicParameterPtr->Texture3Index >= 0)
 				{
 					textures[2] = param.EffectPointer->GetDistortionImage(param.BasicParameterPtr->Texture3Index);
@@ -4047,7 +4419,6 @@ public:
 				{
 					textures[6] = renderer->GetImpl()->GetProxyTexture(EffekseerRenderer::ProxyTextureType::Normal);
 				}
-#endif
 			}
 			else
 			{
@@ -4071,7 +4442,6 @@ public:
 					textures[1] = renderer->GetImpl()->GetProxyTexture(EffekseerRenderer::ProxyTextureType::Normal);
 				}
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 				if (param.BasicParameterPtr->Texture3Index >= 0)
 				{
 					textures[2] = param.EffectPointer->GetColorImage(param.BasicParameterPtr->Texture3Index);
@@ -4116,7 +4486,6 @@ public:
 				{
 					textures[6] = renderer->GetImpl()->GetProxyTexture(EffekseerRenderer::ProxyTextureType::Normal);
 				}
-#endif
 			}
 
 			state.TextureFilterTypes[0] = param.BasicParameterPtr->TextureFilter1;
@@ -4133,7 +4502,6 @@ public:
 				state.TextureWrapTypes[1] = param.BasicParameterPtr->TextureWrap2;
 			}
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 			state.TextureFilterTypes[2] = param.BasicParameterPtr->TextureFilter3;
 			state.TextureWrapTypes[2] = param.BasicParameterPtr->TextureWrap3;
 			state.TextureFilterTypes[3] = param.BasicParameterPtr->TextureFilter4;
@@ -4144,13 +4512,8 @@ public:
 			state.TextureWrapTypes[5] = param.BasicParameterPtr->TextureWrap6;
 			state.TextureFilterTypes[6] = param.BasicParameterPtr->TextureFilter7;
 			state.TextureWrapTypes[6] = param.BasicParameterPtr->TextureWrap7;
-#endif
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 			renderer->SetTextures(shader_, textures, 7);
-#else
-			renderer->SetTextures(shader_, textures, 2);
-#endif
 		}
 
 		renderer->GetRenderState()->Update(distortion);
@@ -4177,25 +4540,25 @@ public:
 
 			if (distortion)
 			{
-				float* pcb = (float*)shader_->GetPixelConstantBuffer();
-				pcb[4 * 0 + 0] = param.BasicParameterPtr->DistortionIntensity;
+				ModelRendererDistortionPixelConstantBuffer* pcb = (ModelRendererDistortionPixelConstantBuffer*)shader_->GetPixelConstantBuffer();
+				pcb->DistortionIntencity[0] = param.BasicParameterPtr->DistortionIntensity;
 
-				pcb[4 * 1 + 0] = uvInversedBack[0];
-				pcb[4 * 1 + 1] = uvInversedBack[1];
+				pcb->UVInversedBack[0] = uvInversedBack[0];
+				pcb->UVInversedBack[1] = uvInversedBack[1];
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
-				pcb[4 * 2 + 0] = param.BasicParameterPtr->EnableInterpolation;
-				pcb[4 * 2 + 1] = param.BasicParameterPtr->InterpolationType;
+				pcb->Interpolation[0] = static_cast<float>(param.BasicParameterPtr->EnableInterpolation);
+				pcb->Interpolation[1] = static_cast<float>(param.BasicParameterPtr->InterpolationType);
 
-				pcb[4 * 3 + 0] = param.BasicParameterPtr->UVDistortionIntensity;
-				pcb[4 * 3 + 1] = param.BasicParameterPtr->BlendUVDistortionIntensity;
+				pcb->UVDistortion[0] = param.BasicParameterPtr->UVDistortionIntensity;
+				pcb->UVDistortion[1] = param.BasicParameterPtr->BlendUVDistortionIntensity;
+				pcb->UVDistortion[2] = uvInversed[0];
+				pcb->UVDistortion[3] = uvInversed[1];
 
-				pcb[4 * 4 + 0] = param.BasicParameterPtr->TextureBlendType;
-#endif
+				pcb->TextureBlendType[0] = static_cast<float>(param.BasicParameterPtr->TextureBlendType);
 			}
 			else
 			{
-				ModelRendererPixelConstantBuffer* pcb = (ModelRendererPixelConstantBuffer*)shader_->GetPixelConstantBuffer();
+				PixelConstantBufferType* pcb = (PixelConstantBufferType*)shader_->GetPixelConstantBuffer();
 
 				// specify predefined parameters
 				if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::Lighting)
@@ -4216,48 +4579,36 @@ public:
 					ColorToFloat4(renderer->GetLightAmbientColor(), pcb->LightAmbientColor);
 				}
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
-				pcb->ModelFlipbookParameter.EnableInterpolation = param.BasicParameterPtr->EnableInterpolation;
-				pcb->ModelFlipbookParameter.InterpolationType = param.BasicParameterPtr->InterpolationType;
-
-				pcb->ModelUVDistortionParameter.Intensity = param.BasicParameterPtr->UVDistortionIntensity;
-				pcb->ModelUVDistortionParameter.BlendIntensity = param.BasicParameterPtr->BlendUVDistortionIntensity;
-
-				pcb->ModelBlendTextureParameter.BlendType = param.BasicParameterPtr->TextureBlendType;
+				pcb->SetModelFlipbookParameter(param.BasicParameterPtr->EnableInterpolation, static_cast<float>(param.BasicParameterPtr->InterpolationType));
+				pcb->SetModelUVDistortionParameter(param.BasicParameterPtr->UVDistortionIntensity, param.BasicParameterPtr->BlendUVDistortionIntensity, {uvInversed[0], uvInversed[1]});
+				pcb->SetModelBlendTextureParameter(static_cast<float>(param.BasicParameterPtr->TextureBlendType));
 
 				::Effekseer::Vector3D CameraFront = renderer->GetCameraFrontDirection();
-				pcb->CameraFrontDirection[0] = -CameraFront.X;
-				pcb->CameraFrontDirection[1] = -CameraFront.Y;
-				pcb->CameraFrontDirection[2] = -CameraFront.Z;
-				pcb->CameraFrontDirection[3] = 0.0f;
+				pcb->SetCameraFrontDirection(-CameraFront.X, -CameraFront.Y, -CameraFront.Z);
+				pcb->SetFalloffParameter(
+					static_cast<float>(param.EnableFalloff),
+					static_cast<float>(param.FalloffParam.ColorBlendType),
+					static_cast<float>(param.FalloffParam.Pow),
+					ColorToFloat4(param.FalloffParam.BeginColor),
+					ColorToFloat4(param.FalloffParam.EndColor));
 
-				pcb->FalloffParameter.Enable = static_cast<float>(param.EnableFalloff);
-				pcb->FalloffParameter.ColorBlendType = static_cast<float>(param.FalloffParam.ColorBlendType);
-				pcb->FalloffParameter.Pow = static_cast<float>(param.FalloffParam.Pow);
-				ColorToFloat4(param.FalloffParam.BeginColor, pcb->FalloffParameter.BeginColor);
-				ColorToFloat4(param.FalloffParam.EndColor, pcb->FalloffParameter.EndColor);
-				pcb->EmissiveScaling = param.BasicParameterPtr->EmissiveScaling;
-
-				ColorToFloat4(Effekseer::Color(
+				pcb->SetEmissiveScaling(static_cast<float>(param.BasicParameterPtr->EmissiveScaling));
+				pcb->SetEdgeColor(ColorToFloat4(Effekseer::Color(
 					param.BasicParameterPtr->EdgeColor[0],
 					param.BasicParameterPtr->EdgeColor[1],
 					param.BasicParameterPtr->EdgeColor[2],
-					param.BasicParameterPtr->EdgeColor[3]), 
-					pcb->EdgeColor);
-				pcb->EdgeParameter.Threshold = param.BasicParameterPtr->EdgeThreshold;
-				pcb->EdgeParameter.ColorScaling = param.BasicParameterPtr->EdgeColorScaling;
-#endif
+					param.BasicParameterPtr->EdgeColor[3])));
+
+				pcb->SetEdgeParameter(param.BasicParameterPtr->EdgeThreshold, static_cast<float>(param.BasicParameterPtr->EdgeColorScaling));
 			}
 		}
 
 		vcb->CameraMatrix = renderer->GetCameraProjectionMatrix();
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
-		vcb->SetModelFlipbookParameter(param.BasicParameterPtr->EnableInterpolation,
-									   param.BasicParameterPtr->UVLoopType,
-									   param.BasicParameterPtr->FlipbookDivideX,
-									   param.BasicParameterPtr->FlipbookDivideY);
-#endif
+		vcb->SetModelFlipbookParameter(static_cast<float>(param.BasicParameterPtr->EnableInterpolation),
+									   static_cast<float>(param.BasicParameterPtr->UVLoopType),
+									   static_cast<float>(param.BasicParameterPtr->FlipbookDivideX),
+									   static_cast<float>(param.BasicParameterPtr->FlipbookDivideY));
 
 		// Check time
 		auto stTime0 = m_times[0] % model->GetFrameCount();
@@ -4292,12 +4643,12 @@ public:
 
 					// DepthParameter
 					::Effekseer::Mat44f modelMatrix = vcb->ModelMatrix[num];
-#ifdef __EFFEKSEER_BUILD_VERSION16__
+
 					if (param.EnableViewOffset)
 					{
 						ApplyViewOffset(modelMatrix, renderer->GetCameraMatrix(), m_viewOffsetDistance[loop + num]);
 					}
-#endif
+
 					ApplyDepthParameters(modelMatrix,
 										 renderer->GetCameraFrontDirection(),
 										 renderer->GetCameraPosition(),
@@ -4310,7 +4661,6 @@ public:
 					vcb->ModelUV[num][2] = m_uv[loop + num].Width;
 					vcb->ModelUV[num][3] = m_uv[loop + num].Height;
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 					vcb->SetModelAlphaUV(
 						num, m_alphaUV[loop + num].X, m_alphaUV[loop + num].Y, m_alphaUV[loop + num].Width, m_alphaUV[loop + num].Height);
 					vcb->SetModelUVDistortionUV(num,
@@ -4332,7 +4682,6 @@ public:
 													 m_blendUVDistortionUV[loop + num].Height);
 					vcb->SetModelFlipbookIndexAndNextRate(num, m_flipbookIndexAndNextRate[loop + num]);
 					vcb->SetModelAlphaThreshold(num, m_alphaThreshold[loop + num]);
-#endif
 
 					ColorToFloat4(m_colors[loop + num], vcb->ModelColor[num]);
 
@@ -4378,7 +4727,6 @@ public:
 				vcb->ModelUV[0][2] = m_uv[loop].Width;
 				vcb->ModelUV[0][3] = m_uv[loop].Height;
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 				vcb->SetModelAlphaUV(0, m_alphaUV[loop].X, m_alphaUV[loop].Y, m_alphaUV[loop].Width, m_alphaUV[loop].Height);
 				vcb->SetModelUVDistortionUV(
 					0, m_uvDistortionUV[loop].X, m_uvDistortionUV[loop].Y, m_uvDistortionUV[loop].Width, m_uvDistortionUV[loop].Height);
@@ -4389,16 +4737,14 @@ public:
 					0, m_blendUVDistortionUV[loop].X, m_blendUVDistortionUV[loop].Y, m_blendUVDistortionUV[loop].Width, m_blendUVDistortionUV[loop].Height);
 				vcb->SetModelFlipbookIndexAndNextRate(0, m_flipbookIndexAndNextRate[loop]);
 				vcb->SetModelAlphaThreshold(0, m_alphaThreshold[loop]);
-#endif
 
 				// DepthParameters
 				::Effekseer::Mat44f modelMatrix = vcb->ModelMatrix[0];
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 				if (param.EnableViewOffset == true)
 				{
 					ApplyViewOffset(modelMatrix, renderer->GetCameraMatrix(), m_viewOffsetDistance[0]);
 				}
-#endif
+
 				ApplyDepthParameters(modelMatrix,
 									 renderer->GetCameraFrontDirection(),
 									 renderer->GetCameraPosition(),
@@ -4501,7 +4847,7 @@ typedef ::Effekseer::RibbonRenderer::NodeParameter efkRibbonNodeParam;
 typedef ::Effekseer::RibbonRenderer::InstanceParameter efkRibbonInstanceParam;
 typedef ::Effekseer::Vec3f efkVector3D;
 
-template <typename RENDERER, typename VERTEX_NORMAL, typename VERTEX_DISTORTION>
+template <typename RENDERER, bool FLIP_RGB_FLAG>
 class RibbonRendererBase : public ::Effekseer::RibbonRenderer, public ::Effekseer::AlignedAllocationPolicy<16>
 {
 private:
@@ -4523,34 +4869,6 @@ protected:
 	int32_t customData1Count_ = 0;
 	int32_t customData2Count_ = 0;
 
-	enum class VertexType
-	{
-		Normal,
-		Distortion,
-		Dynamic,
-		Lighting,
-	};
-
-	VertexType GetVertexType(const VERTEX_NORMAL* v)
-	{
-		return VertexType::Normal;
-	}
-
-	VertexType GetVertexType(const VERTEX_DISTORTION* v)
-	{
-		return VertexType::Distortion;
-	}
-
-	VertexType GetVertexType(const DynamicVertex* v)
-	{
-		return VertexType::Dynamic;
-	}
-
-	VertexType GetVertexType(const LightingVertex* v)
-	{
-		return VertexType::Lighting;
-	}
-
 	template <typename VERTEX, int TARGET>
 	void AssignUV(StrideView<VERTEX> v, float uvX1, float uvX2, float uvY1, float uvY2)
 	{
@@ -4568,7 +4886,6 @@ protected:
 			v[3].UV[0] = uvX2;
 			v[3].UV[1] = uvY2;
 		}
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 		else if (TARGET == 1)
 		{
 			v[0].UV2[0] = uvX1;
@@ -4653,22 +4970,6 @@ protected:
 			v[3].SetBlendUVDistortionUV(uvX2, 0);
 			v[3].SetBlendUVDistortionUV(uvY2, 1);
 		}
-#else
-		else
-		{
-			v[0].UV2[0] = uvX1;
-			v[0].UV2[1] = uvY1;
-
-			v[1].UV2[0] = uvX2;
-			v[1].UV2[1] = uvY1;
-
-			v[2].UV2[0] = uvX1;
-			v[2].UV2[1] = uvY2;
-
-			v[3].UV2[0] = uvX2;
-			v[3].UV2[1] = uvY2;
-		}
-#endif
 	}
 
 	template <typename VERTEX, int TARGET>
@@ -4693,7 +4994,6 @@ protected:
 					uvy = param.UV.Y;
 					uvh = param.UV.Height;
 				}
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 				else if (TARGET == 2)
 				{
 					uvx = param.AlphaUV.X;
@@ -4729,7 +5029,6 @@ protected:
 					uvy = param.BlendUVDistortionUV.Y;
 					uvh = param.BlendUVDistortionUV.Height;
 				}
-#endif
 
 				for (int32_t sploop = 0; sploop < parameter.SplineDivision; sploop++)
 				{
@@ -4766,7 +5065,6 @@ protected:
 					uvy = param.UV.Y;
 					uvh = param.UV.Height;
 				}
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 				else if (TARGET == 2)
 				{
 					uvx = param.AlphaUV.X;
@@ -4802,7 +5100,6 @@ protected:
 					uvy = param.BlendUVDistortionUV.Y;
 					uvh = param.BlendUVDistortionUV.Height;
 				}
-#endif
 
 				if (loop < uvParam.TileEdgeTail)
 				{
@@ -4882,7 +5179,7 @@ protected:
 		}
 	}
 
-	template <typename VERTEX>
+	template <typename VERTEX, bool FLIP_RGB>
 	void RenderSplines(const ::Effekseer::Mat44f& camera)
 	{
 		if (instances.size() == 0)
@@ -4891,8 +5188,6 @@ protected:
 		}
 
 		auto& parameter = innstancesNodeParam;
-
-		auto vertexType = GetVertexType((VERTEX*)m_ringBufferData);
 
 		// Calculate spline
 		if (parameter.SplineDivision > 1)
@@ -4910,12 +5205,12 @@ protected:
 				if (parameter.ViewpointDependent)
 				{
 					::Effekseer::Mat43f mat = param.SRTMatrix43;
-#ifdef __EFFEKSEER_BUILD_VERSION16__
+
 					if (parameter.EnableViewOffset == true)
 					{
 						ApplyViewOffset(mat, camera, param.ViewOffsetDistance);
 					}
-#endif
+
 					::Effekseer::Vec3f s;
 					::Effekseer::Mat43f r;
 					::Effekseer::Vec3f t;
@@ -4965,12 +5260,10 @@ protected:
 				{
 					::Effekseer::Mat43f mat = param.SRTMatrix43;
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 					if (parameter.EnableViewOffset == true)
 					{
 						ApplyViewOffset(mat, camera, param.ViewOffsetDistance);
 					}
-#endif
 
 					ApplyDepthParameters(mat,
 										 m_renderer->GetCameraFrontDirection(),
@@ -5008,8 +5301,8 @@ protected:
 					verteies[0].Pos = ToStruct(spline_left.GetValue(param.InstanceIndex + sploop / (float)parameter.SplineDivision));
 					verteies[1].Pos = ToStruct(spline_right.GetValue(param.InstanceIndex + sploop / (float)parameter.SplineDivision));
 
-					verteies[0].SetColor(Effekseer::Color::Lerp(param.Colors[0], param.Colors[2], percent_instance));
-					verteies[1].SetColor(Effekseer::Color::Lerp(param.Colors[1], param.Colors[3], percent_instance));
+					verteies[0].SetColor(Effekseer::Color::Lerp(param.Colors[0], param.Colors[2], percent_instance), FLIP_RGB);
+					verteies[1].SetColor(Effekseer::Color::Lerp(param.Colors[1], param.Colors[3], percent_instance), FLIP_RGB);
 				}
 				else
 				{
@@ -5018,12 +5311,9 @@ protected:
 						verteies[i].Pos.X = param.Positions[i];
 						verteies[i].Pos.Y = 0.0f;
 						verteies[i].Pos.Z = 0.0f;
-						verteies[i].SetColor(param.Colors[i]);
-
-#ifdef __EFFEKSEER_BUILD_VERSION16__
+						verteies[i].SetColor(param.Colors[i], FLIP_RGB);
 						verteies[i].SetFlipbookIndexAndNextRate(param.FlipbookIndexAndNextRate);
 						verteies[i].SetAlphaThreshold(param.AlphaThreshold);
-#endif
 					}
 				}
 
@@ -5033,12 +5323,12 @@ protected:
 				if (parameter.ViewpointDependent)
 				{
 					::Effekseer::Mat43f mat = param.SRTMatrix43;
-#ifdef __EFFEKSEER_BUILD_VERSION16__
+
 					if (parameter.EnableViewOffset == true)
 					{
 						ApplyViewOffset(mat, camera, param.ViewOffsetDistance);
 					}
-#endif
+
 					::Effekseer::Vec3f s;
 					::Effekseer::Mat43f r;
 					::Effekseer::Vec3f t;
@@ -5100,12 +5390,10 @@ protected:
 					{
 						::Effekseer::Mat43f mat = param.SRTMatrix43;
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 						if (parameter.EnableViewOffset == true)
 						{
 							ApplyViewOffset(mat, camera, param.ViewOffsetDistance);
 						}
-#endif
 
 						ApplyDepthParameters(mat,
 											 m_renderer->GetCameraFrontDirection(),
@@ -5147,23 +5435,21 @@ protected:
 		// calculate UV
 		AssignUVs<VERTEX, 0>(parameter, verteies);
 
-		if (vertexType == VertexType::Dynamic || vertexType == VertexType::Lighting)
+		if (IsDynamicVertex<VERTEX>() || IsLightingVertex<VERTEX>())
 		{
 			AssignUVs<VERTEX, 1>(parameter, verteies);
 		}
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 		AssignUVs<VERTEX, 2>(parameter, verteies);
 		AssignUVs<VERTEX, 3>(parameter, verteies);
 		AssignUVs<VERTEX, 4>(parameter, verteies);
 		AssignUVs<VERTEX, 5>(parameter, verteies);
 		AssignUVs<VERTEX, 6>(parameter, verteies);
-#endif
 
 		// Apply distortion
-		if (vertexType == VertexType::Distortion)
+		if (IsDistortionVertex<VERTEX>())
 		{
-			StrideView<VERTEX_DISTORTION> vs_(m_ringBufferData, stride_, vertexCount_);
+			StrideView<VERTEX> vs_(m_ringBufferData, stride_, vertexCount_);
 			Effekseer::Vec3f axisBefore;
 
 			for (size_t i = 0; i < (instances.size() - 1) * parameter.SplineDivision + 1; i++)
@@ -5197,27 +5483,33 @@ protected:
 				Effekseer::Vec3f tangent = vs_[1].Pos - vs_[0].Pos;
 				tangent = tangent.Normalize();
 
-				if (isFirst_)
+				if (isFirst_ || isLast_)
 				{
-					vs_[0].Binormal = vs_[1].Binormal = ToStruct(axis);
-					vs_[0].Tangent = vs_[1].Tangent = ToStruct(tangent);
-					vs_ += 2;
-				}
-				else if (isLast_)
-				{
-					vs_[0].Binormal = vs_[1].Binormal = ToStruct(axis);
-					vs_[0].Tangent = vs_[1].Tangent = ToStruct(tangent);
+					const auto binormalVector = ToStruct(axis);
+					const auto tangentVector = ToStruct(tangent);
+
+					for (int32_t j = 0; j < 2; j++)
+					{
+						vs_[j].SetBinormal(binormalVector);
+						vs_[j].SetTangent(tangentVector);
+					}
 					vs_ += 2;
 				}
 				else
 				{
-					vs_[0].Binormal = vs_[1].Binormal = vs_[2].Binormal = vs_[3].Binormal = ToStruct(axis);
-					vs_[0].Tangent = vs_[1].Tangent = vs_[2].Tangent = vs_[3].Tangent = ToStruct(tangent);
+					const auto binormalVector = ToStruct(axis);
+					const auto tangentVector = ToStruct(tangent);
+
+					for (int32_t j = 0; j < 4; j++)
+					{
+						vs_[j].SetBinormal(binormalVector);
+						vs_[j].SetTangent(tangentVector);
+					}
 					vs_ += 4;
 				}
 			}
 		}
-		else if (vertexType == VertexType::Dynamic || vertexType == VertexType::Lighting)
+		else if (IsDynamicVertex<VERTEX>() || IsLightingVertex<VERTEX>())
 		{
 			StrideView<VERTEX> vs_(m_ringBufferData, stride_, vertexCount_);
 			Effekseer::Vec3f axisBefore;
@@ -5361,27 +5653,39 @@ protected:
 					const ::Effekseer::Mat44f& camera)
 	{
 		const auto& state = m_renderer->GetStandardRenderer()->GetState();
+		bool isAdvanced = state.IsAdvanced();
 
-		if ((state.MaterialPtr != nullptr && !state.MaterialPtr->IsSimpleVertex) ||
-			parameter.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::Lighting)
+		if (state.MaterialPtr != nullptr && !state.MaterialPtr->IsSimpleVertex)
 		{
-			Rendering_Internal<DynamicVertex>(parameter, instanceParameter, userData, camera);
+			Rendering_Internal<DynamicVertex, FLIP_RGB_FLAG>(parameter, instanceParameter, userData, camera);
+		}
+		else if (parameter.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::Lighting && isAdvanced)
+		{
+			Rendering_Internal<AdvancedLightingVertex, FLIP_RGB_FLAG>(parameter, instanceParameter, userData, camera);
+		}
+		else if (parameter.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::BackDistortion && isAdvanced)
+		{
+			Rendering_Internal<AdvancedVertexDistortion, FLIP_RGB_FLAG>(parameter, instanceParameter, userData, camera);
+		}
+		else if (isAdvanced)
+		{
+			Rendering_Internal<AdvancedSimpleVertex, FLIP_RGB_FLAG>(parameter, instanceParameter, userData, camera);
 		}
 		else if (parameter.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::Lighting)
 		{
-			Rendering_Internal<LightingVertex>(parameter, instanceParameter, userData, camera);
+			Rendering_Internal<LightingVertex, FLIP_RGB_FLAG>(parameter, instanceParameter, userData, camera);
 		}
 		else if (parameter.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::BackDistortion)
 		{
-			Rendering_Internal<VERTEX_DISTORTION>(parameter, instanceParameter, userData, camera);
+			Rendering_Internal<VertexDistortion, FLIP_RGB_FLAG>(parameter, instanceParameter, userData, camera);
 		}
 		else
 		{
-			Rendering_Internal<VERTEX_NORMAL>(parameter, instanceParameter, userData, camera);
+			Rendering_Internal<SimpleVertex, FLIP_RGB_FLAG>(parameter, instanceParameter, userData, camera);
 		}
 	}
 
-	template <typename VERTEX>
+	template <typename VERTEX, bool FLIP_RGB>
 	void Rendering_Internal(const efkRibbonNodeParam& parameter,
 							const efkRibbonInstanceParam& instanceParameter,
 							void* userData,
@@ -5408,7 +5712,7 @@ protected:
 
 		if (isLast)
 		{
-			RenderSplines<VERTEX>(camera);
+			RenderSplines<VERTEX, FLIP_RGB>(camera);
 		}
 	}
 
@@ -5429,7 +5733,6 @@ public:
 		state.TextureWrap1 = param.BasicParameterPtr->TextureWrap1;
 		state.TextureFilter2 = param.BasicParameterPtr->TextureFilter2;
 		state.TextureWrap2 = param.BasicParameterPtr->TextureWrap2;
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 		state.TextureFilter3 = param.BasicParameterPtr->TextureFilter3;
 		state.TextureWrap3 = param.BasicParameterPtr->TextureWrap3;
 		state.TextureFilter4 = param.BasicParameterPtr->TextureFilter4;
@@ -5461,7 +5764,7 @@ public:
 		state.EdgeColor[2] = param.BasicParameterPtr->EdgeColor[2];
 		state.EdgeColor[3] = param.BasicParameterPtr->EdgeColor[3];
 		state.EdgeColorScaling = param.BasicParameterPtr->EdgeColorScaling;
-#endif
+		state.IsAlphaCuttoffEnabled = param.BasicParameterPtr->IsAlphaCutoffEnabled;
 
 		state.Distortion = param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::BackDistortion;
 		state.DistortionIntensity = param.BasicParameterPtr->DistortionIntensity;
@@ -5471,14 +5774,12 @@ public:
 											   param.BasicParameterPtr->MaterialParameterPtr,
 											   param.BasicParameterPtr->Texture1Index,
 											   param.BasicParameterPtr->Texture2Index
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 											   ,
 											   param.BasicParameterPtr->Texture3Index,
 											   param.BasicParameterPtr->Texture4Index,
 											   param.BasicParameterPtr->Texture5Index,
 											   param.BasicParameterPtr->Texture6Index,
 											   param.BasicParameterPtr->Texture7Index
-#endif
 		);
 		customData1Count_ = state.CustomData1Count;
 		customData2Count_ = state.CustomData2Count;
@@ -5527,7 +5828,7 @@ typedef ::Effekseer::RingRenderer::NodeParameter efkRingNodeParam;
 typedef ::Effekseer::RingRenderer::InstanceParameter efkRingInstanceParam;
 typedef ::Effekseer::Vec3f efkVector3D;
 
-template <typename RENDERER, typename VERTEX_NORMAL, typename VERTEX_DISTORTION>
+template <typename RENDERER, bool FLIP_RGB_FLAG>
 class RingRendererBase : public ::Effekseer::RingRenderer, public ::Effekseer::AlignedAllocationPolicy<16>
 {
 protected:
@@ -5572,21 +5873,35 @@ protected:
 						   const StandardRendererState& state,
 						   const ::Effekseer::Mat44f& camera)
 	{
+		bool isAdvanced = state.IsAdvanced();
+
 		if (state.MaterialPtr != nullptr && !state.MaterialPtr->IsSimpleVertex)
 		{
-			Rendering_Internal<DynamicVertex>(param, inst, nullptr, camera);
+			Rendering_Internal<DynamicVertex, FLIP_RGB_FLAG>(param, inst, nullptr, camera);
+		}
+		else if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::Lighting && isAdvanced)
+		{
+			Rendering_Internal<AdvancedLightingVertex, FLIP_RGB_FLAG>(param, inst, nullptr, camera);
+		}
+		else if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::BackDistortion && isAdvanced)
+		{
+			Rendering_Internal<AdvancedVertexDistortion, FLIP_RGB_FLAG>(param, inst, nullptr, camera);
+		}
+		else if (isAdvanced)
+		{
+			Rendering_Internal<AdvancedSimpleVertex, FLIP_RGB_FLAG>(param, inst, nullptr, camera);
 		}
 		else if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::Lighting)
 		{
-			Rendering_Internal<LightingVertex>(param, inst, nullptr, camera);
+			Rendering_Internal<LightingVertex, FLIP_RGB_FLAG>(param, inst, nullptr, camera);
 		}
 		else if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::BackDistortion)
 		{
-			Rendering_Internal<VERTEX_DISTORTION>(param, inst, nullptr, camera);
+			Rendering_Internal<VertexDistortion, FLIP_RGB_FLAG>(param, inst, nullptr, camera);
 		}
 		else
 		{
-			Rendering_Internal<VERTEX_NORMAL>(param, inst, nullptr, camera);
+			Rendering_Internal<SimpleVertex, FLIP_RGB_FLAG>(param, inst, nullptr, camera);
 		}
 	}
 
@@ -5617,7 +5932,6 @@ protected:
 		state.TextureWrap1 = param.BasicParameterPtr->TextureWrap1;
 		state.TextureFilter2 = param.BasicParameterPtr->TextureFilter2;
 		state.TextureWrap2 = param.BasicParameterPtr->TextureWrap2;
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 		state.TextureFilter3 = param.BasicParameterPtr->TextureFilter3;
 		state.TextureWrap3 = param.BasicParameterPtr->TextureWrap3;
 		state.TextureFilter4 = param.BasicParameterPtr->TextureFilter4;
@@ -5649,7 +5963,7 @@ protected:
 		state.EdgeColor[2] = param.BasicParameterPtr->EdgeColor[2];
 		state.EdgeColor[3] = param.BasicParameterPtr->EdgeColor[3];
 		state.EdgeColorScaling = param.BasicParameterPtr->EdgeColorScaling;
-#endif
+		state.IsAlphaCuttoffEnabled = param.BasicParameterPtr->IsAlphaCutoffEnabled;
 
 		state.Distortion = param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::BackDistortion;
 		state.DistortionIntensity = param.BasicParameterPtr->DistortionIntensity;
@@ -5659,14 +5973,12 @@ protected:
 											   param.BasicParameterPtr->MaterialParameterPtr,
 											   param.BasicParameterPtr->Texture1Index,
 											   param.BasicParameterPtr->Texture2Index
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 											   ,
 											   param.BasicParameterPtr->Texture3Index,
 											   param.BasicParameterPtr->Texture4Index,
 											   param.BasicParameterPtr->Texture5Index,
 											   param.BasicParameterPtr->Texture6Index,
 											   param.BasicParameterPtr->Texture7Index
-#endif
 		);
 
 		customData1Count_ = state.CustomData1Count;
@@ -5699,40 +6011,12 @@ protected:
 		}
 	}
 
-	enum class VertexType
-	{
-		Normal,
-		Distortion,
-		Dynamic,
-		Lighting,
-	};
-
-	VertexType GetVertexType(const VERTEX_NORMAL* v)
-	{
-		return VertexType::Normal;
-	}
-
-	VertexType GetVertexType(const VERTEX_DISTORTION* v)
-	{
-		return VertexType::Distortion;
-	}
-
-	VertexType GetVertexType(const DynamicVertex* v)
-	{
-		return VertexType::Dynamic;
-	}
-
-	VertexType GetVertexType(const LightingVertex* v)
-	{
-		return VertexType::Lighting;
-	}
-
 	bool CanSingleRendering()
 	{
 		return m_instanceCount <= 1 && materialType_ == ::Effekseer::RendererMaterialType::Default;
 	}
 
-	template <typename VERTEX>
+	template <typename VERTEX, bool FLIP_RGB>
 	void Rendering_Internal(const efkRingNodeParam& parameter,
 							const efkRingInstanceParam& instanceParameter,
 							void* userData,
@@ -5748,7 +6032,6 @@ protected:
 			Effekseer::Vec3f R;
 			Effekseer::Vec3f F;
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 			if (parameter.EnableViewOffset)
 			{
 				Effekseer::Mat43f instMat = instanceParameter.SRTMatrix43;
@@ -5761,9 +6044,6 @@ protected:
 			{
 				CalcBillboard(parameter.Billboard, mat43, s, R, F, instanceParameter.SRTMatrix43, m_renderer->GetCameraFrontDirection());
 			}
-#else
-			CalcBillboard(parameter.Billboard, mat43, s, R, F, instanceParameter.SRTMatrix43, m_renderer->GetCameraFrontDirection());
-#endif
 
 			ApplyDepthParameters(mat43,
 								 m_renderer->GetCameraFrontDirection(),
@@ -5785,12 +6065,10 @@ protected:
 		{
 			mat43 = instanceParameter.SRTMatrix43;
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 			if (parameter.EnableViewOffset)
 			{
 				ApplyViewOffset(mat43, camera, instanceParameter.ViewOffsetDistance);
 			}
-#endif
 
 			ApplyDepthParameters(mat43,
 								 m_renderer->GetCameraFrontDirection(),
@@ -5803,8 +6081,6 @@ protected:
 		// Vertex* verteies = (Vertex*)m_renderer->GetVertexBuffer()->GetBufferDirect( sizeof(Vertex) * vertexCount );
 
 		StrideView<VERTEX> verteies(m_ringBufferData, stride_, singleVertexCount);
-		auto vertexType = GetVertexType((VERTEX*)m_ringBufferData);
-
 		const float circleAngleDegree = (instanceParameter.ViewingAngleEnd - instanceParameter.ViewingAngleStart);
 		const float stepAngleDegree = circleAngleDegree / (parameter.VertexCount);
 		const float stepAngle = (stepAngleDegree) / 180.0f * 3.141592f;
@@ -5854,7 +6130,6 @@ protected:
 		const float uv1v3 = uv1v1 + 1.0f;
 		float uv1texNext = 0.0f;
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 		const int32_t advancedUVNum = 5;
 
 		float advancedUVCurrent[advancedUVNum] =
@@ -5898,7 +6173,6 @@ protected:
 			advancedUVv1[4] + instanceParameter.BlendUVDistortionUV.Height
 		};
 		float advancedUVtexNext[advancedUVNum] = { 0.0f };
-#endif
 
 		::Effekseer::Vec3f outerNext, innerNext, centerNext;
 
@@ -5949,40 +6223,39 @@ protected:
 
 			StrideView<VERTEX> v(&verteies[i], stride_, 8);
 			v[0].Pos = ToStruct(outerCurrent);
-			v[0].SetColor(outerColor);
+			v[0].SetColor(outerColor, FLIP_RGB);
 			v[0].UV[0] = uv0Current;
 			v[0].UV[1] = uv0v1;
 
 			v[1].Pos = ToStruct(centerCurrent);
-			v[1].SetColor(centerColor);
+			v[1].SetColor(centerColor, FLIP_RGB);
 			v[1].UV[0] = uv0Current;
 			v[1].UV[1] = uv0v2;
 
 			v[2].Pos = ToStruct(outerNext);
-			v[2].SetColor(outerColorNext);
+			v[2].SetColor(outerColorNext, FLIP_RGB);
 			v[2].UV[0] = uv0texNext;
 			v[2].UV[1] = uv0v1;
 
 			v[3].Pos = ToStruct(centerNext);
-			v[3].SetColor(centerColorNext);
+			v[3].SetColor(centerColorNext, FLIP_RGB);
 			v[3].UV[0] = uv0texNext;
 			v[3].UV[1] = uv0v2;
 
 			v[4] = v[1];
 
 			v[5].Pos = ToStruct(innerCurrent);
-			v[5].SetColor(innerColor);
+			v[5].SetColor(innerColor, FLIP_RGB);
 			v[5].UV[0] = uv0Current;
 			v[5].UV[1] = uv0v3;
 
 			v[6] = v[3];
 
 			v[7].Pos = ToStruct(innerNext);
-			v[7].SetColor(innerColorNext);
+			v[7].SetColor(innerColorNext, FLIP_RGB);
 			v[7].UV[0] = uv0texNext;
 			v[7].UV[1] = uv0v3;
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 			for (int32_t uvi = 0; uvi < advancedUVNum; uvi++)
 			{
 				advancedUVtexNext[uvi] = advancedUVCurrent[uvi] + advancedUVStep[uvi];
@@ -6063,14 +6336,13 @@ protected:
 				v[vi].SetFlipbookIndexAndNextRate(instanceParameter.FlipbookIndexAndNextRate);
 				v[vi].SetAlphaThreshold(instanceParameter.AlphaThreshold);
 			}
-#endif
 
 			// distortion
-			if (vertexType == VertexType::Distortion)
+			if (IsDistortionVertex<VERTEX>())
 			{
-				StrideView<VERTEX_DISTORTION> vs(&verteies[i], stride_, 8);
-				auto binormalCurrent = v[5].Pos - v[0].Pos;
-				auto binormalNext = v[7].Pos - v[2].Pos;
+				StrideView<VERTEX> vs(&verteies[i], stride_, 8);
+				const auto binormalCurrent = ToStruct(v[5].Pos - v[0].Pos);
+				const auto binormalNext = ToStruct(v[7].Pos - v[2].Pos);
 
 				// return back
 				float t_b;
@@ -6091,28 +6363,28 @@ protected:
 				::Effekseer::Vec3f tangent1 = (outerNext - outerCurrent).Normalize();
 				::Effekseer::Vec3f tangent2 = (outerNN - outerNext).Normalize();
 
-				auto tangentCurrent = (tangent0 + tangent1) / 2.0f;
-				auto tangentNext = (tangent1 + tangent2) / 2.0f;
+				const auto tangentCurrent = ToStruct((tangent0 + tangent1) / 2.0f);
+				const auto tangentNext = ToStruct((tangent1 + tangent2) / 2.0f);
 
-				vs[0].Tangent = ToStruct(tangentCurrent);
-				vs[0].Binormal = ToStruct(binormalCurrent);
-				vs[1].Tangent = ToStruct(tangentCurrent);
-				vs[1].Binormal = ToStruct(binormalCurrent);
-				vs[2].Tangent = ToStruct(tangentNext);
-				vs[2].Binormal = ToStruct(binormalNext);
-				vs[3].Tangent = ToStruct(tangentNext);
-				vs[3].Binormal = ToStruct(binormalNext);
+				vs[0].SetTangent(tangentCurrent);
+				vs[0].SetBinormal(binormalCurrent);
+				vs[1].SetTangent(tangentCurrent);
+				vs[1].SetBinormal(binormalCurrent);
+				vs[2].SetTangent(tangentNext);
+				vs[2].SetBinormal(binormalNext);
+				vs[3].SetTangent(tangentNext);
+				vs[3].SetBinormal(binormalNext);
 
-				vs[4].Tangent = ToStruct(tangentCurrent);
-				vs[4].Binormal = ToStruct(binormalCurrent);
-				vs[5].Tangent = ToStruct(tangentCurrent);
-				vs[5].Binormal = ToStruct(binormalCurrent);
-				vs[6].Tangent = ToStruct(tangentNext);
-				vs[6].Binormal = ToStruct(binormalNext);
-				vs[7].Tangent = ToStruct(tangentNext);
-				vs[7].Binormal = ToStruct(binormalNext);
+				vs[4].SetTangent(tangentCurrent);
+				vs[4].SetBinormal(binormalCurrent);
+				vs[5].SetTangent(tangentCurrent);
+				vs[5].SetBinormal(binormalCurrent);
+				vs[6].SetTangent(tangentNext);
+				vs[6].SetBinormal(binormalNext);
+				vs[7].SetTangent(tangentNext);
+				vs[7].SetBinormal(binormalNext);
 			}
-			else if (vertexType == VertexType::Dynamic || vertexType == VertexType::Lighting)
+			else if (IsDynamicVertex<VERTEX>() || IsLightingVertex<VERTEX>())
 			{
 				StrideView<VERTEX> vs(&verteies[i], stride_, 8);
 
@@ -6217,12 +6489,11 @@ protected:
 			centerCurrent = centerNext;
 			uv0Current = uv0texNext;
 			uv1Current = uv1texNext;
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 			for (int32_t uvi = 0; uvi < advancedUVNum; uvi++)
 			{
 				advancedUVCurrent[uvi] = advancedUVtexNext[uvi];
 			}
-#endif
+
 			outerColor = outerColorNext;
 			innerColor = innerColorNext;
 			centerColor = centerColorNext;
@@ -6363,7 +6634,7 @@ typedef ::Effekseer::SpriteRenderer::NodeParameter efkSpriteNodeParam;
 typedef ::Effekseer::SpriteRenderer::InstanceParameter efkSpriteInstanceParam;
 typedef ::Effekseer::Vec3f efkVector3D;
 
-template <typename RENDERER, typename VERTEX_NORMAL, typename VERTEX_DISTORTION>
+template <typename RENDERER, bool FLIP_RGB_FLAG>
 class SpriteRendererBase : public ::Effekseer::SpriteRenderer, public ::Effekseer::AlignedAllocationPolicy<16>
 {
 protected:
@@ -6403,21 +6674,36 @@ protected:
 						   const StandardRendererState& state,
 						   const ::Effekseer::Mat44f& camera)
 	{
+
+		bool isAdvanced = state.IsAdvanced();
+
 		if (state.MaterialPtr != nullptr && !state.MaterialPtr->IsSimpleVertex)
 		{
-			Rendering_Internal<DynamicVertex>(param, inst, nullptr, camera);
+			Rendering_Internal<DynamicVertex, FLIP_RGB_FLAG>(param, inst, nullptr, camera);
+		}
+		else if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::Lighting && isAdvanced)
+		{
+			Rendering_Internal<AdvancedLightingVertex, FLIP_RGB_FLAG>(param, inst, nullptr, camera);
+		}
+		else if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::BackDistortion && isAdvanced)
+		{
+			Rendering_Internal<AdvancedVertexDistortion, FLIP_RGB_FLAG>(param, inst, nullptr, camera);
+		}
+		else if (isAdvanced)
+		{
+			Rendering_Internal<AdvancedSimpleVertex, FLIP_RGB_FLAG>(param, inst, nullptr, camera);
 		}
 		else if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::Lighting)
 		{
-			Rendering_Internal<LightingVertex>(param, inst, nullptr, camera);
+			Rendering_Internal<LightingVertex, FLIP_RGB_FLAG>(param, inst, nullptr, camera);
 		}
 		else if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::BackDistortion)
 		{
-			Rendering_Internal<VERTEX_DISTORTION>(param, inst, nullptr, camera);
+			Rendering_Internal<VertexDistortion, FLIP_RGB_FLAG>(param, inst, nullptr, camera);
 		}
 		else
 		{
-			Rendering_Internal<VERTEX_NORMAL>(param, inst, nullptr, camera);
+			Rendering_Internal<SimpleVertex, FLIP_RGB_FLAG>(param, inst, nullptr, camera);
 		}
 	}
 
@@ -6432,7 +6718,6 @@ protected:
 		state.TextureWrap1 = param.BasicParameterPtr->TextureWrap1;
 		state.TextureFilter2 = param.BasicParameterPtr->TextureFilter2;
 		state.TextureWrap2 = param.BasicParameterPtr->TextureWrap2;
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 		state.TextureFilter3 = param.BasicParameterPtr->TextureFilter3;
 		state.TextureWrap3 = param.BasicParameterPtr->TextureWrap3;
 		state.TextureFilter4 = param.BasicParameterPtr->TextureFilter4;
@@ -6464,7 +6749,7 @@ protected:
 		state.EdgeColor[2] = param.BasicParameterPtr->EdgeColor[2];
 		state.EdgeColor[3] = param.BasicParameterPtr->EdgeColor[3];
 		state.EdgeColorScaling = param.BasicParameterPtr->EdgeColorScaling;
-#endif
+		state.IsAlphaCuttoffEnabled = param.BasicParameterPtr->IsAlphaCutoffEnabled;
 
 		state.Distortion = param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::BackDistortion;
 		state.DistortionIntensity = param.BasicParameterPtr->DistortionIntensity;
@@ -6474,14 +6759,12 @@ protected:
 											   param.BasicParameterPtr->MaterialParameterPtr,
 											   param.BasicParameterPtr->Texture1Index,
 											   param.BasicParameterPtr->Texture2Index
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 											   ,
 											   param.BasicParameterPtr->Texture3Index,
 											   param.BasicParameterPtr->Texture4Index,
 											   param.BasicParameterPtr->Texture5Index,
 											   param.BasicParameterPtr->Texture6Index,
 											   param.BasicParameterPtr->Texture7Index
-#endif
 		);
 		customData1Count_ = state.CustomData1Count;
 		customData2Count_ = state.CustomData2Count;
@@ -6516,35 +6799,7 @@ protected:
 		}
 	}
 
-	enum class VertexType
-	{
-		Normal,
-		Distortion,
-		Dynamic,
-		Lightning,
-	};
-
-	VertexType GetVertexType(const VERTEX_NORMAL* v)
-	{
-		return VertexType::Normal;
-	}
-
-	VertexType GetVertexType(const VERTEX_DISTORTION* v)
-	{
-		return VertexType::Distortion;
-	}
-
-	VertexType GetVertexType(const DynamicVertex* v)
-	{
-		return VertexType::Dynamic;
-	}
-
-	VertexType GetVertexType(const LightingVertex* v)
-	{
-		return VertexType::Lightning;
-	}
-
-	template <typename VERTEX>
+	template <typename VERTEX, bool FLIP_RGB>
 	void Rendering_Internal(const efkSpriteNodeParam& parameter,
 							const efkSpriteInstanceParam& instanceParameter,
 							void* userData,
@@ -6555,20 +6810,16 @@ protected:
 
 		StrideView<VERTEX> verteies(m_ringBufferData, stride_, 4);
 
-		auto vertexType = GetVertexType((VERTEX*)m_ringBufferData);
-
 		for (int i = 0; i < 4; i++)
 		{
 			verteies[i].Pos.X = instanceParameter.Positions[i].GetX();
 			verteies[i].Pos.Y = instanceParameter.Positions[i].GetY();
 			verteies[i].Pos.Z = 0.0f;
 
-			verteies[i].SetColor(instanceParameter.Colors[i]);
+			verteies[i].SetColor(instanceParameter.Colors[i], FLIP_RGB);
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 			verteies[i].SetFlipbookIndexAndNextRate(instanceParameter.FlipbookIndexAndNextRate);
 			verteies[i].SetAlphaThreshold(instanceParameter.AlphaThreshold);
-#endif
 		}
 
 		verteies[0].UV[0] = instanceParameter.UV.X;
@@ -6583,7 +6834,6 @@ protected:
 		verteies[3].UV[0] = instanceParameter.UV.X + instanceParameter.UV.Width;
 		verteies[3].UV[1] = instanceParameter.UV.Y;
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 		verteies[0].SetAlphaUV(instanceParameter.AlphaUV.X, 0);
 		verteies[0].SetAlphaUV(instanceParameter.AlphaUV.Y + instanceParameter.AlphaUV.Height, 1);
 
@@ -6643,23 +6893,18 @@ protected:
 
 		verteies[3].SetBlendUVDistortionUV(instanceParameter.BlendUVDistortionUV.X + instanceParameter.BlendUVDistortionUV.Width, 0);
 		verteies[3].SetBlendUVDistortionUV(instanceParameter.BlendUVDistortionUV.Y, 1);
-#endif
 
 		// distortion
-		if (vertexType == VertexType::Distortion)
+		if (IsDistortionVertex<VERTEX>())
 		{
-			StrideView<VERTEX_DISTORTION> vs(verteies.pointerOrigin_, stride_, 4);
+			StrideView<VertexDistortion> vs(verteies.pointerOrigin_, stride_, 4);
 			for (auto i = 0; i < 4; i++)
 			{
-				vs[i].Tangent.X = 1.0f;
-				vs[i].Tangent.Y = 0.0f;
-				vs[i].Tangent.Z = 0.0f;
-				vs[i].Binormal.X = 0.0f;
-				vs[i].Binormal.Y = 1.0f;
-				vs[i].Binormal.Z = 0.0f;
+				vs[i].SetTangent(Effekseer::Vector3D(1.0f, 0.0f, 0.0f));
+				vs[i].SetBinormal(Effekseer::Vector3D(0.0f, 1.0f, 0.0f));
 			}
 		}
-		else if (vertexType == VertexType::Lightning || vertexType == VertexType::Dynamic)
+		else if (IsLightingVertex<VERTEX>() || IsDynamicVertex<VERTEX>())
 		{
 			StrideView<VERTEX> vs(verteies.pointerOrigin_, stride_, 4);
 			vs[0].SetUV2(0.0f, 1.0f);
@@ -6677,22 +6922,18 @@ protected:
 			Effekseer::Vec3f R;
 			Effekseer::Vec3f F;
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 			if (parameter.EnableViewOffset == true)
 			{
 				Effekseer::Mat43f instMat = instanceParameter.SRTMatrix43;
 
 				ApplyViewOffset(instMat, camera, instanceParameter.ViewOffsetDistance);
-				
+
 				CalcBillboard(parameter.Billboard, mat_rot, s, R, F, instMat, m_renderer->GetCameraFrontDirection());
 			}
 			else
 			{
 				CalcBillboard(parameter.Billboard, mat_rot, s, R, F, instanceParameter.SRTMatrix43, m_renderer->GetCameraFrontDirection());
 			}
-#else
-			CalcBillboard(parameter.Billboard, mat_rot, s, R, F, instanceParameter.SRTMatrix43, m_renderer->GetCameraFrontDirection());
-#endif
 
 			for (int i = 0; i < 4; i++)
 			{
@@ -6709,7 +6950,7 @@ protected:
 
 			TransformVertexes(verteies, 4, mat_rot);
 
-			if (vertexType == VertexType::Dynamic || vertexType == VertexType::Lightning)
+			if (IsDynamicVertex<VERTEX>() || IsLightingVertex<VERTEX>())
 			{
 				if (!parameter.IsRightHand)
 				{
@@ -6728,12 +6969,10 @@ protected:
 		{
 			auto mat = instanceParameter.SRTMatrix43;
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 			if (parameter.EnableViewOffset == true)
 			{
 				ApplyViewOffset(mat, camera, instanceParameter.ViewOffsetDistance);
 			}
-#endif
 
 			ApplyDepthParameters(mat,
 								 m_renderer->GetCameraFrontDirection(),
@@ -6748,21 +6987,18 @@ protected:
 				::Effekseer::Vec3f::Store(&verteies[i].Pos, Pos);
 
 				// distortion
-				if (vertexType == VertexType::Distortion)
+				if (IsDistortionVertex<VERTEX>())
 				{
-					auto vs = (VERTEX_DISTORTION*)&verteies[i];
+					auto vs = (VertexDistortion*)&verteies[i];
+					auto tangentX = efkVector3D(mat.X.GetX(), mat.Y.GetX(), mat.Z.GetX());
+					auto tangentY = efkVector3D(mat.X.GetY(), mat.Y.GetY(), mat.Z.GetY());
+					tangentX = tangentX.Normalize();
+					tangentY = tangentY.Normalize();
 
-					::Effekseer::Vec3f t = mat.GetTranslation();
-
-					auto Tangent = ::Effekseer::Vec3f::Load(&vs->Tangent);
-					Tangent = ::Effekseer::Vec3f::Transform(Tangent, mat) - t;
-					::Effekseer::Vec3f::Store(&vs->Tangent, Tangent);
-
-					auto Binormal = ::Effekseer::Vec3f::Load(&vs->Binormal);
-					Binormal = ::Effekseer::Vec3f::Transform(Binormal, mat) - t;
-					::Effekseer::Vec3f::Store(&vs->Binormal, Binormal);
+					verteies[i].SetTangent(ToStruct(tangentX));
+					verteies[i].SetBinormal(ToStruct(tangentY));
 				}
-				else if (vertexType == VertexType::Dynamic || vertexType == VertexType::Lightning)
+				else if (IsDynamicVertex<VERTEX>() || IsLightingVertex<VERTEX>())
 				{
 					StrideView<VERTEX> vs(verteies.pointerOrigin_, stride_, 4);
 					auto tangentX = efkVector3D(mat.X.GetX(), mat.Y.GetX(), mat.Z.GetX());
@@ -6893,7 +7129,7 @@ typedef ::Effekseer::TrackRenderer::NodeParameter efkTrackNodeParam;
 typedef ::Effekseer::TrackRenderer::InstanceParameter efkTrackInstanceParam;
 typedef ::Effekseer::Vec3f efkVector3D;
 
-template <typename RENDERER, typename VERTEX_NORMAL, typename VERTEX_DISTORTION>
+template <typename RENDERER, bool FLIP_RGB_FLAG>
 class TrackRendererBase : public ::Effekseer::TrackRenderer, public ::Effekseer::AlignedAllocationPolicy<16>
 {
 protected:
@@ -6912,34 +7148,6 @@ protected:
 
 	int32_t customData1Count_ = 0;
 	int32_t customData2Count_ = 0;
-
-	enum class VertexType
-	{
-		Normal,
-		Distortion,
-		Dynamic,
-		Lighting,
-	};
-
-	VertexType GetVertexType(const VERTEX_NORMAL* v)
-	{
-		return VertexType::Normal;
-	}
-
-	VertexType GetVertexType(const VERTEX_DISTORTION* v)
-	{
-		return VertexType::Distortion;
-	}
-
-	VertexType GetVertexType(const DynamicVertex* v)
-	{
-		return VertexType::Dynamic;
-	}
-
-	VertexType GetVertexType(const LightingVertex* v)
-	{
-		return VertexType::Lighting;
-	}
 
 	template <typename VERTEX, int TARGET>
 	void AssignUV(StrideView<VERTEX>& v, float uvX1, float uvX2, float uvX3, float uvY1, float uvY2)
@@ -6970,7 +7178,6 @@ protected:
 			v[7].UV[0] = uvX3;
 			v[7].UV[1] = uvY2;
 		}
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 		else if (TARGET == 1)
 		{
 			v[0].UV2[0] = uvX1;
@@ -7127,34 +7334,6 @@ protected:
 			v[7].SetBlendUVDistortionUV(uvX3, 0);
 			v[7].SetBlendUVDistortionUV(uvY2, 1);
 		}
-#else
-		else
-		{
-			v[0].UV2[0] = uvX1;
-			v[0].UV2[1] = uvY1;
-
-			v[1].UV2[0] = uvX2;
-			v[1].UV2[1] = uvY1;
-
-			v[4].UV2[0] = uvX2;
-			v[4].UV2[1] = uvY1;
-
-			v[5].UV2[0] = uvX3;
-			v[5].UV2[1] = uvY1;
-
-			v[2].UV2[0] = uvX1;
-			v[2].UV2[1] = uvY2;
-
-			v[3].UV2[0] = uvX2;
-			v[3].UV2[1] = uvY2;
-
-			v[6].UV2[0] = uvX2;
-			v[6].UV2[1] = uvY2;
-
-			v[7].UV2[0] = uvX3;
-			v[7].UV2[1] = uvY2;
-		}
-#endif
 	}
 
 	template <typename VERTEX, int TARGET>
@@ -7178,7 +7357,6 @@ protected:
 					uvy = param.UV.Y;
 					uvh = param.UV.Height;
 				}
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 				else if (TARGET == 2)
 				{
 					uvx = param.AlphaUV.X;
@@ -7214,7 +7392,6 @@ protected:
 					uvy = param.BlendUVDistortionUV.Y;
 					uvh = param.BlendUVDistortionUV.Height;
 				}
-#endif
 
 				for (int32_t sploop = 0; sploop < parameter.SplineDivision; sploop++)
 				{
@@ -7251,7 +7428,6 @@ protected:
 					uvy = param.UV.Y;
 					uvh = param.UV.Height;
 				}
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 				else if (TARGET == 2)
 				{
 					uvx = param.AlphaUV.X;
@@ -7287,7 +7463,6 @@ protected:
 					uvy = param.BlendUVDistortionUV.Y;
 					uvh = param.BlendUVDistortionUV.Height;
 				}
-#endif
 
 				if (loop < uvParam.TileEdgeTail)
 				{
@@ -7370,7 +7545,7 @@ protected:
 		}
 	}
 
-	template <typename VERTEX>
+	template <typename VERTEX, bool FLIP_RGB>
 	void RenderSplines(const ::Effekseer::Mat44f& camera)
 	{
 		if (instances.size() == 0)
@@ -7379,8 +7554,6 @@ protected:
 		}
 
 		auto& parameter = innstancesNodeParam;
-
-		auto vertexType = GetVertexType((VERTEX*)m_ringBufferData);
 
 		// Calculate spline
 		if (parameter.SplineDivision > 1)
@@ -7394,12 +7567,10 @@ protected:
 
 				auto mat = param.SRTMatrix43;
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 				if (parameter.EnableViewOffset == true)
 				{
 					ApplyViewOffset(mat, camera, param.ViewOffsetDistance);
 				}
-#endif
 
 				ApplyDepthParameters(mat,
 									 m_renderer->GetCameraFrontDirection(),
@@ -7425,12 +7596,10 @@ protected:
 			{
 				auto mat = param.SRTMatrix43;
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 				if (parameter.EnableViewOffset == true)
 				{
 					ApplyViewOffset(mat, camera, param.ViewOffsetDistance);
 				}
-#endif
 
 				::Effekseer::Vec3f s;
 				::Effekseer::Mat43f r;
@@ -7520,19 +7689,18 @@ protected:
 				v[0].Pos.X = (-size / 2.0f) * s.GetX();
 				v[0].Pos.Y = 0.0f;
 				v[0].Pos.Z = 0.0f;
-				v[0].SetColor(leftColor);
+				v[0].SetColor(leftColor, FLIP_RGB);
 
 				v[1].Pos.X = 0.0f;
 				v[1].Pos.Y = 0.0f;
 				v[1].Pos.Z = 0.0f;
-				v[1].SetColor(centerColor);
+				v[1].SetColor(centerColor, FLIP_RGB);
 
 				v[2].Pos.X = (size / 2.0f) * s.GetX();
 				v[2].Pos.Y = 0.0f;
 				v[2].Pos.Z = 0.0f;
-				v[2].SetColor(rightColor);
+				v[2].SetColor(rightColor, FLIP_RGB);
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 				v[0].SetFlipbookIndexAndNextRate(param.FlipbookIndexAndNextRate);
 				v[1].SetFlipbookIndexAndNextRate(param.FlipbookIndexAndNextRate);
 				v[2].SetFlipbookIndexAndNextRate(param.FlipbookIndexAndNextRate);
@@ -7540,7 +7708,6 @@ protected:
 				v[0].SetAlphaThreshold(param.AlphaThreshold);
 				v[1].SetAlphaThreshold(param.AlphaThreshold);
 				v[2].SetAlphaThreshold(param.AlphaThreshold);
-#endif
 
 				if (parameter.SplineDivision > 1)
 				{
@@ -7672,26 +7839,25 @@ protected:
 				vm.Pos = ToStruct(pos);
 				vr.Pos = ToStruct(-R * vr.Pos.X + pos);
 
-				if (vertexType == VertexType::Distortion)
+				if (IsDistortionVertex<VERTEX>())
 				{
-					auto vl_ = (VERTEX_DISTORTION*)(&vl);
-					auto vm_ = (VERTEX_DISTORTION*)(&vm);
-					auto vr_ = (VERTEX_DISTORTION*)(&vr);
+					const auto binormalVector = ToStruct(axis);
+					vl.SetBinormal(binormalVector);
+					vm.SetBinormal(binormalVector);
+					vr.SetBinormal(binormalVector);
 
-					vl_->Binormal = vm_->Binormal = vr_->Binormal = ToStruct(axis);
-
-					::Effekseer::Vec3f tangent = vl_->Pos - vr_->Pos;
+					::Effekseer::Vec3f tangent = vl.Pos - vr.Pos;
 					tangent.Normalize();
 
-					vl_->Tangent = vm_->Tangent = vr_->Tangent = ToStruct(tangent);
-				}
-				else if (vertexType == VertexType::Dynamic || vertexType == VertexType::Lighting)
-				{
-					auto vl_ = (&vl);
-					auto vm_ = (&vm);
-					auto vr_ = (&vr);
+					const auto tangentVector = ToStruct(tangent);
 
-					::Effekseer::Vec3f tangent = SafeNormalize(Effekseer::Vec3f(vl_->Pos - vr_->Pos));
+					vl.SetTangent(tangentVector);
+					vm.SetTangent(tangentVector);
+					vr.SetTangent(tangentVector);
+				}
+				else if (IsDynamicVertex<VERTEX>() || IsLightingVertex<VERTEX>())
+				{
+					::Effekseer::Vec3f tangent = SafeNormalize(Effekseer::Vec3f(vl.Pos - vr.Pos));
 					Effekseer::Vec3f normal = SafeNormalize(Effekseer::Vec3f::Cross(tangent, axis));
 
 					if (!parameter.IsRightHand)
@@ -7702,13 +7868,13 @@ protected:
 					Effekseer::Color normal_ = PackVector3DF(normal);
 					Effekseer::Color tangent_ = PackVector3DF(tangent);
 
-					vl_->SetPackedNormal(normal_);
-					vm_->SetPackedNormal(normal_);
-					vr_->SetPackedNormal(normal_);
+					vl.SetPackedNormal(normal_);
+					vm.SetPackedNormal(normal_);
+					vr.SetPackedNormal(normal_);
 
-					vl_->SetPackedTangent(tangent_);
-					vm_->SetPackedTangent(tangent_);
-					vr_->SetPackedTangent(tangent_);
+					vl.SetPackedTangent(tangent_);
+					vm.SetPackedTangent(tangent_);
+					vr.SetPackedTangent(tangent_);
 				}
 
 				if (isFirst_)
@@ -7747,18 +7913,16 @@ protected:
 		// calculate UV
 		AssignUVs<VERTEX, 0>(parameter, verteies);
 
-		if (vertexType == VertexType::Dynamic || vertexType == VertexType::Lighting)
+		if (IsDynamicVertex<VERTEX>() || IsLightingVertex<VERTEX>())
 		{
 			AssignUVs<VERTEX, 1>(parameter, verteies);
 		}
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 		AssignUVs<VERTEX, 2>(parameter, verteies);
 		AssignUVs<VERTEX, 3>(parameter, verteies);
 		AssignUVs<VERTEX, 4>(parameter, verteies);
 		AssignUVs<VERTEX, 5>(parameter, verteies);
 		AssignUVs<VERTEX, 6>(parameter, verteies);
-#endif
 
 		// custom parameter
 		if (customData1Count_ > 0)
@@ -7821,25 +7985,39 @@ protected:
 	{
 		const auto& state = m_renderer->GetStandardRenderer()->GetState();
 
+		bool isAdvanced = state.IsAdvanced();
+
 		if (state.MaterialPtr != nullptr && !state.MaterialPtr->IsSimpleVertex)
 		{
-			Rendering_Internal<DynamicVertex>(parameter, instanceParameter, userData, camera);
+			Rendering_Internal<DynamicVertex, FLIP_RGB_FLAG>(parameter, instanceParameter, userData, camera);
+		}
+		else if (parameter.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::Lighting && isAdvanced)
+		{
+			Rendering_Internal<AdvancedLightingVertex, FLIP_RGB_FLAG>(parameter, instanceParameter, userData, camera);
+		}
+		else if (parameter.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::BackDistortion && isAdvanced)
+		{
+			Rendering_Internal<AdvancedVertexDistortion, FLIP_RGB_FLAG>(parameter, instanceParameter, userData, camera);
+		}
+		else if (isAdvanced)
+		{
+			Rendering_Internal<AdvancedSimpleVertex, FLIP_RGB_FLAG>(parameter, instanceParameter, userData, camera);
 		}
 		else if (parameter.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::Lighting)
 		{
-			Rendering_Internal<LightingVertex>(parameter, instanceParameter, userData, camera);
+			Rendering_Internal<LightingVertex, FLIP_RGB_FLAG>(parameter, instanceParameter, userData, camera);
 		}
 		else if (parameter.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::BackDistortion)
 		{
-			Rendering_Internal<VERTEX_DISTORTION>(parameter, instanceParameter, userData, camera);
+			Rendering_Internal<VertexDistortion, FLIP_RGB_FLAG>(parameter, instanceParameter, userData, camera);
 		}
 		else
 		{
-			Rendering_Internal<VERTEX_NORMAL>(parameter, instanceParameter, userData, camera);
+			Rendering_Internal<SimpleVertex, FLIP_RGB_FLAG>(parameter, instanceParameter, userData, camera);
 		}
 	}
 
-	template <typename VERTEX>
+	template <typename VERTEX, bool FLIP_RGB>
 	void Rendering_Internal(const efkTrackNodeParam& parameter,
 							const efkTrackInstanceParam& instanceParameter,
 							void* userData,
@@ -7866,7 +8044,7 @@ protected:
 
 		if (isLast)
 		{
-			RenderSplines<VERTEX>(camera);
+			RenderSplines<VERTEX, FLIP_RGB>(camera);
 		}
 	}
 
@@ -7892,7 +8070,6 @@ public:
 		state.TextureWrap1 = param.BasicParameterPtr->TextureWrap1;
 		state.TextureFilter2 = param.BasicParameterPtr->TextureFilter2;
 		state.TextureWrap2 = param.BasicParameterPtr->TextureWrap2;
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 		state.TextureFilter3 = param.BasicParameterPtr->TextureFilter3;
 		state.TextureWrap3 = param.BasicParameterPtr->TextureWrap3;
 		state.TextureFilter4 = param.BasicParameterPtr->TextureFilter4;
@@ -7924,7 +8101,7 @@ public:
 		state.EdgeColor[2] = param.BasicParameterPtr->EdgeColor[2];
 		state.EdgeColor[3] = param.BasicParameterPtr->EdgeColor[3];
 		state.EdgeColorScaling = param.BasicParameterPtr->EdgeColorScaling;
-#endif
+		state.IsAlphaCuttoffEnabled = param.BasicParameterPtr->IsAlphaCutoffEnabled;
 
 		state.Distortion = param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::BackDistortion;
 		state.DistortionIntensity = param.BasicParameterPtr->DistortionIntensity;
@@ -7934,14 +8111,12 @@ public:
 											   param.BasicParameterPtr->MaterialParameterPtr,
 											   param.BasicParameterPtr->Texture1Index,
 											   param.BasicParameterPtr->Texture2Index
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 											   ,
 											   param.BasicParameterPtr->Texture3Index,
 											   param.BasicParameterPtr->Texture4Index,
 											   param.BasicParameterPtr->Texture5Index,
 											   param.BasicParameterPtr->Texture6Index,
 											   param.BasicParameterPtr->Texture7Index
-#endif
 		);
 		customData1Count_ = state.CustomData1Count;
 		customData2Count_ = state.CustomData2Count;

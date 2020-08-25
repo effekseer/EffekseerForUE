@@ -16,9 +16,9 @@ namespace EffekseerRendererUE4
 	class IndexBuffer;
 	class Shader;
 
-	using Vertex = EffekseerRenderer::SimpleVertex;
-	using VertexDistortion = EffekseerRenderer::VertexDistortion;
-	using VertexLighting = EffekseerRenderer::DynamicVertex;	// TODO change it in 1.6
+	using Vertex = EffekseerRenderer::AdvancedSimpleVertex;
+	using VertexDistortion = EffekseerRenderer::AdvancedVertexDistortion;
+	using VertexLighting = EffekseerRenderer::AdvancedLightingVertex;	// TODO change it in 1.6
 
 	typedef ::Effekseer::ModelRenderer::NodeParameter efkModelNodeParam;
 	typedef ::Effekseer::ModelRenderer::InstanceParameter efkModelInstanceParam;
@@ -74,7 +74,7 @@ namespace EffekseerRendererUE4
 
 		float m_distortionIntensity = 0.0f;
 
-		EffekseerRenderer::StandardRenderer<RendererImplemented, Shader, Vertex, VertexDistortion>*	m_standardRenderer = nullptr;
+		EffekseerRenderer::StandardRenderer<RendererImplemented, Shader>*	m_standardRenderer = nullptr;
 	public:
 		
 		static RendererImplemented* Create();
@@ -212,7 +212,7 @@ namespace EffekseerRendererUE4
 
 		IndexBuffer* GetIndexBuffer();
 
-		EffekseerRenderer::StandardRenderer<RendererImplemented, Shader, Vertex, VertexDistortion>* GetStandardRenderer();
+		EffekseerRenderer::StandardRenderer<RendererImplemented, Shader>* GetStandardRenderer();
 
 		::EffekseerRenderer::RenderStateBase* GetRenderState();
 
@@ -243,7 +243,7 @@ namespace EffekseerRendererUE4
 
 		UMaterialInterface* FindMaterial();
 
-		Shader* GetShader(bool useTexture, ::Effekseer::RendererMaterialType) const;
+		Shader* GetShader(::EffekseerRenderer::StandardRendererShaderType) const;
 
 		void BeginShader(Shader* shader);
 		void EndShader(Shader* shader);
