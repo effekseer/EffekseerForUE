@@ -436,7 +436,6 @@ void MaterialLoader::Unload(::Effekseer::MaterialData* data)
 	ES_SAFE_DELETE(data);
 }
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 class CurveLoader 
 	: public Effekseer::CurveLoader
 {
@@ -518,17 +517,13 @@ void CurveLoader::Unload(void* data)
 	}
 }
 
-#endif
-
 static ::Effekseer::Setting* CreateSetting()
 {
 	auto setting = ::Effekseer::Setting::Create();
 	setting->SetTextureLoader(new TextureLoader());
 	setting->SetModelLoader(new ModelLoader());
 	setting->SetMaterialLoader(new MaterialLoader());
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 	setting->SetCurveLoader(new CurveLoader());
-#endif
 	return setting;
 }
 
@@ -546,9 +541,7 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 		this->DistortionTextures.Reset();
 		this->Models.Reset();
 		this->Materials.Reset();
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 		this->Curves.Reset();
-#endif
 	}
 
 	auto textureLoader = (TextureLoader*)setting->GetTextureLoader();
@@ -560,10 +553,8 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 	auto materialLoader = (MaterialLoader*)setting->GetMaterialLoader();
 	materialLoader->SetUObject(this, isResourceReset);
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 	auto curveLoader = (CurveLoader*)setting->GetCurveLoader();
 	curveLoader->SetUObject(this, isResourceReset);
-#endif
 
 	auto rootPath = uPath.c_str();
 	EFK_CHAR parentPath[300];
@@ -581,12 +572,10 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 
 	effectPtr = effect;
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 	if (effect != nullptr)
 	{
 		SetTextureAddressMode(effect->GetRoot());
 	}
-#endif
 
 	// Get information
 	if (effect != nullptr)
@@ -606,13 +595,12 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 			auto modelParam = node->GetEffectModelParameter();
 
 			UTexture2D* texture = nullptr;
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 			UTexture2D* alphaTexture = nullptr;
 			UTexture2D* uvDistortionTexture = nullptr;
 			UTexture2D* blendTexture = nullptr;
 			UTexture2D* blendAlphaTexture = nullptr;
 			UTexture2D* blendUVDistortionTexture = nullptr;
-#endif
+
 			if (param.Distortion)
 			{
 				if (0 <= param.ColorTextureIndex &&
@@ -621,7 +609,6 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 					texture = this->DistortionTextures[param.ColorTextureIndex];
 				}
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 				if (0 <= param.AlphaTextureIndex && param.AlphaTextureIndex < this->DistortionTextures.Num())
 				{
 					alphaTexture = this->DistortionTextures[param.AlphaTextureIndex];
@@ -646,7 +633,6 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 				{
 					blendUVDistortionTexture = this->DistortionTextures[param.BlendUVDistortionTextureIndex];
 				}
-#endif
 			}
 			else
 			{
@@ -656,7 +642,6 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 					texture = this->ColorTextures[param.ColorTextureIndex];
 				}
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 				if (0 <= param.AlphaTextureIndex && param.AlphaTextureIndex < this->ColorTextures.Num())
 				{
 					alphaTexture = this->ColorTextures[param.AlphaTextureIndex];
@@ -681,12 +666,11 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 				{
 					blendUVDistortionTexture = this->ColorTextures[param.BlendUVDistortionTextureIndex];
 				}
-#endif
 			}
 
 			UEffekseerEffectMaterialParameterHolder* mat = NewObject<UEffekseerEffectMaterialParameterHolder>();
 			mat->Texture = texture;
-#ifdef __EFFEKSEER_BUILD_VERSION16__
+
 			mat->TextureAddressType = static_cast<int32>(param.WrapType);
 
 			mat->AlphaTexture = alphaTexture;
@@ -726,14 +710,10 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 			mat->EdgeParams.Color = FLinearColor(param.EdgeParam.Color[0], param.EdgeParam.Color[1], param.EdgeParam.Color[2], param.EdgeParam.Color[3]);
 			mat->EdgeParams.Threshold = param.EdgeParam.Threshold;
 			mat->EdgeParams.ColorScaling = param.EdgeParam.ColorScaling;
-#endif
+
 			mat->IsDepthTestDisabled = !param.ZTest;
 			mat->AlphaBlend = (EEffekseerAlphaBlendType)param.AlphaBlend;
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 			mat->IsLighting = param.MaterialType == ::Effekseer::RendererMaterialType::Lighting;
-#else
-			mat->IsLighting = modelParam.Lighting;
-#endif
 			mat->IsDistorted = param.Distortion;
 
 			this->EffekseerMaterials.Add(mat);
@@ -760,7 +740,6 @@ void UEffekseerEffect::ReleaseEffect()
 	effectPtr = nullptr;
 }
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 void UEffekseerEffect::SetTextureAddressMode(::Effekseer::EffectNode* node)
 {
 	auto SetAtTextureAddressWrap = [](::Effekseer::EffectNode* node, int tex_index, bool is_distotion)
@@ -796,7 +775,6 @@ void UEffekseerEffect::SetTextureAddressMode(::Effekseer::EffectNode* node)
 		SetAtTextureAddressWrap(node, param.AlphaTextureIndex, param.Distortion);
 	}
 }
-#endif
 
 void UEffekseerEffect::Load(const uint8_t* data, int32_t size, const TCHAR* path)
 {

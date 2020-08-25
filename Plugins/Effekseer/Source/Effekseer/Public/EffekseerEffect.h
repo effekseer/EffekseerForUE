@@ -5,18 +5,14 @@
 #include "UObject/Object.h"
 #include "EffekseerModel.h"
 #include "EffekseerMaterial.h"
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 #include "EffekseerCurve.h"
-#endif
 #include "EffekseerAlphaBlendType.h"
 #include "EffekseerEffect.generated.h"
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 namespace Effekseer
 {
 class EffectNode;
 };
-#endif
 
 USTRUCT()
 struct FFlipbookParameters
@@ -153,7 +149,6 @@ public:
 	{
 		return
 			Texture == Other->Texture &&
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 			TextureAddressType == Other->TextureAddressType &&
 			AlphaTexture == Other->AlphaTexture &&
 			AlphaTextureAddressType == Other->AlphaTextureAddressType &&
@@ -166,7 +161,6 @@ public:
 			FlipbookParams == Other->FlipbookParams &&
 			UVDistortionIntensity == Other->UVDistortionIntensity && 
 			TextureBlendType == Other->TextureBlendType &&
-#endif
 			AlphaBlend == Other->AlphaBlend &&
 			IsDepthTestDisabled == Other->IsDepthTestDisabled &&
 			IsLighting == Other->IsLighting &&
@@ -183,7 +177,6 @@ struct EffekseerEffectMaterial
 {
 	UTexture2D*		Texture = nullptr;
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 	UTexture2D*		AlphaTexture = nullptr;
 
 	UTexture2D*		UVDistortionTexture = nullptr;
@@ -193,7 +186,6 @@ struct EffekseerEffectMaterial
 	UTexture2D*		BlendAlphaTexture = nullptr;
 
 	UTexture2D*		BlendUVDistortionTexture = nullptr;
-#endif
 
 	EEffekseerAlphaBlendType	AlphaBlend;
 
@@ -210,7 +202,6 @@ struct EffekseerEffectMaterial
 			return Texture < rhs.Texture;
 		}
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 		if (AlphaTexture != rhs.AlphaTexture)
 		{
 			return AlphaTexture < rhs.AlphaTexture;
@@ -235,7 +226,6 @@ struct EffekseerEffectMaterial
 		{
 			return BlendUVDistortionTexture < rhs.BlendUVDistortionTexture;
 		}
-#endif
 
 		if (AlphaBlend != rhs.AlphaBlend)
 		{
@@ -278,9 +268,7 @@ private:
 	void LoadEffect(const uint8_t* data, int32_t size, const TCHAR* path, bool isResourceReset);
 	void ReleaseEffect();
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 	void SetTextureAddressMode(::Effekseer::EffectNode* node);
-#endif
 
 public:
 	void Load(const uint8_t* data, int32_t size, const TCHAR* path);

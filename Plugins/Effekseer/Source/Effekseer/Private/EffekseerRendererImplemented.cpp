@@ -308,7 +308,7 @@ namespace EffekseerRendererUE4
 	{
 	public:
 		FLinearColor	uv;
-#ifdef __EFFEKSEER_BUILD_VERSION16__
+
 		FLinearColor	alphaUV;
 		FLinearColor	uvDistortionUV;
 		FLinearColor	blendUV;
@@ -316,13 +316,13 @@ namespace EffekseerRendererUE4
 		FLinearColor	blendUVDistortionUV;
 		FLinearColor	flipbookIndexAndNextRate;
 		FLinearColor	alphaThreshold;
-#endif
+
 		FLinearColor	color;
 		float			distortionIntensity;
 		Effekseer::CullingType cullingType_;
 
 		/** Initialization constructor. */
-#ifdef __EFFEKSEER_BUILD_VERSION16__
+
 		FModelMaterialRenderProxy(
 			const FMaterialRenderProxy* InParent,
 			FLinearColor uv,
@@ -348,14 +348,6 @@ namespace EffekseerRendererUE4
 			color(color),
 			distortionIntensity(distortionIntensity),
 			cullingType_(cullingType)
-#else
-		FModelMaterialRenderProxy(const FMaterialRenderProxy* InParent, FLinearColor uv, FLinearColor color, float distortionIntensity, Effekseer::CullingType cullingType) :
-			FCompatibleMaterialRenderProxy(InParent),
-			uv(uv),
-			color(color),
-			distortionIntensity(distortionIntensity),
-			cullingType_(cullingType)
-#endif
 		{}
 
 		const FMaterial* GetParentMaterial(ERHIFeatureLevel::Type InFeatureLevel) const override;
@@ -378,7 +370,6 @@ namespace EffekseerRendererUE4
 			return true;
 		}
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 		if (ParameterInfo.Name == FName(TEXT("AlphaUV")))
 		{
 			*OutValue = alphaUV;
@@ -420,7 +411,6 @@ namespace EffekseerRendererUE4
 			*OutValue = alphaThreshold;
 			return true;
 		}
-#endif
 
 		if (ParameterInfo.Name == FName(TEXT("UserColor")))
 		{
@@ -634,7 +624,6 @@ namespace EffekseerRendererUE4
 				m_renderer->SetDistortionIntensity(parameter.BasicParameterPtr->DistortionIntensity);
 			}
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 			Effekseer::TextureData* textures[7] = { nullptr };
 
 			if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::BackDistortion)
@@ -666,23 +655,8 @@ namespace EffekseerRendererUE4
 			}
 
 			m_renderer->SetTextures(nullptr, textures, 7);
-#else 
-			Effekseer::TextureData* textures[1];
-
-			if (parameter.BasicParameterPtr->Texture1Index >= 0)
-			{
-				textures[0] = parameter.EffectPointer->GetColorImage(parameter.BasicParameterPtr->Texture1Index);
-			}
-			else
-			{
-				textures[0] = nullptr;
-			}
-
-			m_renderer->SetTextures(nullptr, textures, 1);
-#endif
 		}
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 		m_renderer->DrawModel(
 			model, 
 			m_matrixes, 
@@ -698,9 +672,6 @@ namespace EffekseerRendererUE4
 			m_times, 
 			customData1_, 
 			customData2_);
-#else
-		m_renderer->DrawModel(model, m_matrixes, m_uv, m_colors, m_times, customData1_, customData2_);
-#endif
 
 		m_renderer->EndShader(shader);
 
@@ -1081,7 +1052,6 @@ namespace EffekseerRendererUE4
 				Effekseer::Vector3D normal;
 				Effekseer::Vector3D::Cross(normal, v.Binormal, v.Tangent);
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 				FDynamicMeshVertex DynamicVertex;
 				DynamicVertex.Position = FVector(v.Pos.X, v.Pos.Z, v.Pos.Y);
 				DynamicVertex.Color = FColor(v.Col.R, v.Col.G, v.Col.B, v.Col.A);
@@ -1098,13 +1068,6 @@ namespace EffekseerRendererUE4
 				DynamicVertex.TextureCoordinate[6] = FVector2D(v.FlipbookIndexAndNextRate, v.AlphaThreshold);
 
 				meshBuilder.AddVertex(DynamicVertex);
-#else
-				meshBuilder.AddVertex(FVector(v.Pos.X, v.Pos.Z, v.Pos.Y), FVector2D(v.UV[0], v.UV[1]),
-					FVector(v.Binormal.X, v.Binormal.Z, v.Binormal.Y),
-					FVector(v.Tangent.X, v.Tangent.Z, v.Tangent.Y),
-					FVector(normal.X, normal.Z, normal.Y),
-					FColor(v.Col[0], v.Col[1], v.Col[2], v.Col[3]));
-#endif
 			}
 
 			for (int32_t si = 0; si < spriteCount; si++)
@@ -1230,7 +1193,6 @@ namespace EffekseerRendererUE4
 					v.Pos.Z = trans.Values[3][2];
 				}
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 				FDynamicMeshVertex DynamicVertex;
 				DynamicVertex.Position = FVector(v.Pos.X, v.Pos.Z, v.Pos.Y);
 				DynamicVertex.Color = FColor(v.Col.R, v.Col.G, v.Col.B, v.Col.A);
@@ -1244,9 +1206,6 @@ namespace EffekseerRendererUE4
 				DynamicVertex.TextureCoordinate[6] = FVector2D(v.FlipbookIndexAndNextRate, v.AlphaThreshold);
 
 				meshBuilder.AddVertex(DynamicVertex);
-#else
-				meshBuilder.AddVertex(FVector(v.Pos.X, v.Pos.Z, v.Pos.Y), FVector2D(v.UV[0], v.UV[1]), FVector(1, 0, 0), FVector(1, 1, 0), FVector(0, 0, 1), FColor(v.Col[0], v.Col[1], v.Col[2], v.Col[3]));
-#endif				
 			}
 
 			for (int32_t si = 0; si < spriteCount; si++)
@@ -1272,7 +1231,6 @@ namespace EffekseerRendererUE4
 		}
 	}
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 	void RendererImplemented::DrawModel(void* model, 
 				   std::vector<Effekseer::Matrix44>& matrixes, 
 				   std::vector<Effekseer::RectF>& uvs, 
@@ -1287,9 +1245,6 @@ namespace EffekseerRendererUE4
 				   std::vector<int32_t>& times, 
 				   std::vector<std::array<float, 4>>& customData1, 
 				   std::vector<std::array<float, 4>>& customData2)
-#else
-	void RendererImplemented::DrawModel(void* model, std::vector<Effekseer::Matrix44>& matrixes, std::vector<Effekseer::RectF>& uvs, std::vector<Effekseer::Color>& colors, std::vector<int32_t>& times, std::vector<std::array<float, 4>>& customData1, std::vector<std::array<float, 4>>& customData2)
-#endif
 	{
 		// StaticMesh
 		if (model == nullptr) return;
@@ -1312,7 +1267,6 @@ namespace EffekseerRendererUE4
 		{
 			auto& matOrigin = matrixes[objectIndex];
 			auto& uvOrigin = uvs[objectIndex];
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 			auto& alphaUVOrigin = alphaUVs[objectIndex];
 			auto& uvDistortionUVOrigin = uvDistortionUVs[objectIndex];
 			auto& blendUVOrigin = blendUVs[objectIndex];
@@ -1321,7 +1275,6 @@ namespace EffekseerRendererUE4
 
 			auto& flipbookIndexAndNextRate = flipbookIndexAndNextRates[objectIndex];
 			auto& alphaThreshold = alphaThresholds[objectIndex];
-#endif
 			auto& colorOrigin = colors[objectIndex];
 
 			FMatrix matLocalToWorld = FMatrix(
@@ -1332,13 +1285,13 @@ namespace EffekseerRendererUE4
 			);
 
 			FLinearColor uv = FLinearColor(uvOrigin.X, uvOrigin.Y, uvOrigin.Width, uvOrigin.Height);
-#ifdef __EFFEKSEER_BUILD_VERSION16__
+
 			FLinearColor alphaUV = FLinearColor(alphaUVOrigin.X, alphaUVOrigin.Y, alphaUVOrigin.Width, alphaUVOrigin.Height);
 			FLinearColor uvDistortionUV = FLinearColor(uvDistortionUVOrigin.X, uvDistortionUVOrigin.Y, uvDistortionUVOrigin.Width, uvDistortionUVOrigin.Height);
 			FLinearColor blendUV = FLinearColor(blendUVOrigin.X, blendUVOrigin.Y, blendUVOrigin.Width, blendUVOrigin.Height);
 			FLinearColor blendAlphaUV = FLinearColor(blendAlphaUVOrigin.X, blendAlphaUVOrigin.Y, blendAlphaUVOrigin.Width, blendAlphaUVOrigin.Height);
 			FLinearColor blendUVDistortionUV = FLinearColor(blendUVDistortionUVOrigin.X, blendUVDistortionUVOrigin.Y, blendUVDistortionUVOrigin.Width, blendUVDistortionUVOrigin.Height);
-#endif
+
 			FLinearColor color = FLinearColor(colorOrigin.R / 255.0f, colorOrigin.G / 255.0f, colorOrigin.B / 255.0f, colorOrigin.A / 255.0f);
 			int frameTime = times[objectIndex] % mdl->GetFrameCount();
 
@@ -1416,7 +1369,6 @@ namespace EffekseerRendererUE4
 					}
 				else
 				{
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 					proxy = new FModelMaterialRenderProxy(
 						proxy, 
 						uv, 
@@ -1430,9 +1382,6 @@ namespace EffekseerRendererUE4
 						color, 
 						m_distortionIntensity, 
 						m_renderState->GetActiveState().CullingType);
-#else
-					proxy = new FModelMaterialRenderProxy(proxy, uv, color, m_distortionIntensity, m_renderState->GetActiveState().CullingType);
-#endif
 					m_meshElementCollector->RegisterOneFrameMaterialProxy(proxy);
 				}
 
@@ -1498,7 +1447,6 @@ namespace EffekseerRendererUE4
 		m.IsLighting = m_currentShader->GetType() == Effekseer::RendererMaterialType::Lighting;
 		m.IsDistorted = m_currentShader->GetType() == Effekseer::RendererMaterialType::BackDistortion;
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 		if (m.IsLighting || m.IsDistorted)
 		{
 			m.AlphaTexture = (UTexture2D*)textures_[2];
@@ -1515,7 +1463,6 @@ namespace EffekseerRendererUE4
 			m.BlendAlphaTexture = (UTexture2D*)textures_[4];
 			m.BlendUVDistortionTexture = (UTexture2D*)textures_[5];
 		}
-#endif
 
 		UMaterialInstanceDynamic* mat = nullptr;
 

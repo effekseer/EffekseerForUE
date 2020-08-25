@@ -631,7 +631,6 @@ FEffekseerHandle UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVect
 			auto dynamicMaterial = UMaterialInstanceDynamic::Create(mat, this);
 			dynamicMaterial->SetTextureParameterValue(TEXT("ColorTexture"), m->Texture);
 
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 			dynamicMaterial->SetTextureParameterValue(TEXT("AlphaTexture"), m->AlphaTexture);
 			dynamicMaterial->SetTextureParameterValue(TEXT("UVDistortionTexture"), m->UVDistortionTexture);
 			dynamicMaterial->SetTextureParameterValue(TEXT("BlendTexture"), m->BlendTexture);
@@ -664,19 +663,16 @@ FEffekseerHandle UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVect
 			dynamicMaterial->SetVectorParameterValue(TEXT("EdgeColor"), m->EdgeParams.Color);
 			dynamicMaterial->SetScalarParameterValue(TEXT("EdgeThreshold"), m->EdgeParams.Threshold);
 			dynamicMaterial->SetScalarParameterValue(TEXT("EdgeColorScaling"), static_cast<float>(m->EdgeParams.ColorScaling));
-#endif
 
 			Materials.Add(m, dynamicMaterial);
 
 			EffekseerEffectMaterial mkey;
 			mkey.Texture = m->Texture;
-#ifdef __EFFEKSEER_BUILD_VERSION16__
 			mkey.AlphaTexture = m->AlphaTexture;
 			mkey.UVDistortionTexture = m->UVDistortionTexture;
 			mkey.BlendTexture = m->BlendTexture;
 			mkey.BlendAlphaTexture = m->BlendAlphaTexture;
 			mkey.BlendUVDistortionTexture = m->BlendUVDistortionTexture;
-#endif
 			mkey.AlphaBlend = m->AlphaBlend;
 			mkey.IsDepthTestDisabled = m->IsDepthTestDisabled;
 			mkey.IsLighting = m->IsLighting;
