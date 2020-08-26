@@ -226,6 +226,12 @@ EffekseerSystemコンポーネントにEffekseerから接続するためのポ�
 
 ## 更新履歴
 
+### 1.52m or 以降
+
+これを読んでください。
+
+[リリースノート](https://effekseer.github.io/Help_Tool/ja/releasenotes.html)
+
 ### 1.52k (2020/08/13)
 
 - 画像参照ノードのRとGが入れ替わっていた不具合を修正
