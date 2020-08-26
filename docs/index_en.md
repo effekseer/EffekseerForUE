@@ -228,6 +228,12 @@ Materials do not have depth ignoring settings.
 
 ## Release note
 
+### 1.52m or later
+
+Please read it.
+
+[Release notes](https://effekseer.github.io/Help_Tool/en/releasenotes.html)
+
 ### 1.52k (2020/08/13)
 
 - Fixed a bug that Sampler is not supported in a material

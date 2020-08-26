@@ -17846,15 +17846,22 @@ Instance::Instance(Manager* pManager, EffectNode* pEffectNode, InstanceContainer
 	for( int i = 0; i < m_pEffectNode->GetChildrenCount(); i++ )
 	{
 		InstanceContainer* childContainer = m_pContainer->GetChild( i );
+		auto allocated = childContainer->CreateInstanceGroup();
+		
+		// lack of memory 
+		if (allocated == nullptr)
+		{
+			break;
+		}
 
 		if( group != NULL )
 		{
-			group->NextUsedByInstance = childContainer->CreateInstanceGroup();
-			group = group->NextUsedByInstance;
+			group->NextUsedByInstance = allocated;
+			group = allocated;
 		}
 		else
 		{
-			group = childContainer->CreateInstanceGroup();
+			group = allocated;
 			childrenGroups_ = group;
 		}
 	}
@@ -17903,7 +17910,12 @@ bool Instance::IsRequiredToCreateChildren(float currentTime)
 	for (int32_t i = 0; i < parameter->GetChildrenCount(); i++, group = group->NextUsedByInstance)
 	{
 		auto node = (EffectNodeImplemented*)parameter->GetChild(i);
-		assert(group != NULL);
+		
+		// Lack of memory
+		if (group == nullptr)
+		{
+			return false;
+		}
 
 		// GenerationTimeOffset can be minus value.
 		// Minus frame particles is generated simultaniously at frame 0.
@@ -17927,7 +17939,12 @@ void Instance::GenerateChildrenInRequired(float currentTime)
 	for (int32_t i = 0; i < parameter->GetChildrenCount(); i++, group = group->NextUsedByInstance)
 	{
 		auto node = (EffectNodeImplemented*)parameter->GetChild(i);
-		assert(group != NULL);
+
+		if (group == nullptr)
+		{
+			return;
+		}
+
 
 		while (true)
 		{
