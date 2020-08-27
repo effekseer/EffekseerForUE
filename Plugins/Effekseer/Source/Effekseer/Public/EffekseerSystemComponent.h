@@ -39,7 +39,7 @@ public:
 	int32_t	ID = -1;
 	void*	Effect = nullptr;
 	FVector	Position;
-	FRotator	Rotation;
+	FQuat	Rotation;
 	FVector	Scale;
 	FColor	AllColor;
 
@@ -194,7 +194,7 @@ public:
 	void SetEffectPosition(FEffekseerHandle handle, FVector position);
 
 	UFUNCTION(BlueprintCallable, Category = "Control")
-	void SetEffectRotation(FEffekseerHandle handle, FRotator rotation);
+	void SetEffectRotation(FEffekseerHandle handle, FQuat rotation);
 
 	UFUNCTION(BlueprintCallable, Category = "Control")
 	void SetEffectScaling(FEffekseerHandle handle, FVector scaling);
