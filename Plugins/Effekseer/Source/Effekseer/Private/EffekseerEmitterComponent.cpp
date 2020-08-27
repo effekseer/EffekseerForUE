@@ -137,7 +137,7 @@ void UEffekseerEmitterComponent::TickComponent(float DeltaTime, ELevelTick TickT
 			auto transform = GetComponentToWorld();
 
 			system_->SetEffectPosition(handle, transform.GetTranslation());
-			system_->SetEffectRotation(handle, transform.GetRotation().Rotator());
+			system_->SetEffectRotation(handle, transform.GetRotation());
 			system_->SetEffectScaling(handle, transform.GetScale3D());
 
 			ApplyParameters(false);

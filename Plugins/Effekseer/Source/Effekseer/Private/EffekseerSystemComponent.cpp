@@ -230,11 +230,9 @@ public:
 				{
 					auto eid = internalHandle2EfkHandle[cmd.ID];
 					auto rotation = updateData->Commands[i].Rotation;
-					effekseerManager->SetRotation(
-						eid, 
-						rotation.Roll/ 180.0f * 3.1415f, 
-						-rotation.Yaw / 180.0f * 3.1415f,
-						rotation.Pitch / 180.0f * 3.1415f);
+					rotation = FQuat(rotation.X, rotation.Z, rotation.Y, -rotation.W);
+					FVector axis = rotation.GetRotationAxis();
+					effekseerManager->SetRotation(eid, Effekseer::Vector3D(axis.X, axis.Y, axis.Z), rotation.GetAngle());
 				}
 			}
 
@@ -722,7 +720,7 @@ void UEffekseerSystemComponent::SetEffectPosition(FEffekseerHandle handle, FVect
 	currentUpdateData->Commands.Add(cmd);
 }
 
-void UEffekseerSystemComponent::SetEffectRotation(FEffekseerHandle handle, FRotator rotation)
+void UEffekseerSystemComponent::SetEffectRotation(FEffekseerHandle handle, FQuat rotation)
 {
 	if (handle.Effect == nullptr) return;
 
