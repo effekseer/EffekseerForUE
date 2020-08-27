@@ -4,6 +4,7 @@
 #include "AssetTypeActions_EffekseerEffect.h"
 #include "AssetTypeActions_EffekseerModel.h"
 #include "AssetTypeActions_EffekseerMaterial.h"
+#include "AssetTypeActions_EffekseerCurve.h"
 
 class FEffekseerEd : public IEffekseerEd
 {
@@ -13,6 +14,7 @@ class FEffekseerEd : public IEffekseerEd
 	TSharedPtr<FAssetTypeActions_EffekseerEffect> EffekseerEffect_AssetTypeActions;
 	TSharedPtr<FAssetTypeActions_EffekseerModel> EffekseerModel_AssetTypeActions;
 	TSharedPtr<FAssetTypeActions_EffekseerMaterial> EffekseerMaterial_AssetTypeActions;
+	TSharedPtr<FAssetTypeActions_EffekseerCurve> EffekseerCurve_AssetTypeActions;
 };
 
 IMPLEMENT_MODULE( FEffekseerEd, EffekseerEd)
@@ -22,6 +24,7 @@ void FEffekseerEd::StartupModule()
 	EffekseerEffect_AssetTypeActions = MakeShareable(new FAssetTypeActions_EffekseerEffect);
 	EffekseerModel_AssetTypeActions = MakeShareable(new FAssetTypeActions_EffekseerModel);
 	EffekseerMaterial_AssetTypeActions = MakeShareable(new FAssetTypeActions_EffekseerMaterial);
+	EffekseerCurve_AssetTypeActions = MakeShareable(new FAssetTypeActions_EffekseerCurve);
 
 	FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools").Get()
 		.RegisterAssetTypeActions(EffekseerEffect_AssetTypeActions.ToSharedRef());
@@ -31,6 +34,9 @@ void FEffekseerEd::StartupModule()
 
 	FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools").Get()
 		.RegisterAssetTypeActions(EffekseerMaterial_AssetTypeActions.ToSharedRef());
+
+	FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools").Get()
+		.RegisterAssetTypeActions(EffekseerCurve_AssetTypeActions.ToSharedRef());
 }
 
 
@@ -64,6 +70,16 @@ void FEffekseerEd::ShutdownModule()
 				.UnregisterAssetTypeActions(EffekseerMaterial_AssetTypeActions.ToSharedRef());
 		}
 		EffekseerMaterial_AssetTypeActions.Reset();
+	}
+
+	if (EffekseerCurve_AssetTypeActions.IsValid())
+	{
+		if (FModuleManager::Get().IsModuleLoaded("AssetTools"))
+		{
+			FModuleManager::GetModuleChecked<FAssetToolsModule>("AssetTools").Get()
+				.UnregisterAssetTypeActions(EffekseerCurve_AssetTypeActions.ToSharedRef());
+		}
+		EffekseerCurve_AssetTypeActions.Reset();
 	}
 }
 

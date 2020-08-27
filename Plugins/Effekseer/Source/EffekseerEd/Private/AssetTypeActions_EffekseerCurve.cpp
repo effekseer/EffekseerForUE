@@ -7,6 +7,18 @@ UClass* FAssetTypeActions_EffekseerCurve::GetSupportedClass() const
 	return UEffekseerCurve::StaticClass();
 }
 
+void FAssetTypeActions_EffekseerCurve::GetResolvedSourceFilePaths(const TArray<UObject*>& TypeAssets, TArray<FString>& OutSourceFilePaths) const
+{
+	for (auto& Asset : TypeAssets)
+	{
+		const auto asset = CastChecked<UEffekseerCurve>(Asset);
+		if (asset && asset->AssetImportData)
+		{
+			asset->AssetImportData->ExtractFilenames(OutSourceFilePaths);
+		}
+	}
+}
+
 void FAssetTypeActions_EffekseerCurve::GetActions(
 	const TArray<UObject*>& InObjects, FMenuBuilder& MenuBuilder)
 {
