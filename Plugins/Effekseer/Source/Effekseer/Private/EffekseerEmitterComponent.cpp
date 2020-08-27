@@ -39,6 +39,7 @@ UEffekseerEmitterComponent::UEffekseerEmitterComponent(const FObjectInitializer&
 	bAutoDestroy = false;
 	bAutoActivate = true;
 	PrimaryComponentTick.bCanEverTick = true;
+	PrimaryComponentTick.TickGroup = ETickingGroup::TG_PostPhysics;
 
 	if (DynamicInput.Num() < 4)
 	{

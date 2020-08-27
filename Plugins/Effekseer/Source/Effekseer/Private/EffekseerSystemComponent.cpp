@@ -397,6 +397,7 @@ UEffekseerSystemComponent::UEffekseerSystemComponent()
 	//bWantsBeginPlay = true;
 	bTickInEditor = true;
 	PrimaryComponentTick.bCanEverTick = true;
+	PrimaryComponentTick.TickGroup = ETickingGroup::TG_PostUpdateWork;
 	currentUpdateData = new EffekseerUpdateData();
 }
 
