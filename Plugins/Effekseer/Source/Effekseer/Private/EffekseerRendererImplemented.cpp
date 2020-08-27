@@ -967,7 +967,7 @@ namespace EffekseerRendererUE4
 					si * 4 + 2,
 					si * 4 + 1,
 					si * 4 + 3);
-		}
+			}
 
 #if ENGINE_MINOR_VERSION < 22
 			auto proxy = mat->GetRenderProxy(false);
@@ -992,7 +992,7 @@ namespace EffekseerRendererUE4
 
 			meshBuilder.GetMesh(m_localToWorld, proxy, SDPG_World, false, false, m_viewIndex, *m_meshElementCollector);
 			return;
-	}
+		}
 
 		// is single ring?
 		bool isSingleRing = false;
@@ -1024,213 +1024,331 @@ namespace EffekseerRendererUE4
 		{
 			Effekseer::Matrix44 inv;
 			Effekseer::Matrix44::Mul(ringMat, stanMat, Effekseer::Matrix44::Inverse(inv, cameraMat));
-}
-
-		if (m_currentShader->GetType() == Effekseer::RendererMaterialType::BackDistortion)
-		{
-			auto intensity = ((float*)m_currentShader->GetPixelConstantBuffer())[0];
-			SetDistortionIntensity(intensity);
-
-			VertexDistortion* vs = (VertexDistortion*)m_vertexBuffer->GetResource();
-
-#if ENGINE_MINOR_VERSION < 19
-			FDynamicMeshBuilder meshBuilder;
-#else
-			FDynamicMeshBuilder meshBuilder(m_meshElementCollector->GetFeatureLevel(), 7);
-#endif
-			for (int32_t vi = vertexOffset; vi < vertexOffset + spriteCount * 4; vi++)
-			{
-				auto& v = vs[vi];
-
-				if (isSingleRing)
-				{
-					Effekseer::Matrix44 trans;
-					trans.Translation(v.Pos.X, v.Pos.Y, v.Pos.Z);
-					Effekseer::Matrix44::Mul(trans, trans, ringMat);
-					v.Pos.X = trans.Values[3][0];
-					v.Pos.Y = trans.Values[3][1];
-					v.Pos.Z = trans.Values[3][2];
-				}
-
-				Effekseer::Vector3D normal;
-				Effekseer::Vector3D::Cross(normal, v.Binormal, v.Tangent);
-
-				FDynamicMeshVertex DynamicVertex;
-				DynamicVertex.Position = FVector(v.Pos.X, v.Pos.Z, v.Pos.Y);
-				DynamicVertex.Color = FColor(v.Col.R, v.Col.G, v.Col.B, v.Col.A);
-				DynamicVertex.SetTangents(
-					FVector(v.Binormal.X, v.Binormal.Z ,v.Binormal.Y), 
-					FVector(v.Tangent.X, v.Tangent.Z, v.Tangent.Y), 
-					FVector(normal.X, normal.Z, normal.Y));
-				DynamicVertex.TextureCoordinate[0] = FVector2D(v.UV[0], v.UV[1]);
-				DynamicVertex.TextureCoordinate[1] = FVector2D(v.AlphaUV[0], v.AlphaUV[1]);
-				DynamicVertex.TextureCoordinate[2] = FVector2D(v.UVDistortionUV[0], v.UVDistortionUV[1]);
-				DynamicVertex.TextureCoordinate[3] = FVector2D(v.BlendUV[0], v.BlendUV[1]);
-				DynamicVertex.TextureCoordinate[4] = FVector2D(v.BlendAlphaUV[0], v.BlendAlphaUV[1]);
-				DynamicVertex.TextureCoordinate[5] = FVector2D(v.BlendUVDistortionUV[0], v.BlendUVDistortionUV[1]);
-				DynamicVertex.TextureCoordinate[6] = FVector2D(v.FlipbookIndexAndNextRate, v.AlphaThreshold);
-
-				meshBuilder.AddVertex(DynamicVertex);
-			}
-
-			for (int32_t si = 0; si < spriteCount; si++)
-			{
-				meshBuilder.AddTriangle(
-					si * 4 + 0,
-					si * 4 + 1,
-					si * 4 + 2);
-
-				meshBuilder.AddTriangle(
-					si * 4 + 2,
-					si * 4 + 1,
-					si * 4 + 3);
-			}
-
-#if ENGINE_MINOR_VERSION < 22
-			auto proxy = mat->GetRenderProxy(false);
-#else
-			auto proxy = mat->GetRenderProxy();
-#endif
-			proxy = new FDistortionMaterialRenderProxy(proxy, m_distortionIntensity);
-			m_meshElementCollector->RegisterOneFrameMaterialProxy(proxy);
-
-			meshBuilder.GetMesh(m_localToWorld, proxy, SDPG_World, false, false, m_viewIndex, *m_meshElementCollector);
 		}
-		else if (m_currentShader->GetType() == Effekseer::RendererMaterialType::Lighting)
+
+		Effekseer::RendererMaterialType MaterialType = m_currentShader->GetType();
+		bool IsAdvanced = m_currentShader->IsAdvancedMaterial();
+
+		if (MaterialType == Effekseer::RendererMaterialType::BackDistortion)
 		{
 			auto intensity = ((float*)m_currentShader->GetPixelConstantBuffer())[0];
 			SetDistortionIntensity(intensity);
-
-			VertexLighting* vs = (VertexLighting*)m_vertexBuffer->GetResource();
-
-#if ENGINE_MINOR_VERSION < 19
-			FDynamicMeshBuilder meshBuilder;
-#else
-			FDynamicMeshBuilder meshBuilder(m_meshElementCollector->GetFeatureLevel());
-#endif
-			for (int32_t vi = vertexOffset; vi < vertexOffset + spriteCount * 4; vi++)
-			{
-				auto& v = vs[vi];
-
-				if (isSingleRing)
-				{
-					Effekseer::Matrix44 trans;
-					trans.Translation(v.Pos.X, v.Pos.Y, v.Pos.Z);
-					Effekseer::Matrix44::Mul(trans, trans, ringMat);
-					v.Pos.X = trans.Values[3][0];
-					v.Pos.Y = trans.Values[3][1];
-					v.Pos.Z = trans.Values[3][2];
-				}
-
-
-				FDynamicMeshVertex meshVert;
-
-				auto normal = UnpackVector3DF(v.Normal);
-				auto tangent = UnpackVector3DF(v.Tangent);
-				Effekseer::Vector3D binormal;
-				Effekseer::Vector3D::Cross(binormal, normal, tangent);
-
-				meshVert.Position = FVector(v.Pos.X, v.Pos.Z, v.Pos.Y);
-				meshVert.Color = FColor(v.Col.R, v.Col.G, v.Col.B, v.Col.A);
+		}
 
 #if ENGINE_MINOR_VERSION < 19
-				meshVert.TextureCoordinate = FVector2D(v.UV1[0], v.UV1[1]);
-
+		FDynamicMeshBuilder meshBuilder;
 #else
-				meshVert.TextureCoordinate[0] = FVector2D(v.UV1[0], v.UV1[1]);
-				meshVert.TextureCoordinate[1] = FVector2D(v.UV2[0], v.UV2[1]);
+		FDynamicMeshBuilder meshBuilder(m_meshElementCollector->GetFeatureLevel(), 7);
 #endif
 
-				meshVert.SetTangents(
-					FVector(binormal.X, binormal.Z, binormal.Y),
-					FVector(tangent.X, tangent.Z, tangent.Y),
-					FVector(normal.X, normal.Z, normal.Y));
-
-				meshBuilder.AddVertex(meshVert);
-			}
-
-			for (int32_t si = 0; si < spriteCount; si++)
+		if (IsAdvanced == false)
+		{
+			if (MaterialType == Effekseer::RendererMaterialType::Default)
 			{
-				meshBuilder.AddTriangle(
-					si * 4 + 0,
-					si * 4 + 1,
-					si * 4 + 2);
-
-				meshBuilder.AddTriangle(
-					si * 4 + 2,
-					si * 4 + 1,
-					si * 4 + 3);
+				AddVertex<Effekseer::RendererMaterialType::Default, false>(meshBuilder, spriteCount, vertexOffset, isSingleRing, ringMat);
 			}
-
-#if ENGINE_MINOR_VERSION < 22
-			auto proxy = mat->GetRenderProxy(false);
-#else
-			auto proxy = mat->GetRenderProxy();
-#endif
-			proxy = new FDistortionMaterialRenderProxy(proxy, m_distortionIntensity);
-			m_meshElementCollector->RegisterOneFrameMaterialProxy(proxy);
-
-			meshBuilder.GetMesh(m_localToWorld, proxy, SDPG_World, false, false, m_viewIndex, *m_meshElementCollector);
+			else if (MaterialType == Effekseer::RendererMaterialType::BackDistortion)
+			{
+				AddVertex<Effekseer::RendererMaterialType::BackDistortion, false>(meshBuilder, spriteCount, vertexOffset, isSingleRing, ringMat);
+			}
+			else if (MaterialType == Effekseer::RendererMaterialType::Lighting)
+			{
+				AddVertex<Effekseer::RendererMaterialType::Lighting, false>(meshBuilder, spriteCount, vertexOffset, isSingleRing, ringMat);
+			}
 		}
 		else
 		{
-			Vertex* vs = (Vertex*)m_vertexBuffer->GetResource();
-
-#if ENGINE_MINOR_VERSION < 19
-			FDynamicMeshBuilder meshBuilder;
-#else
-			FDynamicMeshBuilder meshBuilder(m_meshElementCollector->GetFeatureLevel(), 7);
-#endif
-
-			for (int32_t vi = vertexOffset; vi < vertexOffset + spriteCount * 4; vi++)
+			if (MaterialType == Effekseer::RendererMaterialType::Default)
 			{
-				auto& v = vs[vi];
-
-				if (isSingleRing)
-				{
-					Effekseer::Matrix44 trans;
-					trans.Translation(v.Pos.X, v.Pos.Y, v.Pos.Z);
-					Effekseer::Matrix44::Mul(trans, trans, ringMat);
-					v.Pos.X = trans.Values[3][0];
-					v.Pos.Y = trans.Values[3][1];
-					v.Pos.Z = trans.Values[3][2];
-				}
-
-				FDynamicMeshVertex DynamicVertex;
-				DynamicVertex.Position = FVector(v.Pos.X, v.Pos.Z, v.Pos.Y);
-				DynamicVertex.Color = FColor(v.Col.R, v.Col.G, v.Col.B, v.Col.A);
-				DynamicVertex.SetTangents(FVector(1, 0, 0), FVector(1, 1, 0), FVector(0, 0, 1));
-				DynamicVertex.TextureCoordinate[0] = FVector2D(v.UV[0], v.UV[1]);
-				DynamicVertex.TextureCoordinate[1] = FVector2D(v.AlphaUV[0], v.AlphaUV[1]);
-				DynamicVertex.TextureCoordinate[2] = FVector2D(v.UVDistortionUV[0], v.UVDistortionUV[1]);
-				DynamicVertex.TextureCoordinate[3] = FVector2D(v.BlendUV[0], v.BlendUV[1]);
-				DynamicVertex.TextureCoordinate[4] = FVector2D(v.BlendAlphaUV[0], v.BlendAlphaUV[1]);
-				DynamicVertex.TextureCoordinate[5] = FVector2D(v.BlendUVDistortionUV[0], v.BlendUVDistortionUV[1]);
-				DynamicVertex.TextureCoordinate[6] = FVector2D(v.FlipbookIndexAndNextRate, v.AlphaThreshold);
-
-				meshBuilder.AddVertex(DynamicVertex);
+				AddVertex<Effekseer::RendererMaterialType::Default, true>(meshBuilder, spriteCount, vertexOffset, isSingleRing, ringMat);
 			}
-
-			for (int32_t si = 0; si < spriteCount; si++)
+			else if (MaterialType == Effekseer::RendererMaterialType::BackDistortion)
 			{
-				meshBuilder.AddTriangle(
-					si * 4 + 0,
-					si * 4 + 1,
-					si * 4 + 2);
+				AddVertex<Effekseer::RendererMaterialType::BackDistortion, true>(meshBuilder, spriteCount, vertexOffset, isSingleRing, ringMat);
+			}
+			else if (MaterialType == Effekseer::RendererMaterialType::Lighting)
+			{
+				AddVertex<Effekseer::RendererMaterialType::Lighting, true>(meshBuilder, spriteCount, vertexOffset, isSingleRing, ringMat);
+			}
+		}
+		
+		for (int32_t si = 0; si < spriteCount; si++)
+		{
+			meshBuilder.AddTriangle(
+				si * 4 + 0,
+				si * 4 + 1,
+				si * 4 + 2);
 
-				meshBuilder.AddTriangle(
-					si * 4 + 2,
-					si * 4 + 1,
-					si * 4 + 3);
+			meshBuilder.AddTriangle(
+				si * 4 + 2,
+				si * 4 + 1,
+				si * 4 + 3);
 		}
 
 #if ENGINE_MINOR_VERSION < 22
-			auto proxy = mat->GetRenderProxy(false);
+		auto proxy = mat->GetRenderProxy(false);
 #else
-			auto proxy = mat->GetRenderProxy();
+		auto proxy = mat->GetRenderProxy();
 #endif
 
-			meshBuilder.GetMesh(m_localToWorld, proxy, SDPG_World, false, false, m_viewIndex, *m_meshElementCollector);
+		if (m_currentShader->GetType() == Effekseer::RendererMaterialType::BackDistortion)
+		{
+			proxy = new FDistortionMaterialRenderProxy(proxy, m_distortionIntensity);
+			m_meshElementCollector->RegisterOneFrameMaterialProxy(proxy);
+		}
+
+		meshBuilder.GetMesh(m_localToWorld, proxy, SDPG_World, false, false, m_viewIndex, *m_meshElementCollector);
+	}
+
+	template<> void RendererImplemented::AddVertex<Effekseer::RendererMaterialType::Default, false>
+		(FDynamicMeshBuilder& meshBuilder, int32_t spriteCount, int32_t vertexOffset, bool isSingleRing, const Effekseer::Matrix44& ringMat)
+	{
+		Vertex* vs = (Vertex*)m_vertexBuffer->GetResource();
+
+		for (int32_t vi = vertexOffset; vi < vertexOffset + spriteCount * 4; vi++)
+		{
+			auto& v = vs[vi];
+
+			if (isSingleRing)
+			{
+				Effekseer::Matrix44 trans;
+				trans.Translation(v.Pos.X, v.Pos.Y, v.Pos.Z);
+				Effekseer::Matrix44::Mul(trans, trans, ringMat);
+				v.Pos.X = trans.Values[3][0];
+				v.Pos.Y = trans.Values[3][1];
+				v.Pos.Z = trans.Values[3][2];
+			}
+
+			FDynamicMeshVertex DynamicVertex;
+			DynamicVertex.Position = FVector(v.Pos.X, v.Pos.Z, v.Pos.Y);
+			DynamicVertex.Color = FColor(v.Col.R, v.Col.G, v.Col.B, v.Col.A);
+			DynamicVertex.SetTangents(FVector(1, 0, 0), FVector(1, 1, 0), FVector(0, 0, 1));
+			DynamicVertex.TextureCoordinate[0] = FVector2D(v.UV[0], v.UV[1]);
+			DynamicVertex.TextureCoordinate[1] =
+			DynamicVertex.TextureCoordinate[2] =
+			DynamicVertex.TextureCoordinate[3] =
+			DynamicVertex.TextureCoordinate[4] =
+			DynamicVertex.TextureCoordinate[5] =
+			DynamicVertex.TextureCoordinate[6] = FVector2D(0.0f);
+
+			meshBuilder.AddVertex(DynamicVertex);
+		}
+	}
+
+	template<> void RendererImplemented::AddVertex<Effekseer::RendererMaterialType::Default, true>
+		(FDynamicMeshBuilder& meshBuilder, int32_t spriteCount, int32_t vertexOffset, bool isSingleRing, const Effekseer::Matrix44& ringMat)
+	{
+		AdvancedVertex* vs = (AdvancedVertex*)m_vertexBuffer->GetResource();
+
+		for (int32_t vi = vertexOffset; vi < vertexOffset + spriteCount * 4; vi++)
+		{
+			auto& v = vs[vi];
+
+			if (isSingleRing)
+			{
+				Effekseer::Matrix44 trans;
+				trans.Translation(v.Pos.X, v.Pos.Y, v.Pos.Z);
+				Effekseer::Matrix44::Mul(trans, trans, ringMat);
+				v.Pos.X = trans.Values[3][0];
+				v.Pos.Y = trans.Values[3][1];
+				v.Pos.Z = trans.Values[3][2];
+			}
+
+			FDynamicMeshVertex DynamicVertex;
+			DynamicVertex.Position = FVector(v.Pos.X, v.Pos.Z, v.Pos.Y);
+			DynamicVertex.Color = FColor(v.Col.R, v.Col.G, v.Col.B, v.Col.A);
+			DynamicVertex.SetTangents(FVector(1, 0, 0), FVector(1, 1, 0), FVector(0, 0, 1));
+			DynamicVertex.TextureCoordinate[0] = FVector2D(v.UV[0], v.UV[1]);
+			DynamicVertex.TextureCoordinate[1] = FVector2D(v.AlphaUV[0], v.AlphaUV[1]);
+			DynamicVertex.TextureCoordinate[2] = FVector2D(v.UVDistortionUV[0], v.UVDistortionUV[1]);
+			DynamicVertex.TextureCoordinate[3] = FVector2D(v.BlendUV[0], v.BlendUV[1]);
+			DynamicVertex.TextureCoordinate[4] = FVector2D(v.BlendAlphaUV[0], v.BlendAlphaUV[1]);
+			DynamicVertex.TextureCoordinate[5] = FVector2D(v.BlendUVDistortionUV[0], v.BlendUVDistortionUV[1]);
+			DynamicVertex.TextureCoordinate[6] = FVector2D(v.FlipbookIndexAndNextRate, v.AlphaThreshold);
+
+			meshBuilder.AddVertex(DynamicVertex);
+		}
+	}
+
+	template<> void RendererImplemented::AddVertex<Effekseer::RendererMaterialType::BackDistortion, false>
+		(FDynamicMeshBuilder& meshBuilder, int32_t spriteCount, int32_t vertexOffset, bool isSingleRing, const Effekseer::Matrix44& ringMat)
+	{
+		VertexDistortion* vs = (VertexDistortion*)m_vertexBuffer->GetResource();
+
+		for (int32_t vi = vertexOffset; vi < vertexOffset + spriteCount * 4; vi++)
+		{
+			auto& v = vs[vi];
+
+			if (isSingleRing)
+			{
+				Effekseer::Matrix44 trans;
+				trans.Translation(v.Pos.X, v.Pos.Y, v.Pos.Z);
+				Effekseer::Matrix44::Mul(trans, trans, ringMat);
+				v.Pos.X = trans.Values[3][0];
+				v.Pos.Y = trans.Values[3][1];
+				v.Pos.Z = trans.Values[3][2];
+			}
+
+			Effekseer::Vector3D normal;
+			Effekseer::Vector3D::Cross(normal, v.Binormal, v.Tangent);
+
+			FDynamicMeshVertex DynamicVertex;
+			DynamicVertex.Position = FVector(v.Pos.X, v.Pos.Z, v.Pos.Y);
+			DynamicVertex.Color = FColor(v.Col.R, v.Col.G, v.Col.B, v.Col.A);
+			DynamicVertex.SetTangents(
+				FVector(v.Binormal.X, v.Binormal.Z ,v.Binormal.Y), 
+				FVector(v.Tangent.X, v.Tangent.Z, v.Tangent.Y), 
+				FVector(normal.X, normal.Z, normal.Y));
+			DynamicVertex.TextureCoordinate[0] = FVector2D(v.UV[0], v.UV[1]);
+			DynamicVertex.TextureCoordinate[1] =
+			DynamicVertex.TextureCoordinate[2] =
+			DynamicVertex.TextureCoordinate[3] =
+			DynamicVertex.TextureCoordinate[4] =
+			DynamicVertex.TextureCoordinate[5] =
+			DynamicVertex.TextureCoordinate[6] = FVector2D(0.0f);
+
+			meshBuilder.AddVertex(DynamicVertex);
+		}
+	}
+
+	template<> void RendererImplemented::AddVertex<Effekseer::RendererMaterialType::BackDistortion, true>
+		(FDynamicMeshBuilder& meshBuilder, int32_t spriteCount, int32_t vertexOffset, bool isSingleRing, const Effekseer::Matrix44& ringMat)
+	{
+		AdvancedVertexDistortion* vs = (AdvancedVertexDistortion*)m_vertexBuffer->GetResource();
+
+		for (int32_t vi = vertexOffset; vi < vertexOffset + spriteCount * 4; vi++)
+		{
+			auto& v = vs[vi];
+
+			if (isSingleRing)
+			{
+				Effekseer::Matrix44 trans;
+				trans.Translation(v.Pos.X, v.Pos.Y, v.Pos.Z);
+				Effekseer::Matrix44::Mul(trans, trans, ringMat);
+				v.Pos.X = trans.Values[3][0];
+				v.Pos.Y = trans.Values[3][1];
+				v.Pos.Z = trans.Values[3][2];
+			}
+
+			Effekseer::Vector3D normal;
+			Effekseer::Vector3D::Cross(normal, v.Binormal, v.Tangent);
+
+			FDynamicMeshVertex DynamicVertex;
+			DynamicVertex.Position = FVector(v.Pos.X, v.Pos.Z, v.Pos.Y);
+			DynamicVertex.Color = FColor(v.Col.R, v.Col.G, v.Col.B, v.Col.A);
+			DynamicVertex.SetTangents(
+				FVector(v.Binormal.X, v.Binormal.Z ,v.Binormal.Y), 
+				FVector(v.Tangent.X, v.Tangent.Z, v.Tangent.Y), 
+				FVector(normal.X, normal.Z, normal.Y));
+			DynamicVertex.TextureCoordinate[0] = FVector2D(v.UV[0], v.UV[1]);
+			DynamicVertex.TextureCoordinate[1] = FVector2D(v.AlphaUV[0], v.AlphaUV[1]);
+			DynamicVertex.TextureCoordinate[2] = FVector2D(v.UVDistortionUV[0], v.UVDistortionUV[1]);
+			DynamicVertex.TextureCoordinate[3] = FVector2D(v.BlendUV[0], v.BlendUV[1]);
+			DynamicVertex.TextureCoordinate[4] = FVector2D(v.BlendAlphaUV[0], v.BlendAlphaUV[1]);
+			DynamicVertex.TextureCoordinate[5] = FVector2D(v.BlendUVDistortionUV[0], v.BlendUVDistortionUV[1]);
+			DynamicVertex.TextureCoordinate[6] = FVector2D(v.FlipbookIndexAndNextRate, v.AlphaThreshold);
+
+			meshBuilder.AddVertex(DynamicVertex);
+		}
+	}
+
+	template<> void RendererImplemented::AddVertex<Effekseer::RendererMaterialType::Lighting, false>
+		(FDynamicMeshBuilder& meshBuilder, int32_t spriteCount, int32_t vertexOffset, bool isSingleRing, const Effekseer::Matrix44& ringMat)
+	{
+		VertexLighting* vs = (VertexLighting*)m_vertexBuffer->GetResource();
+
+		for (int32_t vi = vertexOffset; vi < vertexOffset + spriteCount * 4; vi++)
+		{
+			auto& v = vs[vi];
+
+			if (isSingleRing)
+			{
+				Effekseer::Matrix44 trans;
+				trans.Translation(v.Pos.X, v.Pos.Y, v.Pos.Z);
+				Effekseer::Matrix44::Mul(trans, trans, ringMat);
+				v.Pos.X = trans.Values[3][0];
+				v.Pos.Y = trans.Values[3][1];
+				v.Pos.Z = trans.Values[3][2];
+			}
+
+			FDynamicMeshVertex meshVert;
+
+			auto normal = UnpackVector3DF(v.Normal);
+			auto tangent = UnpackVector3DF(v.Tangent);
+			Effekseer::Vector3D binormal;
+			Effekseer::Vector3D::Cross(binormal, normal, tangent);
+
+			meshVert.Position = FVector(v.Pos.X, v.Pos.Z, v.Pos.Y);
+			meshVert.Color = FColor(v.Col.R, v.Col.G, v.Col.B, v.Col.A);
+
+#if ENGINE_MINOR_VERSION < 19
+			meshVert.TextureCoordinate = FVector2D(v.UV1[0], v.UV1[1]);
+#else
+			meshVert.TextureCoordinate[0] = FVector2D(v.UV1[0], v.UV1[1]);
+			meshVert.TextureCoordinate[1] = FVector2D(v.UV2[0], v.UV2[1]);
+			meshVert.TextureCoordinate[2] =
+			meshVert.TextureCoordinate[3] =
+			meshVert.TextureCoordinate[4] =
+			meshVert.TextureCoordinate[5] =
+			meshVert.TextureCoordinate[6] = FVector2D(0.0f);
+#endif
+
+			meshVert.SetTangents(
+				FVector(binormal.X, binormal.Z, binormal.Y),
+				FVector(tangent.X, tangent.Z, tangent.Y),
+				FVector(normal.X, normal.Z, normal.Y));
+
+			meshBuilder.AddVertex(meshVert);
+		}
+	}
+
+	template<> void RendererImplemented::AddVertex<Effekseer::RendererMaterialType::Lighting, true>
+		(FDynamicMeshBuilder& meshBuilder, int32_t spriteCount, int32_t vertexOffset, bool isSingleRing, const Effekseer::Matrix44& ringMat)
+	{
+		AdvancedVertexLighting* vs = (AdvancedVertexLighting*)m_vertexBuffer->GetResource();
+
+		for (int32_t vi = vertexOffset; vi < vertexOffset + spriteCount * 4; vi++)
+		{
+			auto& v = vs[vi];
+
+			if (isSingleRing)
+			{
+				Effekseer::Matrix44 trans;
+				trans.Translation(v.Pos.X, v.Pos.Y, v.Pos.Z);
+				Effekseer::Matrix44::Mul(trans, trans, ringMat);
+				v.Pos.X = trans.Values[3][0];
+				v.Pos.Y = trans.Values[3][1];
+				v.Pos.Z = trans.Values[3][2];
+			}
+
+			FDynamicMeshVertex meshVert;
+
+			auto normal = UnpackVector3DF(v.Normal);
+			auto tangent = UnpackVector3DF(v.Tangent);
+			Effekseer::Vector3D binormal;
+			Effekseer::Vector3D::Cross(binormal, normal, tangent);
+
+			meshVert.Position = FVector(v.Pos.X, v.Pos.Z, v.Pos.Y);
+			meshVert.Color = FColor(v.Col.R, v.Col.G, v.Col.B, v.Col.A);
+
+#if ENGINE_MINOR_VERSION < 19
+			meshVert.TextureCoordinate = FVector2D(v.UV1[0], v.UV1[1]);
+#else
+			meshVert.TextureCoordinate[0] = FVector2D(v.UV1[0], v.UV1[1]);
+			meshVert.TextureCoordinate[1] = FVector2D(v.AlphaUV[0], v.AlphaUV[1]);
+			meshVert.TextureCoordinate[2] = FVector2D(v.UVDistortionUV[0], v.UVDistortionUV[1]);
+			meshVert.TextureCoordinate[3] = FVector2D(v.BlendUV[0], v.BlendUV[1]);
+			meshVert.TextureCoordinate[4] = FVector2D(v.BlendAlphaUV[0], v.BlendAlphaUV[1]);
+			meshVert.TextureCoordinate[5] = FVector2D(v.BlendUVDistortionUV[0], v.BlendUVDistortionUV[1]);
+			meshVert.TextureCoordinate[6] = FVector2D(v.FlipbookIndexAndNextRate, v.AlphaThreshold);
+#endif
+
+			meshVert.SetTangents(
+				FVector(binormal.X, binormal.Z, binormal.Y),
+				FVector(tangent.X, tangent.Z, tangent.Y),
+				FVector(normal.X, normal.Z, normal.Y));
+
+			meshBuilder.AddVertex(meshVert);
 		}
 	}
 

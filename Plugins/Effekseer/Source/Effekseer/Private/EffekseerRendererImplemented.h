@@ -16,9 +16,13 @@ namespace EffekseerRendererUE4
 	class IndexBuffer;
 	class Shader;
 
-	using Vertex = EffekseerRenderer::AdvancedSimpleVertex;
-	using VertexDistortion = EffekseerRenderer::AdvancedVertexDistortion;
-	using VertexLighting = EffekseerRenderer::AdvancedLightingVertex;	// TODO change it in 1.6
+	using Vertex = EffekseerRenderer::SimpleVertex;
+	using VertexDistortion = EffekseerRenderer::VertexDistortion;
+	using VertexLighting = EffekseerRenderer::LightingVertex;
+
+	using AdvancedVertex = EffekseerRenderer::AdvancedSimpleVertex;
+	using AdvancedVertexDistortion = EffekseerRenderer::AdvancedVertexDistortion;
+	using AdvancedVertexLighting = EffekseerRenderer::AdvancedLightingVertex;	// TODO change it in 1.6
 
 	typedef ::Effekseer::ModelRenderer::NodeParameter efkModelNodeParam;
 	typedef ::Effekseer::ModelRenderer::InstanceParameter efkModelInstanceParam;
@@ -225,7 +229,17 @@ namespace EffekseerRendererUE4
 
 		void SetLayout(Shader* shader);
 		void DrawSprites(int32_t spriteCount, int32_t vertexOffset);
+
+		template<Effekseer::RendererMaterialType MaterialType, bool IsAdvanced>
+		void AddVertex(FDynamicMeshBuilder& meshBuilder, int32_t spriteCount, int32_t vertexOffset, bool isSingleRing, const Effekseer::Matrix44& ringMat);
 		
+		template<> void AddVertex<Effekseer::RendererMaterialType::Default, false>(FDynamicMeshBuilder& meshBuilder, int32_t spriteCount, int32_t vertexOffset, bool isSingleRing, const Effekseer::Matrix44& ringMat);
+		template<> void AddVertex<Effekseer::RendererMaterialType::Default, true>(FDynamicMeshBuilder& meshBuilder, int32_t spriteCount, int32_t vertexOffset, bool isSingleRing, const Effekseer::Matrix44& ringMat);
+		template<> void AddVertex<Effekseer::RendererMaterialType::BackDistortion, false>(FDynamicMeshBuilder& meshBuilder, int32_t spriteCount, int32_t vertexOffset, bool isSingleRing, const Effekseer::Matrix44& ringMat);
+		template<> void AddVertex<Effekseer::RendererMaterialType::BackDistortion, true>(FDynamicMeshBuilder& meshBuilder, int32_t spriteCount, int32_t vertexOffset, bool isSingleRing, const Effekseer::Matrix44& ringMat);
+		template<> void AddVertex<Effekseer::RendererMaterialType::Lighting, false>(FDynamicMeshBuilder& meshBuilder, int32_t spriteCount, int32_t vertexOffset, bool isSingleRing, const Effekseer::Matrix44& ringMat);
+		template<> void AddVertex<Effekseer::RendererMaterialType::Lighting, true>(FDynamicMeshBuilder& meshBuilder, int32_t spriteCount, int32_t vertexOffset, bool isSingleRing, const Effekseer::Matrix44& ringMat);
+
 		void DrawModel(void* model, 
 					   std::vector<Effekseer::Matrix44>& matrixes, 
 					   std::vector<Effekseer::RectF>& uvs, 
