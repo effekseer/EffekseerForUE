@@ -2,11 +2,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "EffekseerRendererNative.h"
 
 #include <EffekseerEffect.h>
 #include <map>
 #include <memory>
+#include <EffekseerRenderer.Renderer.h>
+#include <EffekseerRenderer.ModelRendererBase.h>
+#include <EffekseerRenderer.ShaderBase.h>
+#include <EffekseerRenderer.StandardRenderer.h>
 
 namespace EffekseerRendererUE4
 {

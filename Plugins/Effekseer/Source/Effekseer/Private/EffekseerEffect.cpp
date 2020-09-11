@@ -1,11 +1,11 @@
 #include "EffekseerEffect.h"
-#include "EffekseerNative.h"
-#include "EffekseerRendererNative.h"
 #include "EffekseerMaterial.h"
 
 #include <string>
 #include <functional>
 #include <vector>
+#include <Effekseer.h>
+#include <Effekseer/Effekseer/Material/Effekseer.Material.h>
 
 #include "EffekseerRendererShader.h"
 #include "EffekseerCustomVersion.h"

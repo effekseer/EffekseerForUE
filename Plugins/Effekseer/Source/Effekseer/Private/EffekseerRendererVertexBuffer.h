@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "EffekseerRendererNative.h"
+#include <EffekseerRenderer.VertexBufferBase.h>
 
 #include <vector>
 

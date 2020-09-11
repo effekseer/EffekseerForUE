@@ -1,7 +1,6 @@
 #include "EffekseerMaterial.h"
-#include "EffekseerNative.h"
-
 #include "EffekseerCustomVersion.h"
+#include <Effekseer/Material/Effekseer.Material.h>
 
 void UEffekseerMaterial::LoadMaterial(const uint8_t* data, int32_t size, const TCHAR* path)
 {
@@ -101,7 +100,7 @@ void UEffekseerMaterial::ReassignSearchingMaps()
 	for (int32_t i = 0; i < Textures.Num(); i++)
 	{
 		TextureHashedNameToIndex.Add(Textures[i].Name, i);
-	}
+}
 #endif
 }
 

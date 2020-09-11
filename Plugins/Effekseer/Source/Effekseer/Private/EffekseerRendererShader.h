@@ -1,8 +1,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "EffekseerRendererNative.h"
+#include <Effekseer.h>
 #include <vector>
+#include <EffekseerRenderer.CommonUtils.h>
 
 class UEffekseerMaterial;
 

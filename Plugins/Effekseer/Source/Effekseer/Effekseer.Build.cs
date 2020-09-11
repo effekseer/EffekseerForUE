@@ -17,8 +17,9 @@ namespace UnrealBuildTool.Rules
 
 			PrivateIncludePaths.AddRange(
 				new string[] {
-					"Developer/Effekseer/Private",
-					// ... add other private include paths required here ...
+					"Effekseer/Private",
+					"Effekseer/Private/Effekseer",
+					"Effekseer/Private/EffekseerRendererCommon"
 				}
 				);
 
@@ -54,7 +55,12 @@ namespace UnrealBuildTool.Rules
 				}
 				);
 
-            Definitions.Add("__EFFEKSEER_FOR_UE4__");
+			if (!(Target.Platform == UnrealTargetPlatform.Win64 || Target.Platform == UnrealTargetPlatform.Win32))
+			{
+				Definitions.Add("__EFFEKSEER_NETWORK_DISABLED__");
+			}
+
+			Definitions.Add("__EFFEKSEER_FOR_UE4__");
 		}
 	}
 }

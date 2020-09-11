@@ -1,5 +1,4 @@
 #include "EffekseerCurve.h"
-#include "EffekseerNative.h"
 #include "EffekseerInternalCurve.h"
 
 #include "EffekseerCustomVersion.h"

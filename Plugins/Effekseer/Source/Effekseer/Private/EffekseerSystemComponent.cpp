@@ -2,7 +2,7 @@
 
 #include "DynamicMeshBuilder.h"
 
-#include "EffekseerNative.h"
+#include <Effekseer.h>
 #include "EffekseerRendererImplemented.h"
 
 #include <mutex>

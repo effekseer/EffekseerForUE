@@ -11,6 +11,10 @@
 #include "Math/Color.h"
 #include "MaterialShared.h"
 #include "Materials/MaterialInstanceDynamic.h"
+#include <EffekseerRenderer.TrackRendererBase.h>
+#include <EffekseerRenderer.SpriteRendererBase.h>
+#include <EffekseerRenderer.RibbonRendererBase.h>
+#include <EffekseerRenderer.RingRendererBase.h>
 
 #if ENGINE_MINOR_VERSION < 19
 class FMaterialParameterInfo

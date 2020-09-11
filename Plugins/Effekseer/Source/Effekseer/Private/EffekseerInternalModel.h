@@ -2,7 +2,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "EffekseerNative.h"
+#include <Effekseer.h>
 
 class EffekseerInternalModel
 	: public ::Effekseer::Model
