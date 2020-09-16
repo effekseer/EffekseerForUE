@@ -242,8 +242,8 @@ public:
 	virtual ~ModelLoader();
 
 public:
-	void* Load(const EFK_CHAR* path) override;
-	void Unload(void* data) override;
+	::Effekseer::Model* Load(const EFK_CHAR* path) override;
+	void Unload(::Effekseer::Model* data) override;
 	void SetUObject(UEffekseerEffect* uobject, bool requiredToCreateResource)
 	{
 		m_uobject = uobject;
@@ -265,7 +265,7 @@ ModelLoader::~ModelLoader()
 
 }
 
-void* ModelLoader::Load(const EFK_CHAR* path)
+::Effekseer::Model* ModelLoader::Load(const EFK_CHAR* path)
 {
 	auto path_we = GetFileNameWithoutExtension(path);
 	auto epath_ = (const char16_t*)path_we.c_str();
@@ -278,14 +278,12 @@ void* ModelLoader::Load(const EFK_CHAR* path)
 
 		if (model != nullptr)
 		{
-			return (void*)model->GetNativePtr();
+			return model->GetNativePtr();
 		}
 		else
 		{
 			UE_LOG(LogScript, Warning, TEXT("Failed to load %s"), path_.c_str());
 		}
-
-		return model;
 	}
 	else
 	{
@@ -296,14 +294,14 @@ void* ModelLoader::Load(const EFK_CHAR* path)
 		
 		if (o != nullptr)
 		{
-			return (void*)o->GetNativePtr();
+			return o->GetNativePtr();
 		}
-
-		return o;
 	}
+
+	return nullptr;
 }
 
-void ModelLoader::Unload(void* data)
+void ModelLoader::Unload(::Effekseer::Model* data)
 {
 	if (data != NULL)
 	{
