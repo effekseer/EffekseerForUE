@@ -14467,6 +14467,11 @@ bool EffectImplemented::LoadBody(const uint8_t* data, int32_t size, float mag)
 			binaryReader.Read(Culling.Location.X);
 			binaryReader.Read(Culling.Location.Y);
 			binaryReader.Read(Culling.Location.Z);
+			
+			Culling.Sphere.Radius *= m_maginification;
+			Culling.Location.X *= m_maginification;
+			Culling.Location.Y *= m_maginification;
+			Culling.Location.Z *= m_maginification;
 		}
 	}
 
@@ -16416,6 +16421,8 @@ void ManagerImplemented::Flip()
 			{
 				if (m_cullingWorld != NULL)
 				{
+					auto isCreated = false;
+
 					if (ds.CullingObjectPointer == NULL)
 					{
 						ds.CullingObjectPointer = Culling3D::Object::Create();
@@ -16428,25 +16435,25 @@ void ManagerImplemented::Flip()
 						{
 							ds.CullingObjectPointer->ChangeIntoAll();
 						}
+
+						isCreated = true;
 					}
 
 					InstanceContainer* pContainer = ds.InstanceContainerPointer;
 					Instance* pInstance = pContainer->GetFirstGroup()->GetFirst();
 
-					Vec3f pos(ds.CullingObjectPointer->GetPosition().X,
-							  ds.CullingObjectPointer->GetPosition().Y,
-							  ds.CullingObjectPointer->GetPosition().Z);
+					Vector3D location;
 
-					Mat43f pos_ = Mat43f::Translation(pos);
-					pos_ *= pInstance->m_GlobalMatrix43;
+					auto mat_ = ds.GetEnabledGlobalMatrix();
 
-					if (ds.DoUseBaseMatrix)
+					if (mat_ != nullptr)
 					{
-						pos_ *= ds.BaseMatrix;
+						location.X = mat_->X.GetW();
+						location.Y = mat_->Y.GetW();
+						location.Z = mat_->Z.GetW();
 					}
-
-					Vec3f position = pos_.GetTranslation();
-					ds.CullingObjectPointer->SetPosition(Culling3D::Vector3DF(position.GetX(), position.GetY(), position.GetZ()));
+					
+					ds.CullingObjectPointer->SetPosition(Culling3D::Vector3DF(location.X, location.Y, location.Z));
 
 					if (effect->Culling.Shape == CullingShape::Sphere)
 					{
@@ -16455,18 +16462,25 @@ void ManagerImplemented::Flip()
 						{
 							Vec3f s = pInstance->GetGlobalMatrix43().GetScale();
 							radius *= s.GetLength();
+							Vec3f culling_pos = Vec3f::Transform(Vec3f(effect->Culling.Location), pInstance->GetGlobalMatrix43());
+							ds.CullingObjectPointer->SetPosition(Culling3D::Vector3DF(culling_pos.GetX(), culling_pos.GetY(), culling_pos.GetZ()));
 						}
 
 						if (ds.DoUseBaseMatrix)
 						{
 							Vec3f s = ds.BaseMatrix.GetScale();
 							radius *= s.GetLength();
+							Vec3f culling_pos = Vec3f::Transform(Vec3f(effect->Culling.Location), ds.BaseMatrix);
+							ds.CullingObjectPointer->SetPosition(Culling3D::Vector3DF(culling_pos.GetX(), culling_pos.GetY(), culling_pos.GetZ()));
 						}
 
 						ds.CullingObjectPointer->ChangeIntoSphere(radius);
 					}
 
-					m_cullingWorld->AddObject(ds.CullingObjectPointer);
+					if (isCreated)
+					{
+						m_cullingWorld->AddObject(ds.CullingObjectPointer);					
+					}
 				}
 				ds.IsParameterChanged = false;
 			}
@@ -17289,6 +17303,9 @@ void ManagerImplemented::CalcCulling(const Matrix44& cameraProjMat, bool isOpenG
 		m_culledObjects.push_back(ds);
 		m_culledObjectSets.insert(ds->Self);
 	}
+
+	// sort with handle
+	std::sort(m_culledObjects.begin(), m_culledObjects.end(), [](DrawSet* const& lhs, DrawSet* const& rhs) { return lhs->Self > rhs->Self; });
 
 	m_culled = true;
 }
