@@ -633,7 +633,7 @@ bool EffectImplemented::LoadBody(const uint8_t* data, int32_t size, float mag)
 		defaultDynamicInputs.fill(0);
 	}
 
-	if (m_version >= 1600)
+	if (m_version >= Version16Alpha1)
 	{
 		// curve
 		binaryReader.Read(curveCount_, 0, elementCountMax);
@@ -704,6 +704,11 @@ bool EffectImplemented::LoadBody(const uint8_t* data, int32_t size, float mag)
 			binaryReader.Read(Culling.Location.X);
 			binaryReader.Read(Culling.Location.Y);
 			binaryReader.Read(Culling.Location.Z);
+
+			Culling.Sphere.Radius *= m_maginification;
+			Culling.Location.X *= m_maginification;
+			Culling.Location.Y *= m_maginification;
+			Culling.Location.Z *= m_maginification;
 		}
 	}
 
@@ -1121,6 +1126,11 @@ int EffectImplemented::GetVersion() const
 //----------------------------------------------------------------------------------
 TextureData* EffectImplemented::GetColorImage(int n) const
 {
+	if (n < 0 || n >= GetColorImageCount())
+	{
+		return nullptr;
+	}
+
 	return m_pImages[n];
 }
 
@@ -1142,6 +1152,11 @@ TextureData* EffectImplemented::GetNormalImage(int n) const
 		return m_pImages[n];
 	}
 
+	if (n < 0 || n >= GetNormalImageCount())
+	{
+		return nullptr;
+	}
+
 	return m_normalImages[n];
 }
 
@@ -1161,6 +1176,11 @@ TextureData* EffectImplemented::GetDistortionImage(int n) const
 	if (this->m_version <= 8)
 	{
 		return m_pImages[n];
+	}
+
+	if (n < 0 || n >= GetDistortionImageCount())
+	{
+		return nullptr;
 	}
 
 	return m_distortionImages[n];
@@ -1193,6 +1213,11 @@ const EFK_CHAR* EffectImplemented::GetWavePath(int n) const
 
 Model* EffectImplemented::GetModel(int n) const
 {
+	if (n < 0 || n >= GetModelCount())
+	{
+		return nullptr;
+	}
+
 	return models_[n];
 }
 
@@ -1208,6 +1233,11 @@ const EFK_CHAR* EffectImplemented::GetModelPath(int n) const
 
 MaterialData* EffectImplemented::GetMaterial(int n) const
 {
+	if (n < 0 || n >= GetMaterialCount())
+	{
+		return nullptr;
+	}
+
 	return materials_[n];
 }
 

@@ -6,6 +6,7 @@
 // Include
 //----------------------------------------------------------------------------------
 #include <array>
+#include <assert.h>
 #include <atomic>
 #include <cfloat>
 #include <climits>
@@ -14,7 +15,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <vector>
-
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
@@ -93,6 +93,11 @@ class Curve;
 struct ProcedualModelParameter;
 
 typedef int Handle;
+
+namespace Backend
+{
+class Texture;
+}
 
 /**
 	@brief	Memory Allocation function
@@ -391,55 +396,55 @@ inline int32_t ConvertUtf16ToUtf8(int8_t* dst, int32_t dst_size, const int16_t* 
 */
 inline int32_t ConvertUtf8ToUtf16(char16_t* dst, int32_t dst_size, const char* src)
 {
-    int32_t i, code = 0;
-    int8_t c0, c1, c2 = 0;
-    int8_t* srci = reinterpret_cast<int8_t*>(const_cast<char*>(src));
-    if (dst_size == 0)
-        return 0;
+	int32_t i, code = 0;
+	int8_t c0, c1, c2 = 0;
+	int8_t* srci = reinterpret_cast<int8_t*>(const_cast<char*>(src));
+	if (dst_size == 0)
+		return 0;
 
-    dst_size -= 1;
+	dst_size -= 1;
 
-    for (i = 0; i < dst_size; i++)
-    {
-        uint16_t wc;
+	for (i = 0; i < dst_size; i++)
+	{
+		uint16_t wc;
 
-        c0 = *srci;
-        srci++;
-        if (c0 == '\0')
-        {
-            break;
-        }
-        // convert UTF8 to UTF16
-        code = (uint8_t)c0 >> 4;
-        if (code <= 7)
-        {
-            // 8bit character
-            wc = c0;
-        }
-        else if (code >= 12 && code <= 13)
-        {
-            // 16bit  character
-            c1 = *srci;
-            srci++;
-            wc = ((c0 & 0x1F) << 6) | (c1 & 0x3F);
-        }
-        else if (code == 14)
-        {
-            // 24bit character
-            c1 = *srci;
-            srci++;
-            c2 = *srci;
-            srci++;
-            wc = ((c0 & 0x0F) << 12) | ((c1 & 0x3F) << 6) | (c2 & 0x3F);
-        }
-        else
-        {
-            continue;
-        }
-        dst[i] = wc;
-    }
-    dst[i] = 0;
-    return i;
+		c0 = *srci;
+		srci++;
+		if (c0 == '\0')
+		{
+			break;
+		}
+		// convert UTF8 to UTF16
+		code = (uint8_t)c0 >> 4;
+		if (code <= 7)
+		{
+			// 8bit character
+			wc = c0;
+		}
+		else if (code >= 12 && code <= 13)
+		{
+			// 16bit  character
+			c1 = *srci;
+			srci++;
+			wc = ((c0 & 0x1F) << 6) | (c1 & 0x3F);
+		}
+		else if (code == 14)
+		{
+			// 24bit character
+			c1 = *srci;
+			srci++;
+			c2 = *srci;
+			srci++;
+			wc = ((c0 & 0x0F) << 12) | ((c1 & 0x3F) << 6) | (c2 & 0x3F);
+		}
+		else
+		{
+			continue;
+		}
+		dst[i] = wc;
+	}
+	dst[i] = 0;
+	return i;
 }
 
 /**
@@ -555,6 +560,20 @@ inline std::unique_ptr<T, ReferenceDeleter<T>> CreateUniqueReference(T* ptr, boo
 	return std::unique_ptr<T, ReferenceDeleter<T>>(ptr);
 }
 
+template <typename T>
+inline std::shared_ptr<T> CreateReference(T* ptr, bool addRef = false)
+{
+	if (ptr == nullptr)
+		return std::shared_ptr<T>(nullptr);
+
+	if (addRef)
+	{
+		ptr->AddRef();
+	}
+
+	return std::shared_ptr<T>(ptr, ReferenceDeleter<T>());
+}
+
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
@@ -641,6 +660,9 @@ struct TextureData
 
 	//! for OpenGL, it is ignored in other apis
 	bool HasMipmap = true;
+
+	//! A backend which contains a native data
+	class Backend::Texture* TexturePtr = nullptr;
 };
 
 enum class ShadingModelType : int32_t
@@ -775,14 +797,53 @@ struct NodeRendererBasicParameter
 	int32_t FlipbookDivideX = 1;
 	int32_t FlipbookDivideY = 1;
 
-	int32_t EmissiveScaling = 1;
+	float EmissiveScaling = 1.0f;
 
 	float EdgeThreshold = 0.0f;
-	uint8_t EdgeColor[4] = { 0 };
+	uint8_t EdgeColor[4] = {0};
 	int32_t EdgeColorScaling = 1;
 
 	//! copy from alphacutoff
 	bool IsAlphaCutoffEnabled = false;
+
+	//! Whether are particles rendered with AdvancedRenderer
+	bool GetIsRenderedWithAdvancedRenderer() const
+	{
+		if (MaterialType == RendererMaterialType::File)
+			return false;
+
+		if (Texture3Index >= 0)
+			return true;
+
+		if (Texture4Index >= 0)
+			return true;
+
+		if (Texture5Index >= 0)
+			return true;
+
+		if (Texture6Index >= 0)
+			return true;
+
+		if (Texture7Index >= 0)
+			return true;
+
+		if (EnableInterpolation)
+			return true;
+
+		if (TextureBlendType != -1)
+			return true;
+
+		if (EdgeThreshold != 0)
+			return true;
+
+		if (IsAlphaCutoffEnabled)
+			return true;
+
+		if (EmissiveScaling != 1.0f)
+			return true;
+
+		return false;
+	}
 };
 
 //----------------------------------------------------------------------------------
@@ -801,6 +862,7 @@ struct NodeRendererBasicParameter
 #include <map>
 #include <new>
 #include <set>
+#include <unordered_map>
 #include <vector>
 
 namespace Effekseer
@@ -929,6 +991,16 @@ struct CustomAlignedAllocator
 	{
 		GetAlignedFreeFunc()(p, sizeof(T) * static_cast<uint32_t>(n));
 	}
+
+	bool operator==(const CustomAlignedAllocator<T>&)
+	{
+		return true;
+	}
+
+	bool operator!=(const CustomAlignedAllocator<T>&)
+	{
+		return false;
+	}
 };
 
 template <class T, class U>
@@ -953,7 +1025,12 @@ template <class T>
 using CustomSet = std::set<T, std::less<T>, CustomAllocator<T>>;
 template <class T, class U>
 using CustomMap = std::map<T, U, std::less<T>, CustomAllocator<std::pair<const T, U>>>;
-template <class T, class U> using CustomAlignedMap = std::map<T, U, std::less<T>, CustomAlignedAllocator<std::pair<const T, U>>>;
+template <class T, class U>
+using CustomAlignedMap = std::map<T, U, std::less<T>, CustomAlignedAllocator<std::pair<const T, U>>>;
+template <class T, class U>
+using CustomUnorderedMap = std::unordered_map<T, U, std::hash<T>, std::equal_to<T>, CustomAllocator<std::pair<const T, U>>>;
+template <class T, class U>
+using CustomAlignedUnorderedMap = std::unordered_map<T, U, std::hash<T>, std::equal_to<T>, CustomAlignedAllocator<std::pair<const T, U>>>;
 
 } // namespace Effekseer
 
@@ -1203,6 +1280,40 @@ struct Color
 		@brief	線形補間
 	*/
 	static Color Lerp(const Color in1, const Color in2, float t);
+
+	bool operator!=(const Color& o) const
+	{
+		if (R != o.R)
+			return true;
+
+		if (G != o.G)
+			return true;
+
+		if (B != o.B)
+			return true;
+
+		if (A != o.A)
+			return true;
+
+		return false;
+	}
+
+	bool operator<(const Color& o) const
+	{
+		if (R != o.R)
+			return R < o.R;
+
+		if (G != o.G)
+			return G < o.G;
+
+		if (B != o.B)
+			return B < o.B;
+
+		if (A != o.A)
+			return A < o.A;
+
+		return false;
+	}
 };
 #pragma pack(pop)
 //----------------------------------------------------------------------------------
@@ -2454,7 +2565,7 @@ struct EffectBasicRenderParameter
 		float Pow = 1.0f;
 	} FalloffParam;
 
-	int32_t EmissiveScaling;
+	float EmissiveScaling;
 
 	struct
 	{
@@ -3501,11 +3612,14 @@ public:
 		@param	textureType
 		\~English	a kind of texture
 		\~Japanese	テクスチャの種類
+		@param	isMipMapEnabled
+		\~English	whether is a mipmap enabled
+		\~Japanese	MipMapが有効かどうか
 		@return
 		\~English	a pointer of loaded texture
 		\~Japanese	読み込まれたテクスチャのポインタ
 	*/
-	virtual TextureData* Load(const void* data, int32_t size, TextureType textureType)
+	virtual TextureData* Load(const void* data, int32_t size, TextureType textureType, bool isMipMapEnabled)
 	{
 		return nullptr;
 	}
@@ -4702,6 +4816,86 @@ namespace Effekseer
 namespace Backend
 {
 
+enum class TextureFormatType
+{
+	R8G8B8A8_UNORM,
+	B8G8R8A8_UNORM,
+	R8_UNORM,
+	R16G16_FLOAT,
+	R16G16B16A16_FLOAT,
+	R32G32B32A32_FLOAT,
+	BC1,
+	BC2,
+	BC3,
+	R8G8B8A8_UNORM_SRGB,
+	B8G8R8A8_UNORM_SRGB,
+	BC1_SRGB,
+	BC2_SRGB,
+	BC3_SRGB,
+	D32,
+	D24S8,
+	D32S8,
+	Unknown,
+};
+
+enum class IndexBufferStrideType
+{
+	Stride2,
+	Stride4,
+};
+
+enum class UniformBufferLayoutElementType
+{
+	Vector4,
+};
+
+enum class ShaderStageType
+{
+	Vertex,
+	Pixel,
+};
+
+struct UniformLayoutElement
+{
+	ShaderStageType Stage = ShaderStageType::Vertex;
+	std::string Name;
+	UniformBufferLayoutElementType Type;
+
+	//! Ignored in UniformBuffer
+	int32_t Offset;
+};
+
+/**
+	@brief	Layouts in an uniform buffer
+	@note
+	Only for OpenGL
+*/
+class UniformLayout
+	: public ReferenceObject
+{
+private:
+	CustomVector<std::string> textures_;
+	CustomVector<UniformLayoutElement> elements_;
+
+public:
+	UniformLayout(CustomVector<std::string> textures, CustomVector<UniformLayoutElement> elements)
+		: textures_(std::move(textures))
+		, elements_(std::move(elements))
+	{
+	}
+	virtual ~UniformLayout() = default;
+
+	const CustomVector<std::string>& GetTextures() const
+	{
+		return textures_;
+	}
+
+	const CustomVector<UniformLayoutElement>& GetElements() const
+	{
+		return elements_;
+	}
+};
+
 class VertexBuffer
 	: public ReferenceObject
 {
@@ -4713,9 +4907,22 @@ public:
 class IndexBuffer
 	: public ReferenceObject
 {
+protected:
+	IndexBufferStrideType strideType_ = {};
+	int32_t elementCount_ = {};
+
 public:
 	IndexBuffer() = default;
 	virtual ~IndexBuffer() = default;
+
+	IndexBufferStrideType GetStrideType() const
+	{
+		return strideType_;
+	}
+	int32_t GetElementCount() const
+	{
+		return elementCount_;
+	}
 };
 
 class VertexLayout
@@ -4745,13 +4952,29 @@ public:
 class Texture
 	: public ReferenceObject
 {
+protected:
+	TextureFormatType format_;
+	std::array<int32_t, 2> size_;
+	bool hasMipmap_;
+
 public:
 	Texture() = default;
 	virtual ~Texture() = default;
 
-	/**
-	 * TODO : Implement GetType, GetFormat, GetSize
-	*/
+	TextureFormatType GetFormat() const
+	{
+		return format_;
+	}
+
+	std::array<int32_t, 2> GetSize() const
+	{
+		return size_;
+	}
+
+	bool GetHasMipmap() const
+	{
+		return hasMipmap_;
+	}
 };
 
 class Shader
@@ -4770,10 +4993,20 @@ public:
 	virtual ~ComputeBuffer() = default;
 };
 
-enum class IndexBufferStrideType
+class FrameBuffer
+	: public ReferenceObject
 {
-	Stride2,
-	Stride4,
+public:
+	FrameBuffer() = default;
+	virtual ~FrameBuffer() = default;
+};
+
+class RenderPass
+	: public ReferenceObject
+{
+public:
+	RenderPass() = default;
+	virtual ~RenderPass() = default;
 };
 
 enum class TextureWrapType
@@ -4791,13 +5024,19 @@ enum class TextureSamplingType
 struct DrawParameter
 {
 public:
+	static const int TextureSlotCount = 8;
+
 	VertexBuffer* VertexBufferPtr = nullptr;
 	IndexBuffer* IndexBufferPtr = nullptr;
 	PipelineState* PipelineStatePtr = nullptr;
 
-	std::array<Texture*, 8> TexturePtrs;
-	std::array<TextureWrapType, 8> TextureWrapTypes;
-	std::array<TextureSamplingType, 8> TextureSamplingTypes;
+	UniformBuffer* VertexUniformBufferPtr = nullptr;
+	UniformBuffer* PixelUniformBufferPtr = nullptr;
+
+	int32_t TextureCount = 0;
+	std::array<Texture*, TextureSlotCount> TexturePtrs;
+	std::array<TextureWrapType, TextureSlotCount> TextureWrapTypes;
+	std::array<TextureSamplingType, TextureSlotCount> TextureSamplingTypes;
 
 	int32_t PrimitiveCount = 0;
 	int32_t InstanceCount = 0;
@@ -4817,6 +5056,9 @@ struct VertexLayoutElement
 {
 	VertexLayoutFormat Format;
 
+	//! only for OpenGL
+	std::string Name;
+
 	//! only for DirectX
 	std::string SemanticName;
 
@@ -4831,29 +5073,7 @@ enum class TopologyType
 	Point,
 };
 
-enum class TextureFormatType
-{
-	R8G8B8A8_UNORM,
-	B8G8R8A8_UNORM,
-	R8_UNORM,
-	R16G16_FLOAT,
-	R16G16B16A16_FLOAT,
-	R32G32B32A32_FLOAT,
-	BC1,
-	BC2,
-	BC3,
-	R8G8B8A8_UNORM_SRGB,
-	B8G8R8A8_UNORM_SRGB,
-	BC1_SRGB,
-	BC2_SRGB,
-	BC3_SRGB,
-	D32,
-	D24S8,
-	D32S8,
-	Unknown,
-};
-
-enum class CullingMode
+enum class CullingType
 {
 	Clockwise,
 	CounterClockwise,
@@ -4911,22 +5131,45 @@ struct PipelineStateParameter
 {
 	TopologyType Topology = TopologyType::Triangle;
 
+	CullingType Culling = CullingType::DoubleSide;
+
+	bool IsBlendEnabled = true;
+
+	BlendFuncType BlendSrcFunc = BlendFuncType::SrcAlpha;
+	BlendFuncType BlendDstFunc = BlendFuncType::OneMinusSrcAlpha;
+	BlendFuncType BlendSrcFuncAlpha = BlendFuncType::SrcAlpha;
+	BlendFuncType BlendDstFuncAlpha = BlendFuncType::OneMinusSrcAlpha;
+
+	BlendEquationType BlendEquationRGB = BlendEquationType::Add;
+	BlendEquationType BlendEquationAlpha = BlendEquationType::Add;
+
+	bool IsDepthTestEnabled = false;
+	bool IsDepthWriteEnabled = false;
+	DepthFuncType DepthFunc = DepthFuncType::Less;
+
+	Shader* ShaderPtr = nullptr;
 	VertexLayout* VertexLayoutPtr = nullptr;
+	FrameBuffer* FrameBufferPtr = nullptr;
 };
 
 struct TextureParameter
 {
-	std::array<float, 2> Size;
+	TextureFormatType Format = TextureFormatType::R8G8B8A8_UNORM;
+	bool GenerateMipmap = true;
+	std::array<int32_t, 2> Size;
+	CustomVector<uint8_t> InitialData;
 };
 
 struct RenderTextureParameter
 {
-	std::array<float, 2> Size;
+	TextureFormatType Format = TextureFormatType::R8G8B8A8_UNORM;
+	std::array<int32_t, 2> Size;
 };
 
 struct DepthTextureParameter
 {
-	std::array<float, 2> Size;
+	TextureFormatType Format = TextureFormatType::R8G8B8A8_UNORM;
+	std::array<int32_t, 2> Size;
 };
 
 class GraphicsDevice
@@ -4974,7 +5217,7 @@ public:
 	}
 
 	/**
-		@brief	Update content of a vertex buffer
+		@brief	Update content of a index buffer
 		@param	buffer	buffer
 		@param	size	the size of updated buffer
 		@param	offset	the offset of updated buffer
@@ -4982,6 +5225,19 @@ public:
 		@return	Succeeded in updating?
 	*/
 	virtual bool UpdateIndexBuffer(IndexBuffer* buffer, int32_t size, int32_t offset, const void* data)
+	{
+		return false;
+	}
+
+	/**
+		@brief	Update content of an uniform buffer
+		@param	buffer	buffer
+		@param	size	the size of updated buffer
+		@param	offset	the offset of updated buffer
+		@param	data	updating data
+		@return	Succeeded in updating?
+	*/
+	virtual bool UpdateUniformBuffer(UniformBuffer* buffer, int32_t size, int32_t offset, const void* data)
 	{
 		return false;
 	}
@@ -5007,22 +5263,32 @@ public:
 		return nullptr;
 	}
 
-	virtual PipelineState* CreatePipelineState(PipelineStateParameter& param)
+	virtual PipelineState* CreatePipelineState(const PipelineStateParameter& param)
 	{
 		return nullptr;
 	}
 
-	virtual Texture* CreateTexture()
+	virtual FrameBuffer* CreateFrameBuffer(const TextureFormatType* formats, int32_t formatCount, TextureFormatType* depthFormat)
 	{
 		return nullptr;
 	}
 
-	virtual Texture* CreateRenderTexture()
+	virtual RenderPass* CreateRenderPass(Texture** textures, int32_t textureCount, Texture* depthTexture)
 	{
 		return nullptr;
 	}
 
-	virtual Texture* CreateDepthTexture()
+	virtual Texture* CreateTexture(const TextureParameter& param)
+	{
+		return nullptr;
+	}
+
+	virtual Texture* CreateRenderTexture(const RenderTextureParameter& param)
+	{
+		return nullptr;
+	}
+
+	virtual Texture* CreateDepthTexture(const DepthTextureParameter& param)
 	{
 		return nullptr;
 	}
@@ -5037,21 +5303,65 @@ public:
 		return nullptr;
 	}
 
+	virtual Shader* CreateShaderFromCodes(const char* vsCode, const char* psCode, UniformLayout* layout = nullptr)
+	{
+		return nullptr;
+	}
+
 	/**
 		@brief	Create ComputeBuffer
 		@param	size	the size of buffer
 		@param	initialData	the initial data of buffer. If it is null, not initialized.
 		@return	ComputeBuffer
 	*/
-	virtual ComputeBuffer* CreateComputeBuffer(int32_t size, const void* initialData)
+	// virtual ComputeBuffer* CreateComputeBuffer(int32_t size, const void* initialData)
+	// {
+	// 	return nullptr;
+	// }
+
+	virtual void Draw(const DrawParameter& drawParam)
 	{
-		return nullptr;
 	}
 
-	virtual void Draw(DrawParameter& drawParam)
+	virtual void BeginRenderPass(RenderPass* renderPass, bool isColorCleared, bool isDepthCleared, Color clearColor)
+	{
+	}
+
+	virtual void EndRenderPass()
 	{
 	}
 };
+
+inline int32_t GetVertexLayoutFormatSize(VertexLayoutFormat format)
+{
+	int32_t size = 0;
+	if (format == Effekseer::Backend::VertexLayoutFormat::R8G8B8A8_UINT || format == Effekseer::Backend::VertexLayoutFormat::R8G8B8A8_UNORM)
+	{
+		size = 4;
+	}
+	else if (format == Effekseer::Backend::VertexLayoutFormat::R32_FLOAT)
+	{
+		size = sizeof(float) * 1;
+	}
+	else if (format == Effekseer::Backend::VertexLayoutFormat::R32G32_FLOAT)
+	{
+		size = sizeof(float) * 2;
+	}
+	else if (format == Effekseer::Backend::VertexLayoutFormat::R32G32B32_FLOAT)
+	{
+		size = sizeof(float) * 3;
+	}
+	else if (format == Effekseer::Backend::VertexLayoutFormat::R32G32B32A32_FLOAT)
+	{
+		size = sizeof(float) * 4;
+	}
+	else
+	{
+		assert(0);
+	}
+
+	return size;
+}
 
 } // namespace Backend
 } // namespace Effekseer

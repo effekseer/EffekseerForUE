@@ -260,7 +260,7 @@ namespace EffekseerRendererUE4
 
 		UMaterialInterface* FindMaterial();
 
-		Shader* GetShader(::EffekseerRenderer::StandardRendererShaderType) const;
+		Shader* GetShader(::EffekseerRenderer::RendererShaderType shaderType) const;
 
 		void BeginShader(Shader* shader);
 		void EndShader(Shader* shader);

@@ -1288,12 +1288,16 @@ void ManagerImplemented::Flip()
 						{
 							Vec3f s = pInstance->GetGlobalMatrix43().GetScale();
 							radius *= s.GetLength();
+							Vec3f culling_pos = Vec3f::Transform(Vec3f(effect->Culling.Location), pInstance->GetGlobalMatrix43());
+							ds.CullingObjectPointer->SetPosition(Culling3D::Vector3DF(culling_pos.GetX(), culling_pos.GetY(), culling_pos.GetZ()));
 						}
 
 						if (ds.DoUseBaseMatrix)
 						{
 							Vec3f s = ds.BaseMatrix.GetScale();
 							radius *= s.GetLength();
+							Vec3f culling_pos = Vec3f::Transform(Vec3f(effect->Culling.Location), ds.BaseMatrix);
+							ds.CullingObjectPointer->SetPosition(Culling3D::Vector3DF(culling_pos.GetX(), culling_pos.GetY(), culling_pos.GetZ()));
 						}
 
 						ds.CullingObjectPointer->ChangeIntoSphere(radius);
@@ -1349,6 +1353,11 @@ void ManagerImplemented::Update(const UpdateParameter& parameter)
 		m_WorkerThreads[0].WaitForComplete();
 		// Process on worker thread
 		m_WorkerThreads[0].RunAsync([this, parameter]() { DoUpdate(parameter); });
+
+		if (parameter.SyncUpdate)
+		{
+			m_WorkerThreads[0].WaitForComplete();
+		}
 	}
 }
 
