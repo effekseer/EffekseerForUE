@@ -12,6 +12,86 @@ namespace Effekseer
 namespace Backend
 {
 
+enum class TextureFormatType
+{
+	R8G8B8A8_UNORM,
+	B8G8R8A8_UNORM,
+	R8_UNORM,
+	R16G16_FLOAT,
+	R16G16B16A16_FLOAT,
+	R32G32B32A32_FLOAT,
+	BC1,
+	BC2,
+	BC3,
+	R8G8B8A8_UNORM_SRGB,
+	B8G8R8A8_UNORM_SRGB,
+	BC1_SRGB,
+	BC2_SRGB,
+	BC3_SRGB,
+	D32,
+	D24S8,
+	D32S8,
+	Unknown,
+};
+
+enum class IndexBufferStrideType
+{
+	Stride2,
+	Stride4,
+};
+
+enum class UniformBufferLayoutElementType
+{
+	Vector4,
+};
+
+enum class ShaderStageType
+{
+	Vertex,
+	Pixel,
+};
+
+struct UniformLayoutElement
+{
+	ShaderStageType Stage = ShaderStageType::Vertex;
+	std::string Name;
+	UniformBufferLayoutElementType Type;
+
+	//! Ignored in UniformBuffer
+	int32_t Offset;
+};
+
+/**
+	@brief	Layouts in an uniform buffer
+	@note
+	Only for OpenGL
+*/
+class UniformLayout
+	: public ReferenceObject
+{
+private:
+	CustomVector<std::string> textures_;
+	CustomVector<UniformLayoutElement> elements_;
+
+public:
+	UniformLayout(CustomVector<std::string> textures, CustomVector<UniformLayoutElement> elements)
+		: textures_(std::move(textures))
+		, elements_(std::move(elements))
+	{
+	}
+	virtual ~UniformLayout() = default;
+
+	const CustomVector<std::string>& GetTextures() const
+	{
+		return textures_;
+	}
+
+	const CustomVector<UniformLayoutElement>& GetElements() const
+	{
+		return elements_;
+	}
+};
+
 class VertexBuffer
 	: public ReferenceObject
 {
@@ -23,9 +103,22 @@ public:
 class IndexBuffer
 	: public ReferenceObject
 {
+protected:
+	IndexBufferStrideType strideType_ = {};
+	int32_t elementCount_ = {};
+
 public:
 	IndexBuffer() = default;
 	virtual ~IndexBuffer() = default;
+
+	IndexBufferStrideType GetStrideType() const
+	{
+		return strideType_;
+	}
+	int32_t GetElementCount() const
+	{
+		return elementCount_;
+	}
 };
 
 class VertexLayout
@@ -55,13 +148,29 @@ public:
 class Texture
 	: public ReferenceObject
 {
+protected:
+	TextureFormatType format_;
+	std::array<int32_t, 2> size_;
+	bool hasMipmap_;
+
 public:
 	Texture() = default;
 	virtual ~Texture() = default;
 
-	/**
-	 * TODO : Implement GetType, GetFormat, GetSize
-	*/
+	TextureFormatType GetFormat() const
+	{
+		return format_;
+	}
+
+	std::array<int32_t, 2> GetSize() const
+	{
+		return size_;
+	}
+
+	bool GetHasMipmap() const
+	{
+		return hasMipmap_;
+	}
 };
 
 class Shader
@@ -80,10 +189,20 @@ public:
 	virtual ~ComputeBuffer() = default;
 };
 
-enum class IndexBufferStrideType
+class FrameBuffer
+	: public ReferenceObject
 {
-	Stride2,
-	Stride4,
+public:
+	FrameBuffer() = default;
+	virtual ~FrameBuffer() = default;
+};
+
+class RenderPass
+	: public ReferenceObject
+{
+public:
+	RenderPass() = default;
+	virtual ~RenderPass() = default;
 };
 
 enum class TextureWrapType
@@ -101,13 +220,19 @@ enum class TextureSamplingType
 struct DrawParameter
 {
 public:
+	static const int TextureSlotCount = 8;
+
 	VertexBuffer* VertexBufferPtr = nullptr;
 	IndexBuffer* IndexBufferPtr = nullptr;
 	PipelineState* PipelineStatePtr = nullptr;
 
-	std::array<Texture*, 8> TexturePtrs;
-	std::array<TextureWrapType, 8> TextureWrapTypes;
-	std::array<TextureSamplingType, 8> TextureSamplingTypes;
+	UniformBuffer* VertexUniformBufferPtr = nullptr;
+	UniformBuffer* PixelUniformBufferPtr = nullptr;
+
+	int32_t TextureCount = 0;
+	std::array<Texture*, TextureSlotCount> TexturePtrs;
+	std::array<TextureWrapType, TextureSlotCount> TextureWrapTypes;
+	std::array<TextureSamplingType, TextureSlotCount> TextureSamplingTypes;
 
 	int32_t PrimitiveCount = 0;
 	int32_t InstanceCount = 0;
@@ -127,6 +252,9 @@ struct VertexLayoutElement
 {
 	VertexLayoutFormat Format;
 
+	//! only for OpenGL
+	std::string Name;
+
 	//! only for DirectX
 	std::string SemanticName;
 
@@ -141,29 +269,7 @@ enum class TopologyType
 	Point,
 };
 
-enum class TextureFormatType
-{
-	R8G8B8A8_UNORM,
-	B8G8R8A8_UNORM,
-	R8_UNORM,
-	R16G16_FLOAT,
-	R16G16B16A16_FLOAT,
-	R32G32B32A32_FLOAT,
-	BC1,
-	BC2,
-	BC3,
-	R8G8B8A8_UNORM_SRGB,
-	B8G8R8A8_UNORM_SRGB,
-	BC1_SRGB,
-	BC2_SRGB,
-	BC3_SRGB,
-	D32,
-	D24S8,
-	D32S8,
-	Unknown,
-};
-
-enum class CullingMode
+enum class CullingType
 {
 	Clockwise,
 	CounterClockwise,
@@ -221,22 +327,45 @@ struct PipelineStateParameter
 {
 	TopologyType Topology = TopologyType::Triangle;
 
+	CullingType Culling = CullingType::DoubleSide;
+
+	bool IsBlendEnabled = true;
+
+	BlendFuncType BlendSrcFunc = BlendFuncType::SrcAlpha;
+	BlendFuncType BlendDstFunc = BlendFuncType::OneMinusSrcAlpha;
+	BlendFuncType BlendSrcFuncAlpha = BlendFuncType::SrcAlpha;
+	BlendFuncType BlendDstFuncAlpha = BlendFuncType::OneMinusSrcAlpha;
+
+	BlendEquationType BlendEquationRGB = BlendEquationType::Add;
+	BlendEquationType BlendEquationAlpha = BlendEquationType::Add;
+
+	bool IsDepthTestEnabled = false;
+	bool IsDepthWriteEnabled = false;
+	DepthFuncType DepthFunc = DepthFuncType::Less;
+
+	Shader* ShaderPtr = nullptr;
 	VertexLayout* VertexLayoutPtr = nullptr;
+	FrameBuffer* FrameBufferPtr = nullptr;
 };
 
 struct TextureParameter
 {
-	std::array<float, 2> Size;
+	TextureFormatType Format = TextureFormatType::R8G8B8A8_UNORM;
+	bool GenerateMipmap = true;
+	std::array<int32_t, 2> Size;
+	CustomVector<uint8_t> InitialData;
 };
 
 struct RenderTextureParameter
 {
-	std::array<float, 2> Size;
+	TextureFormatType Format = TextureFormatType::R8G8B8A8_UNORM;
+	std::array<int32_t, 2> Size;
 };
 
 struct DepthTextureParameter
 {
-	std::array<float, 2> Size;
+	TextureFormatType Format = TextureFormatType::R8G8B8A8_UNORM;
+	std::array<int32_t, 2> Size;
 };
 
 class GraphicsDevice
@@ -284,7 +413,7 @@ public:
 	}
 
 	/**
-		@brief	Update content of a vertex buffer
+		@brief	Update content of a index buffer
 		@param	buffer	buffer
 		@param	size	the size of updated buffer
 		@param	offset	the offset of updated buffer
@@ -292,6 +421,19 @@ public:
 		@return	Succeeded in updating?
 	*/
 	virtual bool UpdateIndexBuffer(IndexBuffer* buffer, int32_t size, int32_t offset, const void* data)
+	{
+		return false;
+	}
+
+	/**
+		@brief	Update content of an uniform buffer
+		@param	buffer	buffer
+		@param	size	the size of updated buffer
+		@param	offset	the offset of updated buffer
+		@param	data	updating data
+		@return	Succeeded in updating?
+	*/
+	virtual bool UpdateUniformBuffer(UniformBuffer* buffer, int32_t size, int32_t offset, const void* data)
 	{
 		return false;
 	}
@@ -317,22 +459,32 @@ public:
 		return nullptr;
 	}
 
-	virtual PipelineState* CreatePipelineState(PipelineStateParameter& param)
+	virtual PipelineState* CreatePipelineState(const PipelineStateParameter& param)
 	{
 		return nullptr;
 	}
 
-	virtual Texture* CreateTexture()
+	virtual FrameBuffer* CreateFrameBuffer(const TextureFormatType* formats, int32_t formatCount, TextureFormatType* depthFormat)
 	{
 		return nullptr;
 	}
 
-	virtual Texture* CreateRenderTexture()
+	virtual RenderPass* CreateRenderPass(Texture** textures, int32_t textureCount, Texture* depthTexture)
 	{
 		return nullptr;
 	}
 
-	virtual Texture* CreateDepthTexture()
+	virtual Texture* CreateTexture(const TextureParameter& param)
+	{
+		return nullptr;
+	}
+
+	virtual Texture* CreateRenderTexture(const RenderTextureParameter& param)
+	{
+		return nullptr;
+	}
+
+	virtual Texture* CreateDepthTexture(const DepthTextureParameter& param)
 	{
 		return nullptr;
 	}
@@ -347,21 +499,65 @@ public:
 		return nullptr;
 	}
 
+	virtual Shader* CreateShaderFromCodes(const char* vsCode, const char* psCode, UniformLayout* layout = nullptr)
+	{
+		return nullptr;
+	}
+
 	/**
 		@brief	Create ComputeBuffer
 		@param	size	the size of buffer
 		@param	initialData	the initial data of buffer. If it is null, not initialized.
 		@return	ComputeBuffer
 	*/
-	virtual ComputeBuffer* CreateComputeBuffer(int32_t size, const void* initialData)
+	// virtual ComputeBuffer* CreateComputeBuffer(int32_t size, const void* initialData)
+	// {
+	// 	return nullptr;
+	// }
+
+	virtual void Draw(const DrawParameter& drawParam)
 	{
-		return nullptr;
 	}
 
-	virtual void Draw(DrawParameter& drawParam)
+	virtual void BeginRenderPass(RenderPass* renderPass, bool isColorCleared, bool isDepthCleared, Color clearColor)
+	{
+	}
+
+	virtual void EndRenderPass()
 	{
 	}
 };
+
+inline int32_t GetVertexLayoutFormatSize(VertexLayoutFormat format)
+{
+	int32_t size = 0;
+	if (format == Effekseer::Backend::VertexLayoutFormat::R8G8B8A8_UINT || format == Effekseer::Backend::VertexLayoutFormat::R8G8B8A8_UNORM)
+	{
+		size = 4;
+	}
+	else if (format == Effekseer::Backend::VertexLayoutFormat::R32_FLOAT)
+	{
+		size = sizeof(float) * 1;
+	}
+	else if (format == Effekseer::Backend::VertexLayoutFormat::R32G32_FLOAT)
+	{
+		size = sizeof(float) * 2;
+	}
+	else if (format == Effekseer::Backend::VertexLayoutFormat::R32G32B32_FLOAT)
+	{
+		size = sizeof(float) * 3;
+	}
+	else if (format == Effekseer::Backend::VertexLayoutFormat::R32G32B32A32_FLOAT)
+	{
+		size = sizeof(float) * 4;
+	}
+	else
+	{
+		assert(0);
+	}
+
+	return size;
+}
 
 } // namespace Backend
 } // namespace Effekseer

@@ -6,6 +6,7 @@
 // Include
 //----------------------------------------------------------------------------------
 #include <array>
+#include <assert.h>
 #include <atomic>
 #include <cfloat>
 #include <climits>
@@ -14,7 +15,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <vector>
-
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
@@ -93,6 +93,11 @@ class Curve;
 struct ProcedualModelParameter;
 
 typedef int Handle;
+
+namespace Backend
+{
+class Texture;
+}
 
 /**
 	@brief	Memory Allocation function
@@ -391,55 +396,55 @@ inline int32_t ConvertUtf16ToUtf8(int8_t* dst, int32_t dst_size, const int16_t* 
 */
 inline int32_t ConvertUtf8ToUtf16(char16_t* dst, int32_t dst_size, const char* src)
 {
-    int32_t i, code = 0;
-    int8_t c0, c1, c2 = 0;
-    int8_t* srci = reinterpret_cast<int8_t*>(const_cast<char*>(src));
-    if (dst_size == 0)
-        return 0;
+	int32_t i, code = 0;
+	int8_t c0, c1, c2 = 0;
+	int8_t* srci = reinterpret_cast<int8_t*>(const_cast<char*>(src));
+	if (dst_size == 0)
+		return 0;
 
-    dst_size -= 1;
+	dst_size -= 1;
 
-    for (i = 0; i < dst_size; i++)
-    {
-        uint16_t wc;
+	for (i = 0; i < dst_size; i++)
+	{
+		uint16_t wc;
 
-        c0 = *srci;
-        srci++;
-        if (c0 == '\0')
-        {
-            break;
-        }
-        // convert UTF8 to UTF16
-        code = (uint8_t)c0 >> 4;
-        if (code <= 7)
-        {
-            // 8bit character
-            wc = c0;
-        }
-        else if (code >= 12 && code <= 13)
-        {
-            // 16bit  character
-            c1 = *srci;
-            srci++;
-            wc = ((c0 & 0x1F) << 6) | (c1 & 0x3F);
-        }
-        else if (code == 14)
-        {
-            // 24bit character
-            c1 = *srci;
-            srci++;
-            c2 = *srci;
-            srci++;
-            wc = ((c0 & 0x0F) << 12) | ((c1 & 0x3F) << 6) | (c2 & 0x3F);
-        }
-        else
-        {
-            continue;
-        }
-        dst[i] = wc;
-    }
-    dst[i] = 0;
-    return i;
+		c0 = *srci;
+		srci++;
+		if (c0 == '\0')
+		{
+			break;
+		}
+		// convert UTF8 to UTF16
+		code = (uint8_t)c0 >> 4;
+		if (code <= 7)
+		{
+			// 8bit character
+			wc = c0;
+		}
+		else if (code >= 12 && code <= 13)
+		{
+			// 16bit  character
+			c1 = *srci;
+			srci++;
+			wc = ((c0 & 0x1F) << 6) | (c1 & 0x3F);
+		}
+		else if (code == 14)
+		{
+			// 24bit character
+			c1 = *srci;
+			srci++;
+			c2 = *srci;
+			srci++;
+			wc = ((c0 & 0x0F) << 12) | ((c1 & 0x3F) << 6) | (c2 & 0x3F);
+		}
+		else
+		{
+			continue;
+		}
+		dst[i] = wc;
+	}
+	dst[i] = 0;
+	return i;
 }
 
 /**
@@ -555,6 +560,20 @@ inline std::unique_ptr<T, ReferenceDeleter<T>> CreateUniqueReference(T* ptr, boo
 	return std::unique_ptr<T, ReferenceDeleter<T>>(ptr);
 }
 
+template <typename T>
+inline std::shared_ptr<T> CreateReference(T* ptr, bool addRef = false)
+{
+	if (ptr == nullptr)
+		return std::shared_ptr<T>(nullptr);
+
+	if (addRef)
+	{
+		ptr->AddRef();
+	}
+
+	return std::shared_ptr<T>(ptr, ReferenceDeleter<T>());
+}
+
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
@@ -641,6 +660,9 @@ struct TextureData
 
 	//! for OpenGL, it is ignored in other apis
 	bool HasMipmap = true;
+
+	//! A backend which contains a native data
+	class Backend::Texture* TexturePtr = nullptr;
 };
 
 enum class ShadingModelType : int32_t
@@ -775,14 +797,53 @@ struct NodeRendererBasicParameter
 	int32_t FlipbookDivideX = 1;
 	int32_t FlipbookDivideY = 1;
 
-	int32_t EmissiveScaling = 1;
+	float EmissiveScaling = 1.0f;
 
 	float EdgeThreshold = 0.0f;
-	uint8_t EdgeColor[4] = { 0 };
+	uint8_t EdgeColor[4] = {0};
 	int32_t EdgeColorScaling = 1;
 
 	//! copy from alphacutoff
 	bool IsAlphaCutoffEnabled = false;
+
+	//! Whether are particles rendered with AdvancedRenderer
+	bool GetIsRenderedWithAdvancedRenderer() const
+	{
+		if (MaterialType == RendererMaterialType::File)
+			return false;
+
+		if (Texture3Index >= 0)
+			return true;
+
+		if (Texture4Index >= 0)
+			return true;
+
+		if (Texture5Index >= 0)
+			return true;
+
+		if (Texture6Index >= 0)
+			return true;
+
+		if (Texture7Index >= 0)
+			return true;
+
+		if (EnableInterpolation)
+			return true;
+
+		if (TextureBlendType != -1)
+			return true;
+
+		if (EdgeThreshold != 0)
+			return true;
+
+		if (IsAlphaCutoffEnabled)
+			return true;
+
+		if (EmissiveScaling != 1.0f)
+			return true;
+
+		return false;
+	}
 };
 
 //----------------------------------------------------------------------------------

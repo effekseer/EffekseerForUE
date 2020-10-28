@@ -557,31 +557,7 @@ namespace EffekseerRendererUE4
 
 		SortTemporaryValues(m_renderer, parameter);
 
-		EffekseerRenderer::StandardRendererShaderType type;
-		if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::Default && isAdvanced_)
-		{
-			type = EffekseerRenderer::StandardRendererShaderType::AdvancedUnlit;
-		}
-		else if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::Lighting && isAdvanced_)
-		{
-			type = EffekseerRenderer::StandardRendererShaderType::AdvancedLit;
-		}
-		else if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::BackDistortion && isAdvanced_)
-		{
-			type = EffekseerRenderer::StandardRendererShaderType::AdvancedBackDistortion;
-		}
-		else if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::Default)
-		{
-			type = EffekseerRenderer::StandardRendererShaderType::Unlit;
-		}
-		else if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::Lighting)
-		{
-			type = EffekseerRenderer::StandardRendererShaderType::Lit;
-		}
-		else if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::BackDistortion)
-		{
-			type = EffekseerRenderer::StandardRendererShaderType::BackDistortion;
-		}
+		EffekseerRenderer::RendererShaderType type = collector_.ShaderType;
 
 		Shader* shader = m_renderer->GetShader(type);
 
@@ -1601,29 +1577,29 @@ namespace EffekseerRendererUE4
 		return mat;
 	}
 
-	Shader* RendererImplemented::GetShader(::EffekseerRenderer::StandardRendererShaderType materialType) const
+	Shader* RendererImplemented::GetShader(::EffekseerRenderer::RendererShaderType shaderType) const
 	{
-		if (materialType == ::EffekseerRenderer::StandardRendererShaderType::AdvancedBackDistortion)
+		if (shaderType == ::EffekseerRenderer::RendererShaderType::AdvancedBackDistortion)
 		{
 			return backDistortedShaderAd_.get();
 		}
-		else if (materialType == ::EffekseerRenderer::StandardRendererShaderType::AdvancedLit)
+		else if (shaderType == ::EffekseerRenderer::RendererShaderType::AdvancedLit)
 		{
 			return lightingShaderAd_.get();
 		}
-		else if (materialType == ::EffekseerRenderer::StandardRendererShaderType::AdvancedUnlit)
+		else if (shaderType == ::EffekseerRenderer::RendererShaderType::AdvancedUnlit)
 		{
 			return stanShaderAd_.get();
 		}
-		else if (materialType == ::EffekseerRenderer::StandardRendererShaderType::BackDistortion)
+		else if (shaderType == ::EffekseerRenderer::RendererShaderType::BackDistortion)
 		{
 			return backDistortedShader_.get();
 		}
-		else if (materialType == ::EffekseerRenderer::StandardRendererShaderType::Lit)
+		else if (shaderType == ::EffekseerRenderer::RendererShaderType::Lit)
 		{
 			return lightingShader_.get();
 		}
-		else if (materialType == ::EffekseerRenderer::StandardRendererShaderType::Unlit)
+		else if (shaderType == ::EffekseerRenderer::RendererShaderType::Unlit)
 		{
 			return stanShader_.get();
 		}

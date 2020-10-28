@@ -73,6 +73,7 @@ protected:
 	InstanceCustomData customDataValues2;
 
 	Vec3f prevPosition_;
+	Vec3f prevGlobalPosition_;
 
 	Vec3f parentPosition_;
 	Vec3f steeringVec_;
@@ -103,20 +104,8 @@ public:
 	// Random generator
 	RandObject m_randObject;
 
-	// グローバル位置
-	Vec3f m_GlobalPosition;
-	Vec3f m_GlobalVelocity;
+	LocalForceFieldInstance forceField_;
 
-	// グローバル位置補正
-	Vec3f m_GlobalRevisionLocation;
-	Vec3f m_GlobalRevisionVelocity;
-
-#ifdef OLD_LF
-	//! for noise
-	Vec3f modifyWithNoise_;
-#else
-	LocalForceFieldInstance localForceField_;
-#endif
 	// Color for binding
 	Color ColorInheritance;
 
@@ -143,7 +132,7 @@ public:
 			Vec3f acceleration;
 		} random;
 
-		InstanceEasing3 easing;
+		InstanceEasing<Vec3f> easing;
 		/*
 		struct
 		{
@@ -178,7 +167,7 @@ public:
 			Vec3f acceleration;
 		} random;
 
-		InstanceEasing3 easing;
+		InstanceEasing<Vec3f> easing;
 		/*
 		struct
 		{
@@ -230,7 +219,7 @@ public:
 			Vec3f acceleration;
 		} random;
 
-		InstanceEasing3 easing;
+		InstanceEasing<Vec3f> easing;
 
 		/*
 		struct
@@ -257,6 +246,11 @@ public:
 		{
 			Vec3f offset;
 		} fcruve;
+
+		struct
+		{
+			float offset;
+		} single_fcruve;
 
 	} scaling_values;
 
@@ -453,11 +447,6 @@ private:
 		@brief	行列の更新
 	*/
 	void CalculateParentMatrix(float deltaFrame);
-
-	/**
-		@brief	絶対パラメータの反映
-	*/
-	void ModifyMatrixFromLocationAbs(float deltaFrame);
 
 	void ApplyDynamicParameterToFixedLocation();
 

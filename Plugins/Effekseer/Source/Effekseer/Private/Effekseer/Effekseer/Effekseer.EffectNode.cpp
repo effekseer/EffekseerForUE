@@ -74,7 +74,6 @@ void EffectNodeImplemented::LoadParameter(unsigned char*& pos, EffectNode* paren
 	if (node_type == -1)
 	{
 		TranslationType = ParameterTranslationType_None;
-		LocationAbs.type = LocationAbsType::None;
 		RotationType = ParameterRotationType_None;
 		ScalingType = ParameterScalingType_None;
 		CommonValues.MaxGeneration = 1;
@@ -262,65 +261,54 @@ void EffectNodeImplemented::LoadParameter(unsigned char*& pos, EffectNode* paren
 		// Local force field
 		if (ef->GetVersion() >= 1500)
 		{
-#ifdef OLD_LF
-			int32_t count = 0;
-			memcpy(&count, pos, sizeof(int));
-			pos += sizeof(int);
-
-			for (int32_t i = 0; i < count; i++)
-			{
-				LocalForceFieldsOld[i].Load(pos, ef->GetVersion());
-			}
-#else
 			LocalForceField.Load(pos, ef->GetVersion());
-#endif
 		}
 
-		memcpy(&LocationAbs.type, pos, sizeof(int));
-		pos += sizeof(int);
+		// for compatiblity of location abs
+		if (ef->GetVersion() <= Version16Alpha1)
+		{
+			LocationAbsParameter LocationAbs;
 
-		// Calc attraction forces
-		if (LocationAbs.type == LocationAbsType::None)
-		{
-			memcpy(&size, pos, sizeof(int));
+			memcpy(&LocationAbs.type, pos, sizeof(int));
 			pos += sizeof(int);
-			assert(size == 0);
-			memcpy(&LocationAbs.none, pos, size);
-			pos += size;
-		}
-		else if (LocationAbs.type == LocationAbsType::Gravity)
-		{
-			memcpy(&size, pos, sizeof(int));
-			pos += sizeof(int);
-			assert(size == sizeof(vector3d));
-			memcpy(&LocationAbs.gravity, pos, size);
-			pos += size;
-		}
-		else if (LocationAbs.type == LocationAbsType::AttractiveForce)
-		{
-			memcpy(&size, pos, sizeof(int));
-			pos += sizeof(int);
-			assert(size == sizeof(LocationAbs.attractiveForce));
-			memcpy(&LocationAbs.attractiveForce, pos, size);
-			pos += size;
-		}
 
-		// Magnify attraction forces
-		if (ef->IsDyanamicMagnificationValid())
-		{
+			// Calc attraction forces
 			if (LocationAbs.type == LocationAbsType::None)
 			{
+				memcpy(&size, pos, sizeof(int));
+				pos += sizeof(int);
+				assert(size == 0);
+				memcpy(&LocationAbs.none, pos, size);
+				pos += size;
 			}
 			else if (LocationAbs.type == LocationAbsType::Gravity)
 			{
-				LocationAbs.gravity *= m_effect->GetMaginification();
+				memcpy(&size, pos, sizeof(int));
+				pos += sizeof(int);
+				assert(size == sizeof(vector3d));
+				memcpy(&LocationAbs.gravity, pos, size);
+				pos += size;
 			}
 			else if (LocationAbs.type == LocationAbsType::AttractiveForce)
 			{
-				LocationAbs.attractiveForce.control *= m_effect->GetMaginification();
-				LocationAbs.attractiveForce.force *= m_effect->GetMaginification();
-				LocationAbs.attractiveForce.minRange *= m_effect->GetMaginification();
-				LocationAbs.attractiveForce.maxRange *= m_effect->GetMaginification();
+				memcpy(&size, pos, sizeof(int));
+				pos += sizeof(int);
+				assert(size == sizeof(LocationAbs.attractiveForce));
+				memcpy(&LocationAbs.attractiveForce, pos, size);
+				pos += size;
+			}
+
+			if (LocationAbs.type == LocationAbsType::Gravity)
+			{
+				LocalForceField.MaintainGravityCompatibility(LocationAbs.gravity);
+			}
+			else if (LocationAbs.type == LocationAbsType::AttractiveForce)
+			{
+				LocalForceField.MaintainAttractiveForceCompatibility(
+					LocationAbs.attractiveForce.force,
+					LocationAbs.attractiveForce.control,
+					LocationAbs.attractiveForce.minRange,
+					LocationAbs.attractiveForce.maxRange);
 			}
 		}
 
@@ -474,6 +462,15 @@ void EffectNodeImplemented::LoadParameter(unsigned char*& pos, EffectNode* paren
 			ScalingFCurve->X.SetDefaultValue(1.0f);
 			ScalingFCurve->Y.SetDefaultValue(1.0f);
 			ScalingFCurve->Z.SetDefaultValue(1.0f);
+		}
+		else if (ScalingType == ParameterScalingType_SingleFCurve)
+		{
+			memcpy(&size, pos, sizeof(int));
+			pos += sizeof(int);
+
+			ScalingSingleFCurve = new FCurveScalar();
+			pos += ScalingSingleFCurve->Load(pos, m_effect->GetVersion());
+			ScalingSingleFCurve->S.SetDefaultValue(1.0f);
 		}
 
 		/* Spawning Method */
@@ -749,6 +746,7 @@ EffectNodeImplemented::~EffectNodeImplemented()
 	ES_SAFE_DELETE(TranslationFCurve);
 	ES_SAFE_DELETE(RotationFCurve);
 	ES_SAFE_DELETE(ScalingFCurve);
+	ES_SAFE_DELETE(ScalingSingleFCurve);
 }
 
 void EffectNodeImplemented::CalcCustomData(const Instance* instance, std::array<float, 4>& customData1, std::array<float, 4>& customData2)
@@ -1085,8 +1083,8 @@ EffectInstanceTerm EffectNodeImplemented::CalculateInstanceTerm(EffectInstanceTe
 		lifeMax = INT_MAX;
 	}
 
-	auto firstBeginMin = CommonValues.GenerationTimeOffset.min;
-	auto firstBeginMax = CommonValues.GenerationTimeOffset.max;
+	auto firstBeginMin = static_cast<int32_t>(CommonValues.GenerationTimeOffset.min);
+	auto firstBeginMax = static_cast<int32_t>(CommonValues.GenerationTimeOffset.max);
 	auto firstEndMin = addWithClip(firstBeginMin, lifeMin);
 	auto firstEndMax = addWithClip(firstBeginMax, lifeMax);
 
@@ -1098,7 +1096,7 @@ EffectInstanceTerm EffectNodeImplemented::CalculateInstanceTerm(EffectInstanceTe
 	}
 	else
 	{
-		lastBeginMin = CommonValues.GenerationTimeOffset.min + (CommonValues.MaxGeneration - 1) * (CommonValues.GenerationTime.min);
+		lastBeginMin = firstBeginMin + (CommonValues.MaxGeneration - 1) * (CommonValues.GenerationTime.min);
 	}
 
 	if (CommonValues.MaxGeneration > INT_MAX / 2)
@@ -1107,7 +1105,7 @@ EffectInstanceTerm EffectNodeImplemented::CalculateInstanceTerm(EffectInstanceTe
 	}
 	else
 	{
-		lastBeginMax = CommonValues.GenerationTimeOffset.max + (CommonValues.MaxGeneration - 1) * (CommonValues.GenerationTime.max);
+		lastBeginMax = firstBeginMax + (CommonValues.MaxGeneration - 1) * (CommonValues.GenerationTime.max);
 	}
 
 	auto lastEndMin = addWithClip(lastBeginMin, lifeMin);

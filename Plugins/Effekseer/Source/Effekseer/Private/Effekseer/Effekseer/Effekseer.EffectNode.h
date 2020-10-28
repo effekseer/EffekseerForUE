@@ -373,6 +373,7 @@ enum ParameterScalingType
 	ParameterScalingType_SinglePVA = 3,
 	ParameterScalingType_SingleEasing = 4,
 	ParameterScalingType_FCurve = 5,
+	ParameterScalingType_SingleFCurve = 6,
 
 	ParameterScalingType_None = 0x7fffffff - 1,
 
@@ -441,6 +442,7 @@ struct ParameterGenerationLocation
 		TYPE_MODEL = 2,
 		TYPE_CIRCLE = 3,
 		TYPE_LINE = 4,
+		TYPE_PROCEDUAL_MODEL = 5,
 
 		TYPE_DWORD = 0x7fffffff,
 	} type;
@@ -508,6 +510,13 @@ struct ParameterGenerationLocation
 			random_float position_noize;
 			LineType type;
 		} line;
+
+		
+		struct
+		{
+			int32_t index;
+			eModelType type;
+		} procedualModel;
 	};
 
 	void load(uint8_t*& pos, int32_t version)
@@ -553,6 +562,11 @@ struct ParameterGenerationLocation
 		{
 			memcpy(&line, pos, sizeof(line));
 			pos += sizeof(line);
+		}
+		else if (type == TYPE_PROCEDUAL_MODEL)
+		{
+			memcpy(&procedualModel, pos, sizeof(procedualModel));
+			pos += sizeof(procedualModel);
 		}
 	}
 };
@@ -734,7 +748,7 @@ struct ParameterRendererCommon
 
 	float BlendUVDistortionIntensity = 1.0f;
 
-	int32_t EmissiveScaling = 1;
+	float EmissiveScaling = 1.0f;
 
 	bool ZWrite = false;
 
@@ -899,12 +913,12 @@ struct ParameterRendererCommon
 			{
 				if (version >= 1600)
 				{
-					memcpy(&EmissiveScaling, pos, sizeof(int));
-					pos += sizeof(int);
+					memcpy(&EmissiveScaling, pos, sizeof(float));
+					pos += sizeof(float);
 				}
 				else
 				{
-					EmissiveScaling = 1;
+					EmissiveScaling = 1.0f;
 				}
 			}
 
@@ -1501,24 +1515,18 @@ public:
 	ParameterTranslationType TranslationType;
 	ParameterTranslationFixed TranslationFixed;
 	ParameterTranslationPVA TranslationPVA;
-	ParameterEasing3 TranslationEasing;
+	ParameterEasingVec3f TranslationEasing;
 	// ParameterTranslationEasing TranslationEasing;
 	FCurveVector3D* TranslationFCurve;
 	ParameterTranslationNurbsCurve TranslationNurbsCurve;
 	ParameterTranslationViewOffset TranslationViewOffset;
-
-#ifdef OLD_LF
-	std::array<LocalForceFieldParameterOld, LocalFieldSlotMax> LocalForceFieldsOld;
-#else
 	LocalForceFieldParameter LocalForceField;
-#endif
-	LocationAbsParameter LocationAbs;
 
 	ParameterRotationType RotationType;
 	ParameterRotationFixed RotationFixed;
 	ParameterRotationPVA RotationPVA;
 
-	ParameterEasing3 RotationEasing;
+	ParameterEasingVec3f RotationEasing;
 	// ParameterRotationEasing RotationEasing;
 	FCurveVector3D* RotationFCurve;
 
@@ -1528,11 +1536,12 @@ public:
 	ParameterScalingType ScalingType;
 	ParameterScalingFixed ScalingFixed;
 	ParameterScalingPVA ScalingPVA;
-	ParameterEasing3 ScalingEasing;
+	ParameterEasingVec3f ScalingEasing;
 	// ParameterScalingEasing ScalingEasing;
 	ParameterScalingSinglePVA ScalingSinglePVA;
 	easing_float ScalingSingleEasing;
 	FCurveVector3D* ScalingFCurve;
+	FCurveScalar* ScalingSingleFCurve = nullptr;
 
 	ParameterGenerationLocation GenerationLocation;
 

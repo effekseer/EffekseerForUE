@@ -7,16 +7,11 @@ copy_tree("../Effekseer/Dev/Cpp/EffekseerRendererCommon", "./Plugins/Effekseer/S
 
 copy_tree("../Effekseer/Dev/Cpp/EffekseerMaterial", "./Plugins/Effekseer/Source/EffekseerEd/Private/EffekseerMaterial")
 
-os.remove("./Plugins/Effekseer/Source/Effekseer/Private/Effekseer/Effekseer.vcxproj")
-os.remove("./Plugins/Effekseer/Source/Effekseer/Private/Effekseer/Effekseer.vcxproj.filters")
 os.remove("./Plugins/Effekseer/Source/Effekseer/Private/Effekseer/CMakeLists.txt")
 
 os.remove("./Plugins/Effekseer/Source/Effekseer/Private/EffekseerRendererCommon/CMakeLists.txt")
 os.remove("./Plugins/Effekseer/Source/Effekseer/Private/EffekseerRendererCommon/EffekseerRenderer.DDSTextureLoader.cpp")
 os.remove("./Plugins/Effekseer/Source/Effekseer/Private/EffekseerRendererCommon/EffekseerRenderer.DDSTextureLoader.h")
-os.remove("./Plugins/Effekseer/Source/Effekseer/Private/EffekseerRendererCommon/EffekseerRenderer.DXTK.dds.h")
-os.remove("./Plugins/Effekseer/Source/Effekseer/Private/EffekseerRendererCommon/EffekseerRenderer.DXTK.DDSTextureLoader.cpp")
-os.remove("./Plugins/Effekseer/Source/Effekseer/Private/EffekseerRendererCommon/EffekseerRenderer.DXTK.DDSTextureLoader.h")
 os.remove("./Plugins/Effekseer/Source/Effekseer/Private/EffekseerRendererCommon/EffekseerRenderer.TGATextureLoader.cpp")
 os.remove("./Plugins/Effekseer/Source/Effekseer/Private/EffekseerRendererCommon/EffekseerRenderer.TGATextureLoader.h")
 os.remove("./Plugins/Effekseer/Source/Effekseer/Private/EffekseerRendererCommon/EffekseerRenderer.PngTextureLoader.cpp")
