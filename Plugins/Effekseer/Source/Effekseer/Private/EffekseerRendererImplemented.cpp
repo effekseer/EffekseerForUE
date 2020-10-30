@@ -600,41 +600,10 @@ namespace EffekseerRendererUE4
 		{
 			if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::BackDistortion)
 			{
-
 				m_renderer->SetDistortionIntensity(parameter.BasicParameterPtr->DistortionIntensity);
 			}
 
-			Effekseer::TextureData* textures[7] = { nullptr };
-
-			if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::BackDistortion)
-			{
-				textures[0] = (parameter.BasicParameterPtr->Texture1Index >= 0) ? parameter.EffectPointer->GetDistortionImage(parameter.BasicParameterPtr->Texture1Index) : nullptr;
-				textures[2] = (parameter.BasicParameterPtr->Texture3Index >= 0) ? parameter.EffectPointer->GetDistortionImage(parameter.BasicParameterPtr->Texture3Index) : nullptr;
-				textures[3] = (parameter.BasicParameterPtr->Texture4Index >= 0) ? parameter.EffectPointer->GetDistortionImage(parameter.BasicParameterPtr->Texture4Index) : nullptr;
-				textures[4] = (parameter.BasicParameterPtr->Texture5Index >= 0) ? parameter.EffectPointer->GetDistortionImage(parameter.BasicParameterPtr->Texture5Index) : nullptr;
-				textures[5] = (parameter.BasicParameterPtr->Texture6Index >= 0) ? parameter.EffectPointer->GetDistortionImage(parameter.BasicParameterPtr->Texture6Index) : nullptr;
-				textures[6] = (parameter.BasicParameterPtr->Texture7Index >= 0) ? parameter.EffectPointer->GetDistortionImage(parameter.BasicParameterPtr->Texture7Index) : nullptr;
-			}	
-			else if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::Lighting)
-			{
-				textures[0] = (parameter.BasicParameterPtr->Texture1Index >= 0) ? parameter.EffectPointer->GetColorImage(parameter.BasicParameterPtr->Texture1Index) : nullptr;
-				textures[2] = (parameter.BasicParameterPtr->Texture3Index >= 0) ? parameter.EffectPointer->GetColorImage(parameter.BasicParameterPtr->Texture3Index) : nullptr;
-				textures[3] = (parameter.BasicParameterPtr->Texture4Index >= 0) ? parameter.EffectPointer->GetColorImage(parameter.BasicParameterPtr->Texture4Index) : nullptr;
-				textures[4] = (parameter.BasicParameterPtr->Texture5Index >= 0) ? parameter.EffectPointer->GetColorImage(parameter.BasicParameterPtr->Texture5Index) : nullptr;
-				textures[5] = (parameter.BasicParameterPtr->Texture6Index >= 0) ? parameter.EffectPointer->GetColorImage(parameter.BasicParameterPtr->Texture6Index) : nullptr;
-				textures[6] = (parameter.BasicParameterPtr->Texture7Index >= 0) ? parameter.EffectPointer->GetColorImage(parameter.BasicParameterPtr->Texture7Index) : nullptr;
-			}
-			else
-			{
-				textures[0] = (parameter.BasicParameterPtr->Texture1Index >= 0) ? parameter.EffectPointer->GetColorImage(parameter.BasicParameterPtr->Texture1Index) : nullptr;
-				textures[1] = (parameter.BasicParameterPtr->Texture3Index >= 0) ? parameter.EffectPointer->GetColorImage(parameter.BasicParameterPtr->Texture3Index) : nullptr;
-				textures[2] = (parameter.BasicParameterPtr->Texture4Index >= 0) ? parameter.EffectPointer->GetColorImage(parameter.BasicParameterPtr->Texture4Index) : nullptr;
-				textures[3] = (parameter.BasicParameterPtr->Texture5Index >= 0) ? parameter.EffectPointer->GetColorImage(parameter.BasicParameterPtr->Texture5Index) : nullptr;
-				textures[4] = (parameter.BasicParameterPtr->Texture6Index >= 0) ? parameter.EffectPointer->GetColorImage(parameter.BasicParameterPtr->Texture6Index) : nullptr;
-				textures[5] = (parameter.BasicParameterPtr->Texture7Index >= 0) ? parameter.EffectPointer->GetColorImage(parameter.BasicParameterPtr->Texture7Index) : nullptr;
-			}
-
-			m_renderer->SetTextures(nullptr, textures, 7);
+			m_renderer->SetTextures(nullptr, collector_.Textures.data(), collector_.TextureCount);
 		}
 
 		m_renderer->DrawModel(
