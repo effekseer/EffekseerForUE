@@ -13,7 +13,7 @@ TextureLoader::TextureLoader(::Effekseer::Backend::GraphicsDevice* graphicsDevic
 	, colorSpaceType_(colorSpaceType)
 {
 	ES_SAFE_ADDREF(graphicsDevice_);
-	if (fileInterface == NULL)
+	if (fileInterface == nullptr)
 	{
 		m_fileInterface = &m_defaultFileInterface;
 	}
@@ -24,11 +24,11 @@ TextureLoader::~TextureLoader()
 	ES_SAFE_RELEASE(graphicsDevice_);
 }
 
-Effekseer::TextureData* TextureLoader::Load(const EFK_CHAR* path, ::Effekseer::TextureType textureType)
+Effekseer::TextureData* TextureLoader::Load(const char16_t* path, ::Effekseer::TextureType textureType)
 {
 	std::unique_ptr<::Effekseer::FileReader> reader(m_fileInterface->OpenRead(path));
 
-	if (reader.get() != NULL)
+	if (reader.get() != nullptr)
 	{
 		auto path16 = std::u16string(path);
 		auto isMipEnabled = path16.find(u"_NoMip") == std::u16string::npos;
@@ -178,7 +178,6 @@ Effekseer::TextureData* TextureLoader::Load(const void* data, int32_t size, Effe
 		}
 	}
 
-Exit:;
 	return textureData;
 }
 

@@ -43,6 +43,7 @@ enum class IndexBufferStrideType
 enum class UniformBufferLayoutElementType
 {
 	Vector4,
+	Matrix44,
 };
 
 enum class ShaderStageType
@@ -504,6 +505,11 @@ public:
 		return nullptr;
 	}
 
+	virtual Shader* CreateShaderFromBinary(const void* vsData, int32_t vsDataSize, const void* psData, int32_t psDataSize)
+	{
+		return nullptr;
+	}
+
 	/**
 		@brief	Create ComputeBuffer
 		@param	size	the size of buffer
@@ -525,6 +531,11 @@ public:
 
 	virtual void EndRenderPass()
 	{
+	}
+
+	virtual std::string GetDeviceName() const
+	{
+		return "";
 	}
 };
 

@@ -43,9 +43,9 @@ public:
 		サウンドを読み込む。
 		::Effekseer::Effect::Create実行時に使用される。
 	*/
-	virtual void* Load(const EFK_CHAR* path)
+	virtual void* Load(const char16_t* path)
 	{
-		return NULL;
+		return nullptr;
 	}
 
 	/**
