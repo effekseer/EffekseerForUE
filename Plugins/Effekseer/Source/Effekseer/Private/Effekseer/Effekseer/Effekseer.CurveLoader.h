@@ -48,11 +48,11 @@ public:
 	カーブを読み込む。
 	::Effekseer::Effect::Create実行時に使用される。
 	*/
-	virtual void* Load(const EFK_CHAR* path)
+	virtual void* Load(const char16_t* path)
 	{
 		::Effekseer::DefaultFileInterface fileInterface;
 		std::unique_ptr<::Effekseer::FileReader>reader(fileInterface.OpenRead(path));
-		if (reader.get() == NULL)
+		if (reader.get() == nullptr)
 		{
 			return nullptr;
 		}
@@ -121,7 +121,7 @@ public:
 	*/
 	virtual void Unload(void* data)
 	{
-		if (data != NULL)
+		if (data != nullptr)
 		{
 			Curve* curve = (Curve*)data;
 			ES_SAFE_DELETE(curve);

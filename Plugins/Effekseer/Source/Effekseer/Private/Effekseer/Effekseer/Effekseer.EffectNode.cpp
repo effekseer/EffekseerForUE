@@ -40,11 +40,11 @@ bool operator==(const TranslationParentBindType& lhs, const BindType& rhs)
 EffectNodeImplemented::EffectNodeImplemented(Effect* effect, unsigned char*& pos)
 	: m_effect(effect)
 	, generation_(0)
-	, m_userData(NULL)
+	, m_userData(nullptr)
 	, IsRendered(true)
-	, TranslationFCurve(NULL)
-	, RotationFCurve(NULL)
-	, ScalingFCurve(NULL)
+	, TranslationFCurve(nullptr)
+	, RotationFCurve(nullptr)
+	, ScalingFCurve(nullptr)
 	, SoundType(ParameterSoundType_None)
 	, RenderingOrder(RenderingOrder_FirstCreatedInstanceIsFirst)
 {
@@ -53,7 +53,7 @@ EffectNodeImplemented::EffectNodeImplemented(Effect* effect, unsigned char*& pos
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void EffectNodeImplemented::LoadParameter(unsigned char*& pos, EffectNode* parent, Setting* setting)
+void EffectNodeImplemented::LoadParameter(unsigned char*& pos, EffectNode* parent, const RefPtr<Setting>& setting)
 {
 	int size = 0;
 	int node_type = 0;
@@ -688,6 +688,20 @@ void EffectNodeImplemented::LoadParameter(unsigned char*& pos, EffectNode* paren
 			RendererCommon.BasicParameter.IsAlphaCutoffEnabled = AlphaCutoff.Type != ParameterAlphaCutoff::EType::FIXED || AlphaCutoff.Fixed.Threshold != 0.0f;
 		}
 
+		if (m_effect->GetVersion() >= Version16Alpha3)
+		{
+			int FalloffFlag = 0;
+			memcpy(&FalloffFlag, pos, sizeof(int));
+			pos += sizeof(int);
+			EnableFalloff = (FalloffFlag == 1);
+
+			if (EnableFalloff)
+			{
+				memcpy(&FalloffParam, pos, sizeof(FalloffParameter));
+				pos += sizeof(FalloffParameter);
+			}
+		}
+
 		LoadRendererParameter(pos, m_effect->GetSetting());
 
 		// rescale intensity after 1.5
@@ -799,7 +813,7 @@ int EffectNodeImplemented::GetChildrenCount() const
 EffectNode* EffectNodeImplemented::GetChild(int index) const
 {
 	if (index >= GetChildrenCount())
-		return NULL;
+		return nullptr;
 	return m_Nodes[index];
 }
 
@@ -935,7 +949,7 @@ EffectModelParameter EffectNodeImplemented::GetEffectModelParameter()
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void EffectNodeImplemented::LoadRendererParameter(unsigned char*& pos, Setting* setting)
+void EffectNodeImplemented::LoadRendererParameter(unsigned char*& pos, const RefPtr<Setting>&  setting)
 {
 	int32_t type = 0;
 	memcpy(&type, pos, sizeof(int));
@@ -1025,7 +1039,7 @@ float EffectNodeImplemented::GetFadeAlpha(const Instance& instance)
 		alpha *= v;
 	}
 
-	return alpha;
+	return Clamp(alpha, 1.0f, 0.0f);
 }
 
 //----------------------------------------------------------------------------------
@@ -1036,7 +1050,7 @@ void EffectNodeImplemented::PlaySound_(Instance& instance, SoundTag tag, Manager
 	IRandObject& rand = instance.GetRandObject();
 
 	SoundPlayer* player = manager->GetSoundPlayer();
-	if (player == NULL)
+	if (player == nullptr)
 	{
 		return;
 	}
@@ -1096,7 +1110,7 @@ EffectInstanceTerm EffectNodeImplemented::CalculateInstanceTerm(EffectInstanceTe
 	}
 	else
 	{
-		lastBeginMin = firstBeginMin + (CommonValues.MaxGeneration - 1) * (CommonValues.GenerationTime.min);
+		lastBeginMin = firstBeginMin + static_cast<int32_t>((CommonValues.MaxGeneration - 1) * CommonValues.GenerationTime.min);
 	}
 
 	if (CommonValues.MaxGeneration > INT_MAX / 2)
@@ -1105,7 +1119,7 @@ EffectInstanceTerm EffectNodeImplemented::CalculateInstanceTerm(EffectInstanceTe
 	}
 	else
 	{
-		lastBeginMax = firstBeginMax + (CommonValues.MaxGeneration - 1) * (CommonValues.GenerationTime.max);
+		lastBeginMax = firstBeginMax + static_cast<int32_t>((CommonValues.MaxGeneration - 1) * CommonValues.GenerationTime.max);
 	}
 
 	auto lastEndMin = addWithClip(lastBeginMin, lifeMin);
@@ -1184,7 +1198,7 @@ EffectInstanceTerm EffectNodeImplemented::CalculateInstanceTerm(EffectInstanceTe
 
 EffectNodeImplemented* EffectNodeImplemented::Create(Effect* effect, EffectNode* parent, unsigned char*& pos)
 {
-	EffectNodeImplemented* effectnode = NULL;
+	EffectNodeImplemented* effectnode = nullptr;
 
 	int node_type = 0;
 	memcpy(&node_type, pos, sizeof(int));
@@ -1217,17 +1231,12 @@ EffectNodeImplemented* EffectNodeImplemented::Create(Effect* effect, EffectNode*
 	else if (node_type == EFFECT_NODE_TYPE_MODEL)
 	{
 		EffekseerPrintDebug("* Create : EffectNodeModel\n");
-		effectnode = new EffectNodeModel(effect, pos, EffectNodeModelMode::File);
+		effectnode = new EffectNodeModel(effect, pos);
 	}
 	else if (node_type == EFFECT_NODE_TYPE_TRACK)
 	{
 		EffekseerPrintDebug("* Create : EffectNodeTrack\n");
 		effectnode = new EffectNodeTrack(effect, pos);
-	}
-	else if (node_type == EFFECT_NODE_TYPE_PROCEDUAL_MODEL)
-	{
-		EffekseerPrintDebug("* Create : EffectNodeProcedualModel\n");
-		effectnode = new EffectNodeModel(effect, pos, EffectNodeModelMode::Procedual);
 	}
 	else
 	{

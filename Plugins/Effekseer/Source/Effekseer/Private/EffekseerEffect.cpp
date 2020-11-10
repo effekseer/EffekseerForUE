@@ -515,7 +515,7 @@ void CurveLoader::Unload(void* data)
 	}
 }
 
-static ::Effekseer::Setting* CreateSetting()
+static ::Effekseer::RefPtr<::Effekseer::Setting> CreateSetting()
 {
 	auto setting = ::Effekseer::Setting::Create();
 	setting->SetTextureLoader(new TextureLoader());
@@ -531,7 +531,7 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 
 	Name = tStr<260>(GetFileNameWithoutExtension(uPath.c_str()).c_str()).c_str();
 
-	::Effekseer::Setting* setting = CreateSetting();
+	auto setting = CreateSetting();
 	 
 	if (isResourceReset)
 	{
@@ -566,9 +566,8 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 	loadedScale = Scale;
 
 	auto effect = ::Effekseer::Effect::Create(setting, (void*)data, size, Scale, rootPath);
-	setting->Release();
 
-	effectPtr = effect;
+	effectPtr = effect.Pin();
 
 	if (effect != nullptr)
 	{
@@ -733,8 +732,8 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 
 void UEffekseerEffect::ReleaseEffect()
 {
-	auto p = (::Effekseer::Effect*)effectPtr;
-	ES_SAFE_RELEASE(p);
+	auto pin = ::Effekseer::RefPtr<::Effekseer::Effect>::FromPinned(effectPtr);
+	::Effekseer::RefPtr<::Effekseer::Effect>::Unpin(effectPtr);
 	effectPtr = nullptr;
 }
 

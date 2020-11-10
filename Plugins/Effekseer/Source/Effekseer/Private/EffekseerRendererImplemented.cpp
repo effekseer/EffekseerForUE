@@ -16,18 +16,7 @@
 #include <EffekseerRenderer.RibbonRendererBase.h>
 #include <EffekseerRenderer.RingRendererBase.h>
 
-#if ENGINE_MINOR_VERSION < 19
-class FMaterialParameterInfo
-{
-public:
-	FName Name;
-};
-
-#define GET_MAT_PARAM_NAME .Name
-#else
-
 #define GET_MAT_PARAM_NAME
-#endif
 
 namespace EffekseerRendererUE4
 {
@@ -52,28 +41,6 @@ namespace EffekseerRendererUE4
 		virtual bool GetParentScalarValue(const MaterialParameterInfo& ParameterInfo, float* OutValue, const FMaterialRenderContext& Context) const { return false; }
 		virtual bool GetParentTextureValue(const MaterialParameterInfo& ParameterInfo, const UTexture** OutValue, const FMaterialRenderContext& Context) const { return false; }
 
-#if ENGINE_MINOR_VERSION < 19
-		bool GetVectorValue(const FName ParameterName, FLinearColor* OutValue, const FMaterialRenderContext& Context) const
-		{
-			FMaterialParameterInfo info;
-			info.Name = ParameterName;
-			return GetParentVectorValue(info, OutValue, Context);
-		}
-
-		bool GetScalarValue(const FName ParameterName, float* OutValue, const FMaterialRenderContext& Context) const
-		{
-			FMaterialParameterInfo info;
-			info.Name = ParameterName;
-			return GetParentScalarValue(info, OutValue, Context);
-		}
-
-		bool GetTextureValue(const FName ParameterName, const UTexture** OutValue, const FMaterialRenderContext& Context) const
-		{
-			FMaterialParameterInfo info;
-			info.Name = ParameterName;
-			return GetParentTextureValue(info, OutValue, Context);
-		}
-#else
 		bool GetVectorValue(const MaterialParameterInfo& ParameterInfo, FLinearColor* OutValue, const FMaterialRenderContext& Context) const
 		{
 			return  GetParentVectorValue(ParameterInfo, OutValue, Context);
@@ -88,7 +55,6 @@ namespace EffekseerRendererUE4
 		{
 			return GetParentTextureValue(ParameterInfo, OutValue, Context);
 		}
-#endif
 
 #if ENGINE_MINOR_VERSION >= 25
 		bool GetTextureValue(const FHashedMaterialParameterInfo& ParameterInfo, const URuntimeVirtualTexture** OutValue, const FMaterialRenderContext& Context) const override
@@ -104,22 +70,10 @@ namespace EffekseerRendererUE4
 
 		virtual const FMaterial* GetParentMaterial(ERHIFeatureLevel::Type InFeatureLevel) const { return nullptr; }
 
-#if ENGINE_MINOR_VERSION < 20
-		const FMaterial* GetMaterial(ERHIFeatureLevel::Type InFeatureLevel) const override
-		{
-			return GetParentMaterial(InFeatureLevel);
-		}
-#elif ENGINE_MINOR_VERSION < 22
-		void GetMaterialWithFallback(ERHIFeatureLevel::Type InFeatureLevel, const FMaterialRenderProxy*& OutMaterialRenderProxy, const class FMaterial*& OutMaterial) const override
-		{
-			OutMaterial = GetParentMaterial(InFeatureLevel);
-		}
-#else
 		const FMaterial& GetMaterialWithFallback(ERHIFeatureLevel::Type InFeatureLevel, const FMaterialRenderProxy*& OutFallbackMaterialRenderProxy) const override
 		{
 			return *(GetParentMaterial(InFeatureLevel));
 		}
-#endif
 	};
 
 	class FFileMaterialRenderProxy : public FCompatibleMaterialRenderProxy
@@ -843,22 +797,19 @@ namespace EffekseerRendererUE4
 			EffekseerRenderer::StrideView<EffekseerRenderer::DynamicVertex> custom1(origin + sizeof(EffekseerRenderer::DynamicVertex), stride, vertexOffset + spriteCount * 4);
 			EffekseerRenderer::StrideView<EffekseerRenderer::DynamicVertex> custom2(origin + sizeof(EffekseerRenderer::DynamicVertex) + sizeof(float) * nativeMaterial->GetCustomData1Count(), stride, vertexOffset + spriteCount * 4);
 
-#if ENGINE_MINOR_VERSION < 19
-			FDynamicMeshBuilder meshBuilder;
-#else
 			int32_t customDataCount = 0;
 			if (nativeMaterial->GetCustomData1Count() > 0) customDataCount = 2;
 			if (nativeMaterial->GetCustomData2Count() > 0) customDataCount = 4;
 
 			FDynamicMeshBuilder meshBuilder(m_meshElementCollector->GetFeatureLevel(), 2 + customDataCount);
-#endif
+
 			for (int32_t vi = vertexOffset; vi < vertexOffset + spriteCount * 4; vi++)
 			{
 				auto& v = vs[vi];
 
 				FDynamicMeshVertex meshVert;
 
-#if ENGINE_MINOR_VERSION >= 20
+
 				if (nativeMaterial->GetCustomData1Count() > 0)
 				{
 					std::array<float, 4> customData1;
@@ -880,7 +831,7 @@ namespace EffekseerRendererUE4
 					meshVert.TextureCoordinate[5].X = customData2[2];
 					meshVert.TextureCoordinate[5].Y = customData2[3];
 				}
-#endif
+
 				auto normal = UnpackVector3DF(v.Normal);
 				auto tangent = UnpackVector3DF(v.Tangent);
 				Effekseer::Vector3D binormal;
@@ -889,13 +840,8 @@ namespace EffekseerRendererUE4
 				meshVert.Position = FVector(v.Pos.X, v.Pos.Z, v.Pos.Y);
 				meshVert.Color = FColor(v.Col.R, v.Col.G, v.Col.B, v.Col.A);
 
-#if ENGINE_MINOR_VERSION < 19
-				meshVert.TextureCoordinate = FVector2D(v.UV1[0], v.UV1[1]);
-
-#else
 				meshVert.TextureCoordinate[0] = FVector2D(v.UV1[0], v.UV1[1]);
 				meshVert.TextureCoordinate[1] = FVector2D(v.UV2[0], v.UV2[1]);
-#endif
 
 				meshVert.SetTangents(
 					FVector(binormal.X, binormal.Z, binormal.Y),
@@ -918,11 +864,7 @@ namespace EffekseerRendererUE4
 					si * 4 + 3);
 			}
 
-#if ENGINE_MINOR_VERSION < 22
-			auto proxy = mat->GetRenderProxy(false);
-#else
 			auto proxy = mat->GetRenderProxy();
-#endif
 
 			if (m_currentShader->GetEffekseerMaterial()->UniformNameToIndex.Num() > 0 ||
 				m_currentShader->GetEffekseerMaterial()->TextureNameToIndex.Num() > 0 ||
@@ -984,11 +926,7 @@ namespace EffekseerRendererUE4
 			SetDistortionIntensity(intensity);
 		}
 
-#if ENGINE_MINOR_VERSION < 19
-		FDynamicMeshBuilder meshBuilder;
-#else
 		FDynamicMeshBuilder meshBuilder(m_meshElementCollector->GetFeatureLevel(), 7);
-#endif
 
 		if (IsAdvanced == false)
 		{
@@ -1034,11 +972,7 @@ namespace EffekseerRendererUE4
 				si * 4 + 3);
 		}
 
-#if ENGINE_MINOR_VERSION < 22
-		auto proxy = mat->GetRenderProxy(false);
-#else
 		auto proxy = mat->GetRenderProxy();
-#endif
 
 		if (m_currentShader->GetType() == Effekseer::RendererMaterialType::BackDistortion)
 		{
@@ -1230,9 +1164,6 @@ namespace EffekseerRendererUE4
 			meshVert.Position = FVector(v.Pos.X, v.Pos.Z, v.Pos.Y);
 			meshVert.Color = FColor(v.Col.R, v.Col.G, v.Col.B, v.Col.A);
 
-#if ENGINE_MINOR_VERSION < 19
-			meshVert.TextureCoordinate = FVector2D(v.UV1[0], v.UV1[1]);
-#else
 			meshVert.TextureCoordinate[0] = FVector2D(v.UV1[0], v.UV1[1]);
 			meshVert.TextureCoordinate[1] = FVector2D(v.UV2[0], v.UV2[1]);
 			meshVert.TextureCoordinate[2] =
@@ -1240,7 +1171,6 @@ namespace EffekseerRendererUE4
 			meshVert.TextureCoordinate[4] =
 			meshVert.TextureCoordinate[5] =
 			meshVert.TextureCoordinate[6] = FVector2D(0.0f);
-#endif
 
 			meshVert.SetTangents(
 				FVector(binormal.X, binormal.Z, binormal.Y),
@@ -1280,9 +1210,6 @@ namespace EffekseerRendererUE4
 			meshVert.Position = FVector(v.Pos.X, v.Pos.Z, v.Pos.Y);
 			meshVert.Color = FColor(v.Col.R, v.Col.G, v.Col.B, v.Col.A);
 
-#if ENGINE_MINOR_VERSION < 19
-			meshVert.TextureCoordinate = FVector2D(v.UV1[0], v.UV1[1]);
-#else
 			meshVert.TextureCoordinate[0] = FVector2D(v.UV1[0], v.UV1[1]);
 			meshVert.TextureCoordinate[1] = FVector2D(v.AlphaUV[0], v.AlphaUV[1]);
 			meshVert.TextureCoordinate[2] = FVector2D(v.UVDistortionUV[0], v.UVDistortionUV[1]);
@@ -1290,7 +1217,6 @@ namespace EffekseerRendererUE4
 			meshVert.TextureCoordinate[4] = FVector2D(v.BlendAlphaUV[0], v.BlendAlphaUV[1]);
 			meshVert.TextureCoordinate[5] = FVector2D(v.BlendUVDistortionUV[0], v.BlendUVDistortionUV[1]);
 			meshVert.TextureCoordinate[6] = FVector2D(v.FlipbookIndexAndNextRate, v.AlphaThreshold);
-#endif
 
 			meshVert.SetTangents(
 				FVector(binormal.X, binormal.Z, binormal.Y),
@@ -1379,30 +1305,13 @@ namespace EffekseerRendererUE4
 				FMeshBatch& meshElement = m_meshElementCollector->AllocateMesh();
 				auto& element = meshElement.Elements[0];
 
-#if ENGINE_MINOR_VERSION < 22
-				element.PrimitiveUniformBuffer = CreatePrimitiveUniformBufferImmediate(
-					matLocalToWorld,
-					FBoxSphereBounds(EForceInit::ForceInit),
-					FBoxSphereBounds(EForceInit::ForceInit),
-					false,
-					false);
-#else
 
 				FDynamicPrimitiveUniformBuffer& dynamicPrimitiveUniformBuffer = m_meshElementCollector->AllocateOneFrameResource<FDynamicPrimitiveUniformBuffer>();
-#if ENGINE_MINOR_VERSION < 23
-				dynamicPrimitiveUniformBuffer.Set(matLocalToWorld, matLocalToWorld, FBoxSphereBounds(EForceInit::ForceInit), FBoxSphereBounds(EForceInit::ForceInit), false, false, false);
-#else
 				dynamicPrimitiveUniformBuffer.Set(matLocalToWorld, matLocalToWorld, FBoxSphereBounds(EForceInit::ForceInit), FBoxSphereBounds(EForceInit::ForceInit), false, false, false, false);
-#endif
 
 				element.PrimitiveUniformBufferResource = &dynamicPrimitiveUniformBuffer.UniformBuffer;
-#endif
 
-#if ENGINE_MINOR_VERSION < 22
-				auto proxy = mat->GetRenderProxy(false);
-#else
 				auto proxy = mat->GetRenderProxy();
-#endif
 
 				if (m_currentShader != nullptr && m_currentShader->GetType() == Effekseer::RendererMaterialType::File)
 				{
@@ -1456,11 +1365,7 @@ namespace EffekseerRendererUE4
 				}
 
 				meshElement.MaterialRenderProxy = proxy;
-#if ENGINE_MINOR_VERSION < 19
-				meshElement.VertexFactory = &lodResource.VertexFactory;
-#else
 				meshElement.VertexFactory = &renderData->LODVertexFactories[0].VertexFactory;
-#endif
 				meshElement.Type = PT_TriangleList;
 
 				if (efkmdl->AnimationFaceOffsets.Num() > 0)
@@ -1479,22 +1384,11 @@ namespace EffekseerRendererUE4
 					element.NumPrimitives = section.NumTriangles;
 				}
 
-#if ENGINE_MINOR_VERSION < 19
-				meshElement.DynamicVertexData = NULL;
-#else
-				//meshElement.DynamicVertexData = NULL;
-#endif
-				//meshElement.LCI = &ProxyLODInfo;
 
 				element.MinVertexIndex = section.MinVertexIndex;
 				element.MaxVertexIndex = section.MaxVertexIndex;
 				meshElement.LODIndex = 0;
 
-#if ENGINE_MINOR_VERSION < 19
-				meshElement.UseDynamicData = false;
-#else
-				//meshElement.UseDynamicData = false;
-#endif
 				element.MaxScreenSize = 0.0f;
 				element.MinScreenSize = -1.0f;
 

@@ -16,9 +16,7 @@ EffekseerUpdateData::~EffekseerUpdateData()
 	for (auto c : Commands)
 	{
 		if (c.Effect == nullptr) continue;
-
-		auto p_ = (::Effekseer::Effect*)c.Effect;
-		p_->Release();
+		::Effekseer::RefPtr<::Effekseer::Effect>::Unpin(c.Effect);
 	}
 }
 
@@ -31,7 +29,7 @@ private:
 	
 #ifdef _WIN32
 	::Effekseer::Server*	server = nullptr;
-	std::map<std::u16string, ::Effekseer::Effect*> registeredEffects;
+	std::map<std::u16string, ::Effekseer::RefPtr<::Effekseer::Effect>> registeredEffects;
 #endif
 
 	TMap<UTexture2D*, UMaterialInstanceDynamic*> OpaqueDynamicMaterials;
@@ -196,7 +194,7 @@ public:
 			auto& cmd = updateData->Commands[i];
 			if (cmd.Type == EffekseerUpdateData_CommandType::Play)
 			{
-				auto effect = (::Effekseer::Effect*)updateData->Commands[i].Effect;
+				auto effect = ::Effekseer::RefPtr<::Effekseer::Effect>::FromPinned(updateData->Commands[i].Effect);
 				auto position = updateData->Commands[i].Position;
 
 				auto eid = effekseerManager->Play(effect, position.X, position.Z, position.Y);
@@ -682,9 +680,8 @@ FEffekseerHandle UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVect
 
 	effect->ReloadIfRequired();
 
-	auto p = (::Effekseer::Effect*)effect->GetNativePtr();
-
-	p->AddRef();
+	auto efk = ::Effekseer::RefPtr<::Effekseer::Effect>::FromPinned(effect->GetNativePtr());
+	auto p = efk.Pin();
 	
 	auto handle = nextInternalHandle;
 	

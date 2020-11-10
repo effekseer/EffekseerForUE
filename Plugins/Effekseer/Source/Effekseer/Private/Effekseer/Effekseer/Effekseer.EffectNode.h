@@ -50,6 +50,12 @@ enum class TranslationParentBindType : int32_t
 
 bool operator==(const TranslationParentBindType& lhs, const BindType& rhs);
 
+enum class ModelReferenceType : int32_t
+{
+	File,
+	Procedual,
+};
+
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
@@ -442,7 +448,6 @@ struct ParameterGenerationLocation
 		TYPE_MODEL = 2,
 		TYPE_CIRCLE = 3,
 		TYPE_LINE = 4,
-		TYPE_PROCEDUAL_MODEL = 5,
 
 		TYPE_DWORD = 0x7fffffff,
 	} type;
@@ -487,6 +492,7 @@ struct ParameterGenerationLocation
 
 		struct
 		{
+			ModelReferenceType Reference;
 			int32_t index;
 			eModelType type;
 		} model;
@@ -510,12 +516,6 @@ struct ParameterGenerationLocation
 			random_float position_noize;
 			LineType type;
 		} line;
-
-		struct
-		{
-			int32_t index;
-			eModelType type;
-		} procedualModel;
 	};
 
 	void load(uint8_t*& pos, int32_t version)
@@ -538,8 +538,19 @@ struct ParameterGenerationLocation
 		}
 		else if (type == TYPE_MODEL)
 		{
-			memcpy(&model, pos, sizeof(model));
-			pos += sizeof(model);
+			model.Reference = ModelReferenceType::File;
+
+			if (version >= Version16Alpha3)
+			{
+				memcpy(&model.Reference, pos, sizeof(int32_t));
+				pos += sizeof(int32_t);
+			}
+
+			memcpy(&model.index, pos, sizeof(int32_t));
+			pos += sizeof(int32_t);
+
+			memcpy(&model.type, pos, sizeof(int32_t));
+			pos += sizeof(int32_t);
 		}
 		else if (type == TYPE_CIRCLE)
 		{
@@ -561,11 +572,6 @@ struct ParameterGenerationLocation
 		{
 			memcpy(&line, pos, sizeof(line));
 			pos += sizeof(line);
-		}
-		else if (type == TYPE_PROCEDUAL_MODEL)
-		{
-			memcpy(&procedualModel, pos, sizeof(procedualModel));
-			pos += sizeof(procedualModel);
 		}
 	}
 };
@@ -1490,8 +1496,7 @@ protected:
 	// デストラクタ
 	virtual ~EffectNodeImplemented();
 
-	// 読込
-	void LoadParameter(unsigned char*& pos, EffectNode* parent, Setting* setting);
+	void LoadParameter(unsigned char*& pos, EffectNode* parent, const RefPtr<Setting>& setting);
 
 	// 初期化
 	void Initialize();
@@ -1555,6 +1560,9 @@ public:
 
 	ParameterAlphaCutoff AlphaCutoff;
 
+	bool EnableFalloff = false;
+	FalloffParameter FalloffParam {};
+
 	ParameterSoundType SoundType;
 	ParameterSound Sound;
 
@@ -1578,10 +1586,7 @@ public:
 
 	EffectModelParameter GetEffectModelParameter() override;
 
-	/**
-	@brief	描画部分の読込
-	*/
-	virtual void LoadRendererParameter(unsigned char*& pos, Setting* setting);
+	virtual void LoadRendererParameter(unsigned char*& pos, const RefPtr<Setting>& setting);
 
 	/**
 	@brief	描画開始

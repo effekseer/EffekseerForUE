@@ -104,51 +104,49 @@ class EffectImplemented : public Effect, public ReferenceObject
 	friend class EffectFactory;
 	friend class Instance;
 
-	static const int32_t SupportBinaryVersion = Version16Alpha2;
+	static const int32_t SupportBinaryVersion = Version16Alpha3;
 
 protected:
-	ManagerImplemented* m_pManager;
-
-	Setting* m_setting;
+	RefPtr<Setting> m_setting;
 
 	mutable std::atomic<int32_t> m_reference;
 
-	EffectFactory* factory = nullptr;
+	RefPtr<EffectFactory> factory;
 
 	int m_version;
 
 	int m_ImageCount;
-	EFK_CHAR** m_ImagePaths;
+	char16_t** m_ImagePaths;
 	TextureData** m_pImages;
 
 	int m_normalImageCount;
-	EFK_CHAR** m_normalImagePaths;
+	char16_t** m_normalImagePaths;
 	TextureData** m_normalImages;
 
 	int m_distortionImageCount;
-	EFK_CHAR** m_distortionImagePaths;
+	char16_t** m_distortionImagePaths;
 	TextureData** m_distortionImages;
 
 	int m_WaveCount = 0;
-	EFK_CHAR** m_WavePaths = nullptr;
+	char16_t** m_WavePaths = nullptr;
 	void** m_pWaves = nullptr;
 
 	CustomVector<Model*> models_;
-	CustomVector<EFK_CHAR*> modelPaths_;
+	CustomVector<char16_t*> modelPaths_;
 
 	CustomVector<Model*> procedualModels_;
 	CustomVector<ProcedualModelParameter> procedualModelParameters_;
 
 	int32_t materialCount_ = 0;
-	EFK_CHAR** materialPaths_ = nullptr;
+	char16_t** materialPaths_ = nullptr;
 	MaterialData** materials_ = nullptr;
 
 	int32_t curveCount_ = 0;
-	EFK_CHAR** curvePaths_ = nullptr;
+	char16_t** curvePaths_ = nullptr;
 	void** curves_ = nullptr;
 
 	std::u16string name_;
-	std::basic_string<EFK_CHAR> m_materialPath;
+	std::basic_string<char16_t> m_materialPath;
 
 	//! dynamic inputs
 	std::array<float, 4> defaultDynamicInputs;
@@ -203,31 +201,22 @@ protected:
 	void ResetReloadingBackup();
 
 public:
-	/**
-		@brief	生成
-	*/
-	static Effect* Create(Manager* pManager, void* pData, int size, float magnification, const EFK_CHAR* materialPath = NULL);
 
-	/**
-		@brief	生成
-	*/
-	static Effect* Create(Setting* setting, void* pData, int size, float magnification, const EFK_CHAR* materialPath = NULL);
+	static EffectRef Create(Manager* pManager, void* pData, int size, float magnification, const char16_t* materialPath = nullptr);
 
-	// コンストラクタ
+	static EffectRef Create(const RefPtr<Setting>& setting, void* pData, int size, float magnification, const char16_t* materialPath = nullptr);
+
 	EffectImplemented(Manager* pManager, void* pData, int size);
 
-	// コンストラクタ
-	EffectImplemented(Setting* setting, void* pData, int size);
+	EffectImplemented(const RefPtr<Setting>& setting, void* pData, int size);
 
-	// デストラクタ
 	virtual ~EffectImplemented();
 
-	// Rootの取得
 	EffectNode* GetRoot() const override;
 
 	float GetMaginification() const override;
 
-	bool Load(void* pData, int size, float mag, const EFK_CHAR* materialPath, ReloadingThreadType reloadingThreadType);
+	bool Load(void* pData, int size, float mag, const char16_t* materialPath, ReloadingThreadType reloadingThreadType);
 
 	/**
 		@breif	何も読み込まれていない状態に戻す
@@ -248,74 +237,56 @@ public:
 		return dynamicEquation;
 	}
 
-private:
-	/**
-		@brief	マネージャー取得
-	*/
-	Manager* GetManager() const;
-
 public:
 	const char16_t* GetName() const override;
 
 	void SetName(const char16_t* name) override;
 
-	/**
-	@brief	設定取得
-	*/
-	Setting* GetSetting() const override;
+	RefPtr<Setting> GetSetting() const override;
 
-	/**
-		@brief	エフェクトデータのバージョン取得
-	*/
 	int GetVersion() const override;
 
-	/**
-		@brief	格納されている画像のポインタを取得する。
-	*/
 	TextureData* GetColorImage(int n) const override;
 
 	int32_t GetColorImageCount() const override;
 
-	const EFK_CHAR* GetColorImagePath(int n) const override;
+	const char16_t* GetColorImagePath(int n) const override;
 
-	/**
-	@brief	格納されている画像のポインタを取得する。
-	*/
 	TextureData* GetNormalImage(int n) const override;
 
 	int32_t GetNormalImageCount() const override;
 
-	const EFK_CHAR* GetNormalImagePath(int n) const override;
+	const char16_t* GetNormalImagePath(int n) const override;
 
 	TextureData* GetDistortionImage(int n) const override;
 
 	int32_t GetDistortionImageCount() const override;
 
-	const EFK_CHAR* GetDistortionImagePath(int n) const override;
+	const char16_t* GetDistortionImagePath(int n) const override;
 
 	void* GetWave(int n) const override;
 
 	int32_t GetWaveCount() const override;
 
-	const EFK_CHAR* GetWavePath(int n) const override;
+	const char16_t* GetWavePath(int n) const override;
 
 	Model* GetModel(int n) const override;
 
 	int32_t GetModelCount() const override;
 
-	const EFK_CHAR* GetModelPath(int n) const override;
+	const char16_t* GetModelPath(int n) const override;
 
 	MaterialData* GetMaterial(int n) const override;
 
 	int32_t GetMaterialCount() const override;
 
-	const EFK_CHAR* GetMaterialPath(int n) const override;
+	const char16_t* GetMaterialPath(int n) const override;
 
 	void* GetCurve(int n) const override;
 
 	int32_t GetCurveCount() const override;
 
-	const EFK_CHAR* GetCurvePath(int n) const override;
+	const char16_t* GetCurvePath(int n) const override;
 
 	Model* GetProcedualModel(int n) const override;
 
@@ -333,41 +304,22 @@ public:
 
 	void SetCurve(int32_t index, void* data) override;
 
-	/**
-		@brief	エフェクトのリロードを行う。
-	*/
-	bool Reload(void* data, int32_t size, const EFK_CHAR* materialPath, ReloadingThreadType reloadingThreadType) override;
-
-	/**
-		@brief	エフェクトのリロードを行う。
-	*/
-	bool Reload(const EFK_CHAR* path, const EFK_CHAR* materialPath, ReloadingThreadType reloadingThreadType) override;
-
-	/**
-		@brief	エフェクトのリロードを行う。
-	*/
 	bool Reload(Manager** managers,
 				int32_t managersCount,
 				void* data,
 				int32_t size,
-				const EFK_CHAR* materialPath,
+				const char16_t* materialPath,
 				ReloadingThreadType reloadingThreadType) override;
 
-	/**
-		@brief	エフェクトのリロードを行う。
-	*/
 	bool Reload(Manager** managers,
 				int32_t managersCount,
-				const EFK_CHAR* path,
-				const EFK_CHAR* materialPath,
+				const char16_t* path,
+				const char16_t* materialPath,
 				ReloadingThreadType reloadingThreadType) override;
 
-	/**
-		@brief	画像等リソースの再読み込みを行う。
-	*/
-	void ReloadResources(const void* data, int32_t size, const EFK_CHAR* materialPath) override;
+	void ReloadResources(const void* data, int32_t size, const char16_t* materialPath) override;
 
-	void UnloadResources(const EFK_CHAR* materialPath);
+	void UnloadResources(const char16_t* materialPath);
 
 	void UnloadResources() override;
 

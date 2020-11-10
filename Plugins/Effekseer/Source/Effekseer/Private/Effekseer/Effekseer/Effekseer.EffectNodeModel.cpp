@@ -21,17 +21,26 @@ namespace Effekseer
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void EffectNodeModel::LoadRendererParameter(unsigned char*& pos, Setting* setting)
+void EffectNodeModel::LoadRendererParameter(unsigned char*& pos, const RefPtr<Setting>& setting)
 {
-	if (Mode == EffectNodeModelMode::File)
+	int32_t type = 0;
+	memcpy(&type, pos, sizeof(int));
+	pos += sizeof(int);
+	assert(type == GetType());
+	EffekseerPrintDebug("Renderer : Model\n");
+
+	if (m_effect->GetVersion() >= Version16Alpha3)
 	{
-
-		int32_t type = 0;
-		memcpy(&type, pos, sizeof(int));
+		memcpy(&Mode, pos, sizeof(int));
 		pos += sizeof(int);
-		assert(type == GetType());
-		EffekseerPrintDebug("Renderer : Model\n");
+	}
+	else
+	{
+		Mode = ModelReferenceType::File;
+	}
 
+	if (Mode == ModelReferenceType::File)
+	{
 		AlphaBlend = RendererCommon.AlphaBlend;
 
 		if (m_effect->GetVersion() >= 7)
@@ -54,71 +63,54 @@ void EffectNodeModel::LoadRendererParameter(unsigned char*& pos, Setting* settin
 			RendererCommon.BasicParameter.TextureFilter2 = RendererCommon.BasicParameter.TextureFilter1;
 			RendererCommon.BasicParameter.TextureWrap2 = RendererCommon.BasicParameter.TextureWrap1;
 		}
-
-		if (m_effect->GetVersion() >= 12)
-		{
-			memcpy(&Billboard, pos, sizeof(int));
-			pos += sizeof(int);
-		}
-		else
-		{
-			Billboard = BillboardType::Fixed;
-		}
-
-		if (m_effect->GetVersion() < 15)
-		{
-			int32_t lighting;
-			memcpy(&lighting, pos, sizeof(int));
-			pos += sizeof(int);
-			Lighting = lighting > 0;
-
-			if (Lighting && !RendererCommon.Distortion)
-			{
-				RendererCommon.MaterialType = RendererMaterialType::Lighting;
-				RendererCommon.BasicParameter.MaterialType = RendererMaterialType::Lighting;
-			}
-		}
-
-		memcpy(&Culling, pos, sizeof(int));
-		pos += sizeof(int);
-
-		AllColor.load(pos, m_effect->GetVersion());
-
-		if (m_effect->GetVersion() >= 1600)
-		{
-			int FalloffFlag = 0;
-			memcpy(&FalloffFlag, pos, sizeof(int));
-			pos += sizeof(int);
-			EnableFalloff = (FalloffFlag == 1);
-
-			if (EnableFalloff)
-			{
-				memcpy(&FalloffParam, pos, sizeof(ModelRenderer::FalloffParameter));
-				pos += sizeof(ModelRenderer::FalloffParameter);
-			}
-		}
-		else
-		{
-			EnableFalloff = false;
-		}
 	}
-	else if (Mode == EffectNodeModelMode::Procedual)
+	else if (Mode == ModelReferenceType::Procedual)
 	{
-		int32_t type = 0;
-		memcpy(&type, pos, sizeof(int));
-		pos += sizeof(int);
-		//assert(type == GetType());
-		EffekseerPrintDebug("Renderer : ProcedualModel\n");
-
 		memcpy(&ModelIndex, pos, sizeof(int));
 		pos += sizeof(int);
+	}
 
+	if (m_effect->GetVersion() >= 12)
+	{
+		memcpy(&Billboard, pos, sizeof(int));
+		pos += sizeof(int);
+	}
+	else
+	{
 		Billboard = BillboardType::Fixed;
+	}
 
-		Culling = CullingType::Double;
+	if (m_effect->GetVersion() < 15)
+	{
+		int32_t lighting;
+		memcpy(&lighting, pos, sizeof(int));
+		pos += sizeof(int);
+		Lighting = lighting > 0;
 
-		AllColor.fixed.all = Color(255, 255, 255, 255);
-		EnableFalloff = 0;
+		if (Lighting && !RendererCommon.Distortion)
+		{
+			RendererCommon.MaterialType = RendererMaterialType::Lighting;
+			RendererCommon.BasicParameter.MaterialType = RendererMaterialType::Lighting;
+		}
+	}
+
+	memcpy(&Culling, pos, sizeof(int));
+	pos += sizeof(int);
+
+	AllColor.load(pos, m_effect->GetVersion());
+
+	if (Version16Alpha3 > m_effect->GetVersion() && m_effect->GetVersion() >= Version16Alpha1)
+	{
+		int FalloffFlag = 0;
+		memcpy(&FalloffFlag, pos, sizeof(int));
+		pos += sizeof(int);
+		EnableFalloff = (FalloffFlag == 1);
+
+		if (EnableFalloff)
+		{
+			memcpy(&FalloffParam, pos, sizeof(FalloffParameter));
+			pos += sizeof(FalloffParameter);
+		}
 	}
 }
 
@@ -128,7 +120,7 @@ void EffectNodeModel::LoadRendererParameter(unsigned char*& pos, Setting* settin
 void EffectNodeModel::BeginRendering(int32_t count, Manager* manager)
 {
 	ModelRenderer* renderer = manager->GetModelRenderer();
-	if (renderer != NULL)
+	if (renderer != nullptr)
 	{
 		ModelRenderer::NodeParameter nodeParameter;
 		// nodeParameter.TextureFilter = RendererCommon.FilterType;
@@ -153,7 +145,7 @@ void EffectNodeModel::BeginRendering(int32_t count, Manager* manager)
 		nodeParameter.FalloffParam = FalloffParam;
 		nodeParameter.EnableViewOffset = (TranslationType == ParameterTranslationType_ViewOffset);
 
-		nodeParameter.IsProcedualMode = Mode == EffectNodeModelMode::Procedual;
+		nodeParameter.IsProcedualMode = Mode == ModelReferenceType::Procedual;
 
 		renderer->BeginRendering(nodeParameter, count, m_userData);
 	}
@@ -166,7 +158,7 @@ void EffectNodeModel::Rendering(const Instance& instance, const Instance* next_i
 {
 	const InstanceValues& instValues = instance.rendererValues.model;
 	ModelRenderer* renderer = manager->GetModelRenderer();
-	if (renderer != NULL)
+	if (renderer != nullptr)
 	{
 		ModelRenderer::NodeParameter nodeParameter;
 		// nodeParameter.TextureFilter = RendererCommon.FilterType;
@@ -191,7 +183,7 @@ void EffectNodeModel::Rendering(const Instance& instance, const Instance* next_i
 
 		nodeParameter.EnableViewOffset = (TranslationType == ParameterTranslationType_ViewOffset);
 
-		nodeParameter.IsProcedualMode = Mode == EffectNodeModelMode::Procedual;
+		nodeParameter.IsProcedualMode = Mode == ModelReferenceType::Procedual;
 
 		ModelRenderer::InstanceParameter instanceParameter;
 		instanceParameter.SRTMatrix43 = instance.GetGlobalMatrix43();
@@ -242,7 +234,7 @@ void EffectNodeModel::Rendering(const Instance& instance, const Instance* next_i
 void EffectNodeModel::EndRendering(Manager* manager)
 {
 	ModelRenderer* renderer = manager->GetModelRenderer();
-	if (renderer != NULL)
+	if (renderer != nullptr)
 	{
 		ModelRenderer::NodeParameter nodeParameter;
 		// nodeParameter.TextureFilter = RendererCommon.FilterType;
@@ -268,7 +260,7 @@ void EffectNodeModel::EndRendering(Manager* manager)
 
 		nodeParameter.EnableViewOffset = (TranslationType == ParameterTranslationType_ViewOffset);
 
-		nodeParameter.IsProcedualMode = Mode == EffectNodeModelMode::Procedual;
+		nodeParameter.IsProcedualMode = Mode == ModelReferenceType::Procedual;
 
 		renderer->EndRendering(nodeParameter, m_userData);
 	}

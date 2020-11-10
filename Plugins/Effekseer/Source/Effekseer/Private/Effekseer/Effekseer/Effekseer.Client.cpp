@@ -217,7 +217,7 @@ bool ClientImplemented::Send(void* data, int32_t datasize)
 	return true;
 }
 
-void ClientImplemented::Reload(const EFK_CHAR* key, void* data, int32_t size)
+void ClientImplemented::Reload(const char16_t* key, void* data, int32_t size)
 {
 	int32_t keylen = 0;
 	for (;; keylen++)
@@ -249,11 +249,11 @@ void ClientImplemented::Reload(const EFK_CHAR* key, void* data, int32_t size)
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void ClientImplemented::Reload(Manager* manager, const EFK_CHAR* path, const EFK_CHAR* key)
+void ClientImplemented::Reload(Manager* manager, const char16_t* path, const char16_t* key)
 {
 	EffectLoader* loader = manager->GetEffectLoader();
 
-	void* data = NULL;
+	void* data = nullptr;
 	int32_t size = 0;
 
 	if (!loader->Load(path, data, size))

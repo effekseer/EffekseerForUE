@@ -21,12 +21,6 @@ namespace Effekseer
 //
 //----------------------------------------------------------------------------------
 
-enum class EffectNodeModelMode
-{
-	File,
-	Procedual,
-};
-
 class EffectNodeModel : public EffectNodeImplemented
 {
 	friend class Manager;
@@ -81,14 +75,10 @@ public:
 
 	StandardColorParameter AllColor;
 
-	bool EnableFalloff;
-	ModelRenderer::FalloffParameter FalloffParam;
+	ModelReferenceType Mode = ModelReferenceType::File;
 
-	const EffectNodeModelMode Mode;
-
-	EffectNodeModel(Effect* effect, unsigned char*& pos, EffectNodeModelMode mode)
+	EffectNodeModel(Effect* effect, unsigned char*& pos)
 		: EffectNodeImplemented(effect, pos)
-		, Mode(mode)
 	{
 	}
 
@@ -96,7 +86,7 @@ public:
 	{
 	}
 
-	void LoadRendererParameter(unsigned char*& pos, Setting* setting) override;
+	void LoadRendererParameter(unsigned char*& pos, const RefPtr<Setting>& setting) override;
 
 	void BeginRendering(int32_t count, Manager* manager) override;
 
