@@ -26,11 +26,11 @@ class DefaultEffectLoader : public EffectLoader
 	FileInterface* m_fileInterface;
 
 public:
-	DefaultEffectLoader(FileInterface* fileInterface = nullptr);
+	DefaultEffectLoader(FileInterface* fileInterface = NULL);
 
 	virtual ~DefaultEffectLoader();
 
-	bool Load(const char16_t* path, void*& data, int32_t& size);
+	bool Load(const EFK_CHAR* path, void*& data, int32_t& size);
 
 	void Unload(void* data, int32_t size);
 };

@@ -17,7 +17,7 @@ IndexBufferBase::IndexBufferBase(int maxCount, bool isDynamic)
 	, m_indexCount(0)
 	, m_isDynamic(false)
 	, m_isLock(false)
-	, m_resource(nullptr)
+	, m_resource(NULL)
 {
 }
 
@@ -61,7 +61,7 @@ void* IndexBufferBase::GetBufferDirect(int count)
 	assert(m_isLock);
 	assert(m_indexMaxCount >= m_indexCount + count);
 
-	uint8_t* pBuffer = nullptr;
+	uint8_t* pBuffer = NULL;
 
 	pBuffer = (uint8_t*)m_resource + (m_indexCount * stride_);
 	m_indexCount += count;

@@ -58,7 +58,7 @@ T Clamp(T t, U max_, V min_)
 template <class T>
 void SafeAddRef(T& t)
 {
-	if (t != nullptr)
+	if (t != NULL)
 	{
 		t->AddRef();
 	}
@@ -67,10 +67,10 @@ void SafeAddRef(T& t)
 template <class T>
 void SafeRelease(T& t)
 {
-	if (t != nullptr)
+	if (t != NULL)
 	{
 		t->Release();
-		t = nullptr;
+		t = NULL;
 	}
 }
 
@@ -85,20 +85,20 @@ void SafeSubstitute(T& target, T& value)
 template <typename T>
 inline void SafeDelete(T*& p)
 {
-	if (p != nullptr)
+	if (p != NULL)
 	{
 		delete (p);
-		(p) = nullptr;
+		(p) = NULL;
 	}
 }
 
 template <typename T>
 inline void SafeDeleteArray(T*& p)
 {
-	if (p != nullptr)
+	if (p != NULL)
 	{
 		delete[](p);
-		(p) = nullptr;
+		(p) = NULL;
 	}
 }
 

@@ -40,11 +40,11 @@ bool operator==(const TranslationParentBindType& lhs, const BindType& rhs)
 EffectNodeImplemented::EffectNodeImplemented(Effect* effect, unsigned char*& pos)
 	: m_effect(effect)
 	, generation_(0)
-	, m_userData(nullptr)
+	, m_userData(NULL)
 	, IsRendered(true)
-	, TranslationFCurve(nullptr)
-	, RotationFCurve(nullptr)
-	, ScalingFCurve(nullptr)
+	, TranslationFCurve(NULL)
+	, RotationFCurve(NULL)
+	, ScalingFCurve(NULL)
 	, SoundType(ParameterSoundType_None)
 	, RenderingOrder(RenderingOrder_FirstCreatedInstanceIsFirst)
 {
@@ -799,7 +799,7 @@ int EffectNodeImplemented::GetChildrenCount() const
 EffectNode* EffectNodeImplemented::GetChild(int index) const
 {
 	if (index >= GetChildrenCount())
-		return nullptr;
+		return NULL;
 	return m_Nodes[index];
 }
 
@@ -1036,7 +1036,7 @@ void EffectNodeImplemented::PlaySound_(Instance& instance, SoundTag tag, Manager
 	IRandObject& rand = instance.GetRandObject();
 
 	SoundPlayer* player = manager->GetSoundPlayer();
-	if (player == nullptr)
+	if (player == NULL)
 	{
 		return;
 	}
@@ -1096,7 +1096,7 @@ EffectInstanceTerm EffectNodeImplemented::CalculateInstanceTerm(EffectInstanceTe
 	}
 	else
 	{
-		lastBeginMin = firstBeginMin + static_cast<int32_t>((CommonValues.MaxGeneration - 1) * CommonValues.GenerationTime.min);
+		lastBeginMin = firstBeginMin + (CommonValues.MaxGeneration - 1) * (CommonValues.GenerationTime.min);
 	}
 
 	if (CommonValues.MaxGeneration > INT_MAX / 2)
@@ -1105,7 +1105,7 @@ EffectInstanceTerm EffectNodeImplemented::CalculateInstanceTerm(EffectInstanceTe
 	}
 	else
 	{
-		lastBeginMax = firstBeginMax + static_cast<int32_t>((CommonValues.MaxGeneration - 1) * CommonValues.GenerationTime.max);
+		lastBeginMax = firstBeginMax + (CommonValues.MaxGeneration - 1) * (CommonValues.GenerationTime.max);
 	}
 
 	auto lastEndMin = addWithClip(lastBeginMin, lifeMin);
@@ -1184,7 +1184,7 @@ EffectInstanceTerm EffectNodeImplemented::CalculateInstanceTerm(EffectInstanceTe
 
 EffectNodeImplemented* EffectNodeImplemented::Create(Effect* effect, EffectNode* parent, unsigned char*& pos)
 {
-	EffectNodeImplemented* effectnode = nullptr;
+	EffectNodeImplemented* effectnode = NULL;
 
 	int node_type = 0;
 	memcpy(&node_type, pos, sizeof(int));

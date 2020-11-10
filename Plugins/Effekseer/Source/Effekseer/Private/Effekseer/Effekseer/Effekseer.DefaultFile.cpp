@@ -17,7 +17,7 @@ namespace Effekseer
 DefaultFileReader::DefaultFileReader(FILE* filePtr)
 	: m_filePtr(filePtr)
 {
-	assert(filePtr != nullptr);
+	assert(filePtr != NULL);
 }
 
 //----------------------------------------------------------------------------------
@@ -70,7 +70,7 @@ size_t DefaultFileReader::GetLength()
 DefaultFileWriter::DefaultFileWriter(FILE* filePtr)
 	: m_filePtr(filePtr)
 {
-	assert(filePtr != nullptr);
+	assert(filePtr != NULL);
 }
 
 //----------------------------------------------------------------------------------
@@ -128,9 +128,9 @@ size_t DefaultFileWriter::GetLength()
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-FileReader* DefaultFileInterface::OpenRead(const char16_t* path)
+FileReader* DefaultFileInterface::OpenRead(const EFK_CHAR* path)
 {
-	FILE* filePtr = nullptr;
+	FILE* filePtr = NULL;
 #ifdef _WIN32
 	_wfopen_s(&filePtr, (const wchar_t*)path, L"rb");
 #else
@@ -139,9 +139,9 @@ FileReader* DefaultFileInterface::OpenRead(const char16_t* path)
 	filePtr = fopen((const char*)path8, "rb");
 #endif
 
-	if (filePtr == nullptr)
+	if (filePtr == NULL)
 	{
-		return nullptr;
+		return NULL;
 	}
 
 	return new DefaultFileReader(filePtr);
@@ -150,9 +150,9 @@ FileReader* DefaultFileInterface::OpenRead(const char16_t* path)
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-FileWriter* DefaultFileInterface::OpenWrite(const char16_t* path)
+FileWriter* DefaultFileInterface::OpenWrite(const EFK_CHAR* path)
 {
-	FILE* filePtr = nullptr;
+	FILE* filePtr = NULL;
 #ifdef _WIN32
 	_wfopen_s(&filePtr, (const wchar_t*)path, L"wb");
 #else
@@ -161,9 +161,9 @@ FileWriter* DefaultFileInterface::OpenWrite(const char16_t* path)
 	filePtr = fopen((const char*)path8, "wb");
 #endif
 
-	if (filePtr == nullptr)
+	if (filePtr == NULL)
 	{
-		return nullptr;
+		return NULL;
 	}
 
 	return new DefaultFileWriter(filePtr);

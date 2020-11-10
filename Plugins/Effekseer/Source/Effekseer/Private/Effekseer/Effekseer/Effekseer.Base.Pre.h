@@ -133,27 +133,27 @@ typedef int(EFK_STDCALL* RandFunc)(void);
 typedef void(EFK_STDCALL* EffectInstanceRemovingCallback)(Manager* manager, Handle handle, bool isRemovingManager);
 
 #define ES_SAFE_ADDREF(val) \
-	if ((val) != nullptr)      \
+	if ((val) != NULL)      \
 	{                       \
 		(val)->AddRef();    \
 	}
 #define ES_SAFE_RELEASE(val) \
-	if ((val) != nullptr)       \
+	if ((val) != NULL)       \
 	{                        \
 		(val)->Release();    \
-		(val) = nullptr;        \
+		(val) = NULL;        \
 	}
 #define ES_SAFE_DELETE(val) \
-	if ((val) != nullptr)      \
+	if ((val) != NULL)      \
 	{                       \
 		delete (val);       \
-		(val) = nullptr;       \
+		(val) = NULL;       \
 	}
 #define ES_SAFE_DELETE_ARRAY(val) \
-	if ((val) != nullptr)            \
+	if ((val) != NULL)            \
 	{                             \
 		delete[](val);            \
-		(val) = nullptr;             \
+		(val) = NULL;             \
 	}
 
 #define EFK_ASSERT(x) assert(x)

@@ -16,7 +16,7 @@ VertexBufferBase::VertexBufferBase(int size, bool isDynamic)
 	: m_isDynamic(isDynamic)
 	, m_size(size)
 	, m_offset(0)
-	, m_resource(nullptr)
+	, m_resource(NULL)
 	, m_isLock(false)
 {
 }
@@ -60,9 +60,9 @@ void* VertexBufferBase::GetBufferDirect(int size)
 {
 	assert(m_isLock);
 	if (m_offset + size > m_size)
-		return nullptr;
+		return NULL;
 
-	void* pBuffer = nullptr;
+	void* pBuffer = NULL;
 
 	// バッファに追記
 	pBuffer = m_resource + m_offset;
