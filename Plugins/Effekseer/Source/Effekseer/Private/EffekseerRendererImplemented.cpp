@@ -1406,6 +1406,7 @@ namespace EffekseerRendererUE4
 
 		EffekseerEffectMaterial m;
 		m.Texture = (UTexture2D*)textures_[0];
+
 		m.AlphaBlend = (EEffekseerAlphaBlendType)m_renderState->GetActiveState().AlphaBlend;
 		m.IsDepthTestDisabled = !m_renderState->GetActiveState().DepthTest;
 		m.IsLighting = m_currentShader->GetType() == Effekseer::RendererMaterialType::Lighting;
