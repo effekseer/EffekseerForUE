@@ -153,121 +153,7 @@ struct FFalloffParameter
 	}
 };
 
-UCLASS()
-class EFFEKSEER_API UEffekseerEffectMaterialParameterHolder
-	: public UObject
-{
-public:
-	GENERATED_BODY()
-
-	UPROPERTY()
-	UTexture2D*		Texture = nullptr;
-
-	UPROPERTY()
-	int32			TextureAddressType = 0;
-
-	UPROPERTY()
-	UTexture2D*		AlphaTexture = nullptr;
-
-	UPROPERTY()
-	int32			AlphaTextureAddressType = 0;
-
-	UPROPERTY()
-	UTexture2D*		UVDistortionTexture = nullptr;
-
-	UPROPERTY()
-	int32			UVDistortionTextureAddressType = 0;
-
-	UPROPERTY()
-	UTexture2D*		BlendTexture = nullptr;
-
-	UPROPERTY()
-	int32			BlendTextureAddress = 0;
-
-	UPROPERTY()
-	UTexture2D*		BlendAlphaTexture = nullptr;
-
-	UPROPERTY()
-	int32			BlendAlphaTextureAddress = 0;
-
-	UPROPERTY()
-	UTexture2D*		BlendUVDistortionTexture = nullptr;
-
-	UPROPERTY()
-	int32			BlendUVDistortionTextureAddress = 0;
-
-	UPROPERTY()
-	FFlipbookParameters FlipbookParams;
-
-	UPROPERTY()
-	float			UVDistortionIntensity = 1.0f;
-
-	UPROPERTY()
-	int32			TextureBlendType = -1;
-
-	UPROPERTY()
-	float			BlendUVDistortionIntensity = 1.0f;
-
-	UPROPERTY()
-	bool			EnableFalloff = false;
-
-	UPROPERTY()
-	FFalloffParameter FalloffParam;
-
-	UPROPERTY()
-	float			EmissiveScaling = 1;
-
-	UPROPERTY()
-	FEdgeParameters	EdgeParams;
-
-	UPROPERTY()
-	EEffekseerAlphaBlendType	AlphaBlend;
-
-	UPROPERTY()
-	bool			IsDepthTestDisabled;
-
-	UPROPERTY()
-	bool			IsLighting = false;
-
-	UPROPERTY()
-	bool			IsDistorted = false;
-
-	bool operator == (const UEffekseerEffectMaterialParameterHolder* Other)
-	{
-		return
-			Texture == Other->Texture &&
-			TextureAddressType == Other->TextureAddressType &&
-			AlphaTexture == Other->AlphaTexture &&
-			AlphaTextureAddressType == Other->AlphaTextureAddressType &&
-			UVDistortionTexture == Other->UVDistortionTexture &&
-			UVDistortionTextureAddressType == Other->UVDistortionTextureAddressType &&
-			BlendTexture == Other->BlendTexture &&
-			BlendTextureAddress == Other->BlendTextureAddress &&
-			BlendAlphaTexture == Other->BlendAlphaTexture &&
-			BlendAlphaTextureAddress == Other->BlendAlphaTextureAddress &&
-			BlendUVDistortionTexture == Other->BlendUVDistortionTexture &&
-			BlendUVDistortionTextureAddress == Other->BlendUVDistortionTextureAddress &&
-			FlipbookParams == Other->FlipbookParams &&
-			UVDistortionIntensity == Other->UVDistortionIntensity && 
-			TextureBlendType == Other->TextureBlendType &&
-			BlendUVDistortionIntensity == Other->BlendUVDistortionIntensity &&
-			EnableFalloff == Other->EnableFalloff &&
-			FalloffParam == Other->FalloffParam &&
-			EmissiveScaling == Other->EmissiveScaling &&
-			EdgeParams == Other->EdgeParams &&
-			AlphaBlend == Other->AlphaBlend &&
-			IsDepthTestDisabled == Other->IsDepthTestDisabled &&
-			IsLighting == Other->IsLighting &&
-			IsDistorted == Other->IsDistorted;
-	}
-
-	friend uint32 GetTypeHash(const UEffekseerEffectMaterialParameterHolder* Other)
-	{
-		return GetTypeHash(Other->Texture);
-	}
-};
-
-struct EffekseerEffectMaterial
+struct EffekseerEffectMaterialKey
 {
 	UTexture2D* Texture = nullptr;
 	int32			TextureAddressType = 0;
@@ -294,7 +180,17 @@ struct EffekseerEffectMaterial
 	bool			IsLighting = false;
 	bool			IsDistorted = false;
 
-	bool operator < (const EffekseerEffectMaterial& rhs) const
+	bool operator == (const EffekseerEffectMaterialKey& rhs) const
+	{
+		return !((*this) < rhs) && !(rhs < (*this));
+	}
+
+	bool operator != (const EffekseerEffectMaterialKey& rhs) const
+	{
+		return !((*this) == rhs);
+	}
+
+	bool operator < (const EffekseerEffectMaterialKey& rhs) const
 	{
 		if (Texture != rhs.Texture)
 		{
@@ -417,6 +313,122 @@ struct EffekseerEffectMaterial
 		}
 
 		return false;
+	}
+};
+
+UCLASS()
+class EFFEKSEER_API UEffekseerEffectMaterialParameterHolder
+	: public UObject
+{
+public:
+	GENERATED_BODY()
+
+	UPROPERTY()
+	UTexture2D*		Texture = nullptr;
+
+	UPROPERTY()
+	int32			TextureAddressType = 0;
+
+	UPROPERTY()
+	UTexture2D*		AlphaTexture = nullptr;
+
+	UPROPERTY()
+	int32			AlphaTextureAddressType = 0;
+
+	UPROPERTY()
+	UTexture2D*		UVDistortionTexture = nullptr;
+
+	UPROPERTY()
+	int32			UVDistortionTextureAddressType = 0;
+
+	UPROPERTY()
+	UTexture2D*		BlendTexture = nullptr;
+
+	UPROPERTY()
+	int32			BlendTextureAddress = 0;
+
+	UPROPERTY()
+	UTexture2D*		BlendAlphaTexture = nullptr;
+
+	UPROPERTY()
+	int32			BlendAlphaTextureAddress = 0;
+
+	UPROPERTY()
+	UTexture2D*		BlendUVDistortionTexture = nullptr;
+
+	UPROPERTY()
+	int32			BlendUVDistortionTextureAddress = 0;
+
+	UPROPERTY()
+	FFlipbookParameters FlipbookParams;
+
+	UPROPERTY()
+	float			UVDistortionIntensity = 1.0f;
+
+	UPROPERTY()
+	int32			TextureBlendType = -1;
+
+	UPROPERTY()
+	float			BlendUVDistortionIntensity = 1.0f;
+
+	UPROPERTY()
+	bool			EnableFalloff = false;
+
+	UPROPERTY()
+	FFalloffParameter FalloffParam;
+
+	UPROPERTY()
+	float			EmissiveScaling = 1;
+
+	UPROPERTY()
+	FEdgeParameters	EdgeParams;
+
+	UPROPERTY()
+	EEffekseerAlphaBlendType	AlphaBlend;
+
+	UPROPERTY()
+	bool			IsDepthTestDisabled;
+
+	UPROPERTY()
+	bool			IsLighting = false;
+
+	UPROPERTY()
+	bool			IsDistorted = false;
+
+	EffekseerEffectMaterialKey Key;
+
+	bool operator == (const UEffekseerEffectMaterialParameterHolder* Other)
+	{
+		return
+			Texture == Other->Texture &&
+			TextureAddressType == Other->TextureAddressType &&
+			AlphaTexture == Other->AlphaTexture &&
+			AlphaTextureAddressType == Other->AlphaTextureAddressType &&
+			UVDistortionTexture == Other->UVDistortionTexture &&
+			UVDistortionTextureAddressType == Other->UVDistortionTextureAddressType &&
+			BlendTexture == Other->BlendTexture &&
+			BlendTextureAddress == Other->BlendTextureAddress &&
+			BlendAlphaTexture == Other->BlendAlphaTexture &&
+			BlendAlphaTextureAddress == Other->BlendAlphaTextureAddress &&
+			BlendUVDistortionTexture == Other->BlendUVDistortionTexture &&
+			BlendUVDistortionTextureAddress == Other->BlendUVDistortionTextureAddress &&
+			FlipbookParams == Other->FlipbookParams &&
+			UVDistortionIntensity == Other->UVDistortionIntensity && 
+			TextureBlendType == Other->TextureBlendType &&
+			BlendUVDistortionIntensity == Other->BlendUVDistortionIntensity &&
+			EnableFalloff == Other->EnableFalloff &&
+			FalloffParam == Other->FalloffParam &&
+			EmissiveScaling == Other->EmissiveScaling &&
+			EdgeParams == Other->EdgeParams &&
+			AlphaBlend == Other->AlphaBlend &&
+			IsDepthTestDisabled == Other->IsDepthTestDisabled &&
+			IsLighting == Other->IsLighting &&
+			IsDistorted == Other->IsDistorted;
+	}
+
+	friend uint32 GetTypeHash(const UEffekseerEffectMaterialParameterHolder* Other)
+	{
+		return GetTypeHash(Other->Texture);
 	}
 };
 

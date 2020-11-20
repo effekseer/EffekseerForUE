@@ -6,6 +6,7 @@
 #include <vector>
 #include <Effekseer.h>
 #include <Effekseer/Effekseer/Material/Effekseer.Material.h>
+#include "EffekseerRenderingUserData.h"
 
 #include "EffekseerRendererShader.h"
 #include "EffekseerCustomVersion.h"
@@ -713,8 +714,39 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 			mat->IsLighting = param.MaterialType == ::Effekseer::RendererMaterialType::Lighting;
 			mat->IsDistorted = param.Distortion;
 
+			EffekseerEffectMaterialKey mkey;
+			auto m = mat;
+			mkey.Texture = m->Texture;
+			mkey.TextureAddressType = m->TextureAddressType;
+			mkey.AlphaTexture = m->AlphaTexture;
+			mkey.AlphaTextureAddressType = m->AlphaTextureAddressType;
+			mkey.UVDistortionTexture = m->UVDistortionTexture;
+			mkey.UVDistortionTextureAddressType = m->UVDistortionTextureAddressType;
+			mkey.BlendTexture = m->BlendTexture;
+			mkey.BlendTextureAddress = m->BlendTextureAddress;
+			mkey.BlendAlphaTexture = m->BlendAlphaTexture;
+			mkey.BlendAlphaTextureAddress = m->BlendAlphaTextureAddress;
+			mkey.BlendUVDistortionTexture = m->BlendUVDistortionTexture;
+			mkey.BlendUVDistortionTextureAddress = m->BlendUVDistortionTextureAddress;
+			mkey.FlipbookParams = m->FlipbookParams;
+			mkey.UVDistortionIntensity = m->UVDistortionIntensity;
+			mkey.TextureBlendType = m->TextureBlendType;
+			mkey.BlendUVDistortionIntensity = m->BlendUVDistortionIntensity;
+			mkey.EnableFalloff = m->EnableFalloff;
+			mkey.FalloffParam = m->FalloffParam;
+			mkey.EmissiveScaling = m->EmissiveScaling;
+			mkey.EdgeParams = m->EdgeParams;
+			mkey.AlphaBlend = m->AlphaBlend;
+			mkey.IsDepthTestDisabled = m->IsDepthTestDisabled;
+			mkey.IsLighting = m->IsLighting;
+			mkey.IsDistorted = m->IsDistorted;
+			mat->Key = mkey;
+
 			this->EffekseerMaterials.Add(mat);
 
+			auto renderingData = Effekseer::MakeRefPtr <EffekseerRendererUE4::EffekseerRenderingUserData > ();
+			renderingData->Key = mkey;
+			node->SetRenderingUserData(renderingData);
 		}
 
 		for (size_t i = 0; i < node->GetChildrenCount(); i++)

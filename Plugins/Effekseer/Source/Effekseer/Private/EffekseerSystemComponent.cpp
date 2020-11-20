@@ -40,7 +40,7 @@ private:
 	TMap<UTexture2D*, UMaterialInstanceDynamic*> LightingDynamicMaterials;
 
 	TMap<UEffekseerEffectMaterialParameterHolder*, UMaterialInstanceDynamic*> Materials;
-	std::map<EffekseerEffectMaterial, UMaterialInstanceDynamic*> NMaterials;
+	std::map<EffekseerEffectMaterialKey, UMaterialInstanceDynamic*> NMaterials;
 
 	float	Time = 0;
 
@@ -662,33 +662,7 @@ FEffekseerHandle UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVect
 			dynamicMaterial->SetScalarParameterValue(TEXT("EdgeColorScaling"), static_cast<float>(m->EdgeParams.ColorScaling));
 
 			Materials.Add(m, dynamicMaterial);
-
-			EffekseerEffectMaterial mkey;
-			mkey.Texture = m->Texture;
-			mkey.TextureAddressType = m->TextureAddressType;
-			mkey.AlphaTexture = m->AlphaTexture;
-			mkey.AlphaTextureAddressType = m->AlphaTextureAddressType;
-			mkey.UVDistortionTexture = m->UVDistortionTexture;
-			mkey.UVDistortionTextureAddressType = m->UVDistortionTextureAddressType;
-			mkey.BlendTexture = m->BlendTexture;
-			mkey.BlendTextureAddress = m->BlendTextureAddress;
-			mkey.BlendAlphaTexture = m->BlendAlphaTexture;
-			mkey.BlendAlphaTextureAddress = m->BlendAlphaTextureAddress;
-			mkey.BlendUVDistortionTexture = m->BlendUVDistortionTexture;
-			mkey.BlendUVDistortionTextureAddress = m->BlendUVDistortionTextureAddress;
-			mkey.FlipbookParams = m->FlipbookParams;
-			mkey.UVDistortionIntensity = m->UVDistortionIntensity;
-			mkey.TextureBlendType = m->TextureBlendType;
-			mkey.BlendUVDistortionIntensity = m->BlendUVDistortionIntensity;
-			mkey.EnableFalloff = m->EnableFalloff;
-			mkey.FalloffParam = m->FalloffParam;
-			mkey.EmissiveScaling = m->EmissiveScaling;
-			mkey.EdgeParams = m->EdgeParams;
-			mkey.AlphaBlend = m->AlphaBlend;
-			mkey.IsDepthTestDisabled = m->IsDepthTestDisabled;
-			mkey.IsLighting = m->IsLighting;
-			mkey.IsDistorted = m->IsDistorted;
-			NMaterials[mkey] = dynamicMaterial;
+			NMaterials[m->Key] = dynamicMaterial;
 		}
 	}
 

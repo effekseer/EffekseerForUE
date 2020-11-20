@@ -62,6 +62,8 @@ struct StandardRendererState
 
 	ShaderParameterCollector Collector{};
 
+	Effekseer::RefPtr<Effekseer::RenderingUserData> UserData{};
+
 	StandardRendererState()
 	{
 		DepthTest = false;
@@ -96,6 +98,8 @@ struct StandardRendererState
 		MaterialUniformCount = 0;
 		CustomData1Count = 0;
 		CustomData2Count = 0;
+
+		UserData.Reset();
 	}
 
 	bool operator!=(const StandardRendererState state)
@@ -171,6 +175,15 @@ struct StandardRendererState
 		if (CustomData1Count != state.CustomData1Count)
 			return true;
 
+		if (UserData == nullptr && state.UserData != nullptr)
+			return true;
+
+		if (UserData != nullptr && state.UserData == nullptr)
+			return true;
+
+		if (UserData != nullptr && state.UserData != nullptr && !UserData->Equal(state.UserData.Get()))
+			return true;
+
 		return false;
 	}
 
@@ -210,7 +223,8 @@ struct StandardRendererVertexBuffer
 
 	struct
 	{
-		union {
+		union
+		{
 			float Buffer[4];
 
 			struct
@@ -226,73 +240,17 @@ struct StandardRendererVertexBuffer
 
 struct StandardRendererPixelBuffer
 {
-	struct
-	{
-		union {
-			float Buffer[4];
+	FlipbookParameter FlipbookParam;
 
-			struct
-			{
-				float enableInterpolation;
-				float interpolationType;
-			};
-		};
-	} flipbookParameter;
+	UVDistortionParameter UVDistortionParam;
 
-	struct
-	{
-		union {
-			float Buffer[4];
+	BlendTextureParameter BlendTextureParam;
 
-			struct
-			{
-				float intensity;
-				float blendIntensity;
-				float uvInversed[2];
-			};
-		};
-	} uvDistortionParameter;
+	EmmisiveParameter EmmisiveParam;
 
-	struct
-	{
-		union {
-			float Buffer[4];
+	EdgeParameter EdgeParam;
 
-			struct
-			{
-				float blendType;
-			};
-		};
-	} blendTextureParameter;
-
-	struct
-	{
-		union {
-			float Buffer[4];
-
-			struct
-			{
-				float emissiveScaling;
-			};
-		};
-	};
-
-	struct
-	{
-		float Color[4];
-
-		union {
-			float Buffer[4];
-
-			struct
-			{
-				float Threshold;
-				float ColorScaling;
-			};
-		};
-	} edgeParameter;
-
-	SoftParticleParameter softParticle;
+	SoftParticleParameter SoftParticleParam;
 };
 
 struct StandardRendererDistortionPixelBuffer
@@ -300,46 +258,13 @@ struct StandardRendererDistortionPixelBuffer
 	float scale[4];
 	float uvInversed[4];
 
-	struct
-	{
-		union {
-			float Buffer[4];
+	FlipbookParameter FlipbookParam;
 
-			struct
-			{
-				float enableInterpolation;
-				float interpolationType;
-			};
-		};
-	} flipbookParameter;
+	UVDistortionParameter UVDistortionParam;
 
-	struct
-	{
-		union {
-			float Buffer[4];
+	BlendTextureParameter BlendTextureParam;
 
-			struct
-			{
-				float intensity;
-				float blendIntensity;
-				float uvInversed[2];
-			};
-		};
-	} uvDistortionParameter;
-
-	struct
-	{
-		union {
-			float Buffer[4];
-
-			struct
-			{
-				float blendType;
-			};
-		};
-	} blendTextureParameter;
-
-	SoftParticleParameter softParticle;
+	SoftParticleParameter SoftParticleParam;
 };
 
 struct StandardRendererLitPixelBuffer
@@ -782,23 +707,23 @@ public:
 			lpcb.lightAmbientColor = m_renderer->GetLightAmbientColor().ToFloat4();
 
 			auto& pcb = lpcb.Buffer;
-			pcb.flipbookParameter.enableInterpolation = static_cast<float>(m_state.EnableInterpolation);
-			pcb.flipbookParameter.interpolationType = static_cast<float>(m_state.InterpolationType);
+			pcb.FlipbookParam.EnableInterpolation = static_cast<float>(m_state.EnableInterpolation);
+			pcb.FlipbookParam.InterpolationType = static_cast<float>(m_state.InterpolationType);
 
-			pcb.uvDistortionParameter.intensity = m_state.UVDistortionIntensity;
-			pcb.uvDistortionParameter.blendIntensity = m_state.BlendUVDistortionIntensity;
-			pcb.uvDistortionParameter.uvInversed[0] = uvInversed[0];
-			pcb.uvDistortionParameter.uvInversed[1] = uvInversed[1];
+			pcb.UVDistortionParam.Intensity = m_state.UVDistortionIntensity;
+			pcb.UVDistortionParam.BlendIntensity = m_state.BlendUVDistortionIntensity;
+			pcb.UVDistortionParam.UVInversed[0] = uvInversed[0];
+			pcb.UVDistortionParam.UVInversed[1] = uvInversed[1];
 
-			pcb.blendTextureParameter.blendType = static_cast<float>(m_state.TextureBlendType);
+			pcb.BlendTextureParam.BlendType = static_cast<float>(m_state.TextureBlendType);
 
-			pcb.emissiveScaling = static_cast<float>(m_state.EmissiveScaling);
+			pcb.EmmisiveParam.EmissiveScaling = m_state.EmissiveScaling;
 
-			ColorToFloat4(Effekseer::Color(m_state.EdgeColor[0], m_state.EdgeColor[1], m_state.EdgeColor[2], m_state.EdgeColor[3]), pcb.edgeParameter.Color);
-			pcb.edgeParameter.Threshold = m_state.EdgeThreshold;
-			pcb.edgeParameter.ColorScaling = static_cast<float>(m_state.EdgeColorScaling);
+			ColorToFloat4(Effekseer::Color(m_state.EdgeColor[0], m_state.EdgeColor[1], m_state.EdgeColor[2], m_state.EdgeColor[3]), pcb.EdgeParam.EdgeColor);
+			pcb.EdgeParam.Threshold = m_state.EdgeThreshold;
+			pcb.EdgeParam.ColorScaling = static_cast<float>(m_state.EdgeColorScaling);
 
-			pcb.softParticle.SetParam(
+			pcb.SoftParticleParam.SetParam(
 				m_state.SoftParticleDistance,
 				reconstructionParam.DepthBufferScale,
 				reconstructionParam.DepthBufferOffset,
@@ -833,17 +758,17 @@ public:
 				pcb.uvInversed[0] = uvInversedBack[0];
 				pcb.uvInversed[1] = uvInversedBack[1];
 
-				pcb.flipbookParameter.enableInterpolation = static_cast<float>(m_state.EnableInterpolation);
-				pcb.flipbookParameter.interpolationType = static_cast<float>(m_state.InterpolationType);
+				pcb.FlipbookParam.EnableInterpolation = static_cast<float>(m_state.EnableInterpolation);
+				pcb.FlipbookParam.InterpolationType = static_cast<float>(m_state.InterpolationType);
 
-				pcb.uvDistortionParameter.intensity = m_state.UVDistortionIntensity;
-				pcb.uvDistortionParameter.blendIntensity = m_state.BlendUVDistortionIntensity;
-				pcb.uvDistortionParameter.uvInversed[0] = uvInversed[0];
-				pcb.uvDistortionParameter.uvInversed[1] = uvInversed[1];
+				pcb.UVDistortionParam.Intensity = m_state.UVDistortionIntensity;
+				pcb.UVDistortionParam.BlendIntensity = m_state.BlendUVDistortionIntensity;
+				pcb.UVDistortionParam.UVInversed[0] = uvInversed[0];
+				pcb.UVDistortionParam.UVInversed[1] = uvInversed[1];
 
-				pcb.blendTextureParameter.blendType = static_cast<float>(m_state.TextureBlendType);
+				pcb.BlendTextureParam.BlendType = static_cast<float>(m_state.TextureBlendType);
 
-				pcb.softParticle.SetParam(
+				pcb.SoftParticleParam.SetParam(
 					m_state.SoftParticleDistance,
 					reconstructionParam.DepthBufferScale,
 					reconstructionParam.DepthBufferOffset,
@@ -857,23 +782,23 @@ public:
 			else
 			{
 				StandardRendererPixelBuffer pcb;
-				pcb.flipbookParameter.enableInterpolation = static_cast<float>(m_state.EnableInterpolation);
-				pcb.flipbookParameter.interpolationType = static_cast<float>(m_state.InterpolationType);
+				pcb.FlipbookParam.EnableInterpolation = static_cast<float>(m_state.EnableInterpolation);
+				pcb.FlipbookParam.InterpolationType = static_cast<float>(m_state.InterpolationType);
 
-				pcb.uvDistortionParameter.intensity = m_state.UVDistortionIntensity;
-				pcb.uvDistortionParameter.blendIntensity = m_state.BlendUVDistortionIntensity;
-				pcb.uvDistortionParameter.uvInversed[0] = uvInversed[0];
-				pcb.uvDistortionParameter.uvInversed[1] = uvInversed[1];
+				pcb.UVDistortionParam.Intensity = m_state.UVDistortionIntensity;
+				pcb.UVDistortionParam.BlendIntensity = m_state.BlendUVDistortionIntensity;
+				pcb.UVDistortionParam.UVInversed[0] = uvInversed[0];
+				pcb.UVDistortionParam.UVInversed[1] = uvInversed[1];
 
-				pcb.blendTextureParameter.blendType = static_cast<float>(m_state.TextureBlendType);
+				pcb.BlendTextureParam.BlendType = static_cast<float>(m_state.TextureBlendType);
 
-				pcb.emissiveScaling = static_cast<float>(m_state.EmissiveScaling);
+				pcb.EmmisiveParam.EmissiveScaling = m_state.EmissiveScaling;
 
-				ColorToFloat4(Effekseer::Color(m_state.EdgeColor[0], m_state.EdgeColor[1], m_state.EdgeColor[2], m_state.EdgeColor[3]), pcb.edgeParameter.Color);
-				pcb.edgeParameter.Threshold = m_state.EdgeThreshold;
-				pcb.edgeParameter.ColorScaling = static_cast<float>(m_state.EdgeColorScaling);
+				ColorToFloat4(Effekseer::Color(m_state.EdgeColor[0], m_state.EdgeColor[1], m_state.EdgeColor[2], m_state.EdgeColor[3]), pcb.EdgeParam.EdgeColor);
+				pcb.EdgeParam.Threshold = m_state.EdgeThreshold;
+				pcb.EdgeParam.ColorScaling = static_cast<float>(m_state.EdgeColorScaling);
 
-				pcb.softParticle.SetParam(
+				pcb.SoftParticleParam.SetParam(
 					m_state.SoftParticleDistance,
 					reconstructionParam.DepthBufferScale,
 					reconstructionParam.DepthBufferOffset,
@@ -895,6 +820,7 @@ public:
 		m_renderer->SetVertexBuffer(m_renderer->GetVertexBuffer(), stride);
 		m_renderer->SetIndexBuffer(m_renderer->GetIndexBuffer());
 		m_renderer->SetLayout(shader_);
+		m_renderer->GetImpl()->CurrentRenderingUserData = m_state.UserData;
 		m_renderer->DrawSprites(vertexSize / stride / 4, vbOffset / stride);
 
 		m_renderer->EndShader(shader_);

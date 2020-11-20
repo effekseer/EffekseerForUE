@@ -10,6 +10,7 @@
 #include <EffekseerRenderer.ModelRendererBase.h>
 #include <EffekseerRenderer.ShaderBase.h>
 #include <EffekseerRenderer.StandardRenderer.h>
+#include "EffekseerRenderingUserData.h"
 
 namespace EffekseerRendererUE4
 {
@@ -81,7 +82,7 @@ namespace EffekseerRendererUE4
 		int32_t					m_viewIndex = 0;
 		TMap<UTexture2D*, UMaterialInstanceDynamic*>*	m_materials[6];
 		FMeshElementCollector*	m_meshElementCollector = nullptr;
-		std::map<EffekseerEffectMaterial, UMaterialInstanceDynamic*>	m_nmaterials;
+		std::map<EffekseerEffectMaterialKey, UMaterialInstanceDynamic*>	m_nmaterials;
 
 		float m_distortionIntensity = 0.0f;
 
@@ -258,7 +259,7 @@ namespace EffekseerRendererUE4
 					   std::vector<std::array<float, 4>>& customData1, 
 					   std::vector<std::array<float, 4>>& customData2);
 
-		UMaterialInterface* FindMaterial();
+		UMaterialInterface* FindMaterial(EffekseerRenderingUserData* userData);
 
 		Shader* GetShader(::EffekseerRenderer::RendererShaderType shaderType) const;
 
@@ -275,7 +276,7 @@ namespace EffekseerRendererUE4
 		void SetLocalToWorld(FMatrix localToWorld);
 		void SetViewIndex(int32_t viewIndex);
 		void SetMaterials(const TMap<UTexture2D*, UMaterialInstanceDynamic*>* materials, int32_t index);
-		void SetNMaterials(const std::map<EffekseerEffectMaterial, UMaterialInstanceDynamic*>& nmaterials);
+		void SetNMaterials(const std::map<EffekseerEffectMaterialKey, UMaterialInstanceDynamic*>& nmaterials);
 		void SetMeshElementCollector(FMeshElementCollector* meshElementCollector);
 
 		virtual int GetRef() { return ::Effekseer::ReferenceObject::GetRef(); }
