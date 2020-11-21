@@ -1,4 +1,6 @@
 
+#pragma once
+
 #include <Effekseer.h>
 #include "EffekseerEffect.h"
 
