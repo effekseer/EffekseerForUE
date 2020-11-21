@@ -14,6 +14,32 @@ namespace Effekseer
 class EffectNode;
 };
 
+inline bool CompareColor(const FLinearColor& lhs, const FLinearColor& rhs)
+{
+	if (lhs.R != rhs.R)
+	{
+		return lhs.R < rhs.R;
+	}
+
+	if (lhs.G != rhs.G)
+	{
+		return lhs.G < rhs.G;
+	}
+
+	if (lhs.B != rhs.B)
+	{
+		return lhs.B < rhs.B;
+	}
+
+	if (lhs.A != rhs.A)
+	{
+		return lhs.A < rhs.A;
+	}
+
+	return false;
+
+}
+
 USTRUCT()
 struct FFlipbookParameters
 {
@@ -23,14 +49,28 @@ struct FFlipbookParameters
 	int32 DivideX = 1;
 	int32 DivideY = 1;
 
-	bool operator==(const FFlipbookParameters& Params)
+	bool operator==(const FFlipbookParameters& rhs) const
 	{
-		if (Enable   != Params.Enable) return false;
-		if (LoopType != Params.LoopType) return false;
-		if (DivideX  != Params.DivideX) return false;
-		if (DivideY  != Params.DivideY) return false;
+		if (Enable   != rhs.Enable) return false;
+		if (LoopType != rhs.LoopType) return false;
+		if (DivideX  != rhs.DivideX) return false;
+		if (DivideY  != rhs.DivideY) return false;
 
 		return true;
+	}
+
+	bool operator!=(const FFlipbookParameters& rhs) const
+	{
+		return !(*this == rhs);
+	}
+
+	bool operator < (const FFlipbookParameters& rhs) const
+	{
+		if (Enable != rhs.Enable) return Enable < rhs.Enable;
+		if (LoopType != rhs.LoopType) return LoopType < rhs.LoopType;
+		if (DivideX != rhs.DivideX) return DivideX < rhs.DivideX;
+		if (DivideY != rhs.DivideY) return DivideY < rhs.DivideY;
+		return false;
 	}
 };
 
@@ -42,13 +82,237 @@ struct FEdgeParameters
 	float Threshold = 0;
 	int32_t ColorScaling = 1;
 
-	bool operator==(const FEdgeParameters& Params)
+	bool operator==(const FEdgeParameters& rhs) const
 	{
-		if (Color != Params.Color) return false;
-		if (Threshold  != Params.Threshold) return false;
-		if (ColorScaling  != Params.ColorScaling) return false;
+		if (Color != rhs.Color) return false;
+		if (Threshold  != rhs.Threshold) return false;
+		if (ColorScaling  != rhs.ColorScaling) return false;
 
 		return true;
+	}
+
+	bool operator!=(const FEdgeParameters& rhs) const
+	{
+		return !(*this == rhs);
+	}
+
+	bool operator < (const FEdgeParameters& rhs) const
+	{
+		if (Color != rhs.Color)
+		{
+			return CompareColor(Color, rhs.Color);
+		}
+
+		if (Threshold != rhs.Threshold)
+		{
+			return Threshold < rhs.Threshold;
+		}
+
+		if (ColorScaling != rhs.ColorScaling)
+		{
+			return ColorScaling < rhs.ColorScaling;
+		}
+
+		return false;
+	}
+};
+
+USTRUCT()
+struct FFalloffParameter
+{
+	GENERATED_USTRUCT_BODY()
+
+	int32			ColorBlendType = 0;
+	FLinearColor	BeginColor;
+	FLinearColor	EndColor;
+	int32			Pow = 1;
+
+	bool operator==(const FFalloffParameter& rhs) const
+	{
+		if (ColorBlendType != rhs.ColorBlendType) return false;
+		if (BeginColor != rhs.BeginColor) return false;
+		if (EndColor != rhs.EndColor) return false;
+		if (Pow != rhs.Pow) return false;
+
+		return true;
+	}
+
+	bool operator!=(const FFalloffParameter& rhs) const
+	{
+		return !(*this == rhs);
+	}
+
+	bool operator < (const FFalloffParameter& rhs) const
+	{
+		if (ColorBlendType != rhs.ColorBlendType) return ColorBlendType < rhs.ColorBlendType;
+		if (BeginColor != rhs.BeginColor) return CompareColor(BeginColor,rhs.BeginColor);
+		if (EndColor != rhs.EndColor) return CompareColor(EndColor,rhs.EndColor);
+		if (Pow != rhs.Pow) return Pow < rhs.Pow;
+
+		return false;
+	}
+};
+
+struct EffekseerEffectMaterialKey
+{
+	UTexture2D* Texture = nullptr;
+	int32			TextureAddressType = 0;
+	UTexture2D* AlphaTexture = nullptr;
+	int32			AlphaTextureAddressType = 0;
+	UTexture2D* UVDistortionTexture = nullptr;
+	int32			UVDistortionTextureAddressType = 0;
+	UTexture2D* BlendTexture = nullptr;
+	int32			BlendTextureAddress = 0;
+	UTexture2D* BlendAlphaTexture = nullptr;
+	int32			BlendAlphaTextureAddress = 0;
+	UTexture2D* BlendUVDistortionTexture = nullptr;
+	int32			BlendUVDistortionTextureAddress = 0;
+	FFlipbookParameters FlipbookParams;
+	float			UVDistortionIntensity = 1.0f;
+	int32			TextureBlendType = -1;
+	float			BlendUVDistortionIntensity = 1.0f;
+	bool			EnableFalloff = false;
+	FFalloffParameter FalloffParam;
+	float			EmissiveScaling = 1;
+	FEdgeParameters	EdgeParams;
+	EEffekseerAlphaBlendType	AlphaBlend;
+	bool			IsDepthTestDisabled;
+	bool			IsLighting = false;
+	bool			IsDistorted = false;
+
+	bool operator == (const EffekseerEffectMaterialKey& rhs) const
+	{
+		return !((*this) < rhs) && !(rhs < (*this));
+	}
+
+	bool operator != (const EffekseerEffectMaterialKey& rhs) const
+	{
+		return !((*this) == rhs);
+	}
+
+	bool operator < (const EffekseerEffectMaterialKey& rhs) const
+	{
+		if (Texture != rhs.Texture)
+		{
+			return Texture < rhs.Texture;
+		}
+
+		if (TextureAddressType != rhs.TextureAddressType)
+		{
+			return TextureAddressType < rhs.TextureAddressType;
+		}
+
+		if (AlphaTexture != rhs.AlphaTexture)
+		{
+			return AlphaTexture < rhs.AlphaTexture;
+		}
+
+		if (AlphaTextureAddressType != rhs.AlphaTextureAddressType)
+		{
+			return AlphaTextureAddressType < rhs.AlphaTextureAddressType;
+		}
+
+		if (UVDistortionTexture != rhs.UVDistortionTexture)
+		{
+			return UVDistortionTexture < rhs.UVDistortionTexture;
+		}
+
+		if (UVDistortionTextureAddressType != rhs.UVDistortionTextureAddressType)
+		{
+			return UVDistortionTextureAddressType < rhs.UVDistortionTextureAddressType;
+		}
+
+		if (BlendTexture != rhs.BlendTexture)
+		{
+			return BlendTexture < rhs.BlendTexture;
+		}
+
+		if (BlendTextureAddress != rhs.BlendTextureAddress)
+		{
+			return BlendTextureAddress < rhs.BlendTextureAddress;
+		}
+
+		if (BlendAlphaTexture != rhs.BlendAlphaTexture)
+		{
+			return BlendAlphaTexture < rhs.BlendAlphaTexture;
+		}
+
+		if (BlendAlphaTextureAddress != rhs.BlendAlphaTextureAddress)
+		{
+			return BlendAlphaTextureAddress < rhs.BlendAlphaTextureAddress;
+		}
+
+		if (BlendUVDistortionTexture != rhs.BlendUVDistortionTexture)
+		{
+			return BlendUVDistortionTexture < rhs.BlendUVDistortionTexture;
+		}
+
+		if (BlendUVDistortionTextureAddress != rhs.BlendUVDistortionTextureAddress)
+		{
+			return BlendUVDistortionTextureAddress < rhs.BlendUVDistortionTextureAddress;
+		}
+
+		if (FlipbookParams != rhs.FlipbookParams)
+		{
+			return FlipbookParams < rhs.FlipbookParams;
+		}
+
+		if (UVDistortionIntensity != rhs.UVDistortionIntensity)
+		{
+			return UVDistortionIntensity < rhs.UVDistortionIntensity;
+		}
+
+		if (TextureBlendType != rhs.TextureBlendType)
+		{
+			return TextureBlendType < rhs.TextureBlendType;
+		}
+
+		if (BlendUVDistortionIntensity != rhs.BlendUVDistortionIntensity)
+		{
+			return BlendUVDistortionIntensity < rhs.BlendUVDistortionIntensity;
+		}
+
+		if (EnableFalloff != rhs.EnableFalloff)
+		{
+			return EnableFalloff < rhs.EnableFalloff;
+		}
+
+		if (FalloffParam != rhs.FalloffParam)
+		{
+			return FalloffParam < rhs.FalloffParam;
+		}
+
+		if (EmissiveScaling != rhs.EmissiveScaling)
+		{
+			return EmissiveScaling < rhs.EmissiveScaling;
+		}
+
+		if (EdgeParams != rhs.EdgeParams)
+		{
+			return EdgeParams < rhs.EdgeParams;
+		}
+
+		if (AlphaBlend != rhs.AlphaBlend)
+		{
+			return AlphaBlend < rhs.AlphaBlend;
+		}
+
+		if (IsDepthTestDisabled != rhs.IsDepthTestDisabled)
+		{
+			return IsDepthTestDisabled < rhs.IsDepthTestDisabled;
+		}
+
+		if (IsLighting != rhs.IsLighting)
+		{
+			return IsLighting < rhs.IsLighting;
+		}
+
+		if (IsDistorted != rhs.IsDistorted)
+		{
+			return IsDistorted < rhs.IsDistorted;
+		}
+
+		return false;
 	}
 };
 
@@ -62,7 +326,6 @@ public:
 	UPROPERTY()
 	UTexture2D*		Texture = nullptr;
 
-//#ifdef __EFFEKSEER_BUILD_VERSION16__
 	UPROPERTY()
 	int32			TextureAddressType = 0;
 
@@ -111,27 +374,14 @@ public:
 	UPROPERTY()
 	bool			EnableFalloff = false;
 
-	struct
-	{
-		UPROPERTY()
-		int32			ColorBlendType = 0;
-
-		UPROPERTY()
-		FLinearColor	BeginColor;
-
-		UPROPERTY()
-		FLinearColor	EndColor;
-
-		UPROPERTY()
-		int32			Pow = 1;
-	} FalloffParam;
+	UPROPERTY()
+	FFalloffParameter FalloffParam;
 
 	UPROPERTY()
-	int32			EmissiveScaling = 1;
+	float			EmissiveScaling = 1;
 
 	UPROPERTY()
 	FEdgeParameters	EdgeParams;
-//#endif
 
 	UPROPERTY()
 	EEffekseerAlphaBlendType	AlphaBlend;
@@ -144,6 +394,8 @@ public:
 
 	UPROPERTY()
 	bool			IsDistorted = false;
+
+	EffekseerEffectMaterialKey Key;
 
 	bool operator == (const UEffekseerEffectMaterialParameterHolder* Other)
 	{
@@ -158,9 +410,16 @@ public:
 			BlendTextureAddress == Other->BlendTextureAddress &&
 			BlendAlphaTexture == Other->BlendAlphaTexture &&
 			BlendAlphaTextureAddress == Other->BlendAlphaTextureAddress &&
+			BlendUVDistortionTexture == Other->BlendUVDistortionTexture &&
+			BlendUVDistortionTextureAddress == Other->BlendUVDistortionTextureAddress &&
 			FlipbookParams == Other->FlipbookParams &&
 			UVDistortionIntensity == Other->UVDistortionIntensity && 
 			TextureBlendType == Other->TextureBlendType &&
+			BlendUVDistortionIntensity == Other->BlendUVDistortionIntensity &&
+			EnableFalloff == Other->EnableFalloff &&
+			FalloffParam == Other->FalloffParam &&
+			EmissiveScaling == Other->EmissiveScaling &&
+			EdgeParams == Other->EdgeParams &&
 			AlphaBlend == Other->AlphaBlend &&
 			IsDepthTestDisabled == Other->IsDepthTestDisabled &&
 			IsLighting == Other->IsLighting &&
@@ -170,84 +429,6 @@ public:
 	friend uint32 GetTypeHash(const UEffekseerEffectMaterialParameterHolder* Other)
 	{
 		return GetTypeHash(Other->Texture);
-	}
-};
-
-struct EffekseerEffectMaterial
-{
-	UTexture2D*		Texture = nullptr;
-
-	UTexture2D*		AlphaTexture = nullptr;
-
-	UTexture2D*		UVDistortionTexture = nullptr;
-
-	UTexture2D*		BlendTexture = nullptr;
-
-	UTexture2D*		BlendAlphaTexture = nullptr;
-
-	UTexture2D*		BlendUVDistortionTexture = nullptr;
-
-	EEffekseerAlphaBlendType	AlphaBlend;
-
-	bool			IsDepthTestDisabled;
-
-	bool			IsLighting = false;
-
-	bool			IsDistorted = false;
-
-	bool operator < (const EffekseerEffectMaterial& rhs) const
-	{
-		if (Texture != rhs.Texture)
-		{
-			return Texture < rhs.Texture;
-		}
-
-		if (AlphaTexture != rhs.AlphaTexture)
-		{
-			return AlphaTexture < rhs.AlphaTexture;
-		}
-
-		if (UVDistortionTexture != rhs.UVDistortionTexture)
-		{
-			return UVDistortionTexture < rhs.UVDistortionTexture;
-		}
-
-		if (BlendTexture != rhs.BlendTexture)
-		{
-			return BlendTexture < rhs.BlendTexture;
-		}
-
-		if (BlendAlphaTexture != rhs.BlendAlphaTexture)
-		{
-			return BlendAlphaTexture < rhs.BlendAlphaTexture;
-		}
-
-		if (BlendUVDistortionTexture != rhs.BlendUVDistortionTexture)
-		{
-			return BlendUVDistortionTexture < rhs.BlendUVDistortionTexture;
-		}
-
-		if (AlphaBlend != rhs.AlphaBlend)
-		{
-			return AlphaBlend < rhs.AlphaBlend;
-		}
-
-		if (IsDepthTestDisabled != rhs.IsDepthTestDisabled)
-		{
-			return IsDepthTestDisabled < rhs.IsDepthTestDisabled;
-		}
-
-		if (IsLighting != rhs.IsLighting)
-		{
-			return IsLighting < rhs.IsLighting;
-		}
-
-		if (IsDistorted != rhs.IsDistorted)
-		{
-			return IsDistorted < rhs.IsDistorted;
-		}
-
-		return false;
 	}
 };
 

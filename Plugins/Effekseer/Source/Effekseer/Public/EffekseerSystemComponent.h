@@ -61,7 +61,7 @@ class EffekseerUpdateData
 public:
 	TArray<EffekseerUpdateData_Command>	Commands;
 	TMap<UEffekseerEffectMaterialParameterHolder*, UMaterialInstanceDynamic*> Materials;
-	std::map<EffekseerEffectMaterial, UMaterialInstanceDynamic*> NMaterials;
+	std::map<EffekseerEffectMaterialKey, UMaterialInstanceDynamic*> NMaterials;
 
 	TMap<UTexture2D*, UMaterialInstanceDynamic*> OpaqueDynamicMaterials;
 	TMap<UTexture2D*, UMaterialInstanceDynamic*> TranslucentDynamicMaterials;
@@ -158,7 +158,7 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Material)
 	UMaterialInstanceConstant* DistortionAdditive_DD_Material = nullptr;
 
-	std::map<EffekseerEffectMaterial, UMaterialInstanceDynamic*> NMaterials;
+	std::map<EffekseerEffectMaterialKey, UMaterialInstanceDynamic*> NMaterials;
 
 	UPROPERTY(Transient)
 	TMap<UEffekseerEffectMaterialParameterHolder*, UMaterialInstanceDynamic*> Materials;

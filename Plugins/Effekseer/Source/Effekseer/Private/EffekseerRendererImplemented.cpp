@@ -560,6 +560,8 @@ namespace EffekseerRendererUE4
 			m_renderer->SetTextures(nullptr, collector_.Textures.data(), collector_.TextureCount);
 		}
 
+		m_renderer->GetImpl()->CurrentRenderingUserData = param.UserData;
+
 		m_renderer->DrawModel(
 			model, 
 			m_matrixes, 
@@ -782,7 +784,9 @@ namespace EffekseerRendererUE4
 
 	void RendererImplemented::DrawSprites(int32_t spriteCount, int32_t vertexOffset)
 	{
-		auto mat = FindMaterial();
+		auto reunderingUserData = static_cast<EffekseerRenderingUserData*>(GetImpl()->CurrentRenderingUserData.Get());
+
+		auto mat = FindMaterial(reunderingUserData);
 		if (mat == nullptr) return;
 
 		if (m_currentShader != nullptr && m_currentShader->GetType() == Effekseer::RendererMaterialType::File)
@@ -1252,7 +1256,8 @@ namespace EffekseerRendererUE4
 		auto& renderData = sm->RenderData;
 
 		// Material
-		auto mat = FindMaterial();
+		auto reunderingUserData = static_cast<EffekseerRenderingUserData*>(GetImpl()->CurrentRenderingUserData.Get());
+		auto mat = FindMaterial(reunderingUserData);
 
 		if (mat == nullptr) return;
 
@@ -1397,37 +1402,19 @@ namespace EffekseerRendererUE4
 				}
 	}
 
-	UMaterialInterface* RendererImplemented::FindMaterial()
+	UMaterialInterface* RendererImplemented::FindMaterial(EffekseerRenderingUserData* userData)
 	{
 		if (m_currentShader->GetType() == Effekseer::RendererMaterialType::File)
 		{
 			return m_currentShader->GetEffekseerMaterial()->FindMatrial((EEffekseerAlphaBlendType)m_renderState->GetActiveState().AlphaBlend);
 		}
 
-		EffekseerEffectMaterial m;
-		m.Texture = (UTexture2D*)textures_[0];
-		m.AlphaBlend = (EEffekseerAlphaBlendType)m_renderState->GetActiveState().AlphaBlend;
-		m.IsDepthTestDisabled = !m_renderState->GetActiveState().DepthTest;
-		m.IsLighting = m_currentShader->GetType() == Effekseer::RendererMaterialType::Lighting;
-		m.IsDistorted = m_currentShader->GetType() == Effekseer::RendererMaterialType::BackDistortion;
-
-		if (m.IsLighting || m.IsDistorted)
+		if (userData == nullptr)
 		{
-			m.AlphaTexture = (UTexture2D*)textures_[2];
-			m.UVDistortionTexture = (UTexture2D*)textures_[3];
-			m.BlendTexture = (UTexture2D*)textures_[4];
-			m.BlendAlphaTexture = (UTexture2D*)textures_[5];
-			m.BlendUVDistortionTexture = (UTexture2D*)textures_[6];
-		}
-		else
-		{
-			m.AlphaTexture = (UTexture2D*)textures_[1];
-			m.UVDistortionTexture = (UTexture2D*)textures_[2];
-			m.BlendTexture = (UTexture2D*)textures_[3];
-			m.BlendAlphaTexture = (UTexture2D*)textures_[4];
-			m.BlendUVDistortionTexture = (UTexture2D*)textures_[5];
+			return nullptr;
 		}
 
+		EffekseerEffectMaterialKey m = userData->Key;
 		UMaterialInstanceDynamic* mat = nullptr;
 
 		auto it = m_nmaterials.find(m);
@@ -1532,7 +1519,7 @@ namespace EffekseerRendererUE4
 		m_materials[index] = (TMap<UTexture2D*, UMaterialInstanceDynamic*>*)materials;
 	}
 
-	void RendererImplemented::SetNMaterials(const std::map<EffekseerEffectMaterial, UMaterialInstanceDynamic*>& nmaterials)
+	void RendererImplemented::SetNMaterials(const std::map<EffekseerEffectMaterialKey, UMaterialInstanceDynamic*>& nmaterials)
 	{
 		m_nmaterials = nmaterials;
 	}
