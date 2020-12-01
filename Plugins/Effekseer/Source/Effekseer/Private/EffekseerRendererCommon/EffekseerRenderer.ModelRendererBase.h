@@ -2,7 +2,6 @@
 #ifndef __EFFEKSEERRENDERER_MODEL_RENDERER_BASE_H__
 #define __EFFEKSEERRENDERER_MODEL_RENDERER_BASE_H__
 
-#include <Effekseer.Internal.h>
 #include <Effekseer.h>
 #include <algorithm>
 #include <assert.h>
@@ -20,7 +19,7 @@ namespace EffekseerRenderer
 
 typedef ::Effekseer::ModelRenderer::NodeParameter efkModelNodeParam;
 typedef ::Effekseer::ModelRenderer::InstanceParameter efkModelInstanceParam;
-typedef ::Effekseer::Vec3f efkVector3D;
+typedef ::Effekseer::SIMD::Vec3f efkVector3D;
 
 template <int MODEL_COUNT>
 struct ModelRendererVertexConstantBuffer
@@ -88,7 +87,8 @@ struct ModelRendererAdvancedVertexConstantBuffer
 
 	struct
 	{
-		union {
+		union
+		{
 			float Buffer[4];
 
 			struct
@@ -348,7 +348,7 @@ enum class ModelRendererVertexType
 	Single,
 };
 
-class ModelRendererBase : public ::Effekseer::ModelRenderer, public ::Effekseer::AlignedAllocationPolicy<16>
+class ModelRendererBase : public ::Effekseer::ModelRenderer, public ::Effekseer::SIMD::AlignedAllocationPolicy<16>
 {
 protected:
 	struct KeyValue
@@ -415,9 +415,9 @@ protected:
 		return fc;
 	}
 
-	void VectorToFloat4(const ::Effekseer::Vec3f& v, float fc[4])
+	void VectorToFloat4(const ::Effekseer::SIMD::Vec3f& v, float fc[4])
 	{
-		::Effekseer::SIMD4f::Store3(fc, v.s);
+		::Effekseer::SIMD::Float4::Store3(fc, v.s);
 		fc[3] = 1.0f;
 	}
 
@@ -467,7 +467,7 @@ protected:
 					frontDirection.Z = -frontDirection.Z;
 				}
 
-				keyValues_[i].Key = Effekseer::Vec3f::Dot(t, frontDirection);
+				keyValues_[i].Key = Effekseer::SIMD::Vec3f::Dot(t, frontDirection);
 				keyValues_[i].Value = static_cast<int32_t>(i);
 			}
 
@@ -577,7 +577,7 @@ protected:
 
 		// camera
 		float cameraPosition[4];
-		::Effekseer::Vec3f cameraPosition3 = renderer->GetCameraPosition();
+		::Effekseer::SIMD::Vec3f cameraPosition3 = renderer->GetCameraPosition();
 		VectorToFloat4(cameraPosition3, cameraPosition);
 
 		// time
@@ -627,6 +627,28 @@ protected:
 		renderer->SetPixelBufferToShader(cameraPosition, sizeof(float) * 4, psOffset);
 		psOffset += (sizeof(float) * 4);
 
+		::Effekseer::TextureData* depthTexture = nullptr;
+		::EffekseerRenderer::DepthReconstructionParameter reconstructionParam;
+		renderer->GetImpl()->GetDepth(depthTexture, reconstructionParam);
+
+		SoftParticleParameter softParticleParam;
+
+		softParticleParam.SetParam(
+			0.0f,
+			param.Maginification,
+			reconstructionParam.DepthBufferScale,
+			reconstructionParam.DepthBufferOffset,
+			reconstructionParam.ProjectionMatrix33,
+			reconstructionParam.ProjectionMatrix34,
+			reconstructionParam.ProjectionMatrix43,
+			reconstructionParam.ProjectionMatrix44);
+
+		renderer->SetPixelBufferToShader(softParticleParam.softParticleAndReconstructionParam1.data(), sizeof(float) * 4, psOffset);
+		psOffset += (sizeof(float) * 4);
+
+		renderer->SetPixelBufferToShader(softParticleParam.reconstructionParam2.data(), sizeof(float) * 4, psOffset);
+		psOffset += (sizeof(float) * 4);
+
 		// shader model
 		material = param.EffectPointer->GetMaterial(materialParam->MaterialIndex);
 
@@ -636,7 +658,7 @@ protected:
 			float lightColor[4];
 			float lightAmbientColor[4];
 
-			::Effekseer::Vec3f lightDirection3 = renderer->GetLightDirection();
+			::Effekseer::SIMD::Vec3f lightDirection3 = renderer->GetLightDirection();
 			lightDirection3 = lightDirection3.Normalize();
 
 			VectorToFloat4(lightDirection3, lightDirection);
@@ -735,7 +757,7 @@ public:
 	void Rendering_(RENDERER* renderer, const efkModelNodeParam& parameter, const efkModelInstanceParam& instanceParameter, void* userData)
 	{
 		::Effekseer::BillboardType btype = parameter.Billboard;
-		Effekseer::Mat44f mat44;
+		Effekseer::SIMD::Mat44f mat44;
 
 		if (btype == ::Effekseer::BillboardType::Fixed)
 		{
@@ -743,24 +765,24 @@ public:
 		}
 		else
 		{
-			Effekseer::Mat43f mat43;
-			Effekseer::Vec3f s;
-			Effekseer::Vec3f R;
-			Effekseer::Vec3f F;
+			Effekseer::SIMD::Mat43f mat43;
+			Effekseer::SIMD::Vec3f s;
+			Effekseer::SIMD::Vec3f R;
+			Effekseer::SIMD::Vec3f F;
 
 			CalcBillboard(btype, mat43, s, R, F, instanceParameter.SRTMatrix43, renderer->GetCameraFrontDirection());
 
-			mat44 = ::Effekseer::Mat43f::Scaling(s) * mat43;
+			mat44 = ::Effekseer::SIMD::Mat43f::Scaling(s) * mat43;
 		}
 
 		if (parameter.Magnification != 1.0f)
 		{
-			mat44 = Effekseer::Mat44f::Scaling(::Effekseer::Vec3f(parameter.Magnification)) * mat44;
+			mat44 = Effekseer::SIMD::Mat44f::Scaling(::Effekseer::SIMD::Vec3f(parameter.Magnification)) * mat44;
 		}
 
 		if (!parameter.IsRightHand)
 		{
-			mat44 = Effekseer::Mat44f::Scaling(1.0f, 1.0f, -1.0f) * mat44;
+			mat44 = Effekseer::SIMD::Mat44f::Scaling(1.0f, 1.0f, -1.0f) * mat44;
 		}
 
 		m_matrixes.push_back(ToStruct(mat44));
@@ -882,7 +904,7 @@ public:
 			auto callback = renderer->GetDistortingCallback();
 			if (callback != nullptr)
 			{
-				if (!callback->OnDistorting())
+				if (!callback->OnDistorting(renderer))
 				{
 					return;
 				}
@@ -905,7 +927,7 @@ public:
 
 		if (collector_.IsDepthRequired)
 		{
-			if (depthTexture == nullptr)
+			if (depthTexture == nullptr || (param.BasicParameterPtr->SoftParticleDistance == 0.0f && collector_.ShaderType != RendererShaderType::Material))
 			{
 				depthTexture = renderer->GetImpl()->GetProxyTexture(EffekseerRenderer::ProxyTextureType::White);
 			}
@@ -1037,7 +1059,7 @@ public:
 				pcb->FlipbookParam.InterpolationType = static_cast<float>(param.BasicParameterPtr->InterpolationType);
 
 				pcb->UVDistortionParam.Intensity = param.BasicParameterPtr->UVDistortionIntensity;
-				pcb->UVDistortionParam.BlendIntensity= param.BasicParameterPtr->BlendUVDistortionIntensity;
+				pcb->UVDistortionParam.BlendIntensity = param.BasicParameterPtr->BlendUVDistortionIntensity;
 				pcb->UVDistortionParam.UVInversed[0] = uvInversed[0];
 				pcb->UVDistortionParam.UVInversed[1] = uvInversed[1];
 
@@ -1045,6 +1067,7 @@ public:
 
 				pcb->softParticle.SetParam(
 					param.BasicParameterPtr->SoftParticleDistance,
+					param.Maginification,
 					reconstructionParam.DepthBufferScale,
 					reconstructionParam.DepthBufferOffset,
 					reconstructionParam.ProjectionMatrix33,
@@ -1059,7 +1082,7 @@ public:
 				// specify predefined parameters
 				if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::Lighting)
 				{
-					::Effekseer::Vec3f lightDirection = renderer->GetLightDirection();
+					::Effekseer::SIMD::Vec3f lightDirection = renderer->GetLightDirection();
 					lightDirection = lightDirection.Normalize();
 					VectorToFloat4(lightDirection, vcb->LightDirection);
 					VectorToFloat4(lightDirection, pcb->LightDirection);
@@ -1099,6 +1122,7 @@ public:
 
 				pcb->SoftParticleParam.SetParam(
 					param.BasicParameterPtr->SoftParticleDistance,
+					param.Maginification,
 					reconstructionParam.DepthBufferScale,
 					reconstructionParam.DepthBufferOffset,
 					reconstructionParam.ProjectionMatrix33,
@@ -1149,7 +1173,7 @@ public:
 					vcb->ModelMatrix[num] = m_matrixes[loop + num];
 
 					// DepthParameter
-					::Effekseer::Mat44f modelMatrix = vcb->ModelMatrix[num];
+					::Effekseer::SIMD::Mat44f modelMatrix = vcb->ModelMatrix[num];
 
 					if (param.EnableViewOffset)
 					{
@@ -1253,7 +1277,7 @@ public:
 				vcb->SetModelAlphaThreshold(0, m_alphaThreshold[loop]);
 
 				// DepthParameters
-				::Effekseer::Mat44f modelMatrix = vcb->ModelMatrix[0];
+				::Effekseer::SIMD::Mat44f modelMatrix = vcb->ModelMatrix[0];
 				if (param.EnableViewOffset == true)
 				{
 					ApplyViewOffset(modelMatrix, renderer->GetCameraMatrix(), m_viewOffsetDistance[0]);

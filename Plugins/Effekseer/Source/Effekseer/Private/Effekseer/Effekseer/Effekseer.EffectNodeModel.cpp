@@ -4,7 +4,7 @@
 #include "Effekseer.EffectNode.h"
 #include "Effekseer.Manager.h"
 #include "Effekseer.Vector3D.h"
-#include "SIMD/Effekseer.SIMDUtils.h"
+#include "SIMD/Utils.h"
 
 #include "Effekseer.Instance.h"
 #include "Effekseer.InstanceContainer.h"
@@ -119,7 +119,7 @@ void EffectNodeModel::LoadRendererParameter(unsigned char*& pos, const RefPtr<Se
 //----------------------------------------------------------------------------------
 void EffectNodeModel::BeginRendering(int32_t count, Manager* manager)
 {
-	ModelRenderer* renderer = manager->GetModelRenderer();
+	ModelRendererRef renderer = manager->GetModelRenderer();
 	if (renderer != nullptr)
 	{
 		ModelRenderer::NodeParameter nodeParameter;
@@ -133,6 +133,7 @@ void EffectNodeModel::BeginRendering(int32_t count, Manager* manager)
 		nodeParameter.Billboard = Billboard;
 		nodeParameter.Magnification = m_effect->GetMaginification();
 		nodeParameter.IsRightHand = manager->GetCoordinateSystem() == CoordinateSystem::RH;
+		nodeParameter.Maginification = GetEffect()->GetMaginification();
 
 		nodeParameter.DepthParameterPtr = &DepthValues.DepthParameter;
 		// nodeParameter.DepthOffset = DepthValues.DepthOffset;
@@ -158,7 +159,7 @@ void EffectNodeModel::BeginRendering(int32_t count, Manager* manager)
 void EffectNodeModel::Rendering(const Instance& instance, const Instance* next_instance, Manager* manager)
 {
 	const InstanceValues& instValues = instance.rendererValues.model;
-	ModelRenderer* renderer = manager->GetModelRenderer();
+	ModelRendererRef renderer = manager->GetModelRenderer();
 	if (renderer != nullptr)
 	{
 		ModelRenderer::NodeParameter nodeParameter;
@@ -172,6 +173,7 @@ void EffectNodeModel::Rendering(const Instance& instance, const Instance* next_i
 		nodeParameter.Billboard = Billboard;
 		nodeParameter.Magnification = m_effect->GetMaginification();
 		nodeParameter.IsRightHand = manager->GetCoordinateSystem() == CoordinateSystem::RH;
+		nodeParameter.Maginification = GetEffect()->GetMaginification();
 
 		nodeParameter.DepthParameterPtr = &DepthValues.DepthParameter;
 		// nodeParameter.DepthOffset = DepthValues.DepthOffset;
@@ -236,7 +238,7 @@ void EffectNodeModel::Rendering(const Instance& instance, const Instance* next_i
 //----------------------------------------------------------------------------------
 void EffectNodeModel::EndRendering(Manager* manager)
 {
-	ModelRenderer* renderer = manager->GetModelRenderer();
+	ModelRendererRef renderer = manager->GetModelRenderer();
 	if (renderer != nullptr)
 	{
 		ModelRenderer::NodeParameter nodeParameter;
@@ -250,6 +252,7 @@ void EffectNodeModel::EndRendering(Manager* manager)
 		nodeParameter.Billboard = Billboard;
 		nodeParameter.Magnification = m_effect->GetMaginification();
 		nodeParameter.IsRightHand = manager->GetSetting()->GetCoordinateSystem() == CoordinateSystem::RH;
+		nodeParameter.Maginification = GetEffect()->GetMaginification();
 
 		nodeParameter.DepthParameterPtr = &DepthValues.DepthParameter;
 		// nodeParameter.DepthOffset = DepthValues.DepthOffset;

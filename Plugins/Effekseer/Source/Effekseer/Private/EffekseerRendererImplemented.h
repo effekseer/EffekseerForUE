@@ -37,13 +37,12 @@ namespace EffekseerRendererUE4
 	{
 	private:
 		RendererImplemented*	m_renderer;
-		ModelRenderer(RendererImplemented* renderer);
-
+		
 	public:
-
+		ModelRenderer(RendererImplemented* renderer);
 		virtual ~ModelRenderer();
 
-		static ModelRenderer* Create(RendererImplemented* renderer);
+		static Effekseer::ModelRendererRef Create(RendererImplemented* renderer);
 
 	public:
 		void BeginRendering(const efkModelNodeParam& parameter, int32_t count, void* userData);
@@ -89,7 +88,7 @@ namespace EffekseerRendererUE4
 		EffekseerRenderer::StandardRenderer<RendererImplemented, Shader>*	m_standardRenderer = nullptr;
 	public:
 		
-		static RendererImplemented* Create();
+		static Effekseer::RefPtr<RendererImplemented> Create();
 
 		RendererImplemented();
 		virtual ~RendererImplemented();
@@ -101,11 +100,6 @@ namespace EffekseerRendererUE4
 		@brief	初期化
 		*/
 		bool Initialize(int32_t squareMaxCount);
-
-		/**
-		@brief	このインスタンスを破棄する。
-		*/
-		void Destroy() override;
 
 		/**
 		@brief	ステートを復帰するかどうかのフラグを設定する。
@@ -160,38 +154,38 @@ namespace EffekseerRendererUE4
 		/**
 		@brief	スプライトレンダラーを生成する。
 		*/
-		::Effekseer::SpriteRenderer* CreateSpriteRenderer() override;
+		::Effekseer::SpriteRendererRef CreateSpriteRenderer() override;
 
 		/**
 		@brief	リボンレンダラーを生成する。
 		*/
-		::Effekseer::RibbonRenderer* CreateRibbonRenderer() override;
+		::Effekseer::RibbonRendererRef CreateRibbonRenderer() override;
 
 		/**
 		@brief	リングレンダラーを生成する。
 		*/
-		::Effekseer::RingRenderer* CreateRingRenderer() override;
+		::Effekseer::RingRendererRef CreateRingRenderer() override;
 
 		/**
 		@brief	モデルレンダラーを生成する。
 		*/
-		::Effekseer::ModelRenderer* CreateModelRenderer() override;
+		::Effekseer::ModelRendererRef CreateModelRenderer() override;
 
 		/**
 		@brief	軌跡レンダラーを生成する。
 		*/
-		::Effekseer::TrackRenderer* CreateTrackRenderer() override;
+		::Effekseer::TrackRendererRef CreateTrackRenderer() override;
 
-		virtual ::Effekseer::MaterialLoader* CreateMaterialLoader(::Effekseer::FileInterface* fileInterface = nullptr) override { return nullptr; }
+		::Effekseer::MaterialLoaderRef CreateMaterialLoader(::Effekseer::FileInterface* fileInterface = nullptr) override { return nullptr; }
 		/**
 		@brief	標準のテクスチャ読込クラスを生成する。
 		*/
-		::Effekseer::TextureLoader* CreateTextureLoader(::Effekseer::FileInterface* fileInterface = NULL)  override;
+		::Effekseer::TextureLoaderRef CreateTextureLoader(::Effekseer::FileInterface* fileInterface = NULL)  override;
 
 		/**
 		@brief	標準のモデル読込クラスを生成する。
 		*/
-		::Effekseer::ModelLoader* CreateModelLoader(::Effekseer::FileInterface* fileInterface = NULL) override;
+		::Effekseer::ModelLoaderRef CreateModelLoader(::Effekseer::FileInterface* fileInterface = NULL) override;
 
 		/**
 		@brief	レンダーステートを強制的にリセットする。

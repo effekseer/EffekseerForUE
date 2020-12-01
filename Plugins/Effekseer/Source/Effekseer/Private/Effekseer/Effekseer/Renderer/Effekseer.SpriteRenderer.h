@@ -9,9 +9,9 @@
 #include "../Effekseer.Color.h"
 #include "../Effekseer.Matrix43.h"
 #include "../Effekseer.Vector2D.h"
-#include "../SIMD/Effekseer.Mat43f.h"
-#include "../SIMD/Effekseer.Vec2f.h"
-#include "../SIMD/Effekseer.Vec3f.h"
+#include "../SIMD/Mat43f.h"
+#include "../SIMD/Vec2f.h"
+#include "../SIMD/Vec3f.h"
 
 //----------------------------------------------------------------------------------
 //
@@ -22,7 +22,7 @@ namespace Effekseer
 //
 //----------------------------------------------------------------------------------
 
-class SpriteRenderer
+class SpriteRenderer : public ReferenceObject
 {
 public:
 	struct NodeParameter
@@ -32,6 +32,8 @@ public:
 		bool ZWrite;
 		BillboardType Billboard;
 		bool IsRightHand;
+		float Maginification = 1.0f;
+
 
 		ZSortType ZSort;
 
@@ -45,13 +47,13 @@ public:
 
 	struct InstanceParameter
 	{
-		Mat43f SRTMatrix43;
+		SIMD::Mat43f SRTMatrix43;
 		Color AllColor;
 
 		// Lower left, Lower right, Upper left, Upper right
 		Color Colors[4];
 
-		Vec2f Positions[4];
+		SIMD::Vec2f Positions[4];
 
 		RectF UV;
 

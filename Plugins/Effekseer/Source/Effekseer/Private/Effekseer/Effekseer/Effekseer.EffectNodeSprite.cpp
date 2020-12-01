@@ -5,7 +5,7 @@
 #include "Effekseer.EffectNode.h"
 #include "Effekseer.Manager.h"
 #include "Effekseer.Vector3D.h"
-#include "SIMD/Effekseer.SIMDUtils.h"
+#include "SIMD/Utils.h"
 
 #include "Effekseer.Instance.h"
 #include "Effekseer.InstanceContainer.h"
@@ -148,7 +148,7 @@ void EffectNodeSprite::LoadRendererParameter(unsigned char*& pos, const RefPtr<S
 //----------------------------------------------------------------------------------
 void EffectNodeSprite::BeginRendering(int32_t count, Manager* manager)
 {
-	SpriteRenderer* renderer = manager->GetSpriteRenderer();
+	SpriteRendererRef renderer = manager->GetSpriteRenderer();
 	if (renderer != nullptr)
 	{
 		SpriteRenderer::NodeParameter nodeParameter;
@@ -168,6 +168,7 @@ void EffectNodeSprite::BeginRendering(int32_t count, Manager* manager)
 		nodeParameter.EnableViewOffset = (TranslationType == ParameterTranslationType_ViewOffset);
 
 		nodeParameter.UserData = GetRenderingUserData();
+		nodeParameter.Maginification = GetEffect()->GetMaginification();
 
 		renderer->BeginRendering(nodeParameter, count, nullptr);
 	}
@@ -179,7 +180,7 @@ void EffectNodeSprite::BeginRendering(int32_t count, Manager* manager)
 void EffectNodeSprite::Rendering(const Instance& instance, const Instance* next_instance, Manager* manager)
 {
 	const InstanceValues& instValues = instance.rendererValues.sprite;
-	SpriteRenderer* renderer = manager->GetSpriteRenderer();
+	SpriteRendererRef renderer = manager->GetSpriteRenderer();
 	if (renderer != nullptr)
 	{
 		SpriteRenderer::NodeParameter nodeParameter;
@@ -197,6 +198,7 @@ void EffectNodeSprite::Rendering(const Instance& instance, const Instance* next_
 		nodeParameter.ZSort = DepthValues.ZSort;
 
 		nodeParameter.EnableViewOffset = (TranslationType == ParameterTranslationType_ViewOffset);
+		nodeParameter.Maginification = GetEffect()->GetMaginification();
 
 		SpriteRenderer::InstanceParameter instanceParameter;
 		instanceParameter.AllColor = instValues._color;
@@ -288,7 +290,7 @@ void EffectNodeSprite::Rendering(const Instance& instance, const Instance* next_
 //----------------------------------------------------------------------------------
 void EffectNodeSprite::EndRendering(Manager* manager)
 {
-	SpriteRenderer* renderer = manager->GetSpriteRenderer();
+	SpriteRendererRef renderer = manager->GetSpriteRenderer();
 	if (renderer != nullptr)
 	{
 		SpriteRenderer::NodeParameter nodeParameter;
@@ -306,6 +308,7 @@ void EffectNodeSprite::EndRendering(Manager* manager)
 		nodeParameter.BasicParameterPtr = &RendererCommon.BasicParameter;
 
 		nodeParameter.UserData = GetRenderingUserData();
+		nodeParameter.Maginification = GetEffect()->GetMaginification();
 
 		renderer->EndRendering(nodeParameter, nullptr);
 	}

@@ -24,8 +24,8 @@ class FEffekseerSystemSceneProxy : public FPrimitiveSceneProxy
 {
 private:
 	int32_t	maxSprite_ = 10000;
-	::Effekseer::Manager*	effekseerManager = nullptr;
-	::EffekseerRendererUE4::RendererImplemented*	effekseerRenderer = nullptr;
+	::Effekseer::ManagerRef	effekseerManager = nullptr;
+	::Effekseer::RefPtr<::EffekseerRendererUE4::RendererImplemented>	effekseerRenderer = nullptr;
 	
 #ifdef _WIN32
 	::Effekseer::Server*	server = nullptr;
@@ -79,17 +79,9 @@ public:
 		}
 #endif
 
-		if (effekseerManager != nullptr)
-		{
-			effekseerManager->Destroy();
-			effekseerManager = nullptr;
-		}
+		effekseerManager.Reset();
+		effekseerRenderer.Reset();
 
-		if (effekseerRenderer != nullptr)
-		{
-			effekseerRenderer->Destroy();
-			effekseerRenderer = nullptr;
-		}
 	}
 
 #if ENGINE_MINOR_VERSION >= 19
@@ -546,7 +538,7 @@ FEffekseerHandle UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVect
 
 	// Convert to a position relative from the system.
 
-#if ENGINE_MINOR_VERSION >= 25
+#if ENGINE_MINOR_VERSION >= 24
 	position -= this->GetRelativeLocation();
 #else
 	position -= this->RelativeLocation;

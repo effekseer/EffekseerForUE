@@ -11,9 +11,9 @@
 #include "../Effekseer.Vector2D.h"
 #include "../Effekseer.Vector3D.h"
 #include "../Parameter/Effekseer.Parameters.h"
-#include "../SIMD/Effekseer.Mat43f.h"
-#include "../SIMD/Effekseer.Vec2f.h"
-#include "../SIMD/Effekseer.Vec3f.h"
+#include "../SIMD/Mat43f.h"
+#include "../SIMD/Vec2f.h"
+#include "../SIMD/Vec3f.h"
 
 //----------------------------------------------------------------------------------
 //
@@ -24,7 +24,7 @@ namespace Effekseer
 //
 //----------------------------------------------------------------------------------
 
-class ModelRenderer
+class ModelRenderer : public ReferenceObject
 {
 public:
 	struct NodeParameter
@@ -39,6 +39,7 @@ public:
 		int32_t ModelIndex;
 		float Magnification;
 		bool IsRightHand;
+		float Maginification = 1.0f;
 
 		NodeRendererDepthParameter* DepthParameterPtr = nullptr;
 		NodeRendererBasicParameter* BasicParameterPtr = nullptr;
@@ -55,7 +56,7 @@ public:
 
 	struct InstanceParameter
 	{
-		Mat43f SRTMatrix43;
+		SIMD::Mat43f SRTMatrix43;
 		RectF UV;
 
 		RectF AlphaUV;

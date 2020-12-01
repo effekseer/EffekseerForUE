@@ -23,12 +23,15 @@ class GraphicsDevice;
 
 namespace EffekseerRenderer
 {
-//-----------------------------------------------------------------------------------
-//
-//-----------------------------------------------------------------------------------
+
+class Renderer;
+using RendererRef = ::Effekseer::RefPtr<Renderer>;
 
 /**
-	@brief	背景を歪ませるエフェクトを描画する前に実行されるコールバック
+	@brief	
+	\~english A callback to distort a background before drawing
+	\~japanese 背景を歪ませるエフェクトを描画する前に実行されるコールバック
+	
 */
 class DistortingCallback
 {
@@ -40,7 +43,15 @@ public:
 	{
 	}
 
-	virtual bool OnDistorting()
+	/**
+	@brief	
+	\~english A callback
+	\~japanese コールバック
+	@note
+	\~english Don't hold renderer in the instance
+	\~japanese インスタンス内にrendererを保持してはいけない
+	*/
+	virtual bool OnDistorting(Renderer* renderer)
 	{
 		return false;
 	}
@@ -108,8 +119,8 @@ struct DepthReconstructionParameter
 	float DepthBufferScale = 1.0f;
 	float DepthBufferOffset = 0.0f;
 	float ProjectionMatrix33 = 0.0f;
-	float ProjectionMatrix43 = 0.0f;
 	float ProjectionMatrix34 = 0.0f;
+	float ProjectionMatrix43 = 0.0f;
 	float ProjectionMatrix44 = 0.0f;
 };
 
@@ -120,7 +131,7 @@ protected:
 	virtual ~Renderer();
 
 	class Impl;
-	Impl* impl = nullptr;
+	std::unique_ptr<Impl> impl;
 
 public:
 	/**
@@ -137,11 +148,6 @@ public:
 		@brief	デバイスがリセットされた時に実行する。
 	*/
 	virtual void OnResetDevice() = 0;
-
-	/**
-		@brief	このインスタンスを破棄する。
-	*/
-	virtual void Destroy() = 0;
 
 	/**
 		@brief	ステートを復帰するかどうかのフラグを設定する。
@@ -244,37 +250,37 @@ public:
 	/**
 		@brief	スプライトレンダラーを生成する。
 	*/
-	virtual ::Effekseer::SpriteRenderer* CreateSpriteRenderer() = 0;
+	virtual ::Effekseer::SpriteRendererRef CreateSpriteRenderer() = 0;
 
 	/**
 		@brief	リボンレンダラーを生成する。
 	*/
-	virtual ::Effekseer::RibbonRenderer* CreateRibbonRenderer() = 0;
+	virtual ::Effekseer::RibbonRendererRef CreateRibbonRenderer() = 0;
 
 	/**
 		@brief	リングレンダラーを生成する。
 	*/
-	virtual ::Effekseer::RingRenderer* CreateRingRenderer() = 0;
+	virtual ::Effekseer::RingRendererRef CreateRingRenderer() = 0;
 
 	/**
 		@brief	モデルレンダラーを生成する。
 	*/
-	virtual ::Effekseer::ModelRenderer* CreateModelRenderer() = 0;
+	virtual ::Effekseer::ModelRendererRef CreateModelRenderer() = 0;
 
 	/**
 		@brief	軌跡レンダラーを生成する。
 	*/
-	virtual ::Effekseer::TrackRenderer* CreateTrackRenderer() = 0;
+	virtual ::Effekseer::TrackRendererRef CreateTrackRenderer() = 0;
 
 	/**
 		@brief	標準のテクスチャ読込クラスを生成する。
 	*/
-	virtual ::Effekseer::TextureLoader* CreateTextureLoader(::Effekseer::FileInterface* fileInterface = nullptr) = 0;
+	virtual ::Effekseer::TextureLoaderRef CreateTextureLoader(::Effekseer::FileInterface* fileInterface = nullptr) = 0;
 
 	/**
 		@brief	標準のモデル読込クラスを生成する。
 	*/
-	virtual ::Effekseer::ModelLoader* CreateModelLoader(::Effekseer::FileInterface* fileInterface = nullptr) = 0;
+	virtual ::Effekseer::ModelLoaderRef CreateModelLoader(::Effekseer::FileInterface* fileInterface = nullptr) = 0;
 
 	/**
 	@brief
@@ -282,7 +288,7 @@ public:
 	\~japanese 標準のマテリアル読込クラスを生成する。
 
 	*/
-	virtual ::Effekseer::MaterialLoader* CreateMaterialLoader(::Effekseer::FileInterface* fileInterface = nullptr) = 0;
+	virtual ::Effekseer::MaterialLoaderRef CreateMaterialLoader(::Effekseer::FileInterface* fileInterface = nullptr) = 0;
 
 	/**
 		@brief	レンダーステートを強制的にリセットする。
@@ -441,14 +447,15 @@ public:
 		@brief	
 		\~English	Specify a depth texture and parameters to reconstruct from z to depth
 		\~Japanese	深度画像とZから深度を復元するためのパラメーターを設定する。
-		@note
-		- ピクセルシェーダー側に深度を復元する式を増やす。
-		- 頂点シェーダーからピクセルシェーダーに深度を渡すようにする。
-		- 比較してアルファを変更するようにする。
-		- フェードの度合いのつけ方をUE4を参考に実装する。
-		- ツール側で床を出せるようにする。
 	*/
 	virtual void SetDepth(::Effekseer::Backend::TextureRef texture, const DepthReconstructionParameter& reconstructionParam);
+
+	/**
+		@brief	
+		\~English	Get the graphics device
+		\~Japanese	グラフィクスデバイスを取得する。
+	*/
+	virtual Effekseer::Backend::GraphicsDeviceRef GetGraphicsDevice() const;
 };
 
 //----------------------------------------------------------------------------------

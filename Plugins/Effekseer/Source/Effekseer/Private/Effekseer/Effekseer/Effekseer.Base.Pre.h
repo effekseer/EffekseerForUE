@@ -14,7 +14,9 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <string.h>
+#include <thread>
 #include <vector>
+
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
@@ -31,13 +33,9 @@
 #ifdef _WIN32
 //#include <windows.h>
 #elif defined(_PSVITA)
-#include "Effekseer.PSVita.h"
 #elif defined(_PS4)
-#include "Effekseer.PS4.h"
 #elif defined(_SWITCH)
-#include "Effekseer.Switch.h"
 #elif defined(_XBOXONE)
-#include "Effekseer.XBoxOne.h"
 #else
 #include <pthread.h>
 #include <sys/time.h>
@@ -63,41 +61,41 @@ struct Matrix43;
 struct Matrix44;
 struct RectF;
 
+class Setting;
 class Manager;
 class Effect;
 class EffectNode;
 
-class ParticleRenderer;
 class SpriteRenderer;
 class RibbonRenderer;
 class RingRenderer;
 class ModelRenderer;
 class TrackRenderer;
 
-class Setting;
 class EffectLoader;
 class TextureLoader;
 class MaterialLoader;
+class SoundLoader;
+class ModelLoader;
+class CurveLoader;
 
 class SoundPlayer;
-class SoundLoader;
-
-class ModelLoader;
-class ProcedualModelGenerator;
-
 class Model;
-
-class CurveLoader;
+struct ProcedualModelParameter;
+class ProcedualModelGenerator;
 class Curve;
 
-struct ProcedualModelParameter;
-
 typedef int Handle;
+
+class ManagerImplemented;
+class EffectImplemented;
 
 namespace Backend
 {
 class Texture;
 }
+
+using ThreadNativeHandleType = std::thread::native_handle_type;
 
 /**
 	@brief	Memory Allocation function
@@ -278,7 +276,7 @@ enum class ZSortType : int32_t
 //-----------------------------------------------------------------------------------
 enum class RenderMode : int32_t
 {
-	Normal,	   // 通常描画
+	Normal,	// 通常描画
 	Wireframe, // ワイヤーフレーム描画
 };
 
@@ -700,7 +698,6 @@ public:
 		return *this;
 	}
 
-
 	template <class U>
 	void operator=(const RefPtr<U>& o)
 	{
@@ -717,6 +714,14 @@ public:
 		SafeAddRef(ptr);
 		SafeRelease(ptr_);
 		ptr_ = ptr;
+	}
+
+	template <class U>
+	RefPtr<U> DownCast()
+	{
+		auto ptr = Get();
+		SafeAddRef(ptr);
+		return RefPtr<U>(reinterpret_cast<U*>(ptr));
 	}
 
 	void* Pin()
@@ -767,9 +772,24 @@ RefPtr<T> MakeRefPtr(Arg&&... args)
 	return RefPtr<T>(new T(args...));
 }
 
-using EffectRef = RefPtr<Effect>;
+using SettingRef = RefPtr<Setting>;
 using ManagerRef = RefPtr<Manager>;
+using EffectRef = RefPtr<Effect>;
 
+using SpriteRendererRef = RefPtr<SpriteRenderer>;
+using RibbonRendererRef = RefPtr<RibbonRenderer>;
+using RingRendererRef = RefPtr<RingRenderer>;
+using ModelRendererRef = RefPtr<ModelRenderer>;
+using TrackRendererRef = RefPtr<TrackRenderer>;
+using SoundPlayerRef = RefPtr<SoundPlayer>;
+
+using EffectLoaderRef = RefPtr<EffectLoader>;
+using TextureLoaderRef = RefPtr<TextureLoader>;
+using MaterialLoaderRef = RefPtr<MaterialLoader>;
+using SoundLoaderRef = RefPtr<SoundLoader>;
+using ModelLoaderRef = RefPtr<ModelLoader>;
+using CurveLoaderRef = RefPtr<CurveLoader>;
+using ProcedualModelGeneratorRef = RefPtr<ProcedualModelGenerator>;
 
 /**
 	@brief	This object generates random values.

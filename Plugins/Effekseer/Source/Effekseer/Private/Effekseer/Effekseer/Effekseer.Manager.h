@@ -97,14 +97,7 @@ public:
 		@param	autoFlip		[in]	自動でスレッド間のデータを入れ替えるかどうか、を指定する。trueの場合、Update時に入れ替わる。
 		@return	マネージャー
 	*/
-	static Manager* Create(int instance_max, bool autoFlip = true);
-
-	/**
-		@brief マネージャーを破棄する。
-		@note
-		このマネージャーから生成されたエフェクトは全て強制的に破棄される。
-	*/
-	virtual void Destroy() = 0;
+	static ManagerRef Create(int instance_max, bool autoFlip = true);
 
 	/**
 		@brief
@@ -118,7 +111,7 @@ public:
 		\~English Get a thread handle (HANDLE(win32), pthread_t(posix) or etc.)
 		\~Japanese スレッドハンドルを取得する。(HANDLE(win32) や pthread_t(posix) など)
 	*/
-	virtual uintptr_t GetWorkerThreadHandle(uint32_t threadID) = 0;
+	virtual ThreadNativeHandleType GetWorkerThreadHandle(uint32_t threadID) = 0;
 
 	/**
 		@brief
@@ -184,57 +177,57 @@ public:
 	/**
 		@brief	スプライト描画機能を取得する。
 	*/
-	virtual SpriteRenderer* GetSpriteRenderer() = 0;
+	virtual SpriteRendererRef GetSpriteRenderer() = 0;
 
 	/**
 		@brief	スプライト描画機能を設定する。
 	*/
-	virtual void SetSpriteRenderer(SpriteRenderer* renderer) = 0;
+	virtual void SetSpriteRenderer(SpriteRendererRef renderer) = 0;
 
 	/**
 		@brief	ストライプ描画機能を取得する。
 	*/
-	virtual RibbonRenderer* GetRibbonRenderer() = 0;
+	virtual RibbonRendererRef GetRibbonRenderer() = 0;
 
 	/**
 		@brief	ストライプ描画機能を設定する。
 	*/
-	virtual void SetRibbonRenderer(RibbonRenderer* renderer) = 0;
+	virtual void SetRibbonRenderer(RibbonRendererRef renderer) = 0;
 
 	/**
 		@brief	リング描画機能を取得する。
 	*/
-	virtual RingRenderer* GetRingRenderer() = 0;
+	virtual RingRendererRef GetRingRenderer() = 0;
 
 	/**
 		@brief	リング描画機能を設定する。
 	*/
-	virtual void SetRingRenderer(RingRenderer* renderer) = 0;
+	virtual void SetRingRenderer(RingRendererRef renderer) = 0;
 
 	/**
 		@brief	モデル描画機能を取得する。
 	*/
-	virtual ModelRenderer* GetModelRenderer() = 0;
+	virtual ModelRendererRef GetModelRenderer() = 0;
 
 	/**
 		@brief	モデル描画機能を設定する。
 	*/
-	virtual void SetModelRenderer(ModelRenderer* renderer) = 0;
+	virtual void SetModelRenderer(ModelRendererRef renderer) = 0;
 
 	/**
 		@brief	軌跡描画機能を取得する。
 	*/
-	virtual TrackRenderer* GetTrackRenderer() = 0;
+	virtual TrackRendererRef GetTrackRenderer() = 0;
 
 	/**
 		@brief	軌跡描画機能を設定する。
 	*/
-	virtual void SetTrackRenderer(TrackRenderer* renderer) = 0;
+	virtual void SetTrackRenderer(TrackRendererRef renderer) = 0;
 
 	/**
 		@brief	設定クラスを取得する。
 	*/
-	virtual RefPtr<Setting> GetSetting() const = 0;
+	virtual const RefPtr<Setting>& GetSetting() const = 0;
 
 	/**
 		@brief	設定クラスを設定する。
@@ -245,52 +238,52 @@ public:
 	/**
 		@brief	エフェクト読込クラスを取得する。
 	*/
-	virtual EffectLoader* GetEffectLoader() = 0;
+	virtual EffectLoaderRef GetEffectLoader() = 0;
 
 	/**
 		@brief	エフェクト読込クラスを設定する。
 	*/
-	virtual void SetEffectLoader(EffectLoader* effectLoader) = 0;
+	virtual void SetEffectLoader(EffectLoaderRef effectLoader) = 0;
 
 	/**
 		@brief	テクスチャ読込クラスを取得する。
 	*/
-	virtual TextureLoader* GetTextureLoader() = 0;
+	virtual TextureLoaderRef GetTextureLoader() = 0;
 
 	/**
 		@brief	テクスチャ読込クラスを設定する。
 	*/
-	virtual void SetTextureLoader(TextureLoader* textureLoader) = 0;
+	virtual void SetTextureLoader(TextureLoaderRef textureLoader) = 0;
 
 	/**
 		@brief	サウンド再生機能を取得する。
 	*/
-	virtual SoundPlayer* GetSoundPlayer() = 0;
+	virtual SoundPlayerRef GetSoundPlayer() = 0;
 
 	/**
 		@brief	サウンド再生機能を設定する。
 	*/
-	virtual void SetSoundPlayer(SoundPlayer* soundPlayer) = 0;
+	virtual void SetSoundPlayer(SoundPlayerRef soundPlayer) = 0;
 
 	/**
 		@brief	サウンド読込クラスを取得する
 	*/
-	virtual SoundLoader* GetSoundLoader() = 0;
+	virtual SoundLoaderRef GetSoundLoader() = 0;
 
 	/**
 		@brief	サウンド読込クラスを設定する。
 	*/
-	virtual void SetSoundLoader(SoundLoader* soundLoader) = 0;
+	virtual void SetSoundLoader(SoundLoaderRef soundLoader) = 0;
 
 	/**
 		@brief	モデル読込クラスを取得する。
 	*/
-	virtual ModelLoader* GetModelLoader() = 0;
+	virtual ModelLoaderRef GetModelLoader() = 0;
 
 	/**
 		@brief	モデル読込クラスを設定する。
 	*/
-	virtual void SetModelLoader(ModelLoader* modelLoader) = 0;
+	virtual void SetModelLoader(ModelLoaderRef modelLoader) = 0;
 
 	/**
 		@brief
@@ -300,7 +293,7 @@ public:
 		\~English	loader
 		\~Japanese ローダー
 	*/
-	virtual MaterialLoader* GetMaterialLoader() = 0;
+	virtual MaterialLoaderRef GetMaterialLoader() = 0;
 
 	/**
 		@brief
@@ -310,7 +303,7 @@ public:
 		\~English	loader
 		\~Japanese ローダー
 	*/
-	virtual void SetMaterialLoader(MaterialLoader* loader) = 0;
+	virtual void SetMaterialLoader(MaterialLoaderRef loader) = 0;
 
 	/**
 		@brief
@@ -320,7 +313,7 @@ public:
 		\~English	loader
 		\~Japanese ローダー
 	*/
-	virtual CurveLoader* GetCurveLoader() = 0;
+	virtual CurveLoaderRef GetCurveLoader() = 0;
 
 	/**
 		@brief
@@ -330,7 +323,7 @@ public:
 		\~English	loader
 		\~Japanese ローダー
 	*/
-	virtual void SetCurveLoader(CurveLoader* loader) = 0;
+	virtual void SetCurveLoader(CurveLoaderRef loader) = 0;
 
 	/**
 		@brief	エフェクトを停止する。
@@ -353,7 +346,7 @@ public:
 		@brief	エフェクトのルートだけを停止する。
 		@param	effect	[in]	エフェクト
 	*/
-	virtual void StopRoot(EffectRef& effect) = 0;
+	virtual void StopRoot(const EffectRef& effect) = 0;
 
 	/**
 		@brief	エフェクトのインスタンスが存在しているか取得する。
@@ -754,7 +747,7 @@ public:
 		@param	z	[in]	Z座標
 		@return	エフェクトのインスタンスのハンドル
 	*/
-	virtual Handle Play(EffectRef& effect, float x, float y, float z) = 0;
+	virtual Handle Play(const EffectRef& effect, float x, float y, float z) = 0;
 
 	/**
 		@brief
@@ -770,7 +763,7 @@ public:
 		\~English	A time to play from middle
 		\~Japanese	途中から再生するための時間
 	*/
-	virtual Handle Play(EffectRef& effect, const Vector3D& position, int32_t startFrame = 0) = 0;
+	virtual Handle Play(const EffectRef& effect, const Vector3D& position, int32_t startFrame = 0) = 0;
 
 	/**
 		@brief
@@ -816,6 +809,8 @@ public:
 		@brief	現在存在するエフェクトのハンドルからカリングの空間を配置しなおす。
 	*/
 	virtual void RessignCulling() = 0;
+
+	virtual ManagerImplemented* GetImplemented() = 0;
 };
 //----------------------------------------------------------------------------------
 //

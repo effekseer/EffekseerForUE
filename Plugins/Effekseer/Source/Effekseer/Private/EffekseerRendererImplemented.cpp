@@ -466,11 +466,11 @@ namespace EffekseerRendererUE4
 
 	}
 
-	ModelRenderer* ModelRenderer::Create(RendererImplemented* renderer)
+	Effekseer::ModelRendererRef ModelRenderer::Create(RendererImplemented* renderer)
 	{
 		assert(renderer != NULL);
 
-		return new ModelRenderer(renderer);
+		return Effekseer::MakeRefPtr<ModelRenderer>(renderer);
 	}
 
 	void ModelRenderer::BeginRendering(const efkModelNodeParam& parameter, int32_t count, void* userData)
@@ -583,9 +583,9 @@ namespace EffekseerRendererUE4
 		m_renderer->GetRenderState()->Pop();
 	}
 
-	RendererImplemented* RendererImplemented::Create()
+	Effekseer::RefPtr<RendererImplemented> RendererImplemented::Create()
 	{
-		return new RendererImplemented();
+		return Effekseer::MakeRefPtr<RendererImplemented>();
 	}
 
 	RendererImplemented::RendererImplemented()
@@ -620,11 +620,6 @@ namespace EffekseerRendererUE4
 		m_standardRenderer = new EffekseerRenderer::StandardRenderer<RendererImplemented, Shader>(this);
 
 		return true;
-	}
-
-	void RendererImplemented::Destroy()
-	{
-		Release();
 	}
 
 	void RendererImplemented::SetRestorationOfStatesFlag(bool flag)
@@ -687,37 +682,37 @@ namespace EffekseerRendererUE4
 		return m_squareMaxCount;
 	}
 
-	::Effekseer::SpriteRenderer* RendererImplemented::CreateSpriteRenderer()
+	::Effekseer::SpriteRendererRef RendererImplemented::CreateSpriteRenderer()
 	{
-		return new ::EffekseerRenderer::SpriteRendererBase<RendererImplemented, false>(this);
+		return Effekseer::MakeRefPtr < ::EffekseerRenderer::SpriteRendererBase<RendererImplemented, false>>(this);
 	}
 
-	::Effekseer::RibbonRenderer* RendererImplemented::CreateRibbonRenderer()
+	::Effekseer::RibbonRendererRef RendererImplemented::CreateRibbonRenderer()
 	{
-		return new ::EffekseerRenderer::RibbonRendererBase<RendererImplemented, false>(this);
+		return Effekseer::MakeRefPtr < ::EffekseerRenderer::RibbonRendererBase<RendererImplemented, false>>(this);
 	}
 
-	::Effekseer::RingRenderer* RendererImplemented::CreateRingRenderer()
+	::Effekseer::RingRendererRef RendererImplemented::CreateRingRenderer()
 	{
-		return new ::EffekseerRenderer::RingRendererBase<RendererImplemented, false>(this);
+		return Effekseer::MakeRefPtr < ::EffekseerRenderer::RingRendererBase<RendererImplemented, false>>(this);
 	}
 
-	::Effekseer::ModelRenderer* RendererImplemented::CreateModelRenderer()
+	::Effekseer::ModelRendererRef RendererImplemented::CreateModelRenderer()
 	{
 		return ModelRenderer::Create(this);
 	}
 
-	::Effekseer::TrackRenderer* RendererImplemented::CreateTrackRenderer()
+	::Effekseer::TrackRendererRef RendererImplemented::CreateTrackRenderer()
 	{
-		return new ::EffekseerRenderer::TrackRendererBase<RendererImplemented, false>(this);
+		return Effekseer::MakeRefPtr<::EffekseerRenderer::TrackRendererBase<RendererImplemented, false>>(this);
 	}
 
-	::Effekseer::TextureLoader* RendererImplemented::CreateTextureLoader(::Effekseer::FileInterface* fileInterface)
+	::Effekseer::TextureLoaderRef RendererImplemented::CreateTextureLoader(::Effekseer::FileInterface* fileInterface)
 	{
 		return nullptr;
 	}
 
-	::Effekseer::ModelLoader* RendererImplemented::CreateModelLoader(::Effekseer::FileInterface* fileInterface)
+	::Effekseer::ModelLoaderRef RendererImplemented::CreateModelLoader(::Effekseer::FileInterface* fileInterface)
 	{
 		return nullptr;
 	}

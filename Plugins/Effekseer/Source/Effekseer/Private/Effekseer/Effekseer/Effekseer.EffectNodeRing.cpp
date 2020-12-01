@@ -4,7 +4,7 @@
 #include "Effekseer.EffectNode.h"
 #include "Effekseer.Manager.h"
 #include "Effekseer.Vector3D.h"
-#include "SIMD/Effekseer.SIMDUtils.h"
+#include "SIMD/Utils.h"
 
 #include "Effekseer.Instance.h"
 #include "Effekseer.InstanceContainer.h"
@@ -235,7 +235,7 @@ void EffectNodeRing::LoadRendererParameter(unsigned char*& pos, const RefPtr<Set
 //----------------------------------------------------------------------------------
 void EffectNodeRing::BeginRendering(int32_t count, Manager* manager)
 {
-	RingRenderer* renderer = manager->GetRingRenderer();
+	RingRendererRef renderer = manager->GetRingRenderer();
 	if (renderer != nullptr)
 	{
 		nodeParameter.EffectPointer = GetEffect();
@@ -244,6 +244,7 @@ void EffectNodeRing::BeginRendering(int32_t count, Manager* manager)
 		nodeParameter.Billboard = Billboard;
 		nodeParameter.VertexCount = VertexCount;
 		nodeParameter.IsRightHand = manager->GetCoordinateSystem() == CoordinateSystem::RH;
+		nodeParameter.Maginification = GetEffect()->GetMaginification();
 
 		nodeParameter.DepthParameterPtr = &DepthValues.DepthParameter;
 		nodeParameter.BasicParameterPtr = &RendererCommon.BasicParameter;
@@ -264,7 +265,7 @@ void EffectNodeRing::BeginRendering(int32_t count, Manager* manager)
 void EffectNodeRing::Rendering(const Instance& instance, const Instance* next_instance, Manager* manager)
 {
 	const InstanceValues& instValues = instance.rendererValues.ring;
-	RingRenderer* renderer = manager->GetRingRenderer();
+	RingRendererRef renderer = manager->GetRingRenderer();
 	if (renderer != nullptr)
 	{
 		nodeParameter.EffectPointer = GetEffect();
@@ -350,7 +351,7 @@ void EffectNodeRing::Rendering(const Instance& instance, const Instance* next_in
 //----------------------------------------------------------------------------------
 void EffectNodeRing::EndRendering(Manager* manager)
 {
-	RingRenderer* renderer = manager->GetRingRenderer();
+	RingRendererRef renderer = manager->GetRingRenderer();
 	if (renderer != nullptr)
 	{
 		renderer->EndRendering(nodeParameter, nullptr);

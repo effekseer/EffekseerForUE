@@ -519,10 +519,10 @@ void CurveLoader::Unload(void* data)
 static ::Effekseer::RefPtr<::Effekseer::Setting> CreateSetting()
 {
 	auto setting = ::Effekseer::Setting::Create();
-	setting->SetTextureLoader(new TextureLoader());
-	setting->SetModelLoader(new ModelLoader());
-	setting->SetMaterialLoader(new MaterialLoader());
-	setting->SetCurveLoader(new CurveLoader());
+	setting->SetTextureLoader(Effekseer::MakeRefPtr<TextureLoader>());
+	setting->SetModelLoader(Effekseer::MakeRefPtr<ModelLoader>());
+	setting->SetMaterialLoader(Effekseer::MakeRefPtr<MaterialLoader>());
+	setting->SetCurveLoader(Effekseer::MakeRefPtr<CurveLoader>());
 	return setting;
 }
 
@@ -543,16 +543,16 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 		this->Curves.Reset();
 	}
 
-	auto textureLoader = (TextureLoader*)setting->GetTextureLoader();
+	auto textureLoader = setting->GetTextureLoader().DownCast<TextureLoader>();
 	textureLoader->SetUObject(this, isResourceReset);
 
-	auto modelLoader = (ModelLoader*)setting->GetModelLoader();
+	auto modelLoader = setting->GetModelLoader().DownCast<ModelLoader>();
 	modelLoader->SetUObject(this, isResourceReset);
 
-	auto materialLoader = (MaterialLoader*)setting->GetMaterialLoader();
+	auto materialLoader = setting->GetMaterialLoader().DownCast<MaterialLoader>();
 	materialLoader->SetUObject(this, isResourceReset);
 
-	auto curveLoader = (CurveLoader*)setting->GetCurveLoader();
+	auto curveLoader = setting->GetCurveLoader().DownCast<CurveLoader>();
 	curveLoader->SetUObject(this, isResourceReset);
 
 	auto rootPath = uPath.c_str();
