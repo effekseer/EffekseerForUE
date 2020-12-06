@@ -162,7 +162,9 @@ namespace EffekseerRendererUE4
 			}
 		}
 
-#if ENGINE_MINOR_VERSION >= 25
+#if ENGINE_MINOR_VERSION >= 26
+		const auto found = effekseerMaterial_->UniformHashedNameToIndex.Find(ParameterInfo.Name.ToString());
+#elif ENGINE_MINOR_VERSION >= 25
 		const auto found = effekseerMaterial_->UniformHashedNameToIndex.Find(ParameterInfo.Name);
 #else
 		const auto found = effekseerMaterial_->UniformNameToIndex.Find(ParameterInfo.Name.ToString());
@@ -188,7 +190,9 @@ namespace EffekseerRendererUE4
 			return true;
 		}
 
-#if ENGINE_MINOR_VERSION >= 25
+#if ENGINE_MINOR_VERSION >= 26
+		const auto found = effekseerMaterial_->UniformHashedNameToIndex.Find(ParameterInfo.Name.ToString());
+#elif ENGINE_MINOR_VERSION >= 25
 		const auto found = effekseerMaterial_->UniformHashedNameToIndex.Find(ParameterInfo.Name);
 #else
 		const auto found = effekseerMaterial_->UniformNameToIndex.Find(ParameterInfo.Name.ToString());
@@ -204,7 +208,9 @@ namespace EffekseerRendererUE4
 
 	bool FFileMaterialRenderProxy::GetParentTextureValue(const MaterialParameterInfo& ParameterInfo, const UTexture** OutValue, const FMaterialRenderContext& Context) const
 	{
-#if ENGINE_MINOR_VERSION >= 25
+#if ENGINE_MINOR_VERSION >= 26
+		const auto found = effekseerMaterial_->TextureHashedNameToIndex.Find(ParameterInfo.Name.ToString());
+#elif ENGINE_MINOR_VERSION >= 25
 		const auto found = effekseerMaterial_->TextureHashedNameToIndex.Find(ParameterInfo.Name);
 #else
 		const auto found = effekseerMaterial_->TextureNameToIndex.Find(ParameterInfo.Name.ToString());

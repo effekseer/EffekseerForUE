@@ -359,12 +359,10 @@ public:
 	// This function can be called out of renderThread.
 	void UpdateData(EffekseerUpdateData* updateData)
 	{
-		ENQUEUE_UNIQUE_RENDER_COMMAND_TWOPARAMETER(
-			ParticleUpdateDataCommand,
-			FEffekseerSystemSceneProxy*, Proxy, this,
-			EffekseerUpdateData*, Data, updateData,
+		ENQUEUE_RENDER_COMMAND(
+			EffekseerUpdateDataCommand)([this, updateData](FRHICommandListImmediate& RHICmdList)
 			{
-				Proxy->UpdateData_RenderThread(Data);
+				this->UpdateData_RenderThread(updateData);
 			}
 		);
 	}
