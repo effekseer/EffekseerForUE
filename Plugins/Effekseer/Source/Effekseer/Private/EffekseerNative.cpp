@@ -65,11 +65,17 @@ class PerlinNoise
 		return (float)ret / (float)(0x7fff - 1);
 	}
 
-	float GetRand(int32_t min_, int32_t max_) { return GetRand() * (max_ - min_) + min_; }
+	float GetRand(int32_t min_, int32_t max_)
+	{
+		return GetRand() * (max_ - min_) + min_;
+	}
 
 public:
 	constexpr PerlinNoise() = default;
-	explicit PerlinNoise(const std::uint_fast32_t seed) { this->setSeed(seed); }
+	explicit PerlinNoise(const std::uint_fast32_t seed)
+	{
+		this->setSeed(seed);
+	}
 
 	void setSeed(const std::uint_fast32_t seed)
 	{
@@ -89,7 +95,10 @@ public:
 	}
 
 private:
-	constexpr float GetFade(const float t) const noexcept { return t * t * t * (t * (t * 6 - 15) + 10); }
+	constexpr float GetFade(const float t) const noexcept
+	{
+		return t * t * t * (t * (t * 6 - 15) + 10);
+	}
 
 	SIMD4f GetFadeFast(const SIMD4f in) const noexcept
 	{
@@ -103,9 +112,15 @@ private:
 		return t3 * t6_15_10;
 	}
 
-	constexpr float GetLerp(const float t, const float a, const float b) const noexcept { return a + t * (b - a); }
+	constexpr float GetLerp(const float t, const float a, const float b) const noexcept
+	{
+		return a + t * (b - a);
+	}
 
-	SIMD4f GetLerpFast(const SIMD4f t, const SIMD4f a, const SIMD4f b) const noexcept { return a + t * (b - a); }
+	SIMD4f GetLerpFast(const SIMD4f t, const SIMD4f a, const SIMD4f b) const noexcept
+	{
+		return a + t * (b - a);
+	}
 
 	constexpr float MakeGrad(const Pint hashnum, const float u, const float v) const noexcept
 	{
@@ -213,7 +228,10 @@ public:
 		return this->GetLerp(w, this->GetLerp(v, vv.GetX(), vv.GetY()), this->GetLerp(v, vv.GetZ(), vv.GetW()));
 	}
 
-	float Noise(Vec3f position) const noexcept { return this->SetNoise(position) * 0.5f + 0.5f; }
+	float Noise(Vec3f position) const noexcept
+	{
+		return this->SetNoise(position) * 0.5f + 0.5f;
+	}
 
 public:
 	float OctaveNoise(const std::size_t octaves_, Vec3f position) const noexcept
@@ -253,7 +271,12 @@ public:
 	float Scale = 1.0f;
 	int32_t Octave = 2;
 
-	CurlNoise(int32_t seed) : xnoise_(seed), ynoise_(seed * (seed % 1949 + 5)), znoise_(seed * (seed % 3541 + 10)) {}
+	CurlNoise(int32_t seed)
+		: xnoise_(seed)
+		, ynoise_(seed * (seed % 1949 + 5))
+		, znoise_(seed * (seed % 3541 + 10))
+	{
+	}
 
 	Vec3f Get(Vec3f pos) const
 	{
@@ -330,7 +353,10 @@ void NodeRendererTextureUVTypeParameter::Load(uint8_t*& pos, int32_t version)
 namespace Effekseer
 {
 
-void* EFK_STDCALL InternalMalloc(unsigned int size) { return (void*)new char*[size]; }
+void* EFK_STDCALL InternalMalloc(unsigned int size)
+{
+	return (void*)new char*[size];
+}
 
 void EFK_STDCALL InternalFree(void* p, unsigned int size)
 {
@@ -370,21 +396,45 @@ AlignedMallocFunc alignedMallocFunc_ = InternalAlignedMalloc;
 
 AlignedFreeFunc alignedFreeFunc_ = InternalAlignedFree;
 
-MallocFunc GetMallocFunc() { return mallocFunc_; }
+MallocFunc GetMallocFunc()
+{
+	return mallocFunc_;
+}
 
-void SetMallocFunc(MallocFunc func) { mallocFunc_ = func; }
+void SetMallocFunc(MallocFunc func)
+{
+	mallocFunc_ = func;
+}
 
-FreeFunc GetFreeFunc() { return freeFunc_; }
+FreeFunc GetFreeFunc()
+{
+	return freeFunc_;
+}
 
-void SetFreeFunc(FreeFunc func) { freeFunc_ = func; }
+void SetFreeFunc(FreeFunc func)
+{
+	freeFunc_ = func;
+}
 
-AlignedMallocFunc GetAlignedMallocFunc() { return alignedMallocFunc_; }
+AlignedMallocFunc GetAlignedMallocFunc()
+{
+	return alignedMallocFunc_;
+}
 
-void SetAlignedMallocFunc(AlignedMallocFunc func) { alignedMallocFunc_ = func; }
+void SetAlignedMallocFunc(AlignedMallocFunc func)
+{
+	alignedMallocFunc_ = func;
+}
 
-AlignedFreeFunc GetAlignedFreeFunc() { return alignedFreeFunc_; }
+AlignedFreeFunc GetAlignedFreeFunc()
+{
+	return alignedFreeFunc_;
+}
 
-void SetAlignedFreeFunc(AlignedFreeFunc func) { alignedFreeFunc_ = func; }
+void SetAlignedFreeFunc(AlignedFreeFunc func)
+{
+	alignedFreeFunc_ = func;
+}
 
 } // namespace Effekseer
 
@@ -563,53 +613,125 @@ bool Material::Load(const uint8_t* data, int32_t size)
 	return true;
 }
 
-ShadingModelType Material::GetShadingModel() const { return shadingModel_; }
+ShadingModelType Material::GetShadingModel() const
+{
+	return shadingModel_;
+}
 
-void Material::SetShadingModel(ShadingModelType shadingModel) { shadingModel_ = shadingModel; }
+void Material::SetShadingModel(ShadingModelType shadingModel)
+{
+	shadingModel_ = shadingModel;
+}
 
-bool Material::GetIsSimpleVertex() const { return isSimpleVertex_; }
+bool Material::GetIsSimpleVertex() const
+{
+	return isSimpleVertex_;
+}
 
-void Material::SetIsSimpleVertex(bool isSimpleVertex) { isSimpleVertex_ = isSimpleVertex; }
+void Material::SetIsSimpleVertex(bool isSimpleVertex)
+{
+	isSimpleVertex_ = isSimpleVertex;
+}
 
-bool Material::GetHasRefraction() const { return hasRefraction_; }
+bool Material::GetHasRefraction() const
+{
+	return hasRefraction_;
+}
 
-void Material::SetHasRefraction(bool hasRefraction) { hasRefraction_ = hasRefraction; }
+void Material::SetHasRefraction(bool hasRefraction)
+{
+	hasRefraction_ = hasRefraction;
+}
 
-const char* Material::GetGenericCode() const { return genericCode_.c_str(); }
+const char* Material::GetGenericCode() const
+{
+	return genericCode_.c_str();
+}
 
-void Material::SetGenericCode(const char* code) { genericCode_ = code; }
+void Material::SetGenericCode(const char* code)
+{
+	genericCode_ = code;
+}
 
-uint64_t Material::GetGUID() const { return guid_; }
+uint64_t Material::GetGUID() const
+{
+	return guid_;
+}
 
-void Material::SetGUID(uint64_t guid) { guid_ = guid; }
+void Material::SetGUID(uint64_t guid)
+{
+	guid_ = guid;
+}
 
-TextureWrapType Material::GetTextureWrap(int32_t index) const { return textures_.at(index).Wrap; }
+TextureWrapType Material::GetTextureWrap(int32_t index) const
+{
+	return textures_.at(index).Wrap;
+}
 
-void Material::SetTextureWrap(int32_t index, TextureWrapType value) { textures_.at(index).Wrap = value; }
+void Material::SetTextureWrap(int32_t index, TextureWrapType value)
+{
+	textures_.at(index).Wrap = value;
+}
 
-int32_t Material::GetTextureIndex(int32_t index) const { return textures_.at(index).Index; }
+int32_t Material::GetTextureIndex(int32_t index) const
+{
+	return textures_.at(index).Index;
+}
 
-void Material::SetTextureIndex(int32_t index, int32_t value) { textures_.at(index).Index = value; }
+void Material::SetTextureIndex(int32_t index, int32_t value)
+{
+	textures_.at(index).Index = value;
+}
 
-const char* Material::GetTextureName(int32_t index) const { return textures_.at(index).Name.c_str(); }
+const char* Material::GetTextureName(int32_t index) const
+{
+	return textures_.at(index).Name.c_str();
+}
 
-void Material::SetTextureName(int32_t index, const char* name) { textures_.at(index).Name = name; }
+void Material::SetTextureName(int32_t index, const char* name)
+{
+	textures_.at(index).Name = name;
+}
 
-int32_t Material::GetTextureCount() const { return static_cast<int32_t>(textures_.size()); }
+int32_t Material::GetTextureCount() const
+{
+	return static_cast<int32_t>(textures_.size());
+}
 
-void Material::SetTextureCount(int32_t count) { textures_.resize(count); }
+void Material::SetTextureCount(int32_t count)
+{
+	textures_.resize(count);
+}
 
-int32_t Material::GetUniformIndex(int32_t index) const { return uniforms_.at(index).Index; }
+int32_t Material::GetUniformIndex(int32_t index) const
+{
+	return uniforms_.at(index).Index;
+}
 
-void Material::SetUniformIndex(int32_t index, int32_t value) { uniforms_.at(index).Index = value; }
+void Material::SetUniformIndex(int32_t index, int32_t value)
+{
+	uniforms_.at(index).Index = value;
+}
 
-const char* Material::GetUniformName(int32_t index) const { return uniforms_.at(index).Name.c_str(); }
+const char* Material::GetUniformName(int32_t index) const
+{
+	return uniforms_.at(index).Name.c_str();
+}
 
-void Material::SetUniformName(int32_t index, const char* name) { uniforms_.at(index).Name = name; }
+void Material::SetUniformName(int32_t index, const char* name)
+{
+	uniforms_.at(index).Name = name;
+}
 
-int32_t Material::GetUniformCount() const { return static_cast<int32_t>(uniforms_.size()); }
+int32_t Material::GetUniformCount() const
+{
+	return static_cast<int32_t>(uniforms_.size());
+}
 
-void Material::SetUniformCount(int32_t count) { uniforms_.resize(count); }
+void Material::SetUniformCount(int32_t count)
+{
+	uniforms_.resize(count);
+}
 
 int32_t Material::GetCustomData1Count() const
 {
@@ -620,7 +742,10 @@ int32_t Material::GetCustomData1Count() const
 	return std::max(customDataMinCount_, customData1Count_);
 }
 
-void Material::SetCustomData1Count(int32_t count) { customData1Count_ = count; }
+void Material::SetCustomData1Count(int32_t count)
+{
+	customData1Count_ = count;
+}
 
 int32_t Material::GetCustomData2Count() const
 {
@@ -631,7 +756,10 @@ int32_t Material::GetCustomData2Count() const
 	return std::max(customDataMinCount_, customData2Count_);
 }
 
-void Material::SetCustomData2Count(int32_t count) { customData2Count_ = count; }
+void Material::SetCustomData2Count(int32_t count)
+{
+	customData2Count_ = count;
+}
 
 } // namespace Effekseer
 
@@ -651,33 +779,64 @@ private:
 	std::array<std::vector<uint8_t>, static_cast<int32_t>(MaterialShaderType::Max)> pixelShaders_;
 
 public:
-	CompiledMaterialBinaryInternal() {}
+	CompiledMaterialBinaryInternal()
+	{
+	}
 
-	virtual ~CompiledMaterialBinaryInternal() {}
+	virtual ~CompiledMaterialBinaryInternal()
+	{
+	}
 
 	void SetVertexShaderData(MaterialShaderType type, const std::vector<uint8_t>& data)
 	{
-		vertexShaders_.at(static_cast<int>(type)) = data;
+		vertexShaders_.at(static_cast<size_t>(type)) = data;
 	}
 
-	void SetPixelShaderData(MaterialShaderType type, const std::vector<uint8_t>& data) { pixelShaders_.at(static_cast<int>(type)) = data; }
+	void SetPixelShaderData(MaterialShaderType type, const std::vector<uint8_t>& data)
+	{
+		pixelShaders_.at(static_cast<size_t>(type)) = data;
+	}
 
-	const uint8_t* GetVertexShaderData(MaterialShaderType type) const override { return vertexShaders_.at(static_cast<int>(type)).data(); }
+	const uint8_t* GetVertexShaderData(MaterialShaderType type) const override
+	{
+		return vertexShaders_.at(static_cast<size_t>(type)).data();
+	}
 
-	int32_t GetVertexShaderSize(MaterialShaderType type) const override { return vertexShaders_.at(static_cast<int>(type)).size(); }
+	int32_t GetVertexShaderSize(MaterialShaderType type) const override
+	{
+		return static_cast<int32_t>(vertexShaders_.at(static_cast<size_t>(type)).size());
+	}
 
-	const uint8_t* GetPixelShaderData(MaterialShaderType type) const override { return pixelShaders_.at(static_cast<int>(type)).data(); }
+	const uint8_t* GetPixelShaderData(MaterialShaderType type) const override
+	{
+		return pixelShaders_.at(static_cast<size_t>(type)).data();
+	}
 
-	int32_t GetPixelShaderSize(MaterialShaderType type) const override { return pixelShaders_.at(static_cast<int>(type)).size(); }
+	int32_t GetPixelShaderSize(MaterialShaderType type) const override
+	{
+		return static_cast<int32_t>(pixelShaders_.at(static_cast<int>(type)).size());
+	}
 
-	int AddRef() override { return ReferenceObject::AddRef(); }
+	int AddRef() override
+	{
+		return ReferenceObject::AddRef();
+	}
 
-	int Release() override { return ReferenceObject::Release(); }
+	int Release() override
+	{
+		return ReferenceObject::Release();
+	}
 
-	int GetRef() override { return ReferenceObject::GetRef(); }
+	int GetRef() override
+	{
+		return ReferenceObject::GetRef();
+	}
 };
 
-const std::vector<uint8_t>& CompiledMaterial::GetOriginalData() const { return originalData_; }
+const std::vector<uint8_t>& CompiledMaterial::GetOriginalData() const
+{
+	return originalData_;
+}
 
 bool CompiledMaterial::Load(const uint8_t* data, int32_t size)
 {
@@ -784,7 +943,7 @@ bool CompiledMaterial::Load(const uint8_t* data, int32_t size)
 void CompiledMaterial::Save(std::vector<uint8_t>& dst, uint64_t guid, std::vector<uint8_t>& originalData)
 {
 	dst.reserve(1024 * 64);
-	int32_t offset = 0;
+	size_t offset = 0;
 
 	struct Header
 	{
@@ -805,7 +964,7 @@ void CompiledMaterial::Save(std::vector<uint8_t>& dst, uint64_t guid, std::vecto
 	offset = dst.size();
 
 	// info
-	int32_t platformCount = platforms.size();
+	uint32_t platformCount = static_cast<uint32_t>(platforms.size());
 	dst.resize(dst.size() + sizeof(uint32_t));
 	memcpy(dst.data() + offset, &platformCount, sizeof(uint32_t));
 	offset = dst.size();
@@ -819,7 +978,7 @@ void CompiledMaterial::Save(std::vector<uint8_t>& dst, uint64_t guid, std::vecto
 	}
 
 	// data
-	uint32_t originalDataSize = originalData.size();
+	uint32_t originalDataSize = static_cast<uint32_t>(originalData.size());
 	dst.resize(dst.size() + sizeof(uint32_t));
 	memcpy(dst.data() + offset, &originalDataSize, sizeof(uint32_t));
 	offset = dst.size();
@@ -1062,244 +1221,261 @@ bool EfkEfcProperty::Load(const void* data, int32_t size)
 	return false;
 }
 
-const std::vector<std::u16string>& EfkEfcProperty::GetColorImages() const { return colorImages_; }
-const std::vector<std::u16string>& EfkEfcProperty::GetNormalImages() const { return normalImages_; }
-const std::vector<std::u16string>& EfkEfcProperty::GetDistortionImages() const { return distortionImages_; }
-const std::vector<std::u16string>& EfkEfcProperty::GetSounds() const { return sounds_; }
-const std::vector<std::u16string>& EfkEfcProperty::GetModels() const { return models_; }
-const std::vector<std::u16string>& EfkEfcProperty::GetMaterials() const { return materials_; }
+const std::vector<std::u16string>& EfkEfcProperty::GetColorImages() const
+{
+	return colorImages_;
+}
+const std::vector<std::u16string>& EfkEfcProperty::GetNormalImages() const
+{
+	return normalImages_;
+}
+const std::vector<std::u16string>& EfkEfcProperty::GetDistortionImages() const
+{
+	return distortionImages_;
+}
+const std::vector<std::u16string>& EfkEfcProperty::GetSounds() const
+{
+	return sounds_;
+}
+const std::vector<std::u16string>& EfkEfcProperty::GetModels() const
+{
+	return models_;
+}
+const std::vector<std::u16string>& EfkEfcProperty::GetMaterials() const
+{
+	return materials_;
+}
 
 } // namespace Effekseer
 
-#ifndef	__CULLING3D_CULLING3D_H__
-#define	__CULLING3D_CULLING3D_H__
-
+#ifndef __CULLING3D_CULLING3D_H__
+#define __CULLING3D_CULLING3D_H__
 
 
 namespace Culling3D
 {
-	/**
+/**
 	@brief	最大値取得
 	*/
-	template <typename T, typename U>
-	T Max(T t, U u)
+template <typename T, typename U>
+T Max(T t, U u)
+{
+	if (t > (T)u)
 	{
-		if (t > (T) u)
-		{
-			return t;
-		}
-		return u;
-	}
-
-	/**
-	@brief	最小値取得
-	*/
-	template <typename T, typename U>
-	T Min(T t, U u)
-	{
-		if (t < (T) u)
-		{
-			return t;
-		}
-		return u;
-	}
-
-	/**
-	@brief	範囲内値取得
-	*/
-	template <typename T, typename U, typename V>
-	T Clamp(T t, U max_, V min_)
-	{
-		if (t > (T) max_)
-		{
-			t = (T) max_;
-		}
-
-		if (t < (T) min_)
-		{
-			t = (T) min_;
-		}
-
 		return t;
 	}
+	return u;
+}
 
-	template <class T>
-	void SafeAddRef(T& t)
+/**
+	@brief	最小値取得
+	*/
+template <typename T, typename U>
+T Min(T t, U u)
+{
+	if (t < (T)u)
 	{
-		if (t != NULL)
-		{
-			t->AddRef();
-		}
+		return t;
+	}
+	return u;
+}
+
+/**
+	@brief	範囲内値取得
+	*/
+template <typename T, typename U, typename V>
+T Clamp(T t, U max_, V min_)
+{
+	if (t > (T)max_)
+	{
+		t = (T)max_;
 	}
 
-	template <class T>
-	void SafeRelease(T& t)
+	if (t < (T)min_)
 	{
-		if (t != NULL)
-		{
-			t->Release();
-			t = NULL;
-		}
+		t = (T)min_;
 	}
 
-	template <class T>
-	void SafeSubstitute(T& target, T& value)
+	return t;
+}
+
+template <class T>
+void SafeAddRef(T& t)
+{
+	if (t != NULL)
 	{
-		SafeAddRef(value);
-		SafeRelease(target);
-		target = value;
+		t->AddRef();
 	}
+}
 
-	template <typename T>
-	inline void SafeDelete(T*& p)
+template <class T>
+void SafeRelease(T& t)
+{
+	if (t != NULL)
 	{
-		if (p != NULL)
-		{
-			delete (p);
-			(p) = NULL;
-		}
+		t->Release();
+		t = NULL;
 	}
+}
 
-	template <typename T>
-	inline void SafeDeleteArray(T*& p)
+template <class T>
+void SafeSubstitute(T& target, T& value)
+{
+	SafeAddRef(value);
+	SafeRelease(target);
+	target = value;
+}
+
+template <typename T>
+inline void SafeDelete(T*& p)
+{
+	if (p != NULL)
 	{
-		if (p != NULL)
-		{
-			delete [](p);
-			(p) = NULL;
-		}
+		delete (p);
+		(p) = NULL;
 	}
+}
 
-	class World;
-	class Object;
-
-	struct Vector3DF
+template <typename T>
+inline void SafeDeleteArray(T*& p)
+{
+	if (p != NULL)
 	{
-		float	X;
-		float	Y;
-		float	Z;
+		delete[](p);
+		(p) = NULL;
+	}
+}
 
-		Vector3DF();
-		Vector3DF(float x, float y, float z);
+class World;
+class Object;
 
-		bool operator == (const Vector3DF& o);
-		bool operator != (const Vector3DF& o);
+struct Vector3DF
+{
+	float X;
+	float Y;
+	float Z;
 
-		Vector3DF operator-();
+	Vector3DF();
+	Vector3DF(float x, float y, float z);
 
-		Vector3DF operator + (const Vector3DF& o) const;
+	bool operator==(const Vector3DF& o);
+	bool operator!=(const Vector3DF& o);
 
-		Vector3DF operator - (const Vector3DF& o) const;
+	Vector3DF operator-();
 
-		Vector3DF operator * (const Vector3DF& o) const;
+	Vector3DF operator+(const Vector3DF& o) const;
 
-		Vector3DF operator / (const Vector3DF& o) const;
+	Vector3DF operator-(const Vector3DF& o) const;
 
-		Vector3DF operator * (const float& o) const;
+	Vector3DF operator*(const Vector3DF& o) const;
 
-		Vector3DF operator / (const float& o) const;
+	Vector3DF operator/(const Vector3DF& o) const;
 
-		Vector3DF& operator += (const Vector3DF& o);
+	Vector3DF operator*(const float& o) const;
 
-		Vector3DF& operator -= (const Vector3DF& o);
+	Vector3DF operator/(const float& o) const;
 
-		Vector3DF& operator *= (const Vector3DF& o);
+	Vector3DF& operator+=(const Vector3DF& o);
 
-		Vector3DF& operator /= (const Vector3DF& o);
+	Vector3DF& operator-=(const Vector3DF& o);
 
-		Vector3DF& operator *= (const float& o);
+	Vector3DF& operator*=(const Vector3DF& o);
 
-		Vector3DF& operator /= (const float& o);
+	Vector3DF& operator/=(const Vector3DF& o);
 
-		/**
+	Vector3DF& operator*=(const float& o);
+
+	Vector3DF& operator/=(const float& o);
+
+	/**
 		@brief	このベクトルの長さを取得する。
 		*/
-		float GetLength() const
-		{
-			return sqrtf(GetSquaredLength());
-		}
+	float GetLength() const
+	{
+		return sqrtf(GetSquaredLength());
+	}
 
-		/**
+	/**
 		@brief	このベクトルの長さの二乗を取得する。
 		*/
-		float GetSquaredLength() const
-		{
-			return X * X + Y * Y + Z * Z;
-		}
+	float GetSquaredLength() const
+	{
+		return X * X + Y * Y + Z * Z;
+	}
 
-		/**
+	/**
 		@brief	このベクトルの長さを設定する。
 		*/
-		void SetLength(float value)
-		{
-			float length = GetLength();
-			(*this) *= (value / length);
-		}
+	void SetLength(float value)
+	{
+		float length = GetLength();
+		(*this) *= (value / length);
+	}
 
-		/**
+	/**
 		@brief	このベクトルの単位ベクトルを取得する。
 		*/
-		Vector3DF GetNormal()
-		{
-			float length = GetLength();
-			return Vector3DF(X / length, Y / length, Z / length);
-		}
+	Vector3DF GetNormal()
+	{
+		float length = GetLength();
+		return Vector3DF(X / length, Y / length, Z / length);
+	}
 
-		/**
+	/**
 		@brief	このベクトルの単位ベクトル化する。
 		*/
-		void Normalize()
-		{
-			float length = GetLength();
-			(*this) /= length;
-		}
+	void Normalize()
+	{
+		float length = GetLength();
+		(*this) /= length;
+	}
 
-		/**
+	/**
 		@brief	内積を取得する。
 		*/
-		static float Dot(const Vector3DF& v1, const Vector3DF& v2);
+	static float Dot(const Vector3DF& v1, const Vector3DF& v2);
 
-		/**
+	/**
 		@brief	外積を取得する。
 		@note
 		右手系の場合、右手の親指がv1、人差し指がv2としたとき、中指の方向を返す。<BR>
 		左手系の場合、左手の親指がv1、人差し指がv2としたとき、中指の方向を返す。<BR>
 		*/
-		static Vector3DF Cross(const Vector3DF& v1, const Vector3DF& v2);
+	static Vector3DF Cross(const Vector3DF& v1, const Vector3DF& v2);
 
-		/**
+	/**
 		@brief	2点間の距離を取得する。
 		*/
-		static float Distance(const Vector3DF& v1, const Vector3DF& v2);
-	};
-	
-	struct Matrix44
-	{
-		float	Values[4][4];
+	static float Distance(const Vector3DF& v1, const Vector3DF& v2);
+};
 
-		Matrix44();
-		Matrix44& SetInverted();
-		Vector3DF Transform3D(const Vector3DF& in) const;
+struct Matrix44
+{
+	float Values[4][4];
 
-		/**
+	Matrix44();
+	Matrix44& SetInverted();
+	Vector3DF Transform3D(const Vector3DF& in) const;
+
+	/**
 		@brief	カメラ行列(右手系)を設定する。
 		@param	eye	カメラの位置
 		@param	at	カメラの注視点
 		@param	up	カメラの上方向
 		@return	このインスタンスへの参照
 		*/
-		Matrix44& SetLookAtRH(const Vector3DF& eye, const Vector3DF& at, const Vector3DF& up);
+	Matrix44& SetLookAtRH(const Vector3DF& eye, const Vector3DF& at, const Vector3DF& up);
 
-		/**
+	/**
 		@brief	カメラ行列(左手系)を設定する。
 		@param	eye	カメラの位置
 		@param	at	カメラの注視点
 		@param	up	カメラの上方向
 		@return	このインスタンスへの参照
 		*/
-		Matrix44& SetLookAtLH(const Vector3DF& eye, const Vector3DF& at, const Vector3DF& up);
+	Matrix44& SetLookAtLH(const Vector3DF& eye, const Vector3DF& at, const Vector3DF& up);
 
-		/**
+	/**
 		@brief	射影行列(右手系)を設定する。
 		@param	ovY	Y方向への視野角(ラジアン)
 		@param	aspect	画面のアスペクト比
@@ -1307,9 +1483,9 @@ namespace Culling3D
 		@param	zf	最遠距離
 		@return	このインスタンスへの参照
 		*/
-		Matrix44& SetPerspectiveFovRH(float ovY, float aspect, float zn, float zf);
+	Matrix44& SetPerspectiveFovRH(float ovY, float aspect, float zn, float zf);
 
-		/**
+	/**
 		@brief	OpenGL用射影行列(右手系)を設定する。
 		@param	ovY	Y方向への視野角(ラジアン)
 		@param	aspect	画面のアスペクト比
@@ -1317,9 +1493,9 @@ namespace Culling3D
 		@param	zf	最遠距離
 		@return	このインスタンスへの参照
 		*/
-		Matrix44& SetPerspectiveFovRH_OpenGL(float ovY, float aspect, float zn, float zf);
+	Matrix44& SetPerspectiveFovRH_OpenGL(float ovY, float aspect, float zn, float zf);
 
-		/**
+	/**
 		@brief	射影行列(左手系)を設定する。
 		@param	ovY	Y方向への視野角(ラジアン)
 		@param	aspect	画面のアスペクト比
@@ -1327,9 +1503,9 @@ namespace Culling3D
 		@param	zf	最遠距離
 		@return	このインスタンスへの参照
 		*/
-		Matrix44& SetPerspectiveFovLH(float ovY, float aspect, float zn, float zf);
+	Matrix44& SetPerspectiveFovLH(float ovY, float aspect, float zn, float zf);
 
-		/**
+	/**
 		@brief	正射影行列(右手系)を設定する。
 		@param	width	横幅
 		@param	height	縦幅
@@ -1337,9 +1513,9 @@ namespace Culling3D
 		@param	zf	最遠距離
 		@return	このインスタンスへの参照
 		*/
-		Matrix44& SetOrthographicRH(float width, float height, float zn, float zf);
+	Matrix44& SetOrthographicRH(float width, float height, float zn, float zf);
 
-		/**
+	/**
 		@brief	正射影行列(左手系)を設定する。
 		@param	width	横幅
 		@param	height	縦幅
@@ -1347,1682 +1523,1510 @@ namespace Culling3D
 		@param	zf	最遠距離
 		@return	このインスタンスへの参照
 		*/
-		Matrix44& SetOrthographicLH(float width, float height, float zn, float zf);
+	Matrix44& SetOrthographicLH(float width, float height, float zn, float zf);
 
-		Matrix44 operator * (const Matrix44& right) const;
+	Matrix44 operator*(const Matrix44& right) const;
 
-		Vector3DF operator*(const Vector3DF& right) const;
+	Vector3DF operator*(const Vector3DF& right) const;
 
-		/**
+	/**
 		@brief	乗算を行う。
 		@param	o	出力先
 		@param	in1	行列1
 		@param	in2	行列2
 		@return	出力先の参照
 		*/
-		static Matrix44& Mul(Matrix44& o, const Matrix44& in1, const Matrix44& in2);
-	};
+	static Matrix44& Mul(Matrix44& o, const Matrix44& in1, const Matrix44& in2);
+};
 
-	enum eObjectShapeType
-	{
-		OBJECT_SHAPE_TYPE_NONE,
-		OBJECT_SHAPE_TYPE_SPHERE,
-		OBJECT_SHAPE_TYPE_CUBOID,
-		OBJECT_SHAPE_TYPE_ALL,
-	};
+enum eObjectShapeType
+{
+	OBJECT_SHAPE_TYPE_NONE,
+	OBJECT_SHAPE_TYPE_SPHERE,
+	OBJECT_SHAPE_TYPE_CUBOID,
+	OBJECT_SHAPE_TYPE_ALL,
+};
 
-
-	class IReference
-	{
-	public:
-		/**
+class IReference
+{
+public:
+	/**
 		@brief	参照カウンタを加算する。
 		@return	加算後の参照カウンタ
 		*/
-		virtual int AddRef() = 0;
+	virtual int AddRef() = 0;
 
-		/**
+	/**
 		@brief	参照カウンタを取得する。
 		@return	参照カウンタ
 		*/
-		virtual int GetRef() = 0;
+	virtual int GetRef() = 0;
 
-		/**
+	/**
 		@brief	参照カウンタを減算する。0になった時、インスタンスを削除する。
 		@return	減算後の参照カウンタ
 		*/
-		virtual int Release() = 0;
-	};
+	virtual int Release() = 0;
+};
 
-	class World
-		: public IReference
-	{
-	public:
-		virtual void AddObject(Object* o) = 0;
-		virtual void RemoveObject(Object* o) = 0;
+class World
+	: public IReference
+{
+public:
+	virtual void AddObject(Object* o) = 0;
+	virtual void RemoveObject(Object* o) = 0;
 
-		virtual void CastRay(Vector3DF from, Vector3DF to) = 0;
+	virtual void CastRay(Vector3DF from, Vector3DF to) = 0;
 
-		virtual void Culling(const Matrix44& cameraProjMat, bool isOpenGL) = 0;
-		virtual int32_t GetObjectCount() = 0;
-		virtual Object* GetObject(int32_t index) = 0;
+	virtual void Culling(const Matrix44& cameraProjMat, bool isOpenGL) = 0;
+	virtual int32_t GetObjectCount() = 0;
+	virtual Object* GetObject(int32_t index) = 0;
 
-		virtual bool Reassign() = 0;
+	virtual bool Reassign() = 0;
 
-		virtual void Dump(const char* path, const Matrix44& cameraProjMat, bool isOpenGL) = 0;
+	virtual void Dump(const char* path, const Matrix44& cameraProjMat, bool isOpenGL) = 0;
 
-		static World* Create(float xSize, float ySize, float zSize, int32_t layerCount);
-	};
+	static World* Create(float xSize, float ySize, float zSize, int32_t layerCount);
+};
 
-	class Object
-		: public IReference
-	{
-	public:
-		virtual Vector3DF GetPosition() = 0;
-		virtual void SetPosition(Vector3DF pos) = 0;
-		virtual void ChangeIntoAll() = 0;
-		virtual void ChangeIntoSphere(float radius) = 0;
-		virtual void ChangeIntoCuboid(Vector3DF size) = 0;
+class Object
+	: public IReference
+{
+public:
+	virtual Vector3DF GetPosition() = 0;
+	virtual void SetPosition(Vector3DF pos) = 0;
+	virtual void ChangeIntoAll() = 0;
+	virtual void ChangeIntoSphere(float radius) = 0;
+	virtual void ChangeIntoCuboid(Vector3DF size) = 0;
 
-		virtual void* GetUserData() = 0;
-		virtual void SetUserData(void* data) = 0;
+	virtual void* GetUserData() = 0;
+	virtual void SetUserData(void* data) = 0;
 
-		static Object* Create();
-	};
-}
+	static Object* Create();
+};
+} // namespace Culling3D
 
 #endif
 
 
 
-
 namespace Culling3D
 {
-	class ReferenceObject
-		: public IReference
-	{
-	private:
-		int32_t	m_reference;
-
-	public:
-		ReferenceObject();
-
-		virtual ~ReferenceObject();
-
-		virtual int32_t AddRef();
-
-		virtual int32_t GetRef();
-
-		virtual int32_t Release();
-	};
-}
-
-
-
-
-
-
-namespace Culling3D
+class ReferenceObject
+	: public IReference
 {
-	class Grid
-	{
-	private:
-		std::vector<Object*>	objects;
+private:
+	int32_t m_reference;
 
-	public:
-		Grid();
+public:
+	ReferenceObject();
 
-		void AddObject(Object* o);
+	virtual ~ReferenceObject();
 
-		void RemoveObject(Object* o);
+	virtual int32_t AddRef();
 
-		std::vector<Object*>& GetObjects() { return objects; }
+	virtual int32_t GetRef();
 
-		bool IsScanned;
-	};
-}
+	virtual int32_t Release();
+};
+} // namespace Culling3D
+
 
 
 
 
 namespace Culling3D
 {
-	class Layer
+class Grid
+{
+private:
+	std::vector<Object*> objects;
+
+public:
+	Grid();
+
+	void AddObject(Object* o);
+
+	void RemoveObject(Object* o);
+
+	std::vector<Object*>& GetObjects()
 	{
-	private:
-		int32_t		gridXCount;
-		int32_t		gridYCount;
-		int32_t		gridZCount;
+		return objects;
+	}
 
-		float		offsetX;
-		float		offsetY;
-		float		offsetZ;
+	bool IsScanned;
+};
+} // namespace Culling3D
 
-
-		float		gridSize;
-		std::vector<Grid>	grids;
-
-	public:
-		Layer(int32_t gridXCount, int32_t gridYCount, int32_t gridZCount, float offsetX, float offsetY, float offsetZ, float gridSize);
-		virtual ~Layer();
-
-		bool AddObject(Object* o);
-
-		bool RemoveObject(Object* o);
-
-		void AddGrids(Vector3DF max_, Vector3DF min_, std::vector<Grid*>& grids_);
-
-		int32_t GetGridXCount() { return gridXCount; }
-		int32_t GetGridYCount() { return gridYCount; }
-		int32_t GetGridZCount() { return gridZCount; }
-
-		float GetOffsetX() { return offsetX; }
-		float GetOffsetY() { return offsetY; }
-		float GetOffsetZ() { return offsetZ; }
-
-		float GetGridSize() { return gridSize; }
-		std::vector<Grid>& GetGrids() { return grids; }
-	};
-}
 
 
 
 namespace Culling3D
 {
-	class ObjectInternal
-		: public Object
-		, public ReferenceObject
+class Layer
+{
+private:
+	int32_t gridXCount;
+	int32_t gridYCount;
+	int32_t gridZCount;
+
+	float offsetX;
+	float offsetY;
+	float offsetZ;
+
+	float gridSize;
+	std::vector<Grid> grids;
+
+public:
+	Layer(int32_t gridXCount, int32_t gridYCount, int32_t gridZCount, float offsetX, float offsetY, float offsetZ, float gridSize);
+	virtual ~Layer();
+
+	bool AddObject(Object* o);
+
+	bool RemoveObject(Object* o);
+
+	void AddGrids(Vector3DF max_, Vector3DF min_, std::vector<Grid*>& grids_);
+
+	int32_t GetGridXCount()
 	{
-	public:
-		struct Status
+		return gridXCount;
+	}
+	int32_t GetGridYCount()
+	{
+		return gridYCount;
+	}
+	int32_t GetGridZCount()
+	{
+		return gridZCount;
+	}
+
+	float GetOffsetX()
+	{
+		return offsetX;
+	}
+	float GetOffsetY()
+	{
+		return offsetY;
+	}
+	float GetOffsetZ()
+	{
+		return offsetZ;
+	}
+
+	float GetGridSize()
+	{
+		return gridSize;
+	}
+	std::vector<Grid>& GetGrids()
+	{
+		return grids;
+	}
+};
+} // namespace Culling3D
+
+
+
+namespace Culling3D
+{
+class ObjectInternal
+	: public Object,
+	  public ReferenceObject
+{
+public:
+	struct Status
+	{
+		Vector3DF Position;
+
+		union {
+			struct
+			{
+				float Radius;
+			} Sphere;
+
+			struct
+			{
+				float X;
+				float Y;
+				float Z;
+			} Cuboid;
+		} Data;
+
+		float radius;
+		eObjectShapeType Type;
+
+		void CalcRadius()
 		{
-			Vector3DF	Position;
-
-			union
-			{
-				struct
-				{
-					float Radius;
-				} Sphere;
-
-				struct
-				{
-					float X;
-					float Y;
-					float Z;
-				} Cuboid;
-			} Data;
-
-			float		radius;
-			eObjectShapeType	Type;
-
-			void CalcRadius()
-			{
+			radius = 0.0f;
+			if (Type == OBJECT_SHAPE_TYPE_NONE)
 				radius = 0.0f;
-				if (Type == OBJECT_SHAPE_TYPE_NONE) radius = 0.0f;
-				if (Type == OBJECT_SHAPE_TYPE_SPHERE) radius = Data.Sphere.Radius;
-				if (Type == OBJECT_SHAPE_TYPE_CUBOID) radius = sqrtf(Data.Cuboid.X * Data.Cuboid.X + Data.Cuboid.Y * Data.Cuboid.Y + Data.Cuboid.Z * Data.Cuboid.Z) / 2.0f;
-			}
-
-			float GetRadius()
-			{
-				return radius;
-			}
-		};
-
-	private:
-		void*		userData;
-		World*		world;
-
-		Status	currentStatus;
-		Status	nextStatus;
-
-	public:
-		ObjectInternal();
-		virtual ~ObjectInternal();
-
-		Vector3DF GetPosition() override;
-		void SetPosition(Vector3DF pos) override;
-
-		void ChangeIntoAll() override;
-
-		void ChangeIntoSphere(float radius) override;
-
-		void ChangeIntoCuboid(Vector3DF size) override;
-
-		void* GetUserData() override;
-		void SetUserData(void* userData_) override;
-
-		void SetWorld(World* world_);
-
-		Status	GetCurrentStatus() { return currentStatus; }
-		Status	GetNextStatus() { return nextStatus; }
-
-		int32_t ObjectIndex;
-
-		virtual int32_t GetRef() override { return ReferenceObject::GetRef(); }
-		virtual int32_t AddRef() override { return ReferenceObject::AddRef(); }
-		virtual int32_t Release() override { return ReferenceObject::Release(); }
-	};
-}
-
-
-
-
-
-
-namespace Culling3D
-{
-	class WorldInternal
-		: public World
-		, public ReferenceObject
-	{
-	private:
-		float xSize;
-		float ySize;
-		float zSize;
-
-		float	gridSize;
-		float	minGridSize;
-		int32_t	layerCount;
-
-		std::vector<Layer*>	layers;
-
-		Grid	outofLayers;
-		Grid	allLayers;
-
-		std::vector<Object*> objs;
-
-		std::vector<Grid*> grids;
-
-		std::set<Object*>	containedObjects;
-
-	public:
-		WorldInternal(float xSize, float ySize, float zSize, int32_t layerCount);
-		virtual ~WorldInternal();
-
-		void AddObject(Object* o) override;
-		void RemoveObject(Object* o) override;
-
-		void AddObjectInternal(Object* o);
-		void RemoveObjectInternal(Object* o);
-
-		void CastRay(Vector3DF from, Vector3DF to) override;
-
-		void Culling(const Matrix44& cameraProjMat, bool isOpenGL) override;
-
-		bool Reassign() override;
-
-		void Dump(const char* path, const Matrix44& cameraProjMat, bool isOpenGL) override;
-
-		int32_t GetObjectCount() override { return (int32_t)objs.size(); }
-		Object* GetObject(int32_t index) override { return objs[index]; }
-
-		virtual int32_t GetRef() override { return ReferenceObject::GetRef(); }
-		virtual int32_t AddRef() override { return ReferenceObject::AddRef(); }
-		virtual int32_t Release() override { return ReferenceObject::Release(); }
-	};
-}
-
-
-
-namespace Culling3D
-{
-	Grid::Grid()
-	{
-		IsScanned = false;
-	}
-
-	void Grid::AddObject(Object* o)
-	{
-		assert(o != NULL);
-
-		ObjectInternal* o_ = (ObjectInternal*) o;
-		assert(o_->ObjectIndex == -1);
-
-		objects.push_back(o_);
-		o_->ObjectIndex = (int32_t)objects.size() - 1;
-	}
-
-	void Grid::RemoveObject(Object* o)
-	{
-		assert(o != NULL);
-
-		ObjectInternal* o_ = (ObjectInternal*) o;
-		assert(o_->ObjectIndex != -1);
-
-		if (objects.size() == 1)
-		{
-			objects.clear();
+			if (Type == OBJECT_SHAPE_TYPE_SPHERE)
+				radius = Data.Sphere.Radius;
+			if (Type == OBJECT_SHAPE_TYPE_CUBOID)
+				radius = sqrtf(Data.Cuboid.X * Data.Cuboid.X + Data.Cuboid.Y * Data.Cuboid.Y + Data.Cuboid.Z * Data.Cuboid.Z) / 2.0f;
 		}
-		else if (objects.size() - 1 == o_->ObjectIndex)
+
+		float GetRadius()
 		{
-			objects.resize(objects.size() - 1);
+			return radius;
+		}
+	};
+
+private:
+	void* userData;
+	World* world;
+
+	Status currentStatus;
+	Status nextStatus;
+
+public:
+	ObjectInternal();
+	virtual ~ObjectInternal();
+
+	Vector3DF GetPosition() override;
+	void SetPosition(Vector3DF pos) override;
+
+	void ChangeIntoAll() override;
+
+	void ChangeIntoSphere(float radius) override;
+
+	void ChangeIntoCuboid(Vector3DF size) override;
+
+	void* GetUserData() override;
+	void SetUserData(void* userData_) override;
+
+	void SetWorld(World* world_);
+
+	Status GetCurrentStatus()
+	{
+		return currentStatus;
+	}
+	Status GetNextStatus()
+	{
+		return nextStatus;
+	}
+
+	int32_t ObjectIndex;
+
+	virtual int32_t GetRef() override
+	{
+		return ReferenceObject::GetRef();
+	}
+	virtual int32_t AddRef() override
+	{
+		return ReferenceObject::AddRef();
+	}
+	virtual int32_t Release() override
+	{
+		return ReferenceObject::Release();
+	}
+};
+} // namespace Culling3D
+
+
+
+
+
+
+namespace Culling3D
+{
+class WorldInternal
+	: public World,
+	  public ReferenceObject
+{
+private:
+	float xSize;
+	float ySize;
+	float zSize;
+
+	float gridSize;
+	float minGridSize;
+	int32_t layerCount;
+
+	std::vector<Layer*> layers;
+
+	Grid outofLayers;
+	Grid allLayers;
+
+	std::vector<Object*> objs;
+
+	std::vector<Grid*> grids;
+
+	std::set<Object*> containedObjects;
+
+public:
+	WorldInternal(float xSize, float ySize, float zSize, int32_t layerCount);
+	virtual ~WorldInternal();
+
+	void AddObject(Object* o) override;
+	void RemoveObject(Object* o) override;
+
+	void AddObjectInternal(Object* o);
+	void RemoveObjectInternal(Object* o);
+
+	void CastRay(Vector3DF from, Vector3DF to) override;
+
+	void Culling(const Matrix44& cameraProjMat, bool isOpenGL) override;
+
+	bool Reassign() override;
+
+	void Dump(const char* path, const Matrix44& cameraProjMat, bool isOpenGL) override;
+
+	int32_t GetObjectCount() override
+	{
+		return (int32_t)objs.size();
+	}
+	Object* GetObject(int32_t index) override
+	{
+		return objs[index];
+	}
+
+	virtual int32_t GetRef() override
+	{
+		return ReferenceObject::GetRef();
+	}
+	virtual int32_t AddRef() override
+	{
+		return ReferenceObject::AddRef();
+	}
+	virtual int32_t Release() override
+	{
+		return ReferenceObject::Release();
+	}
+};
+} // namespace Culling3D
+
+
+
+namespace Culling3D
+{
+Grid::Grid()
+{
+	IsScanned = false;
+}
+
+void Grid::AddObject(Object* o)
+{
+	assert(o != NULL);
+
+	ObjectInternal* o_ = (ObjectInternal*)o;
+	assert(o_->ObjectIndex == -1);
+
+	objects.push_back(o_);
+	o_->ObjectIndex = (int32_t)objects.size() - 1;
+}
+
+void Grid::RemoveObject(Object* o)
+{
+	assert(o != NULL);
+
+	ObjectInternal* o_ = (ObjectInternal*)o;
+	assert(o_->ObjectIndex != -1);
+
+	if (objects.size() == 1)
+	{
+		objects.clear();
+	}
+	else if (objects.size() - 1 == o_->ObjectIndex)
+	{
+		objects.resize(objects.size() - 1);
+	}
+	else
+	{
+		ObjectInternal* moved = (ObjectInternal*)objects[objects.size() - 1];
+		moved->ObjectIndex = o_->ObjectIndex;
+		objects[o_->ObjectIndex] = moved;
+		objects.resize(objects.size() - 1);
+	}
+
+	o_->ObjectIndex = -1;
+}
+} // namespace Culling3D
+
+
+
+namespace Culling3D
+{
+Layer::Layer(int32_t gridXCount, int32_t gridYCount, int32_t gridZCount, float offsetX, float offsetY, float offsetZ, float gridSize)
+{
+	this->gridXCount = gridXCount;
+	this->gridYCount = gridYCount;
+	this->gridZCount = gridZCount;
+	this->offsetX = offsetX;
+	this->offsetY = offsetY;
+	this->offsetZ = offsetZ;
+	this->gridSize = gridSize;
+
+	grids.resize(this->gridXCount * this->gridYCount * this->gridZCount);
+}
+
+Layer::~Layer()
+{
+}
+
+bool Layer::AddObject(Object* o)
+{
+	assert(o != NULL);
+
+	ObjectInternal* o_ = (ObjectInternal*)o;
+
+	float x = o_->GetNextStatus().Position.X + offsetX;
+	float y = o_->GetNextStatus().Position.Y + offsetY;
+	float z = o_->GetNextStatus().Position.Z + offsetZ;
+
+	int32_t xind = (int32_t)(x / gridSize);
+	int32_t yind = (int32_t)(y / gridSize);
+	int32_t zind = (int32_t)(z / gridSize);
+
+	int32_t ind = xind + yind * this->gridXCount + zind * this->gridXCount * this->gridYCount;
+
+	if (xind < 0 ||
+		xind >= this->gridXCount ||
+		yind < 0 ||
+		yind >= this->gridYCount ||
+		zind < 0 ||
+		zind >= this->gridZCount)
+		return false;
+
+	if (ind < 0 || ind >= (int32_t)grids.size())
+		return false;
+
+	grids[ind].AddObject(o);
+
+	return true;
+}
+
+bool Layer::RemoveObject(Object* o)
+{
+	assert(o != NULL);
+
+	ObjectInternal* o_ = (ObjectInternal*)o;
+
+	float x = o_->GetCurrentStatus().Position.X + offsetX;
+	float y = o_->GetCurrentStatus().Position.Y + offsetY;
+	float z = o_->GetCurrentStatus().Position.Z + offsetZ;
+
+	int32_t xind = (int32_t)(x / gridSize);
+	int32_t yind = (int32_t)(y / gridSize);
+	int32_t zind = (int32_t)(z / gridSize);
+
+	int32_t ind = xind + yind * this->gridXCount + zind * this->gridXCount * this->gridYCount;
+
+	if (xind < 0 ||
+		xind >= this->gridXCount ||
+		yind < 0 ||
+		yind >= this->gridYCount ||
+		zind < 0 ||
+		zind >= this->gridZCount)
+		return false;
+
+	if (ind < 0 || ind >= (int32_t)grids.size())
+		return false;
+
+	grids[ind].RemoveObject(o);
+
+	return true;
+}
+
+void Layer::AddGrids(Vector3DF max_, Vector3DF min_, std::vector<Grid*>& grids_)
+{
+	int32_t maxX = (int32_t)((max_.X + offsetX) / gridSize) + 1;
+	int32_t maxY = (int32_t)((max_.Y + offsetY) / gridSize) + 1;
+	int32_t maxZ = (int32_t)((max_.Z + offsetZ) / gridSize) + 1;
+
+	int32_t minX = (int32_t)((min_.X + offsetX) / gridSize) - 1;
+	int32_t minY = (int32_t)((min_.Y + offsetY) / gridSize) - 1;
+	int32_t minZ = (int32_t)((min_.Z + offsetZ) / gridSize) - 1;
+
+	maxX = Clamp(maxX, gridXCount - 1, 0);
+	maxY = Clamp(maxY, gridYCount - 1, 0);
+	maxZ = Clamp(maxZ, gridZCount - 1, 0);
+
+	minX = Clamp(minX, gridXCount - 1, 0);
+	minY = Clamp(minY, gridYCount - 1, 0);
+	minZ = Clamp(minZ, gridZCount - 1, 0);
+
+	for (int32_t z = minZ; z <= maxZ; z++)
+	{
+		for (int32_t y = minY; y <= maxY; y++)
+		{
+			for (int32_t x = minX; x <= maxX; x++)
+			{
+				int32_t ind = x + y * this->gridXCount + z * this->gridXCount * this->gridYCount;
+
+				if (!grids[ind].IsScanned)
+				{
+					grids_.push_back(&grids[ind]);
+					grids[ind].IsScanned = true;
+				}
+			}
+		}
+	}
+}
+} // namespace Culling3D
+
+
+namespace Culling3D
+{
+Matrix44::Matrix44()
+{
+	for (int32_t c = 0; c < 4; c++)
+	{
+		for (int32_t r = 0; r < 4; r++)
+		{
+			Values[c][r] = 0.0f;
+		}
+	}
+
+	for (int32_t i = 0; i < 4; i++)
+	{
+		Values[i][i] = 1.0f;
+	}
+}
+
+Matrix44& Matrix44::SetInverted()
+{
+	float a11 = this->Values[0][0];
+	float a12 = this->Values[0][1];
+	float a13 = this->Values[0][2];
+	float a14 = this->Values[0][3];
+	float a21 = this->Values[1][0];
+	float a22 = this->Values[1][1];
+	float a23 = this->Values[1][2];
+	float a24 = this->Values[1][3];
+	float a31 = this->Values[2][0];
+	float a32 = this->Values[2][1];
+	float a33 = this->Values[2][2];
+	float a34 = this->Values[2][3];
+	float a41 = this->Values[3][0];
+	float a42 = this->Values[3][1];
+	float a43 = this->Values[3][2];
+	float a44 = this->Values[3][3];
+
+	/* 行列式の計算 */
+	float b11 = +a22 * (a33 * a44 - a43 * a34) - a23 * (a32 * a44 - a42 * a34) + a24 * (a32 * a43 - a42 * a33);
+	float b12 = -a12 * (a33 * a44 - a43 * a34) + a13 * (a32 * a44 - a42 * a34) - a14 * (a32 * a43 - a42 * a33);
+	float b13 = +a12 * (a23 * a44 - a43 * a24) - a13 * (a22 * a44 - a42 * a24) + a14 * (a22 * a43 - a42 * a23);
+	float b14 = -a12 * (a23 * a34 - a33 * a24) + a13 * (a22 * a34 - a32 * a24) - a14 * (a22 * a33 - a32 * a23);
+
+	float b21 = -a21 * (a33 * a44 - a43 * a34) + a23 * (a31 * a44 - a41 * a34) - a24 * (a31 * a43 - a41 * a33);
+	float b22 = +a11 * (a33 * a44 - a43 * a34) - a13 * (a31 * a44 - a41 * a34) + a14 * (a31 * a43 - a41 * a33);
+	float b23 = -a11 * (a23 * a44 - a43 * a24) + a13 * (a21 * a44 - a41 * a24) - a14 * (a21 * a43 - a41 * a23);
+	float b24 = +a11 * (a23 * a34 - a33 * a24) - a13 * (a21 * a34 - a31 * a24) + a14 * (a21 * a33 - a31 * a23);
+
+	float b31 = +a21 * (a32 * a44 - a42 * a34) - a22 * (a31 * a44 - a41 * a34) + a24 * (a31 * a42 - a41 * a32);
+	float b32 = -a11 * (a32 * a44 - a42 * a34) + a12 * (a31 * a44 - a41 * a34) - a14 * (a31 * a42 - a41 * a32);
+	float b33 = +a11 * (a22 * a44 - a42 * a24) - a12 * (a21 * a44 - a41 * a24) + a14 * (a21 * a42 - a41 * a22);
+	float b34 = -a11 * (a22 * a34 - a32 * a24) + a12 * (a21 * a34 - a31 * a24) - a14 * (a21 * a32 - a31 * a22);
+
+	float b41 = -a21 * (a32 * a43 - a42 * a33) + a22 * (a31 * a43 - a41 * a33) - a23 * (a31 * a42 - a41 * a32);
+	float b42 = +a11 * (a32 * a43 - a42 * a33) - a12 * (a31 * a43 - a41 * a33) + a13 * (a31 * a42 - a41 * a32);
+	float b43 = -a11 * (a22 * a43 - a42 * a23) + a12 * (a21 * a43 - a41 * a23) - a13 * (a21 * a42 - a41 * a22);
+	float b44 = +a11 * (a22 * a33 - a32 * a23) - a12 * (a21 * a33 - a31 * a23) + a13 * (a21 * a32 - a31 * a22);
+
+	// 行列式の逆数をかける
+	float Det = (a11 * b11) + (a12 * b21) + (a13 * b31) + (a14 * b41);
+	if ((-FLT_MIN <= Det) && (Det <= +FLT_MIN))
+	{
+		return *this;
+	}
+
+	float InvDet = 1.0f / Det;
+
+	Values[0][0] = b11 * InvDet;
+	Values[0][1] = b12 * InvDet;
+	Values[0][2] = b13 * InvDet;
+	Values[0][3] = b14 * InvDet;
+	Values[1][0] = b21 * InvDet;
+	Values[1][1] = b22 * InvDet;
+	Values[1][2] = b23 * InvDet;
+	Values[1][3] = b24 * InvDet;
+	Values[2][0] = b31 * InvDet;
+	Values[2][1] = b32 * InvDet;
+	Values[2][2] = b33 * InvDet;
+	Values[2][3] = b34 * InvDet;
+	Values[3][0] = b41 * InvDet;
+	Values[3][1] = b42 * InvDet;
+	Values[3][2] = b43 * InvDet;
+	Values[3][3] = b44 * InvDet;
+
+	return *this;
+}
+
+Matrix44& Matrix44::SetLookAtRH(const Vector3DF& eye, const Vector3DF& at, const Vector3DF& up)
+{
+	// F=正面、R=右方向、U=上方向
+	Vector3DF F = (eye - at).GetNormal();
+	Vector3DF R = Vector3DF::Cross(up, F).GetNormal();
+	Vector3DF U = Vector3DF::Cross(F, R).GetNormal();
+
+	Values[0][0] = R.X;
+	Values[0][1] = R.Y;
+	Values[0][2] = R.Z;
+	Values[0][3] = 0.0f;
+
+	Values[1][0] = U.X;
+	Values[1][1] = U.Y;
+	Values[1][2] = U.Z;
+	Values[1][3] = 0.0f;
+
+	Values[2][0] = F.X;
+	Values[2][1] = F.Y;
+	Values[2][2] = F.Z;
+	Values[2][3] = 0.0f;
+
+	Values[0][3] = -Vector3DF::Dot(R, eye);
+	Values[1][3] = -Vector3DF::Dot(U, eye);
+	Values[2][3] = -Vector3DF::Dot(F, eye);
+	Values[3][3] = 1.0f;
+	return *this;
+}
+
+Matrix44& Matrix44::SetLookAtLH(const Vector3DF& eye, const Vector3DF& at, const Vector3DF& up)
+{
+	// F=正面、R=右方向、U=上方向
+	Vector3DF F = (at - eye).GetNormal();
+	Vector3DF R = Vector3DF::Cross(up, F).GetNormal();
+	Vector3DF U = Vector3DF::Cross(F, R).GetNormal();
+
+	Values[0][0] = R.X;
+	Values[0][1] = R.Y;
+	Values[0][2] = R.Z;
+	Values[0][3] = 0.0f;
+
+	Values[1][0] = U.X;
+	Values[1][1] = U.Y;
+	Values[1][2] = U.Z;
+	Values[1][3] = 0.0f;
+
+	Values[2][0] = F.X;
+	Values[2][1] = F.Y;
+	Values[2][2] = F.Z;
+	Values[2][3] = 0.0f;
+
+	Values[0][3] = -Vector3DF::Dot(R, eye);
+	Values[1][3] = -Vector3DF::Dot(U, eye);
+	Values[2][3] = -Vector3DF::Dot(F, eye);
+	Values[3][3] = 1.0f;
+	return *this;
+}
+
+Matrix44& Matrix44::SetPerspectiveFovRH(float ovY, float aspect, float zn, float zf)
+{
+	float yScale = 1 / tanf(ovY / 2);
+	float xScale = yScale / aspect;
+
+	Values[0][0] = xScale;
+	Values[1][0] = 0;
+	Values[2][0] = 0;
+	Values[3][0] = 0;
+
+	Values[0][1] = 0;
+	Values[1][1] = yScale;
+	Values[2][1] = 0;
+	Values[3][1] = 0;
+
+	Values[0][2] = 0;
+	Values[1][2] = 0;
+	Values[2][2] = zf / (zn - zf);
+	Values[3][2] = -1;
+
+	Values[0][3] = 0;
+	Values[1][3] = 0;
+	Values[2][3] = zn * zf / (zn - zf);
+	Values[3][3] = 0;
+	return *this;
+}
+
+Matrix44& Matrix44::SetPerspectiveFovRH_OpenGL(float ovY, float aspect, float zn, float zf)
+{
+	float yScale = 1 / tanf(ovY / 2);
+	float xScale = yScale / aspect;
+	float dz = zf - zn;
+
+	Values[0][0] = xScale;
+	Values[1][0] = 0;
+	Values[2][0] = 0;
+	Values[3][0] = 0;
+
+	Values[0][1] = 0;
+	Values[1][1] = yScale;
+	Values[2][1] = 0;
+	Values[3][1] = 0;
+
+	Values[0][2] = 0;
+	Values[1][2] = 0;
+	Values[2][2] = -(zf + zn) / dz;
+	Values[3][2] = -1.0f;
+
+	Values[0][3] = 0;
+	Values[1][3] = 0;
+	Values[2][3] = -2.0f * zn * zf / dz;
+	Values[3][3] = 0.0f;
+
+	return *this;
+}
+
+Matrix44& Matrix44::SetPerspectiveFovLH(float ovY, float aspect, float zn, float zf)
+{
+	float yScale = 1 / tanf(ovY / 2);
+	float xScale = yScale / aspect;
+
+	Values[0][0] = xScale;
+	Values[1][0] = 0;
+	Values[2][0] = 0;
+	Values[3][0] = 0;
+
+	Values[0][1] = 0;
+	Values[1][1] = yScale;
+	Values[2][1] = 0;
+	Values[3][1] = 0;
+
+	Values[0][2] = 0;
+	Values[1][2] = 0;
+	Values[2][2] = zf / (zf - zn);
+	Values[3][2] = 1;
+
+	Values[0][3] = 0;
+	Values[1][3] = 0;
+	Values[2][3] = -zn * zf / (zf - zn);
+	Values[3][3] = 0;
+	return *this;
+}
+
+Matrix44& Matrix44::SetOrthographicRH(float width, float height, float zn, float zf)
+{
+	Values[0][0] = 2 / width;
+	Values[1][0] = 0;
+	Values[2][0] = 0;
+	Values[3][0] = 0;
+
+	Values[0][1] = 0;
+	Values[1][1] = 2 / height;
+	Values[2][1] = 0;
+	Values[3][1] = 0;
+
+	Values[0][2] = 0;
+	Values[1][2] = 0;
+	Values[2][2] = 1 / (zn - zf);
+	Values[3][2] = 0;
+
+	Values[0][3] = 0;
+	Values[1][3] = 0;
+	Values[2][3] = zn / (zn - zf);
+	Values[3][3] = 1;
+	return *this;
+}
+
+Matrix44& Matrix44::SetOrthographicLH(float width, float height, float zn, float zf)
+{
+	Values[0][0] = 2 / width;
+	Values[1][0] = 0;
+	Values[2][0] = 0;
+	Values[3][0] = 0;
+
+	Values[0][1] = 0;
+	Values[1][1] = 2 / height;
+	Values[2][1] = 0;
+	Values[3][1] = 0;
+
+	Values[0][2] = 0;
+	Values[1][2] = 0;
+	Values[2][2] = 1 / (zf - zn);
+	Values[3][2] = 0;
+
+	Values[0][3] = 0;
+	Values[1][3] = 0;
+	Values[2][3] = zn / (zn - zf);
+	Values[3][3] = 1;
+	return *this;
+}
+
+Vector3DF Matrix44::Transform3D(const Vector3DF& in) const
+{
+	float values[4];
+
+	for (int i = 0; i < 4; i++)
+	{
+		values[i] = 0;
+		values[i] += in.X * Values[i][0];
+		values[i] += in.Y * Values[i][1];
+		values[i] += in.Z * Values[i][2];
+		values[i] += Values[i][3];
+	}
+
+	Vector3DF o;
+	o.X = values[0] / values[3];
+	o.Y = values[1] / values[3];
+	o.Z = values[2] / values[3];
+	return o;
+}
+
+Matrix44 Matrix44::operator*(const Matrix44& right) const
+{
+	Matrix44 o_;
+	Mul(o_, *this, right);
+	return o_;
+}
+
+Vector3DF Matrix44::operator*(const Vector3DF& right) const
+{
+	return Transform3D(right);
+}
+
+Matrix44& Matrix44::Mul(Matrix44& o, const Matrix44& in1, const Matrix44& in2)
+{
+	Matrix44 _in1 = in1;
+	Matrix44 _in2 = in2;
+
+	for (int i = 0; i < 4; i++)
+	{
+		for (int j = 0; j < 4; j++)
+		{
+			float v = 0.0f;
+			for (int k = 0; k < 4; k++)
+			{
+				v += _in1.Values[i][k] * _in2.Values[k][j];
+			}
+			o.Values[i][j] = v;
+		}
+	}
+	return o;
+}
+} // namespace Culling3D
+
+
+namespace Culling3D
+{
+Object* Object::Create()
+{
+	return new ObjectInternal();
+}
+
+ObjectInternal::ObjectInternal()
+	: userData(NULL)
+	, world(NULL)
+	, ObjectIndex(-1)
+{
+	currentStatus.Position = Vector3DF();
+	currentStatus.radius = 0.0f;
+	currentStatus.Type = OBJECT_SHAPE_TYPE_NONE;
+
+	nextStatus.Position = Vector3DF();
+	nextStatus.radius = 0.0f;
+	nextStatus.Type = OBJECT_SHAPE_TYPE_NONE;
+}
+
+ObjectInternal::~ObjectInternal()
+{
+}
+
+Vector3DF ObjectInternal::GetPosition()
+{
+	return nextStatus.Position;
+}
+
+void ObjectInternal::SetPosition(Vector3DF pos)
+{
+	nextStatus.Position = pos;
+
+	if (world != NULL)
+	{
+		WorldInternal* w = (WorldInternal*)world;
+		w->RemoveObjectInternal(this);
+		w->AddObjectInternal(this);
+	}
+
+	currentStatus = nextStatus;
+}
+
+void ObjectInternal::ChangeIntoAll()
+{
+	nextStatus.Type = OBJECT_SHAPE_TYPE_ALL;
+	nextStatus.CalcRadius();
+
+	if (world != NULL)
+	{
+		WorldInternal* w = (WorldInternal*)world;
+		w->RemoveObjectInternal(this);
+		w->AddObjectInternal(this);
+	}
+
+	currentStatus = nextStatus;
+}
+
+void ObjectInternal::ChangeIntoSphere(float radius)
+{
+	nextStatus.Data.Sphere.Radius = radius;
+	nextStatus.Type = OBJECT_SHAPE_TYPE_SPHERE;
+	nextStatus.CalcRadius();
+
+	if (world != NULL)
+	{
+		WorldInternal* w = (WorldInternal*)world;
+		w->RemoveObjectInternal(this);
+		w->AddObjectInternal(this);
+	}
+
+	currentStatus = nextStatus;
+}
+
+void ObjectInternal::ChangeIntoCuboid(Vector3DF size)
+{
+	nextStatus.Data.Cuboid.X = size.X;
+	nextStatus.Data.Cuboid.Y = size.Y;
+	nextStatus.Data.Cuboid.Z = size.Z;
+	nextStatus.Type = OBJECT_SHAPE_TYPE_CUBOID;
+	nextStatus.CalcRadius();
+
+	if (world != NULL)
+	{
+		WorldInternal* w = (WorldInternal*)world;
+		w->RemoveObjectInternal(this);
+		w->AddObjectInternal(this);
+	}
+
+	currentStatus = nextStatus;
+}
+
+void* ObjectInternal::GetUserData()
+{
+	return userData;
+}
+
+void ObjectInternal::SetUserData(void* userData_)
+{
+	this->userData = userData_;
+}
+
+void ObjectInternal::SetWorld(World* world_)
+{
+	this->world = world_;
+}
+} // namespace Culling3D
+
+
+namespace Culling3D
+{
+ReferenceObject::ReferenceObject()
+	: m_reference(1)
+{
+}
+
+ReferenceObject::~ReferenceObject()
+{
+}
+
+int32_t ReferenceObject::AddRef()
+{
+	m_reference++;
+	return m_reference;
+}
+
+int32_t ReferenceObject::GetRef()
+{
+	return m_reference;
+}
+
+int32_t ReferenceObject::Release()
+{
+	assert(m_reference > 0);
+
+	m_reference--;
+	bool destroy = m_reference == 0;
+	if (destroy)
+	{
+		delete this;
+		return 0;
+	}
+
+	return m_reference;
+}
+} // namespace Culling3D
+
+
+namespace Culling3D
+{
+Vector3DF::Vector3DF()
+	: X(0)
+	, Y(0)
+	, Z(0)
+{
+}
+
+Vector3DF::Vector3DF(float x, float y, float z)
+	: X(x)
+	, Y(y)
+	, Z(z)
+{
+}
+
+bool Vector3DF::operator==(const Vector3DF& o)
+{
+	return X == o.X && Y == o.Y && Z == o.Z;
+}
+
+bool Vector3DF::operator!=(const Vector3DF& o)
+{
+	return !(X == o.X && Y == o.Y && Z == o.Z);
+}
+
+Vector3DF Vector3DF::operator-()
+{
+	return Vector3DF(-X, -Y, -Z);
+}
+
+Vector3DF Vector3DF::operator+(const Vector3DF& o) const
+{
+	return Vector3DF(X + o.X, Y + o.Y, Z + o.Z);
+}
+
+Vector3DF Vector3DF::operator-(const Vector3DF& o) const
+{
+	return Vector3DF(X - o.X, Y - o.Y, Z - o.Z);
+}
+
+Vector3DF Vector3DF::operator*(const Vector3DF& o) const
+{
+	return Vector3DF(X * o.X, Y * o.Y, Z * o.Z);
+}
+
+Vector3DF Vector3DF::operator/(const Vector3DF& o) const
+{
+	return Vector3DF(X / o.X, Y / o.Y, Z / o.Z);
+}
+
+Vector3DF Vector3DF::operator*(const float& o) const
+{
+	return Vector3DF(X * o, Y * o, Z * o);
+}
+
+Vector3DF Vector3DF::operator/(const float& o) const
+{
+	return Vector3DF(X / o, Y / o, Z / o);
+}
+
+Vector3DF& Vector3DF::operator+=(const Vector3DF& o)
+{
+	X += o.X;
+	Y += o.Y;
+	Z += o.Z;
+	return *this;
+}
+
+Vector3DF& Vector3DF::operator-=(const Vector3DF& o)
+{
+	X -= o.X;
+	Y -= o.Y;
+	Z -= o.Z;
+	return *this;
+}
+
+Vector3DF& Vector3DF::operator*=(const float& o)
+{
+	X *= o;
+	Y *= o;
+	Z *= o;
+	return *this;
+}
+
+Vector3DF& Vector3DF::operator/=(const float& o)
+{
+	X /= o;
+	Y /= o;
+	Z /= o;
+	return *this;
+}
+
+float Vector3DF::Dot(const Vector3DF& v1, const Vector3DF& v2)
+{
+	return v1.X * v2.X + v1.Y * v2.Y + v1.Z * v2.Z;
+}
+
+Vector3DF Vector3DF::Cross(const Vector3DF& v1, const Vector3DF& v2)
+{
+	Vector3DF o;
+
+	float x = v1.Y * v2.Z - v1.Z * v2.Y;
+	float y = v1.Z * v2.X - v1.X * v2.Z;
+	float z = v1.X * v2.Y - v1.Y * v2.X;
+	o.X = x;
+	o.Y = y;
+	o.Z = z;
+	return o;
+}
+
+float Vector3DF::Distance(const Vector3DF& v1, const Vector3DF& v2)
+{
+	float dx = v1.X - v2.X;
+	float dy = v1.Y - v2.Y;
+	float dz = v1.Z - v2.Z;
+	return sqrtf(dx * dx + dy * dy + dz * dz);
+}
+} // namespace Culling3D
+
+
+
+namespace Culling3D
+{
+const int32_t viewCullingXDiv = 2;
+const int32_t viewCullingYDiv = 2;
+const int32_t viewCullingZDiv = 3;
+
+bool IsInView(Vector3DF position, float radius, Vector3DF facePositions[6], Vector3DF faceDir[6])
+{
+	for (int32_t i = 0; i < 6; i++)
+	{
+		Vector3DF diff = position - facePositions[i];
+		float distance = Vector3DF::Dot(diff, faceDir[i]);
+
+		if (distance > radius)
+			return false;
+	}
+
+	return true;
+}
+
+World* World::Create(float xSize, float ySize, float zSize, int32_t layerCount)
+{
+	return new WorldInternal(xSize, ySize, zSize, layerCount);
+}
+
+WorldInternal::WorldInternal(float xSize, float ySize, float zSize, int32_t layerCount)
+{
+	this->xSize = xSize;
+	this->ySize = ySize;
+	this->zSize = zSize;
+
+	this->gridSize = Max(Max(this->xSize, this->ySize), this->zSize);
+
+	this->layerCount = layerCount;
+
+	layers.resize(this->layerCount);
+
+	for (size_t i = 0; i < layers.size(); i++)
+	{
+		float gridSize_ = this->gridSize / powf(2.0f, (float)i);
+
+		int32_t xCount = (int32_t)(this->xSize / gridSize_);
+		int32_t yCount = (int32_t)(this->ySize / gridSize_);
+		int32_t zCount = (int32_t)(this->zSize / gridSize_);
+
+		if (xCount * gridSize_ < this->xSize)
+			xCount++;
+		if (yCount * gridSize_ < this->ySize)
+			yCount++;
+		if (zCount * gridSize_ < this->zSize)
+			zCount++;
+
+		layers[i] = new Layer(xCount, yCount, zCount, xSize / 2.0f, ySize / 2.0f, zSize / 2.0f, gridSize_);
+
+		this->minGridSize = gridSize_;
+	}
+}
+
+WorldInternal::~WorldInternal()
+{
+	for (size_t i = 0; i < layers.size(); i++)
+	{
+		delete layers[i];
+	}
+
+	layers.clear();
+
+	for (std::set<Object*>::iterator it = containedObjects.begin(); it != containedObjects.end(); it++)
+	{
+		(*it)->Release();
+	}
+}
+
+void WorldInternal::AddObject(Object* o)
+{
+	SafeAddRef(o);
+	containedObjects.insert(o);
+	AddObjectInternal(o);
+}
+
+void WorldInternal::RemoveObject(Object* o)
+{
+	RemoveObjectInternal(o);
+	containedObjects.erase(o);
+	SafeRelease(o);
+}
+
+void WorldInternal::AddObjectInternal(Object* o)
+{
+	assert(o != NULL);
+
+	ObjectInternal* o_ = (ObjectInternal*)o;
+
+	if (o_->GetNextStatus().Type == OBJECT_SHAPE_TYPE_ALL)
+	{
+		allLayers.AddObject(o);
+		o_->SetWorld(this);
+		return;
+	}
+
+	float radius = o_->GetNextStatus().GetRadius();
+	if (o_->GetNextStatus().Type == OBJECT_SHAPE_TYPE_NONE || radius <= minGridSize)
+	{
+		if (layers[layers.size() - 1]->AddObject(o))
+		{
 		}
 		else
 		{
-			ObjectInternal* moved = (ObjectInternal*) objects[objects.size() - 1];
-			moved->ObjectIndex = o_->ObjectIndex;
-			objects[o_->ObjectIndex] = moved;
-			objects.resize(objects.size() - 1);
-		}
-
-		o_->ObjectIndex = -1;
-	}
-}
-
-
-
-namespace Culling3D
-{
-	Layer::Layer(int32_t gridXCount, int32_t gridYCount, int32_t gridZCount, float offsetX, float offsetY, float offsetZ, float gridSize)
-	{
-		this->gridXCount = gridXCount;
-		this->gridYCount = gridYCount;
-		this->gridZCount = gridZCount;
-		this->offsetX = offsetX;
-		this->offsetY = offsetY;
-		this->offsetZ = offsetZ;
-		this->gridSize = gridSize;
-
-		grids.resize(this->gridXCount * this->gridYCount * this->gridZCount);
-	}
-
-	Layer::~Layer()
-	{
-
-	}
-
-	bool Layer::AddObject(Object* o)
-	{
-		assert(o != NULL);
-
-		ObjectInternal* o_ = (ObjectInternal*) o;
-
-		float x = o_->GetNextStatus().Position.X + offsetX;
-		float y = o_->GetNextStatus().Position.Y + offsetY;
-		float z = o_->GetNextStatus().Position.Z + offsetZ;
-
-		int32_t xind = (int32_t)(x / gridSize);
-		int32_t yind = (int32_t)(y / gridSize);
-		int32_t zind = (int32_t)(z / gridSize);
-
-		int32_t ind = xind + yind * this->gridXCount + zind * this->gridXCount * this->gridYCount;
-
-		if (xind < 0 ||
-			xind >= this->gridXCount ||
-			yind < 0 ||
-			yind >= this->gridYCount ||
-			zind < 0 ||
-			zind >= this->gridZCount) return false;
-
-		if (ind < 0 || ind >= (int32_t)grids.size()) return false;
-
-		grids[ind].AddObject(o);
-
-		return true;
-	}
-
-	bool Layer::RemoveObject(Object* o)
-	{
-		assert(o != NULL);
-
-		ObjectInternal* o_ = (ObjectInternal*) o;
-
-		float x = o_->GetCurrentStatus().Position.X + offsetX;
-		float y = o_->GetCurrentStatus().Position.Y + offsetY;
-		float z = o_->GetCurrentStatus().Position.Z + offsetZ;
-
-		int32_t xind = (int32_t) (x / gridSize);
-		int32_t yind = (int32_t) (y / gridSize);
-		int32_t zind = (int32_t) (z / gridSize);
-
-		int32_t ind = xind + yind * this->gridXCount + zind * this->gridXCount * this->gridYCount;
-
-		if (xind < 0 ||
-			xind >= this->gridXCount ||
-			yind < 0 ||
-			yind >= this->gridYCount ||
-			zind < 0 ||
-			zind >= this->gridZCount) return false;
-
-		if (ind < 0 || ind >= (int32_t) grids.size()) return false;
-
-		grids[ind].RemoveObject(o);
-
-		return true;
-	}
-
-	void Layer::AddGrids(Vector3DF max_, Vector3DF min_, std::vector<Grid*>& grids_)
-	{
-		int32_t maxX = (int32_t) ((max_.X + offsetX) / gridSize) + 1;
-		int32_t maxY = (int32_t) ((max_.Y + offsetY) / gridSize) + 1;
-		int32_t maxZ = (int32_t) ((max_.Z + offsetZ) / gridSize) + 1;
-
-		int32_t minX = (int32_t) ((min_.X + offsetX) / gridSize) - 1;
-		int32_t minY = (int32_t) ((min_.Y + offsetY) / gridSize) - 1;
-		int32_t minZ = (int32_t) ((min_.Z + offsetZ) / gridSize) - 1;
-
-		maxX = Clamp(maxX, gridXCount - 1, 0);
-		maxY = Clamp(maxY, gridYCount - 1, 0);
-		maxZ = Clamp(maxZ, gridZCount - 1, 0);
-
-		minX = Clamp(minX, gridXCount - 1, 0);
-		minY = Clamp(minY, gridYCount - 1, 0);
-		minZ = Clamp(minZ, gridZCount - 1, 0);
-
-		for (int32_t z = minZ; z <= maxZ; z++)
-		{
-			for (int32_t y = minY; y <= maxY; y++)
-			{
-				for (int32_t x = minX; x <= maxX; x++)
-				{
-					int32_t ind = x + y * this->gridXCount + z * this->gridXCount * this->gridYCount;
-
-					if (!grids[ind].IsScanned)
-					{
-						grids_.push_back(&grids[ind]);
-						grids[ind].IsScanned = true;
-					}
-				}
-			}
-		}
-	}
-}
-
-
-namespace Culling3D
-{
-	Matrix44::Matrix44()
-	{
-		for (int32_t c = 0; c < 4; c++)
-		{
-			for (int32_t r = 0; r < 4; r++)
-			{
-				Values[c][r] = 0.0f;
-			}
-		}
-
-		for (int32_t i = 0; i < 4; i++)
-		{
-			Values[i][i] = 1.0f;
-		}
-	}
-
-	Matrix44& Matrix44::SetInverted()
-	{
-		float a11 = this->Values[0][0];
-		float a12 = this->Values[0][1];
-		float a13 = this->Values[0][2];
-		float a14 = this->Values[0][3];
-		float a21 = this->Values[1][0];
-		float a22 = this->Values[1][1];
-		float a23 = this->Values[1][2];
-		float a24 = this->Values[1][3];
-		float a31 = this->Values[2][0];
-		float a32 = this->Values[2][1];
-		float a33 = this->Values[2][2];
-		float a34 = this->Values[2][3];
-		float a41 = this->Values[3][0];
-		float a42 = this->Values[3][1];
-		float a43 = this->Values[3][2];
-		float a44 = this->Values[3][3];
-
-		/* 行列式の計算 */
-		float b11 = +a22 * (a33 * a44 - a43 * a34) - a23 * (a32 * a44 - a42 * a34) + a24 * (a32 * a43 - a42 * a33);
-		float b12 = -a12 * (a33 * a44 - a43 * a34) + a13 * (a32 * a44 - a42 * a34) - a14 * (a32 * a43 - a42 * a33);
-		float b13 = +a12 * (a23 * a44 - a43 * a24) - a13 * (a22 * a44 - a42 * a24) + a14 * (a22 * a43 - a42 * a23);
-		float b14 = -a12 * (a23 * a34 - a33 * a24) + a13 * (a22 * a34 - a32 * a24) - a14 * (a22 * a33 - a32 * a23);
-
-		float b21 = -a21 * (a33 * a44 - a43 * a34) + a23 * (a31 * a44 - a41 * a34) - a24 * (a31 * a43 - a41 * a33);
-		float b22 = +a11 * (a33 * a44 - a43 * a34) - a13 * (a31 * a44 - a41 * a34) + a14 * (a31 * a43 - a41 * a33);
-		float b23 = -a11 * (a23 * a44 - a43 * a24) + a13 * (a21 * a44 - a41 * a24) - a14 * (a21 * a43 - a41 * a23);
-		float b24 = +a11 * (a23 * a34 - a33 * a24) - a13 * (a21 * a34 - a31 * a24) + a14 * (a21 * a33 - a31 * a23);
-
-		float b31 = +a21 * (a32 * a44 - a42 * a34) - a22 * (a31 * a44 - a41 * a34) + a24 * (a31 * a42 - a41 * a32);
-		float b32 = -a11 * (a32 * a44 - a42 * a34) + a12 * (a31 * a44 - a41 * a34) - a14 * (a31 * a42 - a41 * a32);
-		float b33 = +a11 * (a22 * a44 - a42 * a24) - a12 * (a21 * a44 - a41 * a24) + a14 * (a21 * a42 - a41 * a22);
-		float b34 = -a11 * (a22 * a34 - a32 * a24) + a12 * (a21 * a34 - a31 * a24) - a14 * (a21 * a32 - a31 * a22);
-
-		float b41 = -a21 * (a32 * a43 - a42 * a33) + a22 * (a31 * a43 - a41 * a33) - a23 * (a31 * a42 - a41 * a32);
-		float b42 = +a11 * (a32 * a43 - a42 * a33) - a12 * (a31 * a43 - a41 * a33) + a13 * (a31 * a42 - a41 * a32);
-		float b43 = -a11 * (a22 * a43 - a42 * a23) + a12 * (a21 * a43 - a41 * a23) - a13 * (a21 * a42 - a41 * a22);
-		float b44 = +a11 * (a22 * a33 - a32 * a23) - a12 * (a21 * a33 - a31 * a23) + a13 * (a21 * a32 - a31 * a22);
-
-		// 行列式の逆数をかける
-		float Det = (a11 * b11) + (a12 * b21) + (a13 * b31) + (a14 * b41);
-		if ((-FLT_MIN <= Det) && (Det <= +FLT_MIN))
-		{
-			return *this;
-		}
-
-		float InvDet = 1.0f / Det;
-
-		Values[0][0] = b11 * InvDet;
-		Values[0][1] = b12 * InvDet;
-		Values[0][2] = b13 * InvDet;
-		Values[0][3] = b14 * InvDet;
-		Values[1][0] = b21 * InvDet;
-		Values[1][1] = b22 * InvDet;
-		Values[1][2] = b23 * InvDet;
-		Values[1][3] = b24 * InvDet;
-		Values[2][0] = b31 * InvDet;
-		Values[2][1] = b32 * InvDet;
-		Values[2][2] = b33 * InvDet;
-		Values[2][3] = b34 * InvDet;
-		Values[3][0] = b41 * InvDet;
-		Values[3][1] = b42 * InvDet;
-		Values[3][2] = b43 * InvDet;
-		Values[3][3] = b44 * InvDet;
-
-		return *this;
-	}
-
-	Matrix44& Matrix44::SetLookAtRH(const Vector3DF& eye, const Vector3DF& at, const Vector3DF& up)
-	{
-		// F=正面、R=右方向、U=上方向
-		Vector3DF F = (eye - at).GetNormal();
-		Vector3DF R = Vector3DF::Cross(up, F).GetNormal();
-		Vector3DF U = Vector3DF::Cross(F, R).GetNormal();
-
-		Values[0][0] = R.X;
-		Values[0][1] = R.Y;
-		Values[0][2] = R.Z;
-		Values[0][3] = 0.0f;
-
-		Values[1][0] = U.X;
-		Values[1][1] = U.Y;
-		Values[1][2] = U.Z;
-		Values[1][3] = 0.0f;
-
-		Values[2][0] = F.X;
-		Values[2][1] = F.Y;
-		Values[2][2] = F.Z;
-		Values[2][3] = 0.0f;
-
-		Values[0][3] = -Vector3DF::Dot(R, eye);
-		Values[1][3] = -Vector3DF::Dot(U, eye);
-		Values[2][3] = -Vector3DF::Dot(F, eye);
-		Values[3][3] = 1.0f;
-		return *this;
-	}
-
-	Matrix44& Matrix44::SetLookAtLH(const Vector3DF& eye, const Vector3DF& at, const Vector3DF& up)
-	{
-		// F=正面、R=右方向、U=上方向
-		Vector3DF F = (at - eye).GetNormal();
-		Vector3DF R = Vector3DF::Cross(up, F).GetNormal();
-		Vector3DF U = Vector3DF::Cross(F, R).GetNormal();
-
-		Values[0][0] = R.X;
-		Values[0][1] = R.Y;
-		Values[0][2] = R.Z;
-		Values[0][3] = 0.0f;
-
-		Values[1][0] = U.X;
-		Values[1][1] = U.Y;
-		Values[1][2] = U.Z;
-		Values[1][3] = 0.0f;
-
-		Values[2][0] = F.X;
-		Values[2][1] = F.Y;
-		Values[2][2] = F.Z;
-		Values[2][3] = 0.0f;
-
-		Values[0][3] = -Vector3DF::Dot(R, eye);
-		Values[1][3] = -Vector3DF::Dot(U, eye);
-		Values[2][3] = -Vector3DF::Dot(F, eye);
-		Values[3][3] = 1.0f;
-		return *this;
-	}
-
-	Matrix44& Matrix44::SetPerspectiveFovRH(float ovY, float aspect, float zn, float zf)
-	{
-		float yScale = 1 / tanf(ovY / 2);
-		float xScale = yScale / aspect;
-
-		Values[0][0] = xScale;
-		Values[1][0] = 0;
-		Values[2][0] = 0;
-		Values[3][0] = 0;
-
-		Values[0][1] = 0;
-		Values[1][1] = yScale;
-		Values[2][1] = 0;
-		Values[3][1] = 0;
-
-		Values[0][2] = 0;
-		Values[1][2] = 0;
-		Values[2][2] = zf / (zn - zf);
-		Values[3][2] = -1;
-
-		Values[0][3] = 0;
-		Values[1][3] = 0;
-		Values[2][3] = zn * zf / (zn - zf);
-		Values[3][3] = 0;
-		return *this;
-	}
-
-	Matrix44& Matrix44::SetPerspectiveFovRH_OpenGL(float ovY, float aspect, float zn, float zf)
-	{
-		float yScale = 1 / tanf(ovY / 2);
-		float xScale = yScale / aspect;
-		float dz = zf - zn;
-
-		Values[0][0] = xScale;
-		Values[1][0] = 0;
-		Values[2][0] = 0;
-		Values[3][0] = 0;
-
-		Values[0][1] = 0;
-		Values[1][1] = yScale;
-		Values[2][1] = 0;
-		Values[3][1] = 0;
-
-		Values[0][2] = 0;
-		Values[1][2] = 0;
-		Values[2][2] = -(zf + zn) / dz;
-		Values[3][2] = -1.0f;
-
-		Values[0][3] = 0;
-		Values[1][3] = 0;
-		Values[2][3] = -2.0f * zn * zf / dz;
-		Values[3][3] = 0.0f;
-
-		return *this;
-	}
-
-	Matrix44& Matrix44::SetPerspectiveFovLH(float ovY, float aspect, float zn, float zf)
-	{
-		float yScale = 1 / tanf(ovY / 2);
-		float xScale = yScale / aspect;
-
-		Values[0][0] = xScale;
-		Values[1][0] = 0;
-		Values[2][0] = 0;
-		Values[3][0] = 0;
-
-		Values[0][1] = 0;
-		Values[1][1] = yScale;
-		Values[2][1] = 0;
-		Values[3][1] = 0;
-
-		Values[0][2] = 0;
-		Values[1][2] = 0;
-		Values[2][2] = zf / (zf - zn);
-		Values[3][2] = 1;
-
-		Values[0][3] = 0;
-		Values[1][3] = 0;
-		Values[2][3] = -zn * zf / (zf - zn);
-		Values[3][3] = 0;
-		return *this;
-	}
-
-	Matrix44& Matrix44::SetOrthographicRH(float width, float height, float zn, float zf)
-	{
-		Values[0][0] = 2 / width;
-		Values[1][0] = 0;
-		Values[2][0] = 0;
-		Values[3][0] = 0;
-
-		Values[0][1] = 0;
-		Values[1][1] = 2 / height;
-		Values[2][1] = 0;
-		Values[3][1] = 0;
-
-		Values[0][2] = 0;
-		Values[1][2] = 0;
-		Values[2][2] = 1 / (zn - zf);
-		Values[3][2] = 0;
-
-		Values[0][3] = 0;
-		Values[1][3] = 0;
-		Values[2][3] = zn / (zn - zf);
-		Values[3][3] = 1;
-		return *this;
-	}
-
-	Matrix44& Matrix44::SetOrthographicLH(float width, float height, float zn, float zf)
-	{
-		Values[0][0] = 2 / width;
-		Values[1][0] = 0;
-		Values[2][0] = 0;
-		Values[3][0] = 0;
-
-		Values[0][1] = 0;
-		Values[1][1] = 2 / height;
-		Values[2][1] = 0;
-		Values[3][1] = 0;
-
-		Values[0][2] = 0;
-		Values[1][2] = 0;
-		Values[2][2] = 1 / (zf - zn);
-		Values[3][2] = 0;
-
-		Values[0][3] = 0;
-		Values[1][3] = 0;
-		Values[2][3] = zn / (zn - zf);
-		Values[3][3] = 1;
-		return *this;
-	}
-
-	Vector3DF Matrix44::Transform3D(const Vector3DF& in) const
-	{
-		float values[4];
-
-		for (int i = 0; i < 4; i++)
-		{
-			values[i] = 0;
-			values[i] += in.X * Values[i][0];
-			values[i] += in.Y * Values[i][1];
-			values[i] += in.Z * Values[i][2];
-			values[i] += Values[i][3];
-		}
-
-		Vector3DF o;
-		o.X = values[0] / values[3];
-		o.Y = values[1] / values[3];
-		o.Z = values[2] / values[3];
-		return o;
-	}
-
-	Matrix44 Matrix44::operator * (const Matrix44& right) const
-	{
-		Matrix44 o_;
-		Mul(o_, *this, right);
-		return o_;
-	}
-
-	Vector3DF Matrix44::operator * (const Vector3DF& right) const
-	{
-		return Transform3D(right);
-	}
-
-	Matrix44& Matrix44::Mul(Matrix44& o, const Matrix44& in1, const Matrix44& in2)
-	{
-		Matrix44 _in1 = in1;
-		Matrix44 _in2 = in2;
-
-		for (int i = 0; i < 4; i++)
-		{
-			for (int j = 0; j < 4; j++)
-			{
-				float v = 0.0f;
-				for (int k = 0; k < 4; k++)
-				{
-					v += _in1.Values[i][k] * _in2.Values[k][j];
-				}
-				o.Values[i][j] = v;
-			}
-		}
-		return o;
-	}
-}
-
-
-namespace Culling3D
-{
-	Object* Object::Create()
-	{
-		return new ObjectInternal();
-	}
-
-	ObjectInternal::ObjectInternal()
-		: userData(NULL)
-		, world(NULL)
-		, ObjectIndex(-1)
-	{
-		currentStatus.Position = Vector3DF();
-		currentStatus.radius = 0.0f;
-		currentStatus.Type = OBJECT_SHAPE_TYPE_NONE;
-
-		nextStatus.Position = Vector3DF();
-		nextStatus.radius = 0.0f;
-		nextStatus.Type = OBJECT_SHAPE_TYPE_NONE;
-	}
-
-	ObjectInternal::~ObjectInternal()
-	{
-	}
-
-	Vector3DF ObjectInternal::GetPosition()
-	{
-		return nextStatus.Position;
-	}
-
-	void ObjectInternal::SetPosition(Vector3DF pos)
-	{
-		nextStatus.Position = pos;
-
-		if (world != NULL)
-		{
-			WorldInternal* w = (WorldInternal*) world;
-			w->RemoveObjectInternal(this);
-			w->AddObjectInternal(this);
-		}
-
-		currentStatus = nextStatus;
-	}
-
-	void ObjectInternal::ChangeIntoAll()
-	{
-		nextStatus.Type = OBJECT_SHAPE_TYPE_ALL;
-		nextStatus.CalcRadius();
-
-		if (world != NULL)
-		{
-			WorldInternal* w = (WorldInternal*) world;
-			w->RemoveObjectInternal(this);
-			w->AddObjectInternal(this);
-		}
-
-		currentStatus = nextStatus;
-	}
-
-	void ObjectInternal::ChangeIntoSphere(float radius)
-	{
-		nextStatus.Data.Sphere.Radius = radius;
-		nextStatus.Type = OBJECT_SHAPE_TYPE_SPHERE;
-		nextStatus.CalcRadius();
-
-		if (world != NULL)
-		{
-			WorldInternal* w = (WorldInternal*) world;
-			w->RemoveObjectInternal(this);
-			w->AddObjectInternal(this);
-		}
-
-		currentStatus = nextStatus;
-	}
-
-	void ObjectInternal::ChangeIntoCuboid(Vector3DF size)
-	{
-		nextStatus.Data.Cuboid.X = size.X;
-		nextStatus.Data.Cuboid.Y = size.Y;
-		nextStatus.Data.Cuboid.Z = size.Z;
-		nextStatus.Type = OBJECT_SHAPE_TYPE_CUBOID;
-		nextStatus.CalcRadius();
-
-		if (world != NULL)
-		{
-			WorldInternal* w = (WorldInternal*) world;
-			w->RemoveObjectInternal(this);
-			w->AddObjectInternal(this);
-		}
-
-		currentStatus = nextStatus;
-	}
-
-	void* ObjectInternal::GetUserData()
-	{
-		return userData;
-	}
-
-	void ObjectInternal::SetUserData(void* userData_)
-	{
-		this->userData = userData_;
-	}
-
-
-	void ObjectInternal::SetWorld(World* world_)
-	{
-		this->world = world_;
-	}
-}
-
-
-namespace Culling3D
-{
-	ReferenceObject::ReferenceObject()
-		: m_reference(1)
-	{
-	}
-
-	ReferenceObject::~ReferenceObject()
-	{
-	}
-
-	int32_t ReferenceObject::AddRef()
-	{
-		m_reference++;
-		return m_reference;
-	}
-
-	int32_t ReferenceObject::GetRef()
-	{
-		return m_reference;
-	}
-
-	int32_t ReferenceObject::Release()
-	{
-		assert(m_reference > 0);
-
-		m_reference--;
-		bool destroy = m_reference == 0;
-		if (destroy)
-		{
-			delete this;
-			return 0;
-		}
-
-		return m_reference;
-	}
-}
-
-
-namespace Culling3D
-{
-	Vector3DF::Vector3DF()
-		: X(0)
-		, Y(0)
-		, Z(0)
-	{
-	}
-
-	Vector3DF::Vector3DF(float x, float y, float z)
-		: X(x)
-		, Y(y)
-		, Z(z)
-	{
-	}
-
-	bool Vector3DF::operator == (const Vector3DF& o)
-	{
-		return X == o.X && Y == o.Y && Z == o.Z;
-	}
-
-	bool Vector3DF::operator != (const Vector3DF& o)
-	{
-		return !(X == o.X && Y == o.Y && Z == o.Z);
-	}
-
-	Vector3DF Vector3DF::operator-()
-	{
-		return Vector3DF(-X, -Y, -Z);
-	}
-
-	Vector3DF Vector3DF::operator + (const Vector3DF& o) const
-	{
-		return Vector3DF(X + o.X, Y + o.Y, Z + o.Z);
-	}
-
-	Vector3DF Vector3DF::operator - (const Vector3DF& o) const
-	{
-		return Vector3DF(X - o.X, Y - o.Y, Z - o.Z);
-	}
-
-	Vector3DF Vector3DF::operator * (const Vector3DF& o) const
-	{
-		return Vector3DF(X * o.X, Y * o.Y, Z * o.Z);
-	}
-
-	Vector3DF Vector3DF::operator / (const Vector3DF& o) const
-	{
-		return Vector3DF(X / o.X, Y / o.Y, Z / o.Z);
-	}
-
-	Vector3DF Vector3DF::operator * (const float& o) const
-	{
-		return Vector3DF(X * o, Y * o, Z * o);
-	}
-
-	Vector3DF Vector3DF::operator / (const float& o) const
-	{
-		return Vector3DF(X / o, Y / o, Z / o);
-	}
-
-	Vector3DF& Vector3DF::operator += (const Vector3DF& o)
-	{
-		X += o.X;
-		Y += o.Y;
-		Z += o.Z;
-		return *this;
-	}
-
-	Vector3DF& Vector3DF::operator -= (const Vector3DF& o)
-	{
-		X -= o.X;
-		Y -= o.Y;
-		Z -= o.Z;
-		return *this;
-	}
-
-	Vector3DF& Vector3DF::operator *= (const float& o)
-	{
-		X *= o;
-		Y *= o;
-		Z *= o;
-		return *this;
-	}
-
-	Vector3DF& Vector3DF::operator /= (const float& o)
-	{
-		X /= o;
-		Y /= o;
-		Z /= o;
-		return *this;
-	}
-
-	float Vector3DF::Dot(const Vector3DF& v1, const Vector3DF& v2)
-	{
-		return v1.X * v2.X + v1.Y * v2.Y + v1.Z * v2.Z;
-	}
-
-	Vector3DF Vector3DF::Cross(const Vector3DF& v1, const Vector3DF& v2)
-	{
-		Vector3DF o;
-
-		float x = v1.Y * v2.Z - v1.Z * v2.Y;
-		float y = v1.Z * v2.X - v1.X * v2.Z;
-		float z = v1.X * v2.Y - v1.Y * v2.X;
-		o.X = x;
-		o.Y = y;
-		o.Z = z;
-		return o;
-	}
-
-	float Vector3DF::Distance(const Vector3DF& v1, const Vector3DF& v2)
-	{
-		float dx = v1.X - v2.X;
-		float dy = v1.Y - v2.Y;
-		float dz = v1.Z - v2.Z;
-		return sqrtf(dx * dx + dy * dy + dz * dz);
-	}
-}
-
-
-
-namespace Culling3D
-{
-	const int32_t viewCullingXDiv = 2;
-	const int32_t viewCullingYDiv = 2;
-	const int32_t viewCullingZDiv = 3;
-
-	bool IsInView(Vector3DF position, float radius, Vector3DF facePositions[6], Vector3DF faceDir[6])
-	{
-		for (int32_t i = 0; i < 6; i++)
-		{
-			Vector3DF diff = position - facePositions[i];
-			float distance = Vector3DF::Dot(diff, faceDir[i]);
-		
-			if (distance > radius) return false;
-		}
-
-		return true;
-	}
-
-	World* World::Create(float xSize, float ySize, float zSize, int32_t layerCount)
-	{
-		return new WorldInternal(xSize, ySize, zSize, layerCount);
-	}
-
-	WorldInternal::WorldInternal(float xSize, float ySize, float zSize, int32_t layerCount)
-	{
-		this->xSize = xSize;
-		this->ySize = ySize;
-		this->zSize = zSize;
-
-		this->gridSize = Max(Max(this->xSize, this->ySize), this->zSize);
-		
-		this->layerCount = layerCount;
-
-		layers.resize(this->layerCount);
-
-		for (size_t i = 0; i < layers.size(); i++)
-		{
-			float gridSize_ = this->gridSize / powf(2.0f, (float)i);
-
-			int32_t xCount = (int32_t) (this->xSize / gridSize_);
-			int32_t yCount = (int32_t) (this->ySize / gridSize_);
-			int32_t zCount = (int32_t) (this->zSize / gridSize_);
-
-			if (xCount * gridSize_ < this->xSize) xCount++;
-			if (yCount * gridSize_ < this->ySize) yCount++;
-			if (zCount * gridSize_ < this->zSize) zCount++;
-
-			layers[i] = new Layer(xCount, yCount, zCount, xSize / 2.0f, ySize / 2.0f, zSize / 2.0f, gridSize_);
-			
-			this->minGridSize = gridSize_;
-		}
-	}
-
-	WorldInternal::~WorldInternal()
-	{
-		for (size_t i = 0; i < layers.size(); i++)
-		{
-			delete layers[i];
-		}
-
-		layers.clear();
-
-		for (std::set<Object*>::iterator it = containedObjects.begin(); it != containedObjects.end(); it++)
-		{
-			(*it)->Release();
-		}
-	}
-
-	void WorldInternal::AddObject(Object* o)
-	{
-		SafeAddRef(o);
-		containedObjects.insert(o);
-		AddObjectInternal(o);
-	}
-
-	void WorldInternal::RemoveObject(Object* o)
-	{
-		RemoveObjectInternal(o);
-		containedObjects.erase(o);
-		SafeRelease(o);
-	}
-
-	void WorldInternal::AddObjectInternal(Object* o)
-	{
-		assert(o != NULL);
-
-		ObjectInternal* o_ = (ObjectInternal*) o;
-
-		if (o_->GetNextStatus().Type == OBJECT_SHAPE_TYPE_ALL)
-		{
-			allLayers.AddObject(o);
-			o_->SetWorld(this);
-			return;
-		}
-
-		float radius = o_->GetNextStatus().GetRadius();
-		if (o_->GetNextStatus().Type == OBJECT_SHAPE_TYPE_NONE || radius <= minGridSize)
-		{
-			if (layers[layers.size() - 1]->AddObject(o))
-			{
-			}
-			else
-			{
-				outofLayers.AddObject(o);
-			}
-			o_->SetWorld(this);
-			return;
-		}
-
-		int32_t gridInd = (int32_t) (gridSize / (radius * 2.0f));
-
-		if (gridInd * (radius * 2) < gridSize) gridInd++;
-
-		int32_t ind = 1;
-		bool found = false;
-		for (size_t i = 0; i < layers.size(); i++)
-		{
-			if (ind <= gridInd && gridInd < ind * 2)
-			{
-				if (layers[i]->AddObject(o))
-				{
-					((ObjectInternal*) o)->SetWorld(this);
-					found = true;
-				}
-				else
-				{
-					break;
-				}
-			}
-
-			ind *= 2;
-		}
-
-		if (!found)
-		{
-			((ObjectInternal*) o)->SetWorld(this);
 			outofLayers.AddObject(o);
 		}
+		o_->SetWorld(this);
+		return;
 	}
 
-	void WorldInternal::RemoveObjectInternal(Object* o)
+	int32_t gridInd = (int32_t)(gridSize / (radius * 2.0f));
+
+	if (gridInd * (radius * 2) < gridSize)
+		gridInd++;
+
+	int32_t ind = 1;
+	bool found = false;
+	for (size_t i = 0; i < layers.size(); i++)
 	{
-		assert(o != NULL);
-
-		ObjectInternal* o_ = (ObjectInternal*) o;
-
-		if (o_->GetCurrentStatus().Type == OBJECT_SHAPE_TYPE_ALL)
+		if (ind <= gridInd && gridInd < ind * 2)
 		{
-			allLayers.RemoveObject(o);
-			o_->SetWorld(NULL);
-			return;
-		}
-
-		float radius = o_->GetCurrentStatus().GetRadius();
-		if (o_->GetCurrentStatus().Type == OBJECT_SHAPE_TYPE_NONE || radius <= minGridSize)
-		{
-			if (layers[layers.size() - 1]->RemoveObject(o))
+			if (layers[i]->AddObject(o))
 			{
+				((ObjectInternal*)o)->SetWorld(this);
+				found = true;
 			}
 			else
 			{
-				outofLayers.RemoveObject(o);
+				break;
 			}
-			o_->SetWorld(NULL);
-			return;
 		}
 
-		int32_t gridInd = (int32_t) (gridSize / (radius * 2.0f));
-
-		if (gridInd * (radius * 2.0f) < gridSize) gridInd++;
-
-		int32_t ind = 1;
-		bool found = false;
-		for (size_t i = 0; i < layers.size(); i++)
-		{
-			if (ind <= gridInd && gridInd < ind * 2)
-			{
-				if (layers[i]->RemoveObject(o))
-				{
-					((ObjectInternal*) o)->SetWorld(NULL);
-					found = true;
-				}
-				else
-				{
-					break;
-				}
-			}
-
-			ind *= 2;
-		}
-
-		if (!found)
-		{
-			((ObjectInternal*) o)->SetWorld(NULL);
-			outofLayers.RemoveObject(o);
-		}
+		ind *= 2;
 	}
 
-	void WorldInternal::CastRay(Vector3DF from, Vector3DF to)
+	if (!found)
 	{
-		objs.clear();
+		((ObjectInternal*)o)->SetWorld(this);
+		outofLayers.AddObject(o);
+	}
+}
 
-		Vector3DF aabb_max;
-		Vector3DF aabb_min;
+void WorldInternal::RemoveObjectInternal(Object* o)
+{
+	assert(o != NULL);
 
-		aabb_max.X = Max(from.X, to.X);
-		aabb_max.Y = Max(from.Y, to.Y);
-		aabb_max.Z = Max(from.Z, to.Z);
+	ObjectInternal* o_ = (ObjectInternal*)o;
 
-		aabb_min.X = Min(from.X, to.X);
-		aabb_min.Y = Min(from.Y, to.Y);
-		aabb_min.Z = Min(from.Z, to.Z);
-
-		/* 範囲内に含まれるグリッドを取得 */
-		for (size_t i = 0; i < layers.size(); i++)
-		{
-			layers[i]->AddGrids(aabb_max, aabb_min, grids);
-		}
-
-		/* 外領域追加 */
-		grids.push_back(&outofLayers);
-		grids.push_back(&allLayers);
-
-		/* グリッドからオブジェクト取得 */
-		
-		/* 初期計算 */
-		auto ray_dir = (to - from);
-		auto ray_len = ray_dir.GetLength();
-		ray_dir.Normalize();
-
-		for (size_t i = 0; i < grids.size(); i++)
-		{
-			for (size_t j = 0; j < grids[i]->GetObjects().size(); j++)
-			{
-				Object* o = grids[i]->GetObjects()[j];
-				ObjectInternal* o_ = (ObjectInternal*) o;
-
-				if (o_->GetNextStatus().Type == OBJECT_SHAPE_TYPE_ALL)
-				{
-					objs.push_back(o);
-					continue;
-				}
-
-				// 球線分判定
-				{
-					auto radius = o_->GetNextStatus().GetRadius();
-					auto pos = o_->GetNextStatus().Position;
-
-					auto from2pos = pos - from;
-					auto from2nearLen = Vector3DF::Dot(from2pos, ray_dir);
-					auto pos2ray = from2pos - ray_dir * from2nearLen;
-
-					if (pos2ray.GetLength() > radius) continue;
-					if (from2nearLen < 0 || from2nearLen > ray_len) continue;
-				}
-
-				if (o_->GetNextStatus().Type == OBJECT_SHAPE_TYPE_SPHERE)
-				{
-					objs.push_back(o);
-					continue;
-				}
-
-				// AABB判定
-				// 参考：http://marupeke296.com/COL_3D_No18_LineAndAABB.html
-
-				if (o_->GetNextStatus().Type == OBJECT_SHAPE_TYPE_CUBOID)
-				{
-					// 交差判定
-					float p[3], d[3], min[3], max[3];
-					auto pos = o_->GetCurrentStatus().Position;
-					memcpy(p, &from, sizeof(Vector3DF));
-					memcpy(d, &ray_dir, sizeof(Vector3DF));
-					memcpy(min, &pos, sizeof(Vector3DF));
-					memcpy(max, &pos, sizeof(Vector3DF));
-
-					min[0] -= o_->GetNextStatus().Data.Cuboid.X / 2.0f;
-					min[1] -= o_->GetNextStatus().Data.Cuboid.Y / 2.0f;
-					min[2] -= o_->GetNextStatus().Data.Cuboid.Z / 2.0f;
-
-					max[0] += o_->GetNextStatus().Data.Cuboid.X / 2.0f;
-					max[1] += o_->GetNextStatus().Data.Cuboid.Y / 2.0f;
-					max[2] += o_->GetNextStatus().Data.Cuboid.Z / 2.0f;
-
-					float t = -FLT_MAX;
-					float t_max = FLT_MAX;
-
-					for (int k = 0; k < 3; ++k)
-					{
-						if (std::abs(d[k]) < FLT_EPSILON)
-						{
-							if (p[k] < min[k] || p[k] > max[k])
-							{
-								// 交差していない
-								continue;
-							}
-						}
-						else
-						{
-							// スラブとの距離を算出
-							// t1が近スラブ、t2が遠スラブとの距離
-							float odd = 1.0f / d[k];
-							float t1 = (min[k] - p[k]) * odd;
-							float t2 = (max[k] - p[k]) * odd;
-							if (t1 > t2)
-							{
-								float tmp = t1; t1 = t2; t2 = tmp;
-							}
-
-							if (t1 > t) t = t1;
-							if (t2 < t_max) t_max = t2;
-
-							// スラブ交差チェック
-							if (t >= t_max)
-							{
-								// 交差していない
-								continue;
-							}
-						}
-					}
-
-					// 交差している
-					if (0 <= t  && t <= ray_len)
-					{
-						objs.push_back(o);
-						continue;
-					}
-				}
-			}
-		}
-
-		/* 取得したグリッドを破棄 */
-		for (size_t i = 0; i < grids.size(); i++)
-		{
-			grids[i]->IsScanned = false;
-		}
-
-		grids.clear();
+	if (o_->GetCurrentStatus().Type == OBJECT_SHAPE_TYPE_ALL)
+	{
+		allLayers.RemoveObject(o);
+		o_->SetWorld(NULL);
+		return;
 	}
 
-	void WorldInternal::Culling(const Matrix44& cameraProjMat, bool isOpenGL)
+	float radius = o_->GetCurrentStatus().GetRadius();
+	if (o_->GetCurrentStatus().Type == OBJECT_SHAPE_TYPE_NONE || radius <= minGridSize)
 	{
-		objs.clear();
-	
-
-		if (!std::isinf(cameraProjMat.Values[2][2]) &&
-			cameraProjMat.Values[0][0] != 0.0f &&
-			cameraProjMat.Values[1][1] != 0.0f)
+		if (layers[layers.size() - 1]->RemoveObject(o))
 		{
-
-			Matrix44 cameraProjMatInv = cameraProjMat;
-			cameraProjMatInv.SetInverted();
-
-			float maxx = 1.0f;
-			float minx = -1.0f;
-
-			float maxy = 1.0f;
-			float miny = -1.0f;
-
-			float maxz = 1.0f;
-			float minz = 0.0f;
-			if (isOpenGL) minz = -1.0f;
-
-			Vector3DF eyebox[8];
-
-			eyebox[0 + 0] = Vector3DF(minx, miny, maxz);
-			eyebox[1 + 0] = Vector3DF(maxx, miny, maxz);
-			eyebox[2 + 0] = Vector3DF(minx, maxy, maxz);
-			eyebox[3 + 0] = Vector3DF(maxx, maxy, maxz);
-
-			eyebox[0 + 4] = Vector3DF(minx, miny, minz);
-			eyebox[1 + 4] = Vector3DF(maxx, miny, minz);
-			eyebox[2 + 4] = Vector3DF(minx, maxy, minz);
-			eyebox[3 + 4] = Vector3DF(maxx, maxy, minz);
-
-			for (int32_t i = 0; i < 8; i++)
-			{
-				eyebox[i] = cameraProjMatInv.Transform3D(eyebox[i]);
-			}
-
-			// 0-right 1-left 2-top 3-bottom 4-front 5-back
-			Vector3DF facePositions[6];
-			facePositions[0] = eyebox[5];
-			facePositions[1] = eyebox[4];
-			facePositions[2] = eyebox[6];
-			facePositions[3] = eyebox[4];
-			facePositions[4] = eyebox[4];
-			facePositions[5] = eyebox[0];
-
-			Vector3DF faceDir[6];
-			faceDir[0] = Vector3DF::Cross(eyebox[1] - eyebox[5], eyebox[7] - eyebox[5]);
-			faceDir[1] = Vector3DF::Cross(eyebox[6] - eyebox[4], eyebox[0] - eyebox[4]);
-
-			faceDir[2] = Vector3DF::Cross(eyebox[7] - eyebox[6], eyebox[2] - eyebox[6]);
-			faceDir[3] = Vector3DF::Cross(eyebox[0] - eyebox[4], eyebox[5] - eyebox[4]);
-
-			faceDir[4] = Vector3DF::Cross(eyebox[5] - eyebox[4], eyebox[6] - eyebox[4]);
-			faceDir[5] = Vector3DF::Cross(eyebox[2] - eyebox[0], eyebox[1] - eyebox[5]);
-
-			for (int32_t i = 0; i < 6; i++)
-			{
-				faceDir[i].Normalize();
-			}
-
-			for (int32_t z = 0; z < viewCullingZDiv; z++)
-			{
-				for (int32_t y = 0; y < viewCullingYDiv; y++)
-				{
-					for (int32_t x = 0; x < viewCullingXDiv; x++)
-					{
-						Vector3DF eyebox_[8];
-
-						float xsize = 1.0f / (float) viewCullingXDiv;
-						float ysize = 1.0f / (float) viewCullingYDiv;
-						float zsize = 1.0f / (float) viewCullingZDiv;
-
-						for (int32_t e = 0; e < 8; e++)
-						{
-							float x_ = 0.0f, y_ = 0.0f, z_ = 0.0f;
-							if (e == 0){ x_ = xsize * x; y_ = ysize * y; z_ = zsize * z; }
-							if (e == 1){ x_ = xsize * (x + 1); y_ = ysize * y; z_ = zsize * z; }
-							if (e == 2){ x_ = xsize * x; y_ = ysize * (y + 1); z_ = zsize * z; }
-							if (e == 3){ x_ = xsize * (x + 1); y_ = ysize * (y + 1); z_ = zsize * z; }
-							if (e == 4){ x_ = xsize * x; y_ = ysize * y; z_ = zsize * (z + 1); }
-							if (e == 5){ x_ = xsize * (x + 1); y_ = ysize * y; z_ = zsize * (z + 1); }
-							if (e == 6){ x_ = xsize * x; y_ = ysize * (y + 1); z_ = zsize * (z + 1); }
-							if (e == 7){ x_ = xsize * (x + 1); y_ = ysize * (y + 1); z_ = zsize * (z + 1); }
-
-							Vector3DF yzMid[4];
-							yzMid[0] = eyebox[0] * x_ + eyebox[1] * (1.0f - x_);
-							yzMid[1] = eyebox[2] * x_ + eyebox[3] * (1.0f - x_);
-							yzMid[2] = eyebox[4] * x_ + eyebox[5] * (1.0f - x_);
-							yzMid[3] = eyebox[6] * x_ + eyebox[7] * (1.0f - x_);
-
-							Vector3DF zMid[2];
-							zMid[0] = yzMid[0] * y_ + yzMid[1] * (1.0f - y_);
-							zMid[1] = yzMid[2] * y_ + yzMid[3] * (1.0f - y_);
-
-							eyebox_[e] = zMid[0] * z_ + zMid[1] * (1.0f - z_);
-						}
-
-
-
-						Vector3DF max_(-FLT_MAX, -FLT_MAX, -FLT_MAX);
-						Vector3DF min_(FLT_MAX, FLT_MAX, FLT_MAX);
-
-						for (int32_t i = 0; i < 8; i++)
-						{
-							if (eyebox_[i].X > max_.X) max_.X = eyebox_[i].X;
-							if (eyebox_[i].Y > max_.Y) max_.Y = eyebox_[i].Y;
-							if (eyebox_[i].Z > max_.Z) max_.Z = eyebox_[i].Z;
-
-							if (eyebox_[i].X < min_.X) min_.X = eyebox_[i].X;
-							if (eyebox_[i].Y < min_.Y) min_.Y = eyebox_[i].Y;
-							if (eyebox_[i].Z < min_.Z) min_.Z = eyebox_[i].Z;
-						}
-
-						/* 範囲内に含まれるグリッドを取得 */
-						for (size_t i = 0; i < layers.size(); i++)
-						{
-							layers[i]->AddGrids(max_, min_, grids);
-						}
-					}
-				}
-			}
-
-			/* 外領域追加 */
-			grids.push_back(&outofLayers);
-			grids.push_back(&allLayers);
-
-			/* グリッドからオブジェクト取得 */
-			for (size_t i = 0; i < grids.size(); i++)
-			{
-				for (size_t j = 0; j < grids[i]->GetObjects().size(); j++)
-				{
-					Object* o = grids[i]->GetObjects()[j];
-					ObjectInternal* o_ = (ObjectInternal*) o;
-
-					if (
-						o_->GetNextStatus().Type == OBJECT_SHAPE_TYPE_ALL ||
-						IsInView(o_->GetPosition(), o_->GetNextStatus().GetRadius(), facePositions, faceDir))
-					{
-						objs.push_back(o);
-					}
-				}
-			}
-
-			/* 取得したグリッドを破棄 */
-			for (size_t i = 0; i < grids.size(); i++)
-			{
-				grids[i]->IsScanned = false;
-			}
-
-			grids.clear();
 		}
 		else
 		{
-			grids.push_back(&allLayers);
+			outofLayers.RemoveObject(o);
+		}
+		o_->SetWorld(NULL);
+		return;
+	}
 
-			/* グリッドからオブジェクト取得 */
-			for (size_t i = 0; i < grids.size(); i++)
+	int32_t gridInd = (int32_t)(gridSize / (radius * 2.0f));
+
+	if (gridInd * (radius * 2.0f) < gridSize)
+		gridInd++;
+
+	int32_t ind = 1;
+	bool found = false;
+	for (size_t i = 0; i < layers.size(); i++)
+	{
+		if (ind <= gridInd && gridInd < ind * 2)
+		{
+			if (layers[i]->RemoveObject(o))
 			{
-				for (size_t j = 0; j < grids[i]->GetObjects().size(); j++)
-				{
-					Object* o = grids[i]->GetObjects()[j];
-					ObjectInternal* o_ = (ObjectInternal*) o;
+				((ObjectInternal*)o)->SetWorld(NULL);
+				found = true;
+			}
+			else
+			{
+				break;
+			}
+		}
 
-					if (o_->GetNextStatus().Type == OBJECT_SHAPE_TYPE_ALL)
+		ind *= 2;
+	}
+
+	if (!found)
+	{
+		((ObjectInternal*)o)->SetWorld(NULL);
+		outofLayers.RemoveObject(o);
+	}
+}
+
+void WorldInternal::CastRay(Vector3DF from, Vector3DF to)
+{
+	objs.clear();
+
+	Vector3DF aabb_max;
+	Vector3DF aabb_min;
+
+	aabb_max.X = Max(from.X, to.X);
+	aabb_max.Y = Max(from.Y, to.Y);
+	aabb_max.Z = Max(from.Z, to.Z);
+
+	aabb_min.X = Min(from.X, to.X);
+	aabb_min.Y = Min(from.Y, to.Y);
+	aabb_min.Z = Min(from.Z, to.Z);
+
+	/* 範囲内に含まれるグリッドを取得 */
+	for (size_t i = 0; i < layers.size(); i++)
+	{
+		layers[i]->AddGrids(aabb_max, aabb_min, grids);
+	}
+
+	/* 外領域追加 */
+	grids.push_back(&outofLayers);
+	grids.push_back(&allLayers);
+
+	/* グリッドからオブジェクト取得 */
+
+	/* 初期計算 */
+	auto ray_dir = (to - from);
+	auto ray_len = ray_dir.GetLength();
+	ray_dir.Normalize();
+
+	for (size_t i = 0; i < grids.size(); i++)
+	{
+		for (size_t j = 0; j < grids[i]->GetObjects().size(); j++)
+		{
+			Object* o = grids[i]->GetObjects()[j];
+			ObjectInternal* o_ = (ObjectInternal*)o;
+
+			if (o_->GetNextStatus().Type == OBJECT_SHAPE_TYPE_ALL)
+			{
+				objs.push_back(o);
+				continue;
+			}
+
+			// 球線分判定
+			{
+				auto radius = o_->GetNextStatus().GetRadius();
+				auto pos = o_->GetNextStatus().Position;
+
+				auto from2pos = pos - from;
+				auto from2nearLen = Vector3DF::Dot(from2pos, ray_dir);
+				auto pos2ray = from2pos - ray_dir * from2nearLen;
+
+				if (pos2ray.GetLength() > radius)
+					continue;
+				if (from2nearLen < 0 || from2nearLen > ray_len)
+					continue;
+			}
+
+			if (o_->GetNextStatus().Type == OBJECT_SHAPE_TYPE_SPHERE)
+			{
+				objs.push_back(o);
+				continue;
+			}
+
+			// AABB判定
+			// 参考：http://marupeke296.com/COL_3D_No18_LineAndAABB.html
+
+			if (o_->GetNextStatus().Type == OBJECT_SHAPE_TYPE_CUBOID)
+			{
+				// 交差判定
+				float p[3], d[3], min[3], max[3];
+				auto pos = o_->GetCurrentStatus().Position;
+				memcpy(p, &from, sizeof(Vector3DF));
+				memcpy(d, &ray_dir, sizeof(Vector3DF));
+				memcpy(min, &pos, sizeof(Vector3DF));
+				memcpy(max, &pos, sizeof(Vector3DF));
+
+				min[0] -= o_->GetNextStatus().Data.Cuboid.X / 2.0f;
+				min[1] -= o_->GetNextStatus().Data.Cuboid.Y / 2.0f;
+				min[2] -= o_->GetNextStatus().Data.Cuboid.Z / 2.0f;
+
+				max[0] += o_->GetNextStatus().Data.Cuboid.X / 2.0f;
+				max[1] += o_->GetNextStatus().Data.Cuboid.Y / 2.0f;
+				max[2] += o_->GetNextStatus().Data.Cuboid.Z / 2.0f;
+
+				float t = -FLT_MAX;
+				float t_max = FLT_MAX;
+
+				for (int k = 0; k < 3; ++k)
+				{
+					if (std::abs(d[k]) < FLT_EPSILON)
 					{
-						objs.push_back(o);
+						if (p[k] < min[k] || p[k] > max[k])
+						{
+							// 交差していない
+							continue;
+						}
+					}
+					else
+					{
+						// スラブとの距離を算出
+						// t1が近スラブ、t2が遠スラブとの距離
+						float odd = 1.0f / d[k];
+						float t1 = (min[k] - p[k]) * odd;
+						float t2 = (max[k] - p[k]) * odd;
+						if (t1 > t2)
+						{
+							float tmp = t1;
+							t1 = t2;
+							t2 = tmp;
+						}
+
+						if (t1 > t)
+							t = t1;
+						if (t2 < t_max)
+							t_max = t2;
+
+						// スラブ交差チェック
+						if (t >= t_max)
+						{
+							// 交差していない
+							continue;
+						}
 					}
 				}
-			}
 
-			/* 取得したグリッドを破棄 */
-			for (size_t i = 0; i < grids.size(); i++)
-			{
-				grids[i]->IsScanned = false;
+				// 交差している
+				if (0 <= t && t <= ray_len)
+				{
+					objs.push_back(o);
+					continue;
+				}
 			}
-
-			grids.clear();
 		}
-		
 	}
 
-	bool WorldInternal::Reassign()
+	/* 取得したグリッドを破棄 */
+	for (size_t i = 0; i < grids.size(); i++)
 	{
-		/* 数が少ない */
-		if (outofLayers.GetObjects().size() < 10) return false;
-
-		objs.clear();
-
-		for (size_t i = 0; i < layers.size(); i++)
-		{
-			delete layers[i];
-		}
-
-		layers.clear();
-		outofLayers.GetObjects().clear();
-		allLayers.GetObjects().clear();
-
-		outofLayers.IsScanned = false;
-		allLayers.IsScanned = false;
-
-		for (auto& it : containedObjects)
-		{
-			auto o = (ObjectInternal*) (it);
-			o->ObjectIndex = -1;
-		}
-
-		float xmin = FLT_MAX;
-		float xmax = -FLT_MAX;
-		float ymin = FLT_MAX;
-		float ymax = -FLT_MAX;
-		float zmin = FLT_MAX;
-		float zmax = -FLT_MAX;
-
-		for (auto& it : containedObjects)
-		{
-			ObjectInternal* o_ = (ObjectInternal*) it;
-			if (o_->GetNextStatus().Type == OBJECT_SHAPE_TYPE_ALL) continue;
-
-			if (xmin > o_->GetNextStatus().Position.X) xmin = o_->GetNextStatus().Position.X;
-			if (xmax < o_->GetNextStatus().Position.X) xmax = o_->GetNextStatus().Position.X;
-			if (ymin > o_->GetNextStatus().Position.Y) ymin = o_->GetNextStatus().Position.Y;
-			if (ymax < o_->GetNextStatus().Position.Y) ymax = o_->GetNextStatus().Position.Y;
-			if (zmin > o_->GetNextStatus().Position.Z) zmin = o_->GetNextStatus().Position.Z;
-			if (zmax < o_->GetNextStatus().Position.Z) zmax = o_->GetNextStatus().Position.Z;
-
-		}
-
-		auto xlen = Max(std::abs(xmax), std::abs(xmin)) * 2.0f;
-		auto ylen = Max(std::abs(ymax), std::abs(ymin)) * 2.0f;
-		auto zlen = Max(std::abs(zmax), std::abs(zmin)) * 2.0f;
-
-		WorldInternal(xlen, ylen, zlen, this->layerCount);
-
-		for (auto& it: containedObjects)
-		{
-			ObjectInternal* o_ = (ObjectInternal*) (it);
-			AddObjectInternal(o_);
-		}
-		return true;
+		grids[i]->IsScanned = false;
 	}
 
-	void WorldInternal::Dump(const char* path, const Matrix44& cameraProjMat, bool isOpenGL)
-	{
-		std::ofstream ofs(path);
+	grids.clear();
+}
 
-		/* カメラ情報出力 */
+void WorldInternal::Culling(const Matrix44& cameraProjMat, bool isOpenGL)
+{
+	objs.clear();
+
+	if (!std::isinf(cameraProjMat.Values[2][2]) &&
+		cameraProjMat.Values[0][0] != 0.0f &&
+		cameraProjMat.Values[1][1] != 0.0f)
+	{
+
 		Matrix44 cameraProjMatInv = cameraProjMat;
 		cameraProjMatInv.SetInverted();
 
@@ -3034,7 +3038,8 @@ namespace Culling3D
 
 		float maxz = 1.0f;
 		float minz = 0.0f;
-		if (isOpenGL) minz = -1.0f;
+		if (isOpenGL)
+			minz = -1.0f;
 
 		Vector3DF eyebox[8];
 
@@ -3053,12 +3058,29 @@ namespace Culling3D
 			eyebox[i] = cameraProjMatInv.Transform3D(eyebox[i]);
 		}
 
-		ofs << viewCullingXDiv << "," << viewCullingYDiv << "," << viewCullingZDiv << std::endl;
-		for (int32_t i = 0; i < 8; i++)
+		// 0-right 1-left 2-top 3-bottom 4-front 5-back
+		Vector3DF facePositions[6];
+		facePositions[0] = eyebox[5];
+		facePositions[1] = eyebox[4];
+		facePositions[2] = eyebox[6];
+		facePositions[3] = eyebox[4];
+		facePositions[4] = eyebox[4];
+		facePositions[5] = eyebox[0];
+
+		Vector3DF faceDir[6];
+		faceDir[0] = Vector3DF::Cross(eyebox[1] - eyebox[5], eyebox[7] - eyebox[5]);
+		faceDir[1] = Vector3DF::Cross(eyebox[6] - eyebox[4], eyebox[0] - eyebox[4]);
+
+		faceDir[2] = Vector3DF::Cross(eyebox[7] - eyebox[6], eyebox[2] - eyebox[6]);
+		faceDir[3] = Vector3DF::Cross(eyebox[0] - eyebox[4], eyebox[5] - eyebox[4]);
+
+		faceDir[4] = Vector3DF::Cross(eyebox[5] - eyebox[4], eyebox[6] - eyebox[4]);
+		faceDir[5] = Vector3DF::Cross(eyebox[2] - eyebox[0], eyebox[1] - eyebox[5]);
+
+		for (int32_t i = 0; i < 6; i++)
 		{
-			ofs << eyebox[i].X << "," << eyebox[i].Y << "," << eyebox[i].Z << std::endl;
+			faceDir[i].Normalize();
 		}
-		ofs << std::endl;
 
 		for (int32_t z = 0; z < viewCullingZDiv; z++)
 		{
@@ -3068,21 +3090,61 @@ namespace Culling3D
 				{
 					Vector3DF eyebox_[8];
 
-					float xsize = 1.0f / (float) viewCullingXDiv;
-					float ysize = 1.0f / (float) viewCullingYDiv;
-					float zsize = 1.0f / (float) viewCullingZDiv;
+					float xsize = 1.0f / (float)viewCullingXDiv;
+					float ysize = 1.0f / (float)viewCullingYDiv;
+					float zsize = 1.0f / (float)viewCullingZDiv;
 
 					for (int32_t e = 0; e < 8; e++)
 					{
 						float x_ = 0.0f, y_ = 0.0f, z_ = 0.0f;
-						if (e == 0){ x_ = xsize * x; y_ = ysize * y; z_ = zsize * z; }
-						if (e == 1){ x_ = xsize * (x + 1); y_ = ysize * y; z_ = zsize * z; }
-						if (e == 2){ x_ = xsize * x; y_ = ysize * (y + 1); z_ = zsize * z; }
-						if (e == 3){ x_ = xsize * (x + 1); y_ = ysize * (y + 1); z_ = zsize * z; }
-						if (e == 4){ x_ = xsize * x; y_ = ysize * y; z_ = zsize * (z + 1); }
-						if (e == 5){ x_ = xsize * (x + 1); y_ = ysize * y; z_ = zsize * (z + 1); }
-						if (e == 6){ x_ = xsize * x; y_ = ysize * (y + 1); z_ = zsize * (z + 1); }
-						if (e == 7){ x_ = xsize * (x + 1); y_ = ysize * (y + 1); z_ = zsize * (z + 1); }
+						if (e == 0)
+						{
+							x_ = xsize * x;
+							y_ = ysize * y;
+							z_ = zsize * z;
+						}
+						if (e == 1)
+						{
+							x_ = xsize * (x + 1);
+							y_ = ysize * y;
+							z_ = zsize * z;
+						}
+						if (e == 2)
+						{
+							x_ = xsize * x;
+							y_ = ysize * (y + 1);
+							z_ = zsize * z;
+						}
+						if (e == 3)
+						{
+							x_ = xsize * (x + 1);
+							y_ = ysize * (y + 1);
+							z_ = zsize * z;
+						}
+						if (e == 4)
+						{
+							x_ = xsize * x;
+							y_ = ysize * y;
+							z_ = zsize * (z + 1);
+						}
+						if (e == 5)
+						{
+							x_ = xsize * (x + 1);
+							y_ = ysize * y;
+							z_ = zsize * (z + 1);
+						}
+						if (e == 6)
+						{
+							x_ = xsize * x;
+							y_ = ysize * (y + 1);
+							z_ = zsize * (z + 1);
+						}
+						if (e == 7)
+						{
+							x_ = xsize * (x + 1);
+							y_ = ysize * (y + 1);
+							z_ = zsize * (z + 1);
+						}
 
 						Vector3DF yzMid[4];
 						yzMid[0] = eyebox[0] * x_ + eyebox[1] * (1.0f - x_);
@@ -3102,55 +3164,333 @@ namespace Culling3D
 
 					for (int32_t i = 0; i < 8; i++)
 					{
-						if (eyebox_[i].X > max_.X) max_.X = eyebox_[i].X;
-						if (eyebox_[i].Y > max_.Y) max_.Y = eyebox_[i].Y;
-						if (eyebox_[i].Z > max_.Z) max_.Z = eyebox_[i].Z;
+						if (eyebox_[i].X > max_.X)
+							max_.X = eyebox_[i].X;
+						if (eyebox_[i].Y > max_.Y)
+							max_.Y = eyebox_[i].Y;
+						if (eyebox_[i].Z > max_.Z)
+							max_.Z = eyebox_[i].Z;
 
-						if (eyebox_[i].X < min_.X) min_.X = eyebox_[i].X;
-						if (eyebox_[i].Y < min_.Y) min_.Y = eyebox_[i].Y;
-						if (eyebox_[i].Z < min_.Z) min_.Z = eyebox_[i].Z;
+						if (eyebox_[i].X < min_.X)
+							min_.X = eyebox_[i].X;
+						if (eyebox_[i].Y < min_.Y)
+							min_.Y = eyebox_[i].Y;
+						if (eyebox_[i].Z < min_.Z)
+							min_.Z = eyebox_[i].Z;
 					}
 
-					ofs << x << "," << y << "," << z << std::endl;
-					for (int32_t i = 0; i < 8; i++)
+					/* 範囲内に含まれるグリッドを取得 */
+					for (size_t i = 0; i < layers.size(); i++)
 					{
-						ofs << eyebox_[i].X << "," << eyebox_[i].Y << "," << eyebox_[i].Z << std::endl;
+						layers[i]->AddGrids(max_, min_, grids);
 					}
-					ofs << max_.X << "," << max_.Y << "," << max_.Z << std::endl;
-					ofs << min_.X << "," << min_.Y << "," << min_.Z << std::endl;
-					ofs << std::endl;
 				}
 			}
 		}
 
-		ofs << std::endl;
-	
-		/* レイヤー情報 */
-		ofs << layers.size() << std::endl;
+		/* 外領域追加 */
+		grids.push_back(&outofLayers);
+		grids.push_back(&allLayers);
 
-		for (size_t i = 0; i < layers.size(); i++)
+		/* グリッドからオブジェクト取得 */
+		for (size_t i = 0; i < grids.size(); i++)
 		{
-			auto& layer = layers[i];
-			ofs << layer->GetGridXCount() << "," << layer->GetGridYCount() << "," << layer->GetGridZCount() 
-				<< "," << layer->GetOffsetX() << "," << layer->GetOffsetY() << "," << layer->GetOffsetZ() << "," << layer->GetGridSize() << std::endl;
-		
-			for (size_t j = 0; j < layer->GetGrids().size(); j++)
+			for (size_t j = 0; j < grids[i]->GetObjects().size(); j++)
 			{
-				auto& grid = layer->GetGrids()[j];
+				Object* o = grids[i]->GetObjects()[j];
+				ObjectInternal* o_ = (ObjectInternal*)o;
 
-				if (grid.GetObjects().size() > 0)
+				if (
+					o_->GetNextStatus().Type == OBJECT_SHAPE_TYPE_ALL ||
+					IsInView(o_->GetPosition(), o_->GetNextStatus().GetRadius(), facePositions, faceDir))
 				{
-					ofs << j << "," << grid.GetObjects().size() << std::endl;
+					objs.push_back(o);
 				}
 			}
 		}
 
-		Culling(cameraProjMat, isOpenGL);
+		/* 取得したグリッドを破棄 */
+		for (size_t i = 0; i < grids.size(); i++)
+		{
+			grids[i]->IsScanned = false;
+		}
 
+		grids.clear();
+	}
+	else
+	{
+		grids.push_back(&allLayers);
 
+		/* グリッドからオブジェクト取得 */
+		for (size_t i = 0; i < grids.size(); i++)
+		{
+			for (size_t j = 0; j < grids[i]->GetObjects().size(); j++)
+			{
+				Object* o = grids[i]->GetObjects()[j];
+				ObjectInternal* o_ = (ObjectInternal*)o;
+
+				if (o_->GetNextStatus().Type == OBJECT_SHAPE_TYPE_ALL)
+				{
+					objs.push_back(o);
+				}
+			}
+		}
+
+		/* 取得したグリッドを破棄 */
+		for (size_t i = 0; i < grids.size(); i++)
+		{
+			grids[i]->IsScanned = false;
+		}
+
+		grids.clear();
 	}
 }
 
+bool WorldInternal::Reassign()
+{
+	/* 数が少ない */
+	if (outofLayers.GetObjects().size() < 10)
+		return false;
+
+	objs.clear();
+
+	for (size_t i = 0; i < layers.size(); i++)
+	{
+		delete layers[i];
+	}
+
+	layers.clear();
+	outofLayers.GetObjects().clear();
+	allLayers.GetObjects().clear();
+
+	outofLayers.IsScanned = false;
+	allLayers.IsScanned = false;
+
+	for (auto& it : containedObjects)
+	{
+		auto o = (ObjectInternal*)(it);
+		o->ObjectIndex = -1;
+	}
+
+	float xmin = FLT_MAX;
+	float xmax = -FLT_MAX;
+	float ymin = FLT_MAX;
+	float ymax = -FLT_MAX;
+	float zmin = FLT_MAX;
+	float zmax = -FLT_MAX;
+
+	for (auto& it : containedObjects)
+	{
+		ObjectInternal* o_ = (ObjectInternal*)it;
+		if (o_->GetNextStatus().Type == OBJECT_SHAPE_TYPE_ALL)
+			continue;
+
+		if (xmin > o_->GetNextStatus().Position.X)
+			xmin = o_->GetNextStatus().Position.X;
+		if (xmax < o_->GetNextStatus().Position.X)
+			xmax = o_->GetNextStatus().Position.X;
+		if (ymin > o_->GetNextStatus().Position.Y)
+			ymin = o_->GetNextStatus().Position.Y;
+		if (ymax < o_->GetNextStatus().Position.Y)
+			ymax = o_->GetNextStatus().Position.Y;
+		if (zmin > o_->GetNextStatus().Position.Z)
+			zmin = o_->GetNextStatus().Position.Z;
+		if (zmax < o_->GetNextStatus().Position.Z)
+			zmax = o_->GetNextStatus().Position.Z;
+	}
+
+	auto xlen = Max(std::abs(xmax), std::abs(xmin)) * 2.0f;
+	auto ylen = Max(std::abs(ymax), std::abs(ymin)) * 2.0f;
+	auto zlen = Max(std::abs(zmax), std::abs(zmin)) * 2.0f;
+
+	WorldInternal(xlen, ylen, zlen, this->layerCount);
+
+	for (auto& it : containedObjects)
+	{
+		ObjectInternal* o_ = (ObjectInternal*)(it);
+		AddObjectInternal(o_);
+	}
+	return true;
+}
+
+void WorldInternal::Dump(const char* path, const Matrix44& cameraProjMat, bool isOpenGL)
+{
+	std::ofstream ofs(path);
+
+	/* カメラ情報出力 */
+	Matrix44 cameraProjMatInv = cameraProjMat;
+	cameraProjMatInv.SetInverted();
+
+	float maxx = 1.0f;
+	float minx = -1.0f;
+
+	float maxy = 1.0f;
+	float miny = -1.0f;
+
+	float maxz = 1.0f;
+	float minz = 0.0f;
+	if (isOpenGL)
+		minz = -1.0f;
+
+	Vector3DF eyebox[8];
+
+	eyebox[0 + 0] = Vector3DF(minx, miny, maxz);
+	eyebox[1 + 0] = Vector3DF(maxx, miny, maxz);
+	eyebox[2 + 0] = Vector3DF(minx, maxy, maxz);
+	eyebox[3 + 0] = Vector3DF(maxx, maxy, maxz);
+
+	eyebox[0 + 4] = Vector3DF(minx, miny, minz);
+	eyebox[1 + 4] = Vector3DF(maxx, miny, minz);
+	eyebox[2 + 4] = Vector3DF(minx, maxy, minz);
+	eyebox[3 + 4] = Vector3DF(maxx, maxy, minz);
+
+	for (int32_t i = 0; i < 8; i++)
+	{
+		eyebox[i] = cameraProjMatInv.Transform3D(eyebox[i]);
+	}
+
+	ofs << viewCullingXDiv << "," << viewCullingYDiv << "," << viewCullingZDiv << std::endl;
+	for (int32_t i = 0; i < 8; i++)
+	{
+		ofs << eyebox[i].X << "," << eyebox[i].Y << "," << eyebox[i].Z << std::endl;
+	}
+	ofs << std::endl;
+
+	for (int32_t z = 0; z < viewCullingZDiv; z++)
+	{
+		for (int32_t y = 0; y < viewCullingYDiv; y++)
+		{
+			for (int32_t x = 0; x < viewCullingXDiv; x++)
+			{
+				Vector3DF eyebox_[8];
+
+				float xsize = 1.0f / (float)viewCullingXDiv;
+				float ysize = 1.0f / (float)viewCullingYDiv;
+				float zsize = 1.0f / (float)viewCullingZDiv;
+
+				for (int32_t e = 0; e < 8; e++)
+				{
+					float x_ = 0.0f, y_ = 0.0f, z_ = 0.0f;
+					if (e == 0)
+					{
+						x_ = xsize * x;
+						y_ = ysize * y;
+						z_ = zsize * z;
+					}
+					if (e == 1)
+					{
+						x_ = xsize * (x + 1);
+						y_ = ysize * y;
+						z_ = zsize * z;
+					}
+					if (e == 2)
+					{
+						x_ = xsize * x;
+						y_ = ysize * (y + 1);
+						z_ = zsize * z;
+					}
+					if (e == 3)
+					{
+						x_ = xsize * (x + 1);
+						y_ = ysize * (y + 1);
+						z_ = zsize * z;
+					}
+					if (e == 4)
+					{
+						x_ = xsize * x;
+						y_ = ysize * y;
+						z_ = zsize * (z + 1);
+					}
+					if (e == 5)
+					{
+						x_ = xsize * (x + 1);
+						y_ = ysize * y;
+						z_ = zsize * (z + 1);
+					}
+					if (e == 6)
+					{
+						x_ = xsize * x;
+						y_ = ysize * (y + 1);
+						z_ = zsize * (z + 1);
+					}
+					if (e == 7)
+					{
+						x_ = xsize * (x + 1);
+						y_ = ysize * (y + 1);
+						z_ = zsize * (z + 1);
+					}
+
+					Vector3DF yzMid[4];
+					yzMid[0] = eyebox[0] * x_ + eyebox[1] * (1.0f - x_);
+					yzMid[1] = eyebox[2] * x_ + eyebox[3] * (1.0f - x_);
+					yzMid[2] = eyebox[4] * x_ + eyebox[5] * (1.0f - x_);
+					yzMid[3] = eyebox[6] * x_ + eyebox[7] * (1.0f - x_);
+
+					Vector3DF zMid[2];
+					zMid[0] = yzMid[0] * y_ + yzMid[1] * (1.0f - y_);
+					zMid[1] = yzMid[2] * y_ + yzMid[3] * (1.0f - y_);
+
+					eyebox_[e] = zMid[0] * z_ + zMid[1] * (1.0f - z_);
+				}
+
+				Vector3DF max_(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+				Vector3DF min_(FLT_MAX, FLT_MAX, FLT_MAX);
+
+				for (int32_t i = 0; i < 8; i++)
+				{
+					if (eyebox_[i].X > max_.X)
+						max_.X = eyebox_[i].X;
+					if (eyebox_[i].Y > max_.Y)
+						max_.Y = eyebox_[i].Y;
+					if (eyebox_[i].Z > max_.Z)
+						max_.Z = eyebox_[i].Z;
+
+					if (eyebox_[i].X < min_.X)
+						min_.X = eyebox_[i].X;
+					if (eyebox_[i].Y < min_.Y)
+						min_.Y = eyebox_[i].Y;
+					if (eyebox_[i].Z < min_.Z)
+						min_.Z = eyebox_[i].Z;
+				}
+
+				ofs << x << "," << y << "," << z << std::endl;
+				for (int32_t i = 0; i < 8; i++)
+				{
+					ofs << eyebox_[i].X << "," << eyebox_[i].Y << "," << eyebox_[i].Z << std::endl;
+				}
+				ofs << max_.X << "," << max_.Y << "," << max_.Z << std::endl;
+				ofs << min_.X << "," << min_.Y << "," << min_.Z << std::endl;
+				ofs << std::endl;
+			}
+		}
+	}
+
+	ofs << std::endl;
+
+	/* レイヤー情報 */
+	ofs << layers.size() << std::endl;
+
+	for (size_t i = 0; i < layers.size(); i++)
+	{
+		auto& layer = layers[i];
+		ofs << layer->GetGridXCount() << "," << layer->GetGridYCount() << "," << layer->GetGridZCount()
+			<< "," << layer->GetOffsetX() << "," << layer->GetOffsetY() << "," << layer->GetOffsetZ() << "," << layer->GetGridSize() << std::endl;
+
+		for (size_t j = 0; j < layer->GetGrids().size(); j++)
+		{
+			auto& grid = layer->GetGrids()[j];
+
+			if (grid.GetObjects().size() > 0)
+			{
+				ofs << j << "," << grid.GetObjects().size() << std::endl;
+			}
+		}
+	}
+
+	Culling(cameraProjMat, isOpenGL);
+}
+} // namespace Culling3D
+
 
 
 //----------------------------------------------------------------------------------
@@ -3160,31 +3500,30 @@ namespace Culling3D
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-namespace Effekseer { 
+namespace Effekseer
+{
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
 Vector2D::Vector2D()
-	: X		( 0.0f )
-	, Y		( 0.0f )
+	: X(0.0f)
+	, Y(0.0f)
 {
-
 }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-Vector2D::Vector2D( float x, float y )
-	: X		( x )
-	, Y		( y )
+Vector2D::Vector2D(float x, float y)
+	: X(x)
+	, Y(y)
 {
-
 }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-Vector2D& Vector2D::operator+=( const Vector2D& value )
+Vector2D& Vector2D::operator+=(const Vector2D& value)
 {
 	X += value.X;
 	Y += value.Y;
@@ -3194,10 +3533,10 @@ Vector2D& Vector2D::operator+=( const Vector2D& value )
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
- } 
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
+} // namespace Effekseer
+  //----------------------------------------------------------------------------------
+  //
+  //----------------------------------------------------------------------------------
 
 
 //----------------------------------------------------------------------------------
@@ -3209,28 +3548,27 @@ Vector2D& Vector2D::operator+=( const Vector2D& value )
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-namespace Effekseer {
+namespace Effekseer
+{
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
 Vector3D::Vector3D()
-	: X		( 0.0f )
-	, Y		( 0.0f )
-	, Z		( 0.0f )
+	: X(0.0f)
+	, Y(0.0f)
+	, Z(0.0f)
 {
-
 }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-Vector3D::Vector3D( float x, float y, float z )
-	: X		( x )
-	, Y		( y )
-	, Z		( z )
+Vector3D::Vector3D(float x, float y, float z)
+	: X(x)
+	, Y(y)
+	, Z(z)
 {
-
 }
 
 Vector3D Vector3D::operator-()
@@ -3238,46 +3576,46 @@ Vector3D Vector3D::operator-()
 	return Vector3D(-X, -Y, -Z);
 }
 
-Vector3D Vector3D::operator + ( const Vector3D& o ) const
+Vector3D Vector3D::operator+(const Vector3D& o) const
 {
-	return Vector3D( X + o.X, Y + o.Y, Z + o.Z );
+	return Vector3D(X + o.X, Y + o.Y, Z + o.Z);
 }
 
 //-----------------------------------------------------------------------------------
 //
 //-----------------------------------------------------------------------------------
-Vector3D Vector3D::operator - ( const Vector3D& o ) const
+Vector3D Vector3D::operator-(const Vector3D& o) const
 {
-	return Vector3D( X - o.X, Y - o.Y, Z - o.Z );
+	return Vector3D(X - o.X, Y - o.Y, Z - o.Z);
 }
 
 //-----------------------------------------------------------------------------------
 //
 //-----------------------------------------------------------------------------------
-Vector3D Vector3D::operator * ( const float& o ) const
+Vector3D Vector3D::operator*(const float& o) const
 {
-	return Vector3D( X * o, Y * o, Z * o );
+	return Vector3D(X * o, Y * o, Z * o);
 }
 
 //-----------------------------------------------------------------------------------
 //
 //-----------------------------------------------------------------------------------
-Vector3D Vector3D::operator / ( const float& o ) const
+Vector3D Vector3D::operator/(const float& o) const
 {
-	return Vector3D( X / o, Y / o, Z / o );
+	return Vector3D(X / o, Y / o, Z / o);
 }
 
-Vector3D Vector3D::operator * (const Vector3D& o) const
+Vector3D Vector3D::operator*(const Vector3D& o) const
 {
 	return Vector3D(X * o.X, Y * o.Y, Z * o.Z);
 }
 
-Vector3D Vector3D::operator / (const Vector3D& o) const
+Vector3D Vector3D::operator/(const Vector3D& o) const
 {
 	return Vector3D(X / o.X, Y / o.Y, Z / o.Z);
 }
 
-bool Vector3D::operator == (const Vector3D& o)
+bool Vector3D::operator==(const Vector3D& o)
 {
 	return this->X == o.X && this->Y == o.Y && this->Z == o.Z;
 }
@@ -3285,7 +3623,7 @@ bool Vector3D::operator == (const Vector3D& o)
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void Vector3D::Add( Vector3D* pOut, const Vector3D* pIn1, const Vector3D* pIn2 )
+void Vector3D::Add(Vector3D* pOut, const Vector3D* pIn1, const Vector3D* pIn2)
 {
 	float x = pIn1->X + pIn2->X;
 	float y = pIn1->Y + pIn2->Y;
@@ -3298,7 +3636,7 @@ void Vector3D::Add( Vector3D* pOut, const Vector3D* pIn1, const Vector3D* pIn2 )
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-Vector3D& Vector3D::Sub( Vector3D& o, const Vector3D& in1, const Vector3D& in2 )
+Vector3D& Vector3D::Sub(Vector3D& o, const Vector3D& in1, const Vector3D& in2)
 {
 	o.X = in1.X - in2.X;
 	o.Y = in1.Y - in2.Y;
@@ -3309,7 +3647,7 @@ Vector3D& Vector3D::Sub( Vector3D& o, const Vector3D& in1, const Vector3D& in2 )
 //-----------------------------------------------------------------------------------
 //
 //-----------------------------------------------------------------------------------
-Vector3D& Vector3D::operator += ( const Vector3D& o )
+Vector3D& Vector3D::operator+=(const Vector3D& o)
 {
 	X += o.X;
 	Y += o.Y;
@@ -3320,7 +3658,7 @@ Vector3D& Vector3D::operator += ( const Vector3D& o )
 //-----------------------------------------------------------------------------------
 //
 //-----------------------------------------------------------------------------------
-Vector3D& Vector3D::operator -= ( const Vector3D& o )
+Vector3D& Vector3D::operator-=(const Vector3D& o)
 {
 	X -= o.X;
 	Y -= o.Y;
@@ -3331,7 +3669,7 @@ Vector3D& Vector3D::operator -= ( const Vector3D& o )
 //-----------------------------------------------------------------------------------
 //
 //-----------------------------------------------------------------------------------
-Vector3D& Vector3D::operator *= ( const float& o )
+Vector3D& Vector3D::operator*=(const float& o)
 {
 	X *= o;
 	Y *= o;
@@ -3342,7 +3680,7 @@ Vector3D& Vector3D::operator *= ( const float& o )
 //-----------------------------------------------------------------------------------
 //
 //-----------------------------------------------------------------------------------
-Vector3D& Vector3D::operator /= ( const float& o )
+Vector3D& Vector3D::operator/=(const float& o)
 {
 	X /= o;
 	Y /= o;
@@ -3353,15 +3691,15 @@ Vector3D& Vector3D::operator /= ( const float& o )
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-float Vector3D::Length( const Vector3D& in )
+float Vector3D::Length(const Vector3D& in)
 {
-	return sqrt( in.X * in.X + in.Y * in.Y + in.Z * in.Z );
+	return sqrt(in.X * in.X + in.Y * in.Y + in.Z * in.Z);
 }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-float Vector3D::LengthSq( const Vector3D& in )
+float Vector3D::LengthSq(const Vector3D& in)
 {
 	return in.X * in.X + in.Y * in.Y + in.Z * in.Z;
 }
@@ -3369,7 +3707,7 @@ float Vector3D::LengthSq( const Vector3D& in )
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-float Vector3D::Dot( const Vector3D& in1, const Vector3D& in2 )
+float Vector3D::Dot(const Vector3D& in1, const Vector3D& in2)
 {
 	return in1.X * in2.X + in1.Y * in2.Y + in1.Z * in2.Z;
 }
@@ -3377,9 +3715,9 @@ float Vector3D::Dot( const Vector3D& in1, const Vector3D& in2 )
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void Vector3D::Normal( Vector3D& o, const Vector3D& in )
+void Vector3D::Normal(Vector3D& o, const Vector3D& in)
 {
-	float inv = Rsqrt( in.X * in.X + in.Y * in.Y + in.Z * in.Z );
+	float inv = Rsqrt(in.X * in.X + in.Y * in.Y + in.Z * in.Z);
 	o.X = in.X * inv;
 	o.Y = in.Y * inv;
 	o.Z = in.Z * inv;
@@ -3388,7 +3726,7 @@ void Vector3D::Normal( Vector3D& o, const Vector3D& in )
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-Vector3D& Vector3D::Cross( Vector3D& o, const Vector3D& in1, const Vector3D& in2 )
+Vector3D& Vector3D::Cross(Vector3D& o, const Vector3D& in1, const Vector3D& in2)
 {
 	float x = in1.Y * in2.Z - in1.Z * in2.Y;
 	float y = in1.Z * in2.X - in1.X * in2.Z;
@@ -3402,10 +3740,10 @@ Vector3D& Vector3D::Cross( Vector3D& o, const Vector3D& in1, const Vector3D& in2
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-Vector3D& Vector3D::Transform( Vector3D& o, const Vector3D& in, const Matrix43& mat )
+Vector3D& Vector3D::Transform(Vector3D& o, const Vector3D& in, const Matrix43& mat)
 {
 	float values[4];
-	for( int i = 0; i < 3; i++ )
+	for (int i = 0; i < 3; i++)
 	{
 		values[i] = 0;
 		values[i] += in.X * mat.Value[0][i];
@@ -3422,11 +3760,11 @@ Vector3D& Vector3D::Transform( Vector3D& o, const Vector3D& in, const Matrix43& 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-Vector3D& Vector3D::Transform( Vector3D& o, const Vector3D& in, const Matrix44& mat )
+Vector3D& Vector3D::Transform(Vector3D& o, const Vector3D& in, const Matrix44& mat)
 {
 	float values[3];
 
-	for( int i = 0; i < 3; i++ )
+	for (int i = 0; i < 3; i++)
 	{
 		values[i] = 0;
 		values[i] += in.X * mat.Values[0][i];
@@ -3463,10 +3801,10 @@ Vector3D& Vector3D::TransformWithW(Vector3D& o, const Vector3D& in, const Matrix
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
- } 
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
+} // namespace Effekseer
+  //----------------------------------------------------------------------------------
+  //
+  //----------------------------------------------------------------------------------
 
 
 //----------------------------------------------------------------------------------
@@ -3491,18 +3829,18 @@ namespace Effekseer
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-Color::Color( uint8_t r, uint8_t g, uint8_t b, uint8_t a )
-	: R	( r )
-	, G	( g )
-	, B	( b )
-	, A	( a )
+Color::Color(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
+	: R(r)
+	, G(g)
+	, B(b)
+	, A(a)
 {
 }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-Color Color::Mul( Color in1, Color in2 )
+Color Color::Mul(Color in1, Color in2)
 {
 #if defined(EFK_SSE2)
 	__m128i s1 = _mm_cvtsi32_si128(*(int32_t*)&in1);
@@ -3518,7 +3856,7 @@ Color Color::Mul( Color in1, Color in2 )
 	__m128i r2 = _mm_and_si128(r0, mask);
 	__m128i r3 = _mm_or_si128(r2, r1);
 	__m128i res = _mm_packus_epi16(r3, zero);
-	
+
 	Color o;
 	*(int*)&o = _mm_cvtsi128_si32(res);
 	return o;
@@ -3533,7 +3871,7 @@ Color Color::Mul( Color in1, Color in2 )
 	uint16x8_t r2 = vandq_u16(r0, mask);
 	uint16x8_t r3 = vorrq_u16(r2, r1);
 	uint8x8_t res = vqmovn_u16(r3);
-	
+
 	Color o;
 	*(uint32_t*)&o = vget_lane_u32(vreinterpret_u32_u8(res), 0);
 	return o;
@@ -3550,19 +3888,19 @@ Color Color::Mul( Color in1, Color in2 )
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-Color Color::Mul( Color in1, float in2 )
+Color Color::Mul(Color in1, float in2)
 {
 #if defined(EFK_SSE2)
 	__m128i s1 = _mm_cvtsi32_si128(*(int32_t*)&in1);
 	__m128i s2 = _mm_set1_epi16((int16_t)(in2 * 256));
 	__m128i zero = _mm_setzero_si128();
-	
+
 	s1 = _mm_unpacklo_epi8(s1, zero);
 
 	__m128i res = _mm_mullo_epi16(s1, s2);
 	res = _mm_srli_epi16(res, 8);
 	res = _mm_packus_epi16(res, zero);
-	
+
 	Color o;
 	*(int*)&o = _mm_cvtsi128_si32(res);
 	return o;
@@ -3573,7 +3911,7 @@ Color Color::Mul( Color in1, float in2 )
 	uint16x8_t r0 = vmulq_u16(s3, s2);
 	uint16x8_t r1 = vshrq_n_u16(r0, 8);
 	uint8x8_t res = vqmovn_u16(r1);
-	
+
 	Color o;
 	*(uint32_t*)&o = vget_lane_u32(vreinterpret_u32_u8(res), 0);
 	return o;
@@ -3590,7 +3928,7 @@ Color Color::Mul( Color in1, float in2 )
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-Color Color::Lerp( const Color in1, const Color in2, float t )
+Color Color::Lerp(const Color in1, const Color in2, float t)
 {
 	/*
 #if defined(EFK_SSE2)
@@ -3648,18 +3986,18 @@ Color Color::Lerp( const Color in1, const Color in2, float t )
 #else
 	*/
 	Color o;
-	o.R = (uint8_t)Clamp( in1.R + (in2.R - in1.R) * t, 255, 0 );
-	o.G = (uint8_t)Clamp( in1.G + (in2.G - in1.G) * t, 255, 0 );
-	o.B = (uint8_t)Clamp( in1.B + (in2.B - in1.B) * t, 255, 0 );
-	o.A = (uint8_t)Clamp( in1.A + (in2.A - in1.A) * t, 255, 0 );
+	o.R = (uint8_t)Clamp(in1.R + (in2.R - in1.R) * t, 255, 0);
+	o.G = (uint8_t)Clamp(in1.G + (in2.G - in1.G) * t, 255, 0);
+	o.B = (uint8_t)Clamp(in1.B + (in2.B - in1.B) * t, 255, 0);
+	o.A = (uint8_t)Clamp(in1.A + (in2.A - in1.A) * t, 255, 0);
 	return o;
-//#endif
+	//#endif
 }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-}
+} // namespace Effekseer
 
 //----------------------------------------------------------------------------------
 //
@@ -3672,26 +4010,27 @@ Color Color::Lerp( const Color in1, const Color in2, float t )
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-namespace Effekseer { 
+namespace Effekseer
+{
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
 RectF::RectF()
-	: X			( 0.0f )
-	, Y			( 0.0f )
-	, Width		( 1.0f )
-	, Height	( 1.0f )
+	: X(0.0f)
+	, Y(0.0f)
+	, Width(1.0f)
+	, Height(1.0f)
 {
 }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-RectF::RectF( float x, float y, float width, float height )
-	: X			( x )
-	, Y			( y )
-	, Width		( width )
-	, Height	( height )
+RectF::RectF(float x, float y, float width, float height)
+	: X(x)
+	, Y(y)
+	, Width(width)
+	, Height(height)
 {
 }
 
@@ -3700,7 +4039,7 @@ RectF::RectF( float x, float y, float width, float height )
 //----------------------------------------------------------------------------------
 Vector2D RectF::Position() const
 {
-	return Vector2D( X, Y );
+	return Vector2D(X, Y);
 }
 
 //----------------------------------------------------------------------------------
@@ -3708,16 +4047,16 @@ Vector2D RectF::Position() const
 //----------------------------------------------------------------------------------
 Vector2D RectF::Size() const
 {
-	return Vector2D( Width, Height );
+	return Vector2D(Width, Height);
 }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
- } 
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
+} // namespace Effekseer
+  //----------------------------------------------------------------------------------
+  //
+  //----------------------------------------------------------------------------------
 
 
 //----------------------------------------------------------------------------------
@@ -3745,28 +4084,27 @@ Vector2D RectF::Size() const
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-namespace Effekseer {
+namespace Effekseer
+{
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
 void Matrix43::Indentity()
 {
-	static const Matrix43 indentity = {{
-		{1.0f, 0.0f, 0.0f}, 
-		{0.0f, 1.0f, 0.0f}, 
-		{0.0f, 0.0f, 1.0f},
-		{0.0f, 0.0f, 0.0f}
-	}};
-	memcpy( Value, indentity.Value, sizeof(indentity) );
+	static const Matrix43 indentity = {{{1.0f, 0.0f, 0.0f},
+										{0.0f, 1.0f, 0.0f},
+										{0.0f, 0.0f, 1.0f},
+										{0.0f, 0.0f, 0.0f}}};
+	memcpy(Value, indentity.Value, sizeof(indentity));
 }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void Matrix43::Scaling( float x, float y, float z )
+void Matrix43::Scaling(float x, float y, float z)
 {
-	memset( Value, 0, sizeof(float) * 12 );
+	memset(Value, 0, sizeof(float) * 12);
 	Value[0][0] = x;
 	Value[1][1] = y;
 	Value[2][2] = z;
@@ -3775,10 +4113,10 @@ void Matrix43::Scaling( float x, float y, float z )
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void Matrix43::RotationX( float angle )
+void Matrix43::RotationX(float angle)
 {
 	float c, s;
-	::Effekseer::SinCos( angle, s, c );
+	::Effekseer::SinCos(angle, s, c);
 
 	Value[0][0] = 1.0f;
 	Value[0][1] = 0.0f;
@@ -3800,10 +4138,10 @@ void Matrix43::RotationX( float angle )
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void Matrix43::RotationY( float angle )
+void Matrix43::RotationY(float angle)
 {
 	float c, s;
-	::Effekseer::SinCos( angle, s, c );
+	::Effekseer::SinCos(angle, s, c);
 
 	Value[0][0] = c;
 	Value[0][1] = 0.0f;
@@ -3825,10 +4163,10 @@ void Matrix43::RotationY( float angle )
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void Matrix43::RotationZ( float angle )
+void Matrix43::RotationZ(float angle)
 {
 	float c, s;
-	::Effekseer::SinCos( angle, s, c );
+	::Effekseer::SinCos(angle, s, c);
 
 	Value[0][0] = c;
 	Value[0][1] = s;
@@ -3849,31 +4187,31 @@ void Matrix43::RotationZ( float angle )
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void Matrix43::RotationXYZ( float rx, float ry, float rz )
+void Matrix43::RotationXYZ(float rx, float ry, float rz)
 {
 	float cx, sx, cy, sy, cz, sz;
-	
-	if( rx != 0.0f )
+
+	if (rx != 0.0f)
 	{
-		::Effekseer::SinCos( rx, sx, cx );
+		::Effekseer::SinCos(rx, sx, cx);
 	}
 	else
 	{
 		sx = 0.0f;
 		cx = 1.0f;
 	}
-	if( ry != 0.0f )
+	if (ry != 0.0f)
 	{
-		::Effekseer::SinCos( ry, sy, cy );
+		::Effekseer::SinCos(ry, sy, cy);
 	}
 	else
 	{
 		sy = 0.0f;
 		cy = 1.0f;
 	}
-	if( rz != 0.0f )
+	if (rz != 0.0f)
 	{
-		::Effekseer::SinCos( rz, sz, cz );
+		::Effekseer::SinCos(rz, sz, cz);
 	}
 	else
 	{
@@ -3886,7 +4224,7 @@ void Matrix43::RotationXYZ( float rx, float ry, float rz )
 	Value[0][2] = -sy;
 
 	Value[1][0] = sx * sy * -sz + cx * -sz;
-	Value[1][1] = sx * sy *  sz + cx *  cz;
+	Value[1][1] = sx * sy * sz + cx * cz;
 	Value[1][2] = sx * cy;
 
 	Value[2][0] = cx * sy * cz + sx * sz;
@@ -3901,38 +4239,38 @@ void Matrix43::RotationXYZ( float rx, float ry, float rz )
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void Matrix43::RotationZXY( float rz, float rx, float ry )
+void Matrix43::RotationZXY(float rz, float rx, float ry)
 {
 	float cx, sx, cy, sy, cz, sz;
 
-	if( rx != 0.0f )
+	if (rx != 0.0f)
 	{
-		::Effekseer::SinCos( rx, sx, cx );
+		::Effekseer::SinCos(rx, sx, cx);
 	}
 	else
 	{
 		sx = 0.0f;
 		cx = 1.0f;
 	}
-	if( ry != 0.0f )
+	if (ry != 0.0f)
 	{
-		::Effekseer::SinCos( ry, sy, cy );
+		::Effekseer::SinCos(ry, sy, cy);
 	}
 	else
 	{
 		sy = 0.0f;
 		cy = 1.0f;
 	}
-	if( rz != 0.0f )
+	if (rz != 0.0f)
 	{
-		::Effekseer::SinCos( rz, sz, cz );
+		::Effekseer::SinCos(rz, sz, cz);
 	}
 	else
 	{
 		sz = 0.0f;
 		cz = 1.0f;
 	}
-	
+
 	Value[0][0] = cz * cy + sz * sx * sy;
 	Value[0][1] = sz * cx;
 	Value[0][2] = cz * -sy + sz * sx * cy;
@@ -3944,7 +4282,7 @@ void Matrix43::RotationZXY( float rz, float rx, float ry )
 	Value[2][0] = cx * sy;
 	Value[2][1] = -sx;
 	Value[2][2] = cx * cy;
-	
+
 	Value[3][0] = 0.0f;
 	Value[3][1] = 0.0f;
 	Value[3][2] = 0.0f;
@@ -3952,10 +4290,10 @@ void Matrix43::RotationZXY( float rz, float rx, float ry )
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void Matrix43::RotationAxis( const Vector3D& axis, float angle )
+void Matrix43::RotationAxis(const Vector3D& axis, float angle)
 {
-	const float c = cosf( angle );
-	const float s = sinf( angle );
+	const float c = cosf(angle);
+	const float s = sinf(angle);
 	const float cc = 1.0f - c;
 
 	Value[0][0] = cc * (axis.X * axis.X) + c;
@@ -3978,7 +4316,7 @@ void Matrix43::RotationAxis( const Vector3D& axis, float angle )
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void Matrix43::RotationAxis( const Vector3D& axis, float s, float c )
+void Matrix43::RotationAxis(const Vector3D& axis, float s, float c)
 {
 	const float cc = 1.0f - c;
 
@@ -4002,7 +4340,7 @@ void Matrix43::RotationAxis( const Vector3D& axis, float s, float c )
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void Matrix43::Translation( float x, float y, float z )
+void Matrix43::Translation(float x, float y, float z)
 {
 	Indentity();
 	Value[3][0] = x;
@@ -4013,7 +4351,7 @@ void Matrix43::Translation( float x, float y, float z )
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void Matrix43::GetSRT( Vector3D& s, Matrix43& r, Vector3D& t ) const
+void Matrix43::GetSRT(Vector3D& s, Matrix43& r, Vector3D& t) const
 {
 #if defined(EFK_SSE2)
 	t.X = Value[3][0];
@@ -4034,7 +4372,8 @@ void Matrix43::GetSRT( Vector3D& s, Matrix43& r, Vector3D& t ) const
 	__m128 vscq = _mm_add_ps(_mm_add_ps(s0, s1), s2);
 	__m128 vsc = _mm_sqrt_ps(vscq);
 	__m128 vscr = _mm_div_ps(vsc, vscq);
-	EFK_ALIGN_AS(16) float sc[4];
+	EFK_ALIGN_AS(16)
+	float sc[4];
 	_mm_store_ps(sc, vsc);
 	s.X = sc[0];
 	s.Y = sc[1];
@@ -4078,20 +4417,20 @@ void Matrix43::GetSRT( Vector3D& s, Matrix43& r, Vector3D& t ) const
 	t.X = Value[3][0];
 	t.Y = Value[3][1];
 	t.Z = Value[3][2];
-	
+
 	float sc[3];
-	for( int m = 0; m < 3; m++ )
+	for (int m = 0; m < 3; m++)
 	{
-		sc[m] = std::sqrt( Value[m][0] * Value[m][0] + Value[m][1] * Value[m][1] + Value[m][2] * Value[m][2] );
+		sc[m] = std::sqrt(Value[m][0] * Value[m][0] + Value[m][1] * Value[m][1] + Value[m][2] * Value[m][2]);
 	}
-	
+
 	s.X = sc[0];
 	s.Y = sc[1];
 	s.Z = sc[2];
-	
-	for( int m = 0; m < 3; m++ )
+
+	for (int m = 0; m < 3; m++)
 	{
-		for( int n = 0; n < 3; n++ )
+		for (int n = 0; n < 3; n++)
 		{
 			r.Value[m][n] = Value[m][n] / sc[m];
 		}
@@ -4105,7 +4444,7 @@ void Matrix43::GetSRT( Vector3D& s, Matrix43& r, Vector3D& t ) const
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void Matrix43::GetScale( Vector3D& s ) const
+void Matrix43::GetScale(Vector3D& s) const
 {
 #ifdef SSE_MODULE
 	Mat44f mat;
@@ -4149,7 +4488,8 @@ void Matrix43::GetScale( Vector3D& s ) const
 	s2 = _mm_mul_ps(s2, s2);
 	__m128 vscq = _mm_add_ps(_mm_add_ps(s0, s1), s2);
 	__m128 sc_v = _mm_sqrt_ps(vscq);
-	EFK_ALIGN_AS(16) float sc[4];
+	EFK_ALIGN_AS(16)
+	float sc[4];
 	_mm_store_ps(sc, sc_v);
 	s.X = sc[0];
 	s.Y = sc[1];
@@ -4169,11 +4509,11 @@ void Matrix43::GetScale( Vector3D& s ) const
 	s.Z = sc[2];
 #else
 	float sc[3];
-	for( int m = 0; m < 3; m++ )
+	for (int m = 0; m < 3; m++)
 	{
-		sc[m] = std::sqrt( Value[m][0] * Value[m][0] + Value[m][1] * Value[m][1] + Value[m][2] * Value[m][2] );
+		sc[m] = std::sqrt(Value[m][0] * Value[m][0] + Value[m][1] * Value[m][1] + Value[m][2] * Value[m][2]);
 	}
-	
+
 	s.X = sc[0];
 	s.Y = sc[1];
 	s.Z = sc[2];
@@ -4185,7 +4525,7 @@ void Matrix43::GetScale( Vector3D& s ) const
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void Matrix43::GetRotation( Matrix43& r ) const
+void Matrix43::GetRotation(Matrix43& r) const
 {
 #if defined(EFK_SSE2)
 	__m128 v0 = _mm_loadu_ps(&Value[0][0]);
@@ -4229,14 +4569,14 @@ void Matrix43::GetRotation( Matrix43& r ) const
 	r.Value[3][2] = 0.0f;
 #else
 	float sc[3];
-	for( int m = 0; m < 3; m++ )
+	for (int m = 0; m < 3; m++)
 	{
-		sc[m] = std::sqrt( Value[m][0] * Value[m][0] + Value[m][1] * Value[m][1] + Value[m][2] * Value[m][2] );
+		sc[m] = std::sqrt(Value[m][0] * Value[m][0] + Value[m][1] * Value[m][1] + Value[m][2] * Value[m][2]);
 	}
 
-	for( int m = 0; m < 3; m++ )
+	for (int m = 0; m < 3; m++)
 	{
-		for( int n = 0; n < 3; n++ )
+		for (int n = 0; n < 3; n++)
 		{
 			r.Value[m][n] = Value[m][n] / sc[m];
 		}
@@ -4250,7 +4590,7 @@ void Matrix43::GetRotation( Matrix43& r ) const
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void Matrix43::GetTranslation( Vector3D& t ) const
+void Matrix43::GetTranslation(Vector3D& t) const
 {
 	t.X = Value[3][0];
 	t.Y = Value[3][1];
@@ -4260,7 +4600,7 @@ void Matrix43::GetTranslation( Vector3D& t ) const
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void Matrix43::SetSRT( const Vector3D& s, const Matrix43& r, const Vector3D& t )
+void Matrix43::SetSRT(const Vector3D& s, const Matrix43& r, const Vector3D& t)
 {
 	Value[0][0] = s.X * r.Value[0][0];
 	Value[0][1] = s.X * r.Value[0][1];
@@ -4308,7 +4648,7 @@ bool Matrix43::IsValid() const
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void Matrix43::Multiple( Matrix43& out, const Matrix43& in1, const Matrix43& in2 )
+void Matrix43::Multiple(Matrix43& out, const Matrix43& in1, const Matrix43& in2)
 {
 #if defined(EFK_SSE2)
 	__m128 s1_v0 = _mm_loadu_ps(&in1.Value[0][0]);
@@ -4353,7 +4693,8 @@ void Matrix43::Multiple( Matrix43& out, const Matrix43& in1, const Matrix43& in2
 		o_v3 = _mm_shuffle_ps(o_v2, o_v2, _MM_SHUFFLE(2, 2, 2, 2));
 	}
 	{
-		EFK_ALIGN_AS(16) const uint32_t mask_u32[4] = {0xffffffff, 0x00000000, 0x00000000, 0x00000000};
+		EFK_ALIGN_AS(16)
+		const uint32_t mask_u32[4] = {0xffffffff, 0x00000000, 0x00000000, 0x00000000};
 		__m128 mask = _mm_load_ps((const float*)mask_u32);
 		s2_v0 = _mm_shuffle_ps(s2_v0, s2_v0, _MM_SHUFFLE(2, 1, 0, 0));
 		s2_v1 = _mm_shuffle_ps(s2_v1, s2_v1, _MM_SHUFFLE(2, 1, 0, 0));
@@ -4409,31 +4750,31 @@ void Matrix43::Multiple( Matrix43& out, const Matrix43& in1, const Matrix43& in2
 	// 共通の場合は一時変数にコピー
 	const Matrix43& s1 = (&out == &in1) ? (temp1 = in1) : in1;
 	const Matrix43& s2 = (&out == &in2) ? (temp2 = in2) : in2;
-	
+
 	out.Value[0][0] = s1.Value[0][0] * s2.Value[0][0] + s1.Value[0][1] * s2.Value[1][0] + s1.Value[0][2] * s2.Value[2][0];
 	out.Value[0][1] = s1.Value[0][0] * s2.Value[0][1] + s1.Value[0][1] * s2.Value[1][1] + s1.Value[0][2] * s2.Value[2][1];
 	out.Value[0][2] = s1.Value[0][0] * s2.Value[0][2] + s1.Value[0][1] * s2.Value[1][2] + s1.Value[0][2] * s2.Value[2][2];
-									   					 				 				   				   
+
 	out.Value[1][0] = s1.Value[1][0] * s2.Value[0][0] + s1.Value[1][1] * s2.Value[1][0] + s1.Value[1][2] * s2.Value[2][0];
 	out.Value[1][1] = s1.Value[1][0] * s2.Value[0][1] + s1.Value[1][1] * s2.Value[1][1] + s1.Value[1][2] * s2.Value[2][1];
 	out.Value[1][2] = s1.Value[1][0] * s2.Value[0][2] + s1.Value[1][1] * s2.Value[1][2] + s1.Value[1][2] * s2.Value[2][2];
-									   					 				 				   				   
+
 	out.Value[2][0] = s1.Value[2][0] * s2.Value[0][0] + s1.Value[2][1] * s2.Value[1][0] + s1.Value[2][2] * s2.Value[2][0];
 	out.Value[2][1] = s1.Value[2][0] * s2.Value[0][1] + s1.Value[2][1] * s2.Value[1][1] + s1.Value[2][2] * s2.Value[2][1];
 	out.Value[2][2] = s1.Value[2][0] * s2.Value[0][2] + s1.Value[2][1] * s2.Value[1][2] + s1.Value[2][2] * s2.Value[2][2];
-									   					 				 				   				   
+
 	out.Value[3][0] = s1.Value[3][0] * s2.Value[0][0] + s1.Value[3][1] * s2.Value[1][0] + s1.Value[3][2] * s2.Value[2][0] + s2.Value[3][0];
 	out.Value[3][1] = s1.Value[3][0] * s2.Value[0][1] + s1.Value[3][1] * s2.Value[1][1] + s1.Value[3][2] * s2.Value[2][1] + s2.Value[3][1];
 	out.Value[3][2] = s1.Value[3][0] * s2.Value[0][2] + s1.Value[3][1] * s2.Value[1][2] + s1.Value[3][2] * s2.Value[2][2] + s2.Value[3][2];
 #else
 	Matrix43 temp;
 
-	for( int i = 0; i < 4; i++ )
+	for (int i = 0; i < 4; i++)
 	{
-		for( int j = 0; j < 3; j++ )
+		for (int j = 0; j < 3; j++)
 		{
 			float v = 0.0f;
-			for( int k = 0; k < 3; k++ )
+			for (int k = 0; k < 3; k++)
 			{
 				v += in1.Value[i][k] * in2.Value[k][j];
 			}
@@ -4441,7 +4782,7 @@ void Matrix43::Multiple( Matrix43& out, const Matrix43& in1, const Matrix43& in2
 		}
 	}
 
-	for( int i = 0; i < 3; i++ )
+	for (int i = 0; i < 3; i++)
 	{
 		temp.Value[3][i] += in2.Value[3][i];
 	}
@@ -4453,7 +4794,7 @@ void Matrix43::Multiple( Matrix43& out, const Matrix43& in1, const Matrix43& in2
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
- } 
+} // namespace Effekseer
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
@@ -4467,7 +4808,8 @@ void Matrix43::Multiple( Matrix43& out, const Matrix43& in1, const Matrix43& in2
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-namespace Effekseer { 
+namespace Effekseer
+{
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
@@ -4481,7 +4823,7 @@ Matrix44::Matrix44()
 //----------------------------------------------------------------------------------
 Matrix44& Matrix44::Indentity()
 {
-	memset( Values, 0, sizeof(float) * 16 );
+	memset(Values, 0, sizeof(float) * 16);
 	Values[0][0] = 1.0f;
 	Values[1][1] = 1.0f;
 	Values[2][2] = 1.0f;
@@ -4510,15 +4852,15 @@ Matrix44& Matrix44::Transpose()
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-Matrix44& Matrix44::LookAtRH( const Vector3D& eye, const Vector3D& at, const Vector3D& up )
+Matrix44& Matrix44::LookAtRH(const Vector3D& eye, const Vector3D& at, const Vector3D& up)
 {
 	// F=正面、R=右方向、U=上方向
-	Vector3D F; 
+	Vector3D F;
 	Vector3D R;
 	Vector3D U;
-	Vector3D::Normal( F, Vector3D::Sub( F, eye, at ) );
-	Vector3D::Normal( R, Vector3D::Cross( R, up, F ) );
-	Vector3D::Normal( U, Vector3D::Cross( U, F, R ) );
+	Vector3D::Normal(F, Vector3D::Sub(F, eye, at));
+	Vector3D::Normal(R, Vector3D::Cross(R, up, F));
+	Vector3D::Normal(U, Vector3D::Cross(U, F, R));
 
 	Values[0][0] = R.X;
 	Values[1][0] = R.Y;
@@ -4535,9 +4877,9 @@ Matrix44& Matrix44::LookAtRH( const Vector3D& eye, const Vector3D& at, const Vec
 	Values[2][2] = F.Z;
 	Values[3][2] = 0.0f;
 
-	Values[3][0] = - Vector3D::Dot( R, eye );
-	Values[3][1] = - Vector3D::Dot( U, eye );
-	Values[3][2] = - Vector3D::Dot( F, eye );
+	Values[3][0] = -Vector3D::Dot(R, eye);
+	Values[3][1] = -Vector3D::Dot(U, eye);
+	Values[3][2] = -Vector3D::Dot(F, eye);
 	Values[3][3] = 1.0f;
 	return *this;
 }
@@ -4545,15 +4887,15 @@ Matrix44& Matrix44::LookAtRH( const Vector3D& eye, const Vector3D& at, const Vec
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-Matrix44& Matrix44::LookAtLH( const Vector3D& eye, const Vector3D& at, const Vector3D& up )
+Matrix44& Matrix44::LookAtLH(const Vector3D& eye, const Vector3D& at, const Vector3D& up)
 {
 	// F=正面、R=右方向、U=上方向
-	Vector3D F; 
+	Vector3D F;
 	Vector3D R;
 	Vector3D U;
-	Vector3D::Normal( F, Vector3D::Sub( F, at, eye ) );
-	Vector3D::Normal( R, Vector3D::Cross( R, up, F ) );
-	Vector3D::Normal( U, Vector3D::Cross( U, F, R ) );
+	Vector3D::Normal(F, Vector3D::Sub(F, at, eye));
+	Vector3D::Normal(R, Vector3D::Cross(R, up, F));
+	Vector3D::Normal(U, Vector3D::Cross(U, F, R));
 
 	Values[0][0] = R.X;
 	Values[1][0] = R.Y;
@@ -4570,9 +4912,9 @@ Matrix44& Matrix44::LookAtLH( const Vector3D& eye, const Vector3D& at, const Vec
 	Values[2][2] = F.Z;
 	Values[3][2] = 0.0f;
 
-	Values[3][0] = - Vector3D::Dot( R, eye );
-	Values[3][1] = - Vector3D::Dot( U, eye );
-	Values[3][2] = - Vector3D::Dot( F, eye );
+	Values[3][0] = -Vector3D::Dot(R, eye);
+	Values[3][1] = -Vector3D::Dot(U, eye);
+	Values[3][2] = -Vector3D::Dot(F, eye);
 	Values[3][3] = 1.0f;
 	return *this;
 }
@@ -4580,9 +4922,9 @@ Matrix44& Matrix44::LookAtLH( const Vector3D& eye, const Vector3D& at, const Vec
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-Matrix44& Matrix44::PerspectiveFovRH( float ovY, float aspect, float zn, float zf )
+Matrix44& Matrix44::PerspectiveFovRH(float ovY, float aspect, float zn, float zf)
 {
-	float yScale = 1 / tanf( ovY / 2 );
+	float yScale = 1 / tanf(ovY / 2);
 	float xScale = yScale / aspect;
 
 	Values[0][0] = xScale;
@@ -4597,12 +4939,12 @@ Matrix44& Matrix44::PerspectiveFovRH( float ovY, float aspect, float zn, float z
 
 	Values[2][0] = 0;
 	Values[2][1] = 0;
-	Values[2][2] = zf / (zn-zf);
+	Values[2][2] = zf / (zn - zf);
 	Values[2][3] = -1;
 
 	Values[3][0] = 0;
 	Values[3][1] = 0;
-	Values[3][2] = zn * zf / (zn-zf);
+	Values[3][2] = zn * zf / (zn - zf);
 	Values[3][3] = 0;
 	return *this;
 }
@@ -4610,9 +4952,9 @@ Matrix44& Matrix44::PerspectiveFovRH( float ovY, float aspect, float zn, float z
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-Matrix44& Matrix44::PerspectiveFovRH_OpenGL( float ovY, float aspect, float zn, float zf )
+Matrix44& Matrix44::PerspectiveFovRH_OpenGL(float ovY, float aspect, float zn, float zf)
 {
-	float yScale = 1 / tanf( ovY / 2 );
+	float yScale = 1 / tanf(ovY / 2);
 	float xScale = yScale / aspect;
 	float dz = zf - zn;
 
@@ -4642,9 +4984,9 @@ Matrix44& Matrix44::PerspectiveFovRH_OpenGL( float ovY, float aspect, float zn, 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-Matrix44& Matrix44::PerspectiveFovLH( float ovY, float aspect, float zn, float zf )
+Matrix44& Matrix44::PerspectiveFovLH(float ovY, float aspect, float zn, float zf)
 {
-	float yScale = 1 / tanf( ovY / 2 );
+	float yScale = 1 / tanf(ovY / 2);
 	float xScale = yScale / aspect;
 
 	Values[0][0] = xScale;
@@ -4659,42 +5001,42 @@ Matrix44& Matrix44::PerspectiveFovLH( float ovY, float aspect, float zn, float z
 
 	Values[2][0] = 0;
 	Values[2][1] = 0;
-	Values[2][2] = zf / (zf-zn);
+	Values[2][2] = zf / (zf - zn);
 	Values[2][3] = 1;
 
 	Values[3][0] = 0;
 	Values[3][1] = 0;
-	Values[3][2] = -zn * zf / (zf-zn);
+	Values[3][2] = -zn * zf / (zf - zn);
 	Values[3][3] = 0;
 	return *this;
 }
-	
+
 //----------------------------------------------------------------------------------
 //
 //---------------------------------------------------------------------------------
-Matrix44& Matrix44::PerspectiveFovLH_OpenGL( float ovY, float aspect, float zn, float zf )
+Matrix44& Matrix44::PerspectiveFovLH_OpenGL(float ovY, float aspect, float zn, float zf)
 {
-	float yScale = 1 / tanf( ovY / 2 );
+	float yScale = 1 / tanf(ovY / 2);
 	float xScale = yScale / aspect;
-		
+
 	Values[0][0] = xScale;
 	Values[0][1] = 0;
 	Values[0][2] = 0;
 	Values[0][3] = 0;
-		
+
 	Values[1][0] = 0;
 	Values[1][1] = yScale;
 	Values[1][2] = 0;
 	Values[1][3] = 0;
-		
+
 	Values[2][0] = 0;
 	Values[2][1] = 0;
-	Values[2][2] = zf / (zf-zn);
+	Values[2][2] = zf / (zf - zn);
 	Values[2][3] = 1;
-		
+
 	Values[3][0] = 0;
 	Values[3][1] = 0;
-	Values[3][2] = -2.0f * zn * zf / (zf-zn);
+	Values[3][2] = -2.0f * zn * zf / (zf - zn);
 	Values[3][3] = 0;
 	return *this;
 }
@@ -4702,7 +5044,7 @@ Matrix44& Matrix44::PerspectiveFovLH_OpenGL( float ovY, float aspect, float zn, 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-Matrix44& Matrix44::OrthographicRH( float width, float height, float zn, float zf )
+Matrix44& Matrix44::OrthographicRH(float width, float height, float zn, float zf)
 {
 	Values[0][0] = 2 / width;
 	Values[0][1] = 0;
@@ -4716,12 +5058,12 @@ Matrix44& Matrix44::OrthographicRH( float width, float height, float zn, float z
 
 	Values[2][0] = 0;
 	Values[2][1] = 0;
-	Values[2][2] = 1 / (zn-zf);
+	Values[2][2] = 1 / (zn - zf);
 	Values[2][3] = 0;
 
 	Values[3][0] = 0;
 	Values[3][1] = 0;
-	Values[3][2] = zn / (zn-zf);
+	Values[3][2] = zn / (zn - zf);
 	Values[3][3] = 1;
 	return *this;
 }
@@ -4729,7 +5071,7 @@ Matrix44& Matrix44::OrthographicRH( float width, float height, float zn, float z
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-Matrix44& Matrix44::OrthographicLH( float width, float height, float zn, float zf )
+Matrix44& Matrix44::OrthographicLH(float width, float height, float zn, float zf)
 {
 	Values[0][0] = 2 / width;
 	Values[0][1] = 0;
@@ -4743,12 +5085,12 @@ Matrix44& Matrix44::OrthographicLH( float width, float height, float zn, float z
 
 	Values[2][0] = 0;
 	Values[2][1] = 0;
-	Values[2][2] = 1 / (zf-zn);
+	Values[2][2] = 1 / (zf - zn);
 	Values[2][3] = 0;
 
 	Values[3][0] = 0;
 	Values[3][1] = 0;
-	Values[3][2] = zn / (zn-zf);
+	Values[3][2] = zn / (zn - zf);
 	Values[3][3] = 1;
 	return *this;
 }
@@ -4756,9 +5098,9 @@ Matrix44& Matrix44::OrthographicLH( float width, float height, float zn, float z
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void Matrix44::Scaling( float x, float y, float z )
+void Matrix44::Scaling(float x, float y, float z)
 {
-	memset( Values, 0, sizeof(float) * 16 );
+	memset(Values, 0, sizeof(float) * 16);
 	Values[0][0] = x;
 	Values[1][1] = y;
 	Values[2][2] = z;
@@ -4768,10 +5110,10 @@ void Matrix44::Scaling( float x, float y, float z )
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void Matrix44::RotationX( float angle )
+void Matrix44::RotationX(float angle)
 {
 	float c, s;
-	SinCos( angle, s, c );
+	SinCos(angle, s, c);
 
 	Values[0][0] = 1.0f;
 	Values[0][1] = 0.0f;
@@ -4797,10 +5139,10 @@ void Matrix44::RotationX( float angle )
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void Matrix44::RotationY( float angle )
+void Matrix44::RotationY(float angle)
 {
 	float c, s;
-	SinCos( angle, s, c );
+	SinCos(angle, s, c);
 
 	Values[0][0] = c;
 	Values[0][1] = 0.0f;
@@ -4826,10 +5168,10 @@ void Matrix44::RotationY( float angle )
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void Matrix44::RotationZ( float angle )
+void Matrix44::RotationZ(float angle)
 {
 	float c, s;
-	SinCos( angle, s, c );
+	SinCos(angle, s, c);
 
 	Values[0][0] = c;
 	Values[0][1] = s;
@@ -4855,7 +5197,7 @@ void Matrix44::RotationZ( float angle )
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void Matrix44::Translation( float x, float y, float z )
+void Matrix44::Translation(float x, float y, float z)
 {
 	Indentity();
 	Values[3][0] = x;
@@ -4866,10 +5208,10 @@ void Matrix44::Translation( float x, float y, float z )
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void Matrix44::RotationAxis( const Vector3D& axis, float angle )
+void Matrix44::RotationAxis(const Vector3D& axis, float angle)
 {
-	const float c = cosf( angle );
-	const float s = sinf( angle );
+	const float c = cosf(angle);
+	const float s = sinf(angle);
 	const float cc = 1.0f - c;
 
 	Values[0][0] = cc * (axis.X * axis.X) + c;
@@ -4892,7 +5234,7 @@ void Matrix44::RotationAxis( const Vector3D& axis, float angle )
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void Matrix44::Quaternion( float x, float y, float z, float w )
+void Matrix44::Quaternion(float x, float y, float z, float w)
 {
 	float xx = x * x;
 	float yy = y * y;
@@ -4928,17 +5270,17 @@ void Matrix44::Quaternion( float x, float y, float z, float w )
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-Matrix44& Matrix44::Mul( Matrix44& o, const Matrix44& in1, const Matrix44& in2 )
+Matrix44& Matrix44::Mul(Matrix44& o, const Matrix44& in1, const Matrix44& in2)
 {
 	Matrix44 _in1 = in1;
 	Matrix44 _in2 = in2;
 
-	for( int i = 0; i < 4; i++ )
+	for (int i = 0; i < 4; i++)
 	{
-		for( int j = 0; j < 4; j++ )
+		for (int j = 0; j < 4; j++)
 		{
 			float v = 0.0f;
-			for( int k = 0; k < 4; k++ )
+			for (int k = 0; k < 4; k++)
 			{
 				v += _in1.Values[i][k] * _in2.Values[k][j];
 			}
@@ -4951,7 +5293,7 @@ Matrix44& Matrix44::Mul( Matrix44& o, const Matrix44& in1, const Matrix44& in2 )
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-Matrix44& Matrix44::Inverse(  Matrix44& o, const Matrix44& in )
+Matrix44& Matrix44::Inverse(Matrix44& o, const Matrix44& in)
 {
 	float a11 = in.Values[0][0];
 	float a12 = in.Values[0][1];
@@ -4971,29 +5313,29 @@ Matrix44& Matrix44::Inverse(  Matrix44& o, const Matrix44& in )
 	float a44 = in.Values[3][3];
 
 	/* 行列式の計算 */
-	float b11 = + a22 * (a33 * a44 - a43 * a34) - a23 * (a32 * a44 - a42 * a34) + a24 * (a32 * a43 - a42 * a33);
-	float b12 = - a12 * (a33 * a44 - a43 * a34) + a13 * (a32 * a44 - a42 * a34) - a14 * (a32 * a43 - a42 * a33);
-	float b13 = + a12 * (a23 * a44 - a43 * a24) - a13 * (a22 * a44 - a42 * a24) + a14 * (a22 * a43 - a42 * a23);
-	float b14 = - a12 * (a23 * a34 - a33 * a24) + a13 * (a22 * a34 - a32 * a24) - a14 * (a22 * a33 - a32 * a23);
+	float b11 = +a22 * (a33 * a44 - a43 * a34) - a23 * (a32 * a44 - a42 * a34) + a24 * (a32 * a43 - a42 * a33);
+	float b12 = -a12 * (a33 * a44 - a43 * a34) + a13 * (a32 * a44 - a42 * a34) - a14 * (a32 * a43 - a42 * a33);
+	float b13 = +a12 * (a23 * a44 - a43 * a24) - a13 * (a22 * a44 - a42 * a24) + a14 * (a22 * a43 - a42 * a23);
+	float b14 = -a12 * (a23 * a34 - a33 * a24) + a13 * (a22 * a34 - a32 * a24) - a14 * (a22 * a33 - a32 * a23);
 
-	float b21 = - a21 * (a33 * a44 - a43 * a34) + a23 * (a31 * a44 - a41 * a34) - a24 * (a31 * a43 - a41 * a33);
-	float b22 = + a11 * (a33 * a44 - a43 * a34) - a13 * (a31 * a44 - a41 * a34) + a14 * (a31 * a43 - a41 * a33);
-	float b23 = - a11 * (a23 * a44 - a43 * a24) + a13 * (a21 * a44 - a41 * a24) - a14 * (a21 * a43 - a41 * a23);
-	float b24 = + a11 * (a23 * a34 - a33 * a24) - a13 * (a21 * a34 - a31 * a24) + a14 * (a21 * a33 - a31 * a23);
+	float b21 = -a21 * (a33 * a44 - a43 * a34) + a23 * (a31 * a44 - a41 * a34) - a24 * (a31 * a43 - a41 * a33);
+	float b22 = +a11 * (a33 * a44 - a43 * a34) - a13 * (a31 * a44 - a41 * a34) + a14 * (a31 * a43 - a41 * a33);
+	float b23 = -a11 * (a23 * a44 - a43 * a24) + a13 * (a21 * a44 - a41 * a24) - a14 * (a21 * a43 - a41 * a23);
+	float b24 = +a11 * (a23 * a34 - a33 * a24) - a13 * (a21 * a34 - a31 * a24) + a14 * (a21 * a33 - a31 * a23);
 
-	float b31 = + a21 * (a32 * a44 - a42 * a34) - a22 * (a31 * a44 - a41 * a34) + a24 * (a31 * a42 - a41 * a32);
-	float b32 = - a11 * (a32 * a44 - a42 * a34) + a12 * (a31 * a44 - a41 * a34) - a14 * (a31 * a42 - a41 * a32);
-	float b33 = + a11 * (a22 * a44 - a42 * a24) - a12 * (a21 * a44 - a41 * a24) + a14 * (a21 * a42 - a41 * a22);
-	float b34 = - a11 * (a22 * a34 - a32 * a24) + a12 * (a21 * a34 - a31 * a24) - a14 * (a21 * a32 - a31 * a22);
+	float b31 = +a21 * (a32 * a44 - a42 * a34) - a22 * (a31 * a44 - a41 * a34) + a24 * (a31 * a42 - a41 * a32);
+	float b32 = -a11 * (a32 * a44 - a42 * a34) + a12 * (a31 * a44 - a41 * a34) - a14 * (a31 * a42 - a41 * a32);
+	float b33 = +a11 * (a22 * a44 - a42 * a24) - a12 * (a21 * a44 - a41 * a24) + a14 * (a21 * a42 - a41 * a22);
+	float b34 = -a11 * (a22 * a34 - a32 * a24) + a12 * (a21 * a34 - a31 * a24) - a14 * (a21 * a32 - a31 * a22);
 
-	float b41 = - a21 * (a32 * a43 - a42 * a33) + a22 * (a31 * a43 - a41 * a33) - a23 * (a31 * a42 - a41 * a32);
-	float b42 = + a11 * (a32 * a43 - a42 * a33) - a12 * (a31 * a43 - a41 * a33) + a13 * (a31 * a42 - a41 * a32);
-	float b43 = - a11 * (a22 * a43 - a42 * a23) + a12 * (a21 * a43 - a41 * a23) - a13 * (a21 * a42 - a41 * a22);
-	float b44 = + a11 * (a22 * a33 - a32 * a23) - a12 * (a21 * a33 - a31 * a23) + a13 * (a21 * a32 - a31 * a22);
+	float b41 = -a21 * (a32 * a43 - a42 * a33) + a22 * (a31 * a43 - a41 * a33) - a23 * (a31 * a42 - a41 * a32);
+	float b42 = +a11 * (a32 * a43 - a42 * a33) - a12 * (a31 * a43 - a41 * a33) + a13 * (a31 * a42 - a41 * a32);
+	float b43 = -a11 * (a22 * a43 - a42 * a23) + a12 * (a21 * a43 - a41 * a23) - a13 * (a21 * a42 - a41 * a22);
+	float b44 = +a11 * (a22 * a33 - a32 * a23) - a12 * (a21 * a33 - a31 * a23) + a13 * (a21 * a32 - a31 * a22);
 
 	// 行列式の逆数をかける
 	float Det = (a11 * b11) + (a12 * b21) + (a13 * b31) + (a14 * b41);
-	if ( (-FLT_MIN <= Det) && (Det <= +FLT_MIN) )
+	if ((-FLT_MIN <= Det) && (Det <= +FLT_MIN))
 	{
 		o = in;
 		return o;
@@ -5024,13 +5366,13 @@ Matrix44& Matrix44::Inverse(  Matrix44& o, const Matrix44& in )
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
- } 
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
+} // namespace Effekseer
+  //----------------------------------------------------------------------------------
+  //
+  //----------------------------------------------------------------------------------
 
-#ifndef	__EFFEKSEER_INTERNAL_STRUCT_H__
-#define	__EFFEKSEER_INTERNAL_STRUCT_H__
+#ifndef __EFFEKSEER_INTERNAL_STRUCT_H__
+#define __EFFEKSEER_INTERNAL_STRUCT_H__
 
 /**
 	@file
@@ -5051,7 +5393,7 @@ namespace Effekseer
 {
 
 template <typename T>
-void ReadData( T& dst, unsigned char*& pos )
+void ReadData(T& dst, unsigned char*& pos)
 {
 	memcpy(&dst, pos, sizeof(T));
 	pos += sizeof(T);
@@ -5062,12 +5404,12 @@ void ReadData( T& dst, unsigned char*& pos )
 //----------------------------------------------------------------------------------
 struct random_float
 {
-	float	max;
-	float	min;
+	float max;
+	float min;
 
 	void reset()
 	{
-		memset( this, 0 , sizeof(random_float) );
+		memset(this, 0, sizeof(random_float));
 	};
 
 	float getValue(IRandObject& g) const
@@ -5081,12 +5423,12 @@ struct random_float
 //----------------------------------------------------------------------------------
 struct random_int
 {
-	int	max;
-	int	min;
+	int max;
+	int min;
 
 	void reset()
 	{
-		memset( this, 0 , sizeof(random_int) );
+		memset(this, 0, sizeof(random_int));
 	};
 
 	float getValue(IRandObject& g) const
@@ -5102,8 +5444,8 @@ struct random_int
 //----------------------------------------------------------------------------------
 struct vector2d
 {
-	float	x;
-	float	y;
+	float x;
+	float y;
 
 	vector2d& operator*=(float rhs)
 	{
@@ -5115,15 +5457,15 @@ struct vector2d
 
 struct rectf
 {
-	float	x;
-	float	y;
-	float	w;
-	float	h;
+	float x;
+	float y;
+	float w;
+	float h;
 
 	void reset()
 	{
-		assert( sizeof(rectf) == sizeof(float) * 4 );
-		memset( this, 0, sizeof(rectf) );
+		assert(sizeof(rectf) == sizeof(float) * 4);
+		memset(this, 0, sizeof(rectf));
 	}
 };
 
@@ -5132,20 +5474,19 @@ struct rectf
 //----------------------------------------------------------------------------------
 struct random_vector2d
 {
-	vector2d	max;
-	vector2d	min;
+	vector2d max;
+	vector2d min;
 
 	void reset()
 	{
-		memset( this, 0 , sizeof(random_vector2d) );
+		memset(this, 0, sizeof(random_vector2d));
 	};
 
 	Vec2f getValue(IRandObject& g) const
 	{
 		return {
 			g.GetRand(min.x, max.x),
-			g.GetRand(min.y, max.y)
-		};
+			g.GetRand(min.y, max.y)};
 	}
 };
 
@@ -5158,7 +5499,7 @@ struct easing_float_without_random
 	float easingB;
 	float easingC;
 
-	void setValueToArg( float& o, const float start_, const float end_, float t ) const
+	void setValueToArg(float& o, const float start_, const float end_, float t) const
 	{
 		float df = end_ - start_;
 		float d = easingA * t * t * t + easingB * t * t + easingC * t;
@@ -5171,13 +5512,13 @@ struct easing_float_without_random
 //----------------------------------------------------------------------------------
 struct easing_float
 {
-	random_float	start;
-	random_float	end;
+	random_float start;
+	random_float end;
 	float easingA;
 	float easingB;
 	float easingC;
 
-	float getValue( const float start_, const float end_, float t ) const
+	float getValue(const float start_, const float end_, float t) const
 	{
 		float df = end_ - start_;
 		float d = easingA * t * t * t + easingB * t * t + easingC * t;
@@ -5190,13 +5531,13 @@ struct easing_float
 //----------------------------------------------------------------------------------
 struct easing_vector2d
 {
-	random_vector2d	start;
-	random_vector2d	end;
+	random_vector2d start;
+	random_vector2d end;
 	float easingA;
 	float easingB;
 	float easingC;
 
-	Vec2f getValue( const Vec2f& start_, const Vec2f& end_, float t ) const
+	Vec2f getValue(const Vec2f& start_, const Vec2f& end_, float t) const
 	{
 		Vec2f size = end_ - start_;
 		float d = easingA * t * t * t + easingB * t * t + easingC * t;
@@ -5209,9 +5550,9 @@ struct easing_vector2d
 //----------------------------------------------------------------------------------
 struct vector3d
 {
-	float	x;
-	float	y;
-	float	z;
+	float x;
+	float y;
+	float z;
 
 	vector3d& operator*=(float rhs)
 	{
@@ -5227,12 +5568,12 @@ struct vector3d
 //----------------------------------------------------------------------------------
 struct random_vector3d
 {
-	vector3d	max;
-	vector3d	min;
+	vector3d max;
+	vector3d min;
 
 	void reset()
 	{
-		memset( this, 0 , sizeof(random_vector3d) );
+		memset(this, 0, sizeof(random_vector3d));
 	};
 
 	Vec3f getValue(IRandObject& g) const
@@ -5240,8 +5581,7 @@ struct random_vector3d
 		return {
 			g.GetRand(min.x, max.x),
 			g.GetRand(min.y, max.y),
-			g.GetRand(min.z, max.z)
-		};
+			g.GetRand(min.z, max.z)};
 	}
 };
 
@@ -5250,13 +5590,13 @@ struct random_vector3d
 //----------------------------------------------------------------------------------
 struct easing_vector3d
 {
-	random_vector3d	start;
-	random_vector3d	end;
+	random_vector3d start;
+	random_vector3d end;
 	float easingA;
 	float easingB;
 	float easingC;
 
-	Vec3f getValue( const Vec3f& start_, const Vec3f& end_, float t ) const
+	Vec3f getValue(const Vec3f& start_, const Vec3f& end_, float t) const
 	{
 		Vec3f size = end_ - start_;
 		float d = easingA * t * t * t + easingB * t * t + easingC * t;
@@ -5264,12 +5604,14 @@ struct easing_vector3d
 	}
 };
 
-inline Color HSVToRGB(Color hsv) {
+inline Color HSVToRGB(Color hsv)
+{
 	int H = hsv.R, S = hsv.G, V = hsv.B;
-	int Hi, R=0, G=0, B=0, p, q, t;
+	int Hi, R = 0, G = 0, B = 0, p, q, t;
 	float f, s;
 
-	if (H >= 252) H = 252;
+	if (H >= 252)
+		H = 252;
 	Hi = (H / 42);
 	f = H / 42.0f - Hi;
 	Hi = Hi % 6;
@@ -5278,13 +5620,38 @@ inline Color HSVToRGB(Color hsv) {
 	q = (int)((V * (1 - f * s)));
 	t = (int)((V * (1 - (1 - f) * s)));
 
-	switch (Hi) {
-	case 0: R = V; G = t; B = p; break;
-	case 1: R = q; G = V; B = p; break;
-	case 2: R = p; G = V; B = t; break;
-	case 3: R = p; G = q; B = V; break;
-	case 4: R = t; G = p; B = V; break;
-	case 5: R = V; G = p; B = q; break;
+	switch (Hi)
+	{
+	case 0:
+		R = V;
+		G = t;
+		B = p;
+		break;
+	case 1:
+		R = q;
+		G = V;
+		B = p;
+		break;
+	case 2:
+		R = p;
+		G = V;
+		B = t;
+		break;
+	case 3:
+		R = p;
+		G = q;
+		B = V;
+		break;
+	case 4:
+		R = t;
+		G = p;
+		B = V;
+		break;
+	case 5:
+		R = V;
+		G = p;
+		B = q;
+		break;
 	}
 	Color result;
 	result.R = R;
@@ -5300,12 +5667,12 @@ inline Color HSVToRGB(Color hsv) {
 struct random_color
 {
 	ColorMode mode;
-	Color	max;
-	Color	min;
+	Color max;
+	Color min;
 
 	void reset()
 	{
-		assert( sizeof(random_color) == 12 );
+		assert(sizeof(random_color) == 12);
 		mode = COLOR_MODE_RGBA;
 		max = {255, 255, 255, 255};
 		min = {255, 255, 255, 255};
@@ -5313,39 +5680,39 @@ struct random_color
 
 	Color getValue(IRandObject& g) const
 	{
-		Color r = getDirectValue( g );
-		if( mode == COLOR_MODE_HSVA )
+		Color r = getDirectValue(g);
+		if (mode == COLOR_MODE_HSVA)
 		{
-			r = HSVToRGB( r );
+			r = HSVToRGB(r);
 		}
 		return r;
 	}
-	
+
 	Color getDirectValue(IRandObject& g) const
 	{
 		Color r;
-		r.R = (uint8_t) (g.GetRand(min.R, max.R));
-		r.G = (uint8_t) (g.GetRand(min.G, max.G));
-		r.B = (uint8_t) (g.GetRand(min.B, max.B));
-		r.A = (uint8_t) (g.GetRand(min.A, max.A));
+		r.R = (uint8_t)(g.GetRand(min.R, max.R));
+		r.G = (uint8_t)(g.GetRand(min.G, max.G));
+		r.B = (uint8_t)(g.GetRand(min.B, max.B));
+		r.A = (uint8_t)(g.GetRand(min.A, max.A));
 		return r;
 	}
 
-	void load( int version, unsigned char*& pos )
+	void load(int version, unsigned char*& pos)
 	{
-		if( version >= 4 )
+		if (version >= 4)
 		{
 			uint8_t mode_ = 0;
 			ReadData<uint8_t>(mode_, pos);
 			mode = static_cast<ColorMode>(mode_);
-			pos++;	// reserved
+			pos++; // reserved
 		}
 		else
 		{
 			mode = COLOR_MODE_RGBA;
 		}
-		ReadData<Color>(max, pos );
-		ReadData<Color>(min, pos );
+		ReadData<Color>(max, pos);
+		ReadData<Color>(min, pos);
 	}
 };
 
@@ -5354,51 +5721,51 @@ struct random_color
 //----------------------------------------------------------------------------------
 struct easing_color
 {
-	random_color	start;
-	random_color	end;
+	random_color start;
+	random_color end;
 	float easingA;
 	float easingB;
 	float easingC;
 
-	void setValueToArg( Color& o, const Color& start_, const Color& end_, float t ) const
+	void setValueToArg(Color& o, const Color& start_, const Color& end_, float t) const
 	{
-		assert( start.mode == end.mode );
+		assert(start.mode == end.mode);
 		float d = easingA * t * t * t + easingB * t * t + easingC * t;
 		o = Color::Lerp(start_, end_, d);
-		if( start.mode == COLOR_MODE_HSVA )
+		if (start.mode == COLOR_MODE_HSVA)
 		{
-			o = HSVToRGB( o );
+			o = HSVToRGB(o);
 		}
 	}
 
 	Color getStartValue(IRandObject& g) const
 	{
-		return start.getDirectValue( g );
-	}
-	
-	Color getEndValue(IRandObject& g) const
-	{
-		return end.getDirectValue( g);
+		return start.getDirectValue(g);
 	}
 
-	void load( int version, unsigned char*& pos )
+	Color getEndValue(IRandObject& g) const
 	{
-		start.load( version, pos );
-		end.load( version, pos );
-		ReadData<float>(easingA, pos );
-		ReadData<float>(easingB, pos );
-		ReadData<float>(easingC, pos );
+		return end.getDirectValue(g);
+	}
+
+	void load(int version, unsigned char*& pos)
+	{
+		start.load(version, pos);
+		end.load(version, pos);
+		ReadData<float>(easingA, pos);
+		ReadData<float>(easingB, pos);
+		ReadData<float>(easingC, pos);
 	}
 };
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-}
+} // namespace Effekseer
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-#endif	// __EFFEKSEER_INTERNAL_STRUCT_H__
+#endif // __EFFEKSEER_INTERNAL_STRUCT_H__
 
 #ifndef __EFFEKSEER_INTERNAL_SCRIPT_H__
 #define __EFFEKSEER_INTERNAL_SCRIPT_H__
@@ -5465,7 +5832,10 @@ public:
 								 RandFuncCallback* randFuncCallback,
 								 RandWithSeedFuncCallback* randSeedFuncCallback,
 								 void* userData);
-	RunningPhaseType GetRunningPhase() const { return runningPhase; }
+	RunningPhaseType GetRunningPhase() const
+	{
+		return runningPhase;
+	}
 };
 
 } // namespace Effekseer
@@ -5473,8 +5843,8 @@ public:
 #endif
 
 
-#ifndef	__EFFEKSEER_DEFAULTEFFECTLOADER_H__
-#define	__EFFEKSEER_DEFAULTEFFECTLOADER_H__
+#ifndef __EFFEKSEER_DEFAULTEFFECTLOADER_H__
+#define __EFFEKSEER_DEFAULTEFFECTLOADER_H__
 
 //----------------------------------------------------------------------------------
 // Include
@@ -5483,7 +5853,8 @@ public:
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-namespace Effekseer { 
+namespace Effekseer
+{
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
@@ -5495,25 +5866,25 @@ class DefaultEffectLoader
 {
 	DefaultFileInterface m_defaultFileInterface;
 	FileInterface* m_fileInterface;
-public:
 
-	DefaultEffectLoader( FileInterface* fileInterface = NULL );
+public:
+	DefaultEffectLoader(FileInterface* fileInterface = NULL);
 
 	virtual ~DefaultEffectLoader();
 
-	bool Load( const EFK_CHAR* path, void*& data, int32_t& size );
+	bool Load(const EFK_CHAR* path, void*& data, int32_t& size);
 
-	void Unload( void* data, int32_t size );
+	void Unload(void* data, int32_t size);
 };
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
- } 
+} // namespace Effekseer
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-#endif	// __EFFEKSEER_DEFAULTEFFECTLOADER_H__
+#endif // __EFFEKSEER_DEFAULTEFFECTLOADER_H__
 
 
 //----------------------------------------------------------------------------------
@@ -5523,14 +5894,15 @@ public:
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-namespace Effekseer { 
+namespace Effekseer
+{
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-DefaultEffectLoader::DefaultEffectLoader( FileInterface* fileInterface )
-	: m_fileInterface( fileInterface )
+DefaultEffectLoader::DefaultEffectLoader(FileInterface* fileInterface)
+	: m_fileInterface(fileInterface)
 {
-	if( m_fileInterface == NULL )
+	if (m_fileInterface == NULL)
 	{
 		m_fileInterface = &m_defaultFileInterface;
 	}
@@ -5541,26 +5913,26 @@ DefaultEffectLoader::DefaultEffectLoader( FileInterface* fileInterface )
 //----------------------------------------------------------------------------------
 DefaultEffectLoader::~DefaultEffectLoader()
 {
-
 }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-bool DefaultEffectLoader::Load( const EFK_CHAR* path, void*& data, int32_t& size )
+bool DefaultEffectLoader::Load(const EFK_CHAR* path, void*& data, int32_t& size)
 {
-	assert( path != NULL );
+	assert(path != NULL);
 
 	data = NULL;
 	size = 0;
 
-	std::unique_ptr<FileReader> 
-		reader( m_fileInterface->OpenRead( path ) );
-	if( reader.get() == NULL ) return false;
+	std::unique_ptr<FileReader>
+		reader(m_fileInterface->OpenRead(path));
+	if (reader.get() == NULL)
+		return false;
 
 	size = (int32_t)reader->GetLength();
 	data = new uint8_t[size];
-	reader->Read( data, size );
+	reader->Read(data, size);
 
 	return true;
 }
@@ -5568,23 +5940,23 @@ bool DefaultEffectLoader::Load( const EFK_CHAR* path, void*& data, int32_t& size
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void DefaultEffectLoader::Unload( void* data, int32_t size )
+void DefaultEffectLoader::Unload(void* data, int32_t size)
 {
 	uint8_t* data8 = (uint8_t*)data;
-	ES_SAFE_DELETE_ARRAY( data8 );
+	ES_SAFE_DELETE_ARRAY(data8);
 }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
- } 
+} // namespace Effekseer
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
 
 
-#ifndef	__EFFEKSEER_DEFAULT_FILE_H__
-#define	__EFFEKSEER_DEFAULT_FILE_H__
+#ifndef __EFFEKSEER_DEFAULT_FILE_H__
+#define __EFFEKSEER_DEFAULT_FILE_H__
 
 //----------------------------------------------------------------------------------
 // Include
@@ -5593,7 +5965,8 @@ void DefaultEffectLoader::Unload( void* data, int32_t size )
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-namespace Effekseer { 
+namespace Effekseer
+{
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
@@ -5607,13 +5980,13 @@ private:
 	FILE* m_filePtr;
 
 public:
-	DefaultFileReader( FILE* filePtr );
+	DefaultFileReader(FILE* filePtr);
 
 	~DefaultFileReader();
 
-	size_t Read( void* buffer, size_t size );
+	size_t Read(void* buffer, size_t size);
 
-	void Seek( int position );
+	void Seek(int position);
 
 	int GetPosition();
 
@@ -5626,15 +5999,15 @@ private:
 	FILE* m_filePtr;
 
 public:
-	DefaultFileWriter( FILE* filePtr );
+	DefaultFileWriter(FILE* filePtr);
 
 	~DefaultFileWriter();
 
-	size_t Write( const void* buffer, size_t size );
+	size_t Write(const void* buffer, size_t size);
 
 	void Flush();
 
-	void Seek( int position );
+	void Seek(int position);
 
 	int GetPosition();
 
@@ -5644,39 +6017,38 @@ public:
 class DefaultFileInterface : public FileInterface
 {
 private:
-
 public:
-	FileReader* OpenRead( const EFK_CHAR* path );
+	FileReader* OpenRead(const EFK_CHAR* path);
 
-	FileWriter* OpenWrite( const EFK_CHAR* path );
+	FileWriter* OpenWrite(const EFK_CHAR* path);
 };
 
+//----------------------------------------------------------------------------------
+//
+//----------------------------------------------------------------------------------
+} // namespace Effekseer
+//----------------------------------------------------------------------------------
+//
+//----------------------------------------------------------------------------------
+#endif // __EFFEKSEER_DEFAULT_FILE_H__
+
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
- } 
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
-#endif	// __EFFEKSEER_DEFAULT_FILE_H__
-
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
-namespace Effekseer { 
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
-DefaultFileReader::DefaultFileReader( FILE* filePtr )
-	: m_filePtr( filePtr )
+namespace Effekseer
 {
-	assert( filePtr != NULL );
+//----------------------------------------------------------------------------------
+//
+//----------------------------------------------------------------------------------
+DefaultFileReader::DefaultFileReader(FILE* filePtr)
+	: m_filePtr(filePtr)
+{
+	assert(filePtr != NULL);
 }
 
 //----------------------------------------------------------------------------------
@@ -5684,23 +6056,23 @@ DefaultFileReader::DefaultFileReader( FILE* filePtr )
 //----------------------------------------------------------------------------------
 DefaultFileReader::~DefaultFileReader()
 {
-	fclose( m_filePtr );
+	fclose(m_filePtr);
 }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-size_t DefaultFileReader::Read( void* buffer, size_t size )
+size_t DefaultFileReader::Read(void* buffer, size_t size)
 {
-	return fread( buffer, 1, size, m_filePtr );
+	return fread(buffer, 1, size, m_filePtr);
 }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void DefaultFileReader::Seek( int position )
+void DefaultFileReader::Seek(int position)
 {
-	fseek( m_filePtr, (size_t)position, SEEK_SET );
+	fseek(m_filePtr, (size_t)position, SEEK_SET);
 }
 
 //----------------------------------------------------------------------------------
@@ -5708,7 +6080,7 @@ void DefaultFileReader::Seek( int position )
 //----------------------------------------------------------------------------------
 int DefaultFileReader::GetPosition()
 {
-	return (int)ftell( m_filePtr );
+	return (int)ftell(m_filePtr);
 }
 
 //----------------------------------------------------------------------------------
@@ -5716,20 +6088,20 @@ int DefaultFileReader::GetPosition()
 //----------------------------------------------------------------------------------
 size_t DefaultFileReader::GetLength()
 {
-	long position = ftell( m_filePtr );
-	fseek( m_filePtr, 0, SEEK_END );
-	long length = ftell( m_filePtr );
-	fseek( m_filePtr, position, SEEK_SET );
+	long position = ftell(m_filePtr);
+	fseek(m_filePtr, 0, SEEK_END);
+	long length = ftell(m_filePtr);
+	fseek(m_filePtr, position, SEEK_SET);
 	return (size_t)length;
 }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-DefaultFileWriter::DefaultFileWriter( FILE* filePtr )
-	: m_filePtr( filePtr )
+DefaultFileWriter::DefaultFileWriter(FILE* filePtr)
+	: m_filePtr(filePtr)
 {
-	assert( filePtr != NULL );
+	assert(filePtr != NULL);
 }
 
 //----------------------------------------------------------------------------------
@@ -5737,15 +6109,15 @@ DefaultFileWriter::DefaultFileWriter( FILE* filePtr )
 //----------------------------------------------------------------------------------
 DefaultFileWriter::~DefaultFileWriter()
 {
-	fclose( m_filePtr );
+	fclose(m_filePtr);
 }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-size_t DefaultFileWriter::Write( const void* buffer, size_t size )
+size_t DefaultFileWriter::Write(const void* buffer, size_t size)
 {
-	return fwrite( buffer, 1, size, m_filePtr );
+	return fwrite(buffer, 1, size, m_filePtr);
 }
 
 //----------------------------------------------------------------------------------
@@ -5753,15 +6125,15 @@ size_t DefaultFileWriter::Write( const void* buffer, size_t size )
 //----------------------------------------------------------------------------------
 void DefaultFileWriter::Flush()
 {
-	fflush( m_filePtr );
+	fflush(m_filePtr);
 }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void DefaultFileWriter::Seek( int position )
+void DefaultFileWriter::Seek(int position)
 {
-	fseek( m_filePtr, (size_t)position, SEEK_SET );
+	fseek(m_filePtr, (size_t)position, SEEK_SET);
 }
 
 //----------------------------------------------------------------------------------
@@ -5769,7 +6141,7 @@ void DefaultFileWriter::Seek( int position )
 //----------------------------------------------------------------------------------
 int DefaultFileWriter::GetPosition()
 {
-	return (int)ftell( m_filePtr );
+	return (int)ftell(m_filePtr);
 }
 
 //----------------------------------------------------------------------------------
@@ -5777,64 +6149,64 @@ int DefaultFileWriter::GetPosition()
 //----------------------------------------------------------------------------------
 size_t DefaultFileWriter::GetLength()
 {
-	long position = ftell( m_filePtr );
-	fseek( m_filePtr, 0, SEEK_END );
-	long length = ftell( m_filePtr );
-	fseek( m_filePtr, position, SEEK_SET );
+	long position = ftell(m_filePtr);
+	fseek(m_filePtr, 0, SEEK_END);
+	long length = ftell(m_filePtr);
+	fseek(m_filePtr, position, SEEK_SET);
 	return (size_t)length;
 }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-FileReader* DefaultFileInterface::OpenRead( const EFK_CHAR* path )
+FileReader* DefaultFileInterface::OpenRead(const EFK_CHAR* path)
 {
 	FILE* filePtr = NULL;
 #ifdef _WIN32
-	_wfopen_s( &filePtr, (const wchar_t*)path, L"rb" );
+	_wfopen_s(&filePtr, (const wchar_t*)path, L"rb");
 #else
 	int8_t path8[256];
-	ConvertUtf16ToUtf8( path8, 256, (const int16_t*)path );
-	filePtr = fopen( (const char*)path8, "rb" );
+	ConvertUtf16ToUtf8(path8, 256, (const int16_t*)path);
+	filePtr = fopen((const char*)path8, "rb");
 #endif
-	
-	if( filePtr == NULL )
+
+	if (filePtr == NULL)
 	{
 		return NULL;
 	}
 
-	return new DefaultFileReader( filePtr );
+	return new DefaultFileReader(filePtr);
 }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-FileWriter* DefaultFileInterface::OpenWrite( const EFK_CHAR* path )
+FileWriter* DefaultFileInterface::OpenWrite(const EFK_CHAR* path)
 {
 	FILE* filePtr = NULL;
 #ifdef _WIN32
-	_wfopen_s( &filePtr, (const wchar_t*)path, L"wb" );
+	_wfopen_s(&filePtr, (const wchar_t*)path, L"wb");
 #else
 	int8_t path8[256];
-	ConvertUtf16ToUtf8( path8, 256, (const int16_t*)path );
-	filePtr = fopen( (const char*)path8, "wb" );
+	ConvertUtf16ToUtf8(path8, 256, (const int16_t*)path);
+	filePtr = fopen((const char*)path8, "wb");
 #endif
-	
-	if( filePtr == NULL )
+
+	if (filePtr == NULL)
 	{
 		return NULL;
 	}
 
-	return new DefaultFileWriter( filePtr );
+	return new DefaultFileWriter(filePtr);
 }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
- } 
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
+} // namespace Effekseer
+  //----------------------------------------------------------------------------------
+  //
+  //----------------------------------------------------------------------------------
 
 #ifndef __EFFEKSEER_FCURVES_H__
 #define __EFFEKSEER_FCURVES_H__
@@ -5879,7 +6251,10 @@ public:
 
 	float GetOffset(InstanceGlobal& g) const;
 
-	void SetDefaultValue(float value) { defaultValue_ = value; }
+	void SetDefaultValue(float value)
+	{
+		defaultValue_ = value;
+	}
 
 	void ChangeCoordinate();
 
@@ -5947,8 +6322,8 @@ public:
 #endif // __EFFEKSEER_FCURVES_H__
 
 
-#ifndef	__EFFEKSEER_EFFECTNODE_H__
-#define	__EFFEKSEER_EFFECTNODE_H__
+#ifndef __EFFEKSEER_EFFECTNODE_H__
+#define __EFFEKSEER_EFFECTNODE_H__
 
 //----------------------------------------------------------------------------------
 // Include
@@ -6067,10 +6442,10 @@ struct ParameterCommonValues_8
 	BindType TranslationBindType;
 	BindType RotationBindType;
 	BindType ScalingBindType;
-	int		RemoveWhenLifeIsExtinct;
-	int		RemoveWhenParentIsRemoved;
-	int		RemoveWhenChildrenIsExtinct;
-	random_int	life;
+	int RemoveWhenLifeIsExtinct;
+	int RemoveWhenParentIsRemoved;
+	int RemoveWhenChildrenIsExtinct;
+	random_int life;
 	float GenerationTime;
 	float GenerationTimeOffset;
 };
@@ -6089,7 +6464,7 @@ struct ParameterCommonValues
 	int RemoveWhenLifeIsExtinct = 1;
 	int RemoveWhenParentIsRemoved = 0;
 	int RemoveWhenChildrenIsExtinct = 0;
-	random_int	life;
+	random_int life;
 	random_float GenerationTime;
 	random_float GenerationTimeOffset;
 
@@ -6106,12 +6481,12 @@ struct ParameterCommonValues
 
 struct ParameterDepthValues
 {
-	float	DepthOffset;
-	bool	IsDepthOffsetScaledWithCamera;
-	bool	IsDepthOffsetScaledWithParticleScale;
-	ZSortType	ZSort;
-	int32_t	DrawingPriority;
-	float	SoftParticle;
+	float DepthOffset;
+	bool IsDepthOffsetScaledWithCamera;
+	bool IsDepthOffsetScaledWithParticleScale;
+	ZSortType ZSort;
+	int32_t DrawingPriority;
+	float SoftParticle;
 
 	NodeRendererDepthParameter DepthParameter;
 
@@ -6159,9 +6534,9 @@ struct ParameterTranslationPVA
 	RefMinMax RefEqP;
 	RefMinMax RefEqV;
 	RefMinMax RefEqA;
-	random_vector3d	location;
-	random_vector3d	velocity;
-	random_vector3d	acceleration;
+	random_vector3d location;
+	random_vector3d velocity;
+	random_vector3d acceleration;
 };
 
 struct ParameterTranslationEasing
@@ -6191,11 +6566,10 @@ struct LocalForceFieldTurbulenceParameter
 
 struct LocalForceFieldParameter
 {
-	std::unique_ptr <LocalForceFieldTurbulenceParameter> Turbulence;
+	std::unique_ptr<LocalForceFieldTurbulenceParameter> Turbulence;
 
 	bool Load(uint8_t*& pos, int32_t version);
 };
-
 
 enum class LocationAbsType : int32_t
 {
@@ -6215,13 +6589,14 @@ struct LocationAbsParameter
 
 		} none;
 
-		Vec3f	gravity;
+		Vec3f gravity;
 
-		struct {
-			float	force;
-			float	control;
-			float	minRange;
-			float	maxRange;
+		struct
+		{
+			float force;
+			float control;
+			float minRange;
+			float maxRange;
 		} attractiveForce;
 	};
 };
@@ -6261,9 +6636,9 @@ struct ParameterRotationPVA
 	RefMinMax RefEqP;
 	RefMinMax RefEqV;
 	RefMinMax RefEqA;
-	random_vector3d	rotation;
-	random_vector3d	velocity;
-	random_vector3d	acceleration;
+	random_vector3d rotation;
+	random_vector3d velocity;
+	random_vector3d acceleration;
 };
 
 struct ParameterRotationEasing
@@ -6278,10 +6653,10 @@ struct ParameterRotationEasing
 //----------------------------------------------------------------------------------
 struct ParameterRotationAxisPVA
 {
-	random_vector3d	axis;
-	random_float	rotation;
-	random_float	velocity;
-	random_float	acceleration;
+	random_vector3d axis;
+	random_float rotation;
+	random_float velocity;
+	random_float acceleration;
 };
 
 //----------------------------------------------------------------------------------
@@ -6289,8 +6664,8 @@ struct ParameterRotationAxisPVA
 //----------------------------------------------------------------------------------
 struct ParameterRotationAxisEasing
 {
-	random_vector3d	axis;
-	easing_float	easing;
+	random_vector3d axis;
+	easing_float easing;
 };
 
 //----------------------------------------------------------------------------------
@@ -6356,7 +6731,7 @@ struct ParameterScalingSinglePVA
 //----------------------------------------------------------------------------------
 struct ParameterGenerationLocation
 {
-	int	EffectsRotation;
+	int EffectsRotation;
 
 	enum class AxisType : int32_t
 	{
@@ -6416,28 +6791,28 @@ struct ParameterGenerationLocation
 
 		struct
 		{
-			int32_t		index;
-			eModelType	type;
+			int32_t index;
+			eModelType type;
 		} model;
 
 		struct
 		{
-			int32_t			division;
-			random_float	radius;
-			random_float	angle_start;
-			random_float	angle_end;
-			eCircleType		type;
-			AxisType		axisDirection;
-			random_float	angle_noize;
+			int32_t division;
+			random_float radius;
+			random_float angle_start;
+			random_float angle_end;
+			eCircleType type;
+			AxisType axisDirection;
+			random_float angle_noize;
 		} circle;
 
 		struct
 		{
-			int32_t			division;
-			random_vector3d	position_start;
-			random_vector3d	position_end;
-			random_float	position_noize;
-			LineType		type;
+			int32_t division;
+			random_vector3d position_start;
+			random_vector3d position_end;
+			random_float position_noize;
+			LineType type;
 		} line;
 	};
 
@@ -6529,7 +6904,8 @@ struct ParameterCustomData
 {
 	ParameterCustomDataType Type = ParameterCustomDataType::None;
 
-	union {
+	union
+	{
 		ParameterCustomDataFixed Fixed;
 		ParameterCustomDataRandom Random;
 		ParameterCustomDataEasing Easing;
@@ -6598,7 +6974,6 @@ struct ParameterCustomData
 	}
 };
 
-
 struct ParameterRendererCommon
 {
 #ifdef __EFFEKSEER_BUILD_VERSION16__
@@ -6608,7 +6983,7 @@ struct ParameterRendererCommon
 	RendererMaterialType MaterialType = RendererMaterialType::Default;
 
 	//! texture index except a file
-	int32_t				ColorTextureIndex = -1;
+	int32_t ColorTextureIndex = -1;
 
 	//! texture index except a file
 	int32_t Texture2Index = -1;
@@ -6637,14 +7012,14 @@ struct ParameterRendererCommon
 	TextureWrapType Wrap3Type = TextureWrapType::Repeat;
 #endif
 
-	bool				ZWrite = false;
+	bool ZWrite = false;
 
-	bool				ZTest = false;
+	bool ZTest = false;
 
 	//! this value is not unused
-	bool				Distortion = false;
+	bool Distortion = false;
 
-	float				DistortionIntensity = 0;
+	float DistortionIntensity = 0;
 
 	BindType ColorBindType = BindType::NotBind;
 
@@ -6664,8 +7039,8 @@ struct ParameterRendererCommon
 
 	struct
 	{
-		float	Frame;
-		easing_float_without_random	Value;
+		float Frame;
+		easing_float_without_random Value;
 	} FadeIn;
 
 	enum
@@ -6678,8 +7053,8 @@ struct ParameterRendererCommon
 
 	struct
 	{
-		float	Frame;
-		easing_float_without_random	Value;
+		float Frame;
+		easing_float_without_random Value;
 	} FadeOut;
 
 	enum
@@ -6704,8 +7079,8 @@ struct ParameterRendererCommon
 	*/
 	struct UVScroll_09
 	{
-		rectf		Position;
-		vector2d	Speed;
+		rectf Position;
+		vector2d Speed;
 	};
 
 	union
@@ -6716,15 +7091,15 @@ struct ParameterRendererCommon
 
 		struct
 		{
-			rectf	Position;
+			rectf Position;
 		} Fixed;
 
 		struct
 		{
-			rectf	Position;
-			int32_t	FrameLength;
-			int32_t	FrameCountX;
-			int32_t	FrameCountY;
+			rectf Position;
+			int32_t FrameLength;
+			int32_t FrameCountX;
+			int32_t FrameCountY;
 
 			enum
 			{
@@ -6735,7 +7110,7 @@ struct ParameterRendererCommon
 				LOOPTYPE_DWORD = 0x7fffffff,
 			} LoopType;
 
-			random_int	StartFrame;
+			random_int StartFrame;
 
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 			enum
@@ -6749,9 +7124,9 @@ struct ParameterRendererCommon
 
 		struct
 		{
-			random_vector2d	Position;
-			random_vector2d	Size;
-			random_vector2d	Speed;
+			random_vector2d Position;
+			random_vector2d Size;
+			random_vector2d Speed;
 		} Scroll;
 
 		struct
@@ -6843,17 +7218,24 @@ struct ParameterRendererCommon
 				memcpy(&textures, pos, sizeof(int));
 				pos += sizeof(int);
 
-
 				Material.MaterialTextures.resize(textures);
-				memcpy(Material.MaterialTextures.data(), pos, sizeof(MaterialTextureParameter) * textures);
-				pos += (sizeof(MaterialTextureParameter) * textures);
+
+				if (textures > 0)
+				{
+					memcpy(Material.MaterialTextures.data(), pos, sizeof(MaterialTextureParameter) * textures);
+					pos += (sizeof(MaterialTextureParameter) * textures);
+				}
 
 				memcpy(&uniforms, pos, sizeof(int));
 				pos += sizeof(int);
 
 				Material.MaterialUniforms.resize(uniforms);
-				memcpy(Material.MaterialUniforms.data(), pos, sizeof(float) * 4 * uniforms);
-				pos += (sizeof(float) * 4 * uniforms);
+
+				if (uniforms > 0)
+				{
+					memcpy(Material.MaterialUniforms.data(), pos, sizeof(float) * 4 * uniforms);
+					pos += (sizeof(float) * 4 * uniforms);
+				}
 			}
 		}
 		else
@@ -6948,8 +7330,7 @@ struct ParameterRendererCommon
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 		if (version >= 16)
 		{
-			auto LoadUVParameter = [&](const int UVIndex)
-			{
+			auto LoadUVParameter = [&](const int UVIndex) {
 				const auto& UVType = UVTypes[UVIndex];
 				auto& UV = UVs[UVIndex];
 
@@ -7032,7 +7413,6 @@ struct ParameterRendererCommon
 				UV.Scroll.Speed.max.x = values.Speed.x;
 				UV.Scroll.Speed.max.y = values.Speed.y;
 				UV.Scroll.Speed.min = UV.Scroll.Speed.max;
-
 			}
 			else
 			{
@@ -7184,7 +7564,8 @@ struct ParameterAlphaCrunch
 	};
 
 	ParameterAlphaCrunch()
-	{}
+	{
+	}
 
 	~ParameterAlphaCrunch()
 	{
@@ -7205,10 +7586,19 @@ struct ParameterAlphaCrunch
 
 		switch (Type)
 		{
-		case Effekseer::ParameterAlphaCrunch::EType::FIXED: memcpy(&Fixed, pos, BufferSize); break;
-		case Effekseer::ParameterAlphaCrunch::EType::FPI: memcpy(&FourPointInterpolation, pos, BufferSize); break;
-		case Effekseer::ParameterAlphaCrunch::EType::EASING: memcpy(&Easing, pos, BufferSize); break;
-		case Effekseer::ParameterAlphaCrunch::EType::F_CURVE: FCurve.Threshold = new FCurveScalar();  FCurve.Threshold->Load(pos, version); break;
+		case Effekseer::ParameterAlphaCrunch::EType::FIXED:
+			memcpy(&Fixed, pos, BufferSize);
+			break;
+		case Effekseer::ParameterAlphaCrunch::EType::FPI:
+			memcpy(&FourPointInterpolation, pos, BufferSize);
+			break;
+		case Effekseer::ParameterAlphaCrunch::EType::EASING:
+			memcpy(&Easing, pos, BufferSize);
+			break;
+		case Effekseer::ParameterAlphaCrunch::EType::F_CURVE:
+			FCurve.Threshold = new FCurveScalar();
+			FCurve.Threshold->Load(pos, version);
+			break;
 		}
 
 		pos += BufferSize;
@@ -7243,13 +7633,13 @@ enum ParameterSoundPanType
 //----------------------------------------------------------------------------------
 struct ParameterSound
 {
-	int32_t			WaveId;
-	random_float	Volume;
-	random_float	Pitch;
+	int32_t WaveId;
+	random_float Volume;
+	random_float Pitch;
 	ParameterSoundPanType PanType;
-	random_float	Pan;
-	float			Distance;
-	random_int		Delay;
+	random_float Pan;
+	float Distance;
+	random_int Delay;
 };
 
 /**
@@ -7265,7 +7655,7 @@ struct DynamicFactorParameter
 	std::array<float, 3> ScaleInv;
 
 	DynamicFactorParameter()
-	{ 
+	{
 		Tra.fill(1.0f);
 		TraInv.fill(1.0f);
 		Rot.fill(1.0f);
@@ -7274,7 +7664,6 @@ struct DynamicFactorParameter
 		ScaleInv.fill(1.0f);
 	}
 };
-
 
 //----------------------------------------------------------------------------------
 //
@@ -7287,15 +7676,14 @@ enum eRenderingOrder
 	RenderingOrder_DWORD = 0x7fffffff,
 };
 
-
 /**
 @brief	ノードインスタンス生成クラス
 @note
 エフェクトのノードの実体を生成する。
 */
 class EffectNodeImplemented
-	: public EffectNode
-	, public AlignedAllocationPolicy<16>
+	: public EffectNode,
+	  public AlignedAllocationPolicy<16>
 {
 	friend class Manager;
 	friend class EffectImplemented;
@@ -7303,13 +7691,13 @@ class EffectNodeImplemented
 
 protected:
 	// 所属しているパラメーター
-	Effect*	m_effect;
-	
+	Effect* m_effect;
+
 	//! a generation in the node tree
 	int generation_;
 
 	// 子ノード
-	std::vector<EffectNodeImplemented*>	m_Nodes;
+	std::vector<EffectNodeImplemented*> m_Nodes;
 
 	// ユーザーデータ
 	void* m_userData;
@@ -7330,7 +7718,6 @@ protected:
 	void CalcCustomData(const Instance* instance, std::array<float, 4>& customData1, std::array<float, 4>& customData2);
 
 public:
-
 	/**
 	@brief	\~english Whether to draw the node.
 	\~japanese このノードを描画するか?
@@ -7341,50 +7728,50 @@ public:
 	*/
 	bool IsRendered;
 
-	ParameterCommonValues		CommonValues;
+	ParameterCommonValues CommonValues;
 
-	ParameterTranslationType	TranslationType;
-	ParameterTranslationFixed	TranslationFixed;
-	ParameterTranslationPVA		TranslationPVA;
+	ParameterTranslationType TranslationType;
+	ParameterTranslationFixed TranslationFixed;
+	ParameterTranslationPVA TranslationPVA;
 	ParameterTranslationEasing TranslationEasing;
-	FCurveVector3D*				TranslationFCurve;
+	FCurveVector3D* TranslationFCurve;
 
 	std::array<LocalForceFieldParameter, LocalFieldSlotMax> LocalForceFields;
-	LocationAbsParameter		LocationAbs;
+	LocationAbsParameter LocationAbs;
 
-	ParameterRotationType		RotationType;
-	ParameterRotationFixed		RotationFixed;
-	ParameterRotationPVA		RotationPVA;
+	ParameterRotationType RotationType;
+	ParameterRotationFixed RotationFixed;
+	ParameterRotationPVA RotationPVA;
 	ParameterRotationEasing RotationEasing;
-	FCurveVector3D*				RotationFCurve;
+	FCurveVector3D* RotationFCurve;
 
-	ParameterRotationAxisPVA	RotationAxisPVA;
-	ParameterRotationAxisEasing	RotationAxisEasing;
+	ParameterRotationAxisPVA RotationAxisPVA;
+	ParameterRotationAxisEasing RotationAxisEasing;
 
-	ParameterScalingType		ScalingType;
-	ParameterScalingFixed		ScalingFixed;
-	ParameterScalingPVA			ScalingPVA;
+	ParameterScalingType ScalingType;
+	ParameterScalingFixed ScalingFixed;
+	ParameterScalingPVA ScalingPVA;
 	ParameterScalingEasing ScalingEasing;
-	ParameterScalingSinglePVA	ScalingSinglePVA;
-	easing_float				ScalingSingleEasing;
-	FCurveVector3D*				ScalingFCurve;
+	ParameterScalingSinglePVA ScalingSinglePVA;
+	easing_float ScalingSingleEasing;
+	FCurveVector3D* ScalingFCurve;
 
-	ParameterGenerationLocation	GenerationLocation;
+	ParameterGenerationLocation GenerationLocation;
 
-	ParameterDepthValues		DepthValues;
+	ParameterDepthValues DepthValues;
 
-	ParameterRendererCommon		RendererCommon;
+	ParameterRendererCommon RendererCommon;
 
 #ifdef __EFFEKSEER_BUILD_VERSION16__
-	ParameterAlphaCrunch		AlphaCrunch;
+	ParameterAlphaCrunch AlphaCrunch;
 #endif
 
-	ParameterSoundType			SoundType;
-	ParameterSound				Sound;
+	ParameterSoundType SoundType;
+	ParameterSound Sound;
 
-	eRenderingOrder				RenderingOrder;
+	eRenderingOrder RenderingOrder;
 
-	int32_t						RenderingPriority = -1;
+	int32_t RenderingPriority = -1;
 
 	DynamicFactorParameter DynamicFactor;
 
@@ -7464,20 +7851,23 @@ public:
 	/**
 	@brief	ノードの種類取得
 	*/
-	virtual eEffectNodeType GetType() const { return EFFECT_NODE_TYPE_NONE; }
+	virtual eEffectNodeType GetType() const
+	{
+		return EFFECT_NODE_TYPE_NONE;
+	}
 };
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
 
-}
+} // namespace Effekseer
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-#endif	// __EFFEKSEER_EFFECTNODE_H__
+#endif // __EFFEKSEER_EFFECTNODE_H__
 
-#ifndef	__EFFEKSEER_ParameterNODE_MODEL_H__
-#define	__EFFEKSEER_ParameterNODE_MODEL_H__
+#ifndef __EFFEKSEER_ParameterNODE_MODEL_H__
+#define __EFFEKSEER_ParameterNODE_MODEL_H__
 
 //----------------------------------------------------------------------------------
 // Include
@@ -7503,15 +7893,13 @@ class EffectNodeModel
 	friend class Instance;
 
 public:
-
 	struct InstanceValues
 	{
 		// 色
 		Color _color;
 		Color _original;
 
-		union 
-		{
+		union {
 			struct
 			{
 				Color _color;
@@ -7525,7 +7913,7 @@ public:
 			struct
 			{
 				Color start;
-				Color  end;
+				Color end;
 
 			} easing;
 
@@ -7538,21 +7926,21 @@ public:
 	};
 
 public:
-	AlphaBlendType		AlphaBlend;
-	int32_t			ModelIndex;
+	AlphaBlendType AlphaBlend;
+	int32_t ModelIndex;
 
 	//! this value is not used
-	int32_t			NormalTextureIndex;
+	int32_t NormalTextureIndex;
 
-	BillboardType	Billboard;
+	BillboardType Billboard;
 
 	//! this value is not used
-	bool			Lighting;
-	CullingType	Culling;
+	bool Lighting;
+	CullingType Culling;
 
-	StandardColorParameter	AllColor;
+	StandardColorParameter AllColor;
 
-	EffectNodeModel( Effect* effect, unsigned char*& pos )
+	EffectNodeModel(Effect* effect, unsigned char*& pos)
 		: EffectNodeImplemented(effect, pos)
 	{
 	}
@@ -7573,21 +7961,24 @@ public:
 
 	void UpdateRenderedInstance(Instance& instance, Manager* manager) override;
 
-	eEffectNodeType GetType() const override { return EFFECT_NODE_TYPE_MODEL; }
+	eEffectNodeType GetType() const override
+	{
+		return EFFECT_NODE_TYPE_MODEL;
+	}
 };
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-}
+} // namespace Effekseer
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-#endif	// __EFFEKSEER_ParameterNODE_MODEL_H__
+#endif // __EFFEKSEER_ParameterNODE_MODEL_H__
 
 
-#ifndef	__EFFEKSEER_ParameterNODE_RIBBON_H__
-#define	__EFFEKSEER_ParameterNODE_RIBBON_H__
+#ifndef __EFFEKSEER_ParameterNODE_RIBBON_H__
+#define __EFFEKSEER_ParameterNODE_RIBBON_H__
 
 //----------------------------------------------------------------------------------
 // Include
@@ -7612,8 +8003,7 @@ struct RibbonAllColorParameter
 		Parameter_DWORD = 0x7fffffff,
 	} type;
 
-	union
-	{
+	union {
 		struct
 		{
 			Color all;
@@ -7641,8 +8031,7 @@ struct RibbonColorParameter
 		Parameter_DWORD = 0x7fffffff,
 	} type;
 
-	union
-	{
+	union {
 		struct
 		{
 
@@ -7666,8 +8055,7 @@ struct RibbonPositionParameter
 		Parameter_DWORD = 0x7fffffff,
 	} type;
 
-	union
-	{
+	union {
 		struct
 		{
 
@@ -7688,15 +8076,13 @@ class EffectNodeRibbon
 	: public EffectNodeImplemented
 {
 public:
-
 	struct InstanceValues
 	{
 		// 色
 		Color _color;
 		Color _original;
 
-		union
-		{
+		union {
 			struct
 			{
 				Color _color;
@@ -7710,39 +8096,37 @@ public:
 			struct
 			{
 				Color start;
-				Color  end;
+				Color end;
 
 			} easing;
 
 		} allColorValues;
 
-		union
-		{
+		union {
 
 		} colorValues;
 
-		union
-		{
+		union {
 
 		} positionValues;
 	};
 
-	RibbonRenderer::NodeParameter	m_nodeParameter;
+	RibbonRenderer::NodeParameter m_nodeParameter;
 	RibbonRenderer::InstanceParameter m_instanceParameter;
+
 public:
+	AlphaBlendType AlphaBlend;
 
-	AlphaBlendType		AlphaBlend;
+	int ViewpointDependent;
 
-	int				ViewpointDependent;
-
-	RibbonAllColorParameter	RibbonAllColor;
+	RibbonAllColorParameter RibbonAllColor;
 
 	RibbonColorParameter RibbonColor;
 	RibbonPositionParameter RibbonPosition;
 
 	int RibbonTexture;
 
-	int32_t	SplineDivision = 1;
+	int32_t SplineDivision = 1;
 
 	NodeRendererTextureUVTypeParameter TextureUVType;
 
@@ -7771,21 +8155,24 @@ public:
 
 	void UpdateRenderedInstance(Instance& instance, Manager* manager) override;
 
-	eEffectNodeType GetType() const override { return EFFECT_NODE_TYPE_RIBBON; }
+	eEffectNodeType GetType() const override
+	{
+		return EFFECT_NODE_TYPE_RIBBON;
+	}
 };
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-}
+} // namespace Effekseer
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-#endif	// __EFFEKSEER_ParameterNODE_RIBBON_H__
+#endif // __EFFEKSEER_ParameterNODE_RIBBON_H__
 
 
-#ifndef	__EFFEKSEER_ParameterNODE_RING_H__
-#define	__EFFEKSEER_ParameterNODE_RING_H__
+#ifndef __EFFEKSEER_ParameterNODE_RING_H__
+#define __EFFEKSEER_ParameterNODE_RING_H__
 
 //----------------------------------------------------------------------------------
 // Include
@@ -7810,8 +8197,7 @@ struct RingSingleParameter
 		Parameter_DWORD = 0x7fffffff,
 	} type;
 
-	union
-	{
+	union {
 		float fixed;
 		random_float random;
 		easing_float easing;
@@ -7831,21 +8217,20 @@ struct RingLocationParameter
 
 		Parameter_DWORD = 0x7fffffff,
 	} type;
-	
-	union
-	{
+
+	union {
 		struct
 		{
 			vector2d location;
 		} fixed;
-	
+
 		struct
 		{
-			random_vector2d	location;
-			random_vector2d	velocity;
-			random_vector2d	acceleration;
+			random_vector2d location;
+			random_vector2d velocity;
+			random_vector2d acceleration;
 		} pva;
-		
+
 		easing_vector2d easing;
 	};
 };
@@ -7864,8 +8249,7 @@ struct RingColorParameter
 		Parameter_DWORD = 0x7fffffff,
 	} type;
 
-	union
-	{	
+	union {
 		Color fixed;
 		random_color random;
 		easing_color easing;
@@ -7877,12 +8261,11 @@ struct RingColorParameter
 //----------------------------------------------------------------------------------
 struct RingSingleValues
 {
-	float	current;
-	union
-	{
+	float current;
+	union {
 		struct
 		{
-			
+
 		} fixed;
 
 		struct
@@ -7892,8 +8275,8 @@ struct RingSingleValues
 
 		struct
 		{
-			float  start;
-			float  end;
+			float start;
+			float end;
 		} easing;
 	};
 };
@@ -7903,26 +8286,25 @@ struct RingSingleValues
 //----------------------------------------------------------------------------------
 struct RingLocationValues
 {
-	Vec2f	current;
+	Vec2f current;
 
-	union
-	{
+	union {
 		struct
 		{
-	
+
 		} fixed;
 
 		struct
 		{
-			Vec2f  start;
-			Vec2f  velocity;
-			Vec2f  acceleration;
+			Vec2f start;
+			Vec2f velocity;
+			Vec2f acceleration;
 		} pva;
 
 		struct
 		{
-			Vec2f  start;
-			Vec2f  end;
+			Vec2f start;
+			Vec2f end;
 		} easing;
 	};
 };
@@ -7932,11 +8314,10 @@ struct RingLocationValues
 //----------------------------------------------------------------------------------
 struct RingColorValues
 {
-	Color	current;
-	Color	original;
+	Color current;
+	Color original;
 
-	union
-	{
+	union {
 		struct
 		{
 			Color _color;
@@ -7949,8 +8330,8 @@ struct RingColorValues
 
 		struct
 		{
-			Color  start;
-			Color  end;
+			Color start;
+			Color end;
 		} easing;
 	};
 };
@@ -7981,7 +8362,6 @@ class EffectNodeRing
 	friend class Instance;
 
 public:
-
 	struct InstanceValues
 	{
 		RingSingleValues startingAngle;
@@ -7995,20 +8375,19 @@ public:
 	};
 
 public:
+	AlphaBlendType AlphaBlend;
+	BillboardType Billboard;
 
-	AlphaBlendType		AlphaBlend;
-	BillboardType	Billboard;
-
-	int32_t	VertexCount;
+	int32_t VertexCount;
 
 	RingShapeParameter Shape;
 	//RingSingleParameter	ViewingAngle;
 
-	RingLocationParameter	OuterLocation;
-	RingLocationParameter	InnerLocation;
-	
-	RingSingleParameter	CenterRatio;
-	
+	RingLocationParameter OuterLocation;
+	RingLocationParameter InnerLocation;
+
+	RingSingleParameter CenterRatio;
+
 	RingColorParameter OuterColor;
 	RingColorParameter CenterColor;
 	RingColorParameter InnerColor;
@@ -8017,7 +8396,7 @@ public:
 
 	RingRenderer::NodeParameter nodeParameter;
 
-	EffectNodeRing( Effect* effect, unsigned char*& pos )
+	EffectNodeRing(Effect* effect, unsigned char*& pos)
 		: EffectNodeImplemented(effect, pos)
 	{
 	}
@@ -8038,40 +8417,43 @@ public:
 
 	void UpdateRenderedInstance(Instance& instance, Manager* manager) override;
 
-	eEffectNodeType GetType() const override { return EFFECT_NODE_TYPE_RING; }
+	eEffectNodeType GetType() const override
+	{
+		return EFFECT_NODE_TYPE_RING;
+	}
 
 private:
-	void LoadSingleParameter( unsigned char*& pos, RingSingleParameter& param );
+	void LoadSingleParameter(unsigned char*& pos, RingSingleParameter& param);
 
-	void LoadLocationParameter( unsigned char*& pos, RingLocationParameter& param );
-	
-	void LoadColorParameter( unsigned char*& pos, RingColorParameter& param );
-	
+	void LoadLocationParameter(unsigned char*& pos, RingLocationParameter& param);
+
+	void LoadColorParameter(unsigned char*& pos, RingColorParameter& param);
+
 	void InitializeSingleValues(const RingSingleParameter& param, RingSingleValues& values, Manager* manager, InstanceGlobal* instanceGlobal);
 
 	void InitializeLocationValues(const RingLocationParameter& param, RingLocationValues& values, Manager* manager, InstanceGlobal* instanceGlobal);
-	
+
 	void InitializeColorValues(const RingColorParameter& param, RingColorValues& values, Manager* manager, InstanceGlobal* instanceGlobal);
-	
-	void UpdateSingleValues( Instance& instance, const RingSingleParameter& param, RingSingleValues& values );
-	
-	void UpdateLocationValues( Instance& instance, const RingLocationParameter& param, RingLocationValues& values );
-	
-	void UpdateColorValues( Instance& instance, const RingColorParameter& param, RingColorValues& values );
+
+	void UpdateSingleValues(Instance& instance, const RingSingleParameter& param, RingSingleValues& values);
+
+	void UpdateLocationValues(Instance& instance, const RingLocationParameter& param, RingLocationValues& values);
+
+	void UpdateColorValues(Instance& instance, const RingColorParameter& param, RingColorValues& values);
 };
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-}
+} // namespace Effekseer
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-#endif	// __EFFEKSEER_ParameterNODE_RING_H__
+#endif // __EFFEKSEER_ParameterNODE_RING_H__
 
 
-#ifndef	__EFFEKSEER_ParameterNODE_ROOT_H__
-#define	__EFFEKSEER_ParameterNODE_ROOT_H__
+#ifndef __EFFEKSEER_ParameterNODE_ROOT_H__
+#define __EFFEKSEER_ParameterNODE_ROOT_H__
 
 //----------------------------------------------------------------------------------
 // Include
@@ -8085,7 +8467,7 @@ namespace Effekseer
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-	
+
 class EffectNodeRoot
 	: public EffectNodeImplemented
 {
@@ -8094,35 +8476,34 @@ class EffectNodeRoot
 	friend class Instance;
 
 protected:
-
-	
-
 public:
-	EffectNodeRoot( Effect* effect, unsigned char*& pos )
+	EffectNodeRoot(Effect* effect, unsigned char*& pos)
 		: EffectNodeImplemented(effect, pos)
 	{
 	}
 
 	~EffectNodeRoot()
 	{
-	
 	}
 
-	eEffectNodeType GetType() const { return EFFECT_NODE_TYPE_ROOT; }
+	eEffectNodeType GetType() const
+	{
+		return EFFECT_NODE_TYPE_ROOT;
+	}
 };
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-}
+} // namespace Effekseer
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-#endif	// __EFFEKSEER_ParameterNODE_ROOT_H__
+#endif // __EFFEKSEER_ParameterNODE_ROOT_H__
 
 
-#ifndef	__EFFEKSEER_ParameterNODE_SPRITE_H__
-#define	__EFFEKSEER_ParameterNODE_SPRITE_H__
+#ifndef __EFFEKSEER_ParameterNODE_SPRITE_H__
+#define __EFFEKSEER_ParameterNODE_SPRITE_H__
 
 //----------------------------------------------------------------------------------
 // Include
@@ -8143,11 +8524,10 @@ struct SpriteColorParameter
 		Parameter_DWORD = 0x7fffffff,
 	} type;
 
-	union
-	{
+	union {
 		struct
 		{
-		
+
 		} def;
 
 		struct
@@ -8170,11 +8550,10 @@ struct SpritePositionParameter
 		Parameter_DWORD = 0x7fffffff,
 	} type;
 
-	union
-	{
+	union {
 		struct
 		{
-		
+
 		} def;
 
 		struct
@@ -8198,16 +8577,14 @@ class EffectNodeSprite
 	friend class Instance;
 
 public:
-
 	struct InstanceValues
 	{
 		// 色
 		Color _color;
 
 		Color _originalColor;
-		
-		union 
-		{
+
+		union {
 			struct
 			{
 				Color _color;
@@ -8221,7 +8598,7 @@ public:
 			struct
 			{
 				Color start;
-				Color  end;
+				Color end;
 
 			} easing;
 
@@ -8232,30 +8609,27 @@ public:
 
 		} allColorValues;
 
-		union
-		{
-	
+		union {
+
 		} colorValues;
 
-		union
-		{
-	
+		union {
+
 		} positionValues;
 	};
 
 public:
+	AlphaBlendType AlphaBlend;
+	BillboardType Billboard;
 
-	AlphaBlendType		AlphaBlend;
-	BillboardType	Billboard;
-
-	StandardColorParameter	SpriteAllColor;
+	StandardColorParameter SpriteAllColor;
 
 	SpriteColorParameter SpriteColor;
 	SpritePositionParameter SpritePosition;
 
 	int SpriteTexture;
 
-	EffectNodeSprite( Effect* effect, unsigned char*& pos )
+	EffectNodeSprite(Effect* effect, unsigned char*& pos)
 		: EffectNodeImplemented(effect, pos)
 	{
 	}
@@ -8272,21 +8646,24 @@ public:
 
 	void UpdateRenderedInstance(Instance& instance, Manager* manager) override;
 
-	eEffectNodeType GetType() const override { return EFFECT_NODE_TYPE_SPRITE; }
+	eEffectNodeType GetType() const override
+	{
+		return EFFECT_NODE_TYPE_SPRITE;
+	}
 };
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-}
+} // namespace Effekseer
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-#endif	// __EFFEKSEER_ParameterNODE_SPRITE_H__
+#endif // __EFFEKSEER_ParameterNODE_SPRITE_H__
 
 
-#ifndef	__EFFEKSEER_ParameterNODE_TRACK_H__
-#define	__EFFEKSEER_ParameterNODE_TRACK_H__
+#ifndef __EFFEKSEER_ParameterNODE_TRACK_H__
+#define __EFFEKSEER_ParameterNODE_TRACK_H__
 
 //----------------------------------------------------------------------------------
 // Include
@@ -8309,8 +8686,7 @@ struct TrackSizeParameter
 		Parameter_DWORD = 0x7fffffff,
 	} type;
 
-	union
-	{
+	union {
 		struct
 		{
 			float size;
@@ -8325,13 +8701,11 @@ class EffectNodeTrack
 	: public EffectNodeImplemented
 {
 public:
-
 	struct InstanceGroupValues
 	{
 		struct Color
 		{
-			union
-			{
+			union {
 				struct
 				{
 					Effekseer::Color color_;
@@ -8345,7 +8719,7 @@ public:
 				struct
 				{
 					Effekseer::Color start;
-					Effekseer::Color  end;
+					Effekseer::Color end;
 				} easing;
 
 				struct
@@ -8358,76 +8732,73 @@ public:
 
 		struct Size
 		{
-			union
-			{
+			union {
 				struct
 				{
-					float	size_;
+					float size_;
 				} fixed;
 			} size;
 		};
 
-		Color	ColorLeft;
-		Color	ColorCenter;
-		Color	ColorRight;
+		Color ColorLeft;
+		Color ColorCenter;
+		Color ColorRight;
 
-		Color	ColorLeftMiddle;
-		Color	ColorCenterMiddle;
-		Color	ColorRightMiddle;
+		Color ColorLeftMiddle;
+		Color ColorCenterMiddle;
+		Color ColorRightMiddle;
 
-		Size	SizeFor;
-		Size	SizeMiddle;
-		Size	SizeBack;
-
+		Size SizeFor;
+		Size SizeMiddle;
+		Size SizeBack;
 	};
 
 	struct InstanceValues
 	{
-		Color	colorLeft;
-		Color	colorCenter;
-		Color	colorRight;
+		Color colorLeft;
+		Color colorCenter;
+		Color colorRight;
 
-		Color	colorLeftMiddle;
-		Color	colorCenterMiddle;
-		Color	colorRightMiddle;
+		Color colorLeftMiddle;
+		Color colorCenterMiddle;
+		Color colorRightMiddle;
 
-		Color	_colorLeft;
-		Color	_colorCenter;
-		Color	_colorRight;
+		Color _colorLeft;
+		Color _colorCenter;
+		Color _colorRight;
 
-		Color	_colorLeftMiddle;
-		Color	_colorCenterMiddle;
-		Color	_colorRightMiddle;
+		Color _colorLeftMiddle;
+		Color _colorCenterMiddle;
+		Color _colorRightMiddle;
 
-		float	SizeFor;
-		float	SizeMiddle;
-		float	SizeBack;
+		float SizeFor;
+		float SizeMiddle;
+		float SizeBack;
 	};
 
-	TrackRenderer::NodeParameter	m_nodeParameter;
+	TrackRenderer::NodeParameter m_nodeParameter;
 	TrackRenderer::InstanceParameter m_instanceParameter;
 
-	InstanceGroupValues		m_currentGroupValues;
+	InstanceGroupValues m_currentGroupValues;
 
 public:
+	AlphaBlendType AlphaBlend;
 
-	AlphaBlendType		AlphaBlend;
+	StandardColorParameter TrackColorLeft;
+	StandardColorParameter TrackColorCenter;
+	StandardColorParameter TrackColorRight;
 
-	StandardColorParameter	TrackColorLeft;
-	StandardColorParameter	TrackColorCenter;
-	StandardColorParameter	TrackColorRight;
+	StandardColorParameter TrackColorLeftMiddle;
+	StandardColorParameter TrackColorCenterMiddle;
+	StandardColorParameter TrackColorRightMiddle;
 
-	StandardColorParameter	TrackColorLeftMiddle;
-	StandardColorParameter	TrackColorCenterMiddle;
-	StandardColorParameter	TrackColorRightMiddle;
-
-	TrackSizeParameter	TrackSizeFor;
-	TrackSizeParameter	TrackSizeMiddle;
-	TrackSizeParameter	TrackSizeBack;
+	TrackSizeParameter TrackSizeFor;
+	TrackSizeParameter TrackSizeMiddle;
+	TrackSizeParameter TrackSizeBack;
 
 	int TrackTexture;
 
-	int32_t	SplineDivision = 1;
+	int32_t SplineDivision = 1;
 
 	NodeRendererTextureUVTypeParameter TextureUVType;
 
@@ -8459,7 +8830,10 @@ public:
 
 	void UpdateRenderedInstance(Instance& instance, Manager* manager) override;
 
-	eEffectNodeType GetType() const override { return EFFECT_NODE_TYPE_TRACK; }
+	eEffectNodeType GetType() const override
+	{
+		return EFFECT_NODE_TYPE_TRACK;
+	}
 
 	void InitializeValues(InstanceGroupValues::Color& value, StandardColorParameter& param, InstanceGlobal* instanceGlobal);
 	void InitializeValues(InstanceGroupValues::Size& value, TrackSizeParameter& param, Manager* manager);
@@ -8471,11 +8845,11 @@ public:
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-}
+} // namespace Effekseer
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-#endif	// __EFFEKSEER_ParameterNODE_TRACK_H__
+#endif // __EFFEKSEER_ParameterNODE_TRACK_H__
 
 
 #ifndef __EFFEKSEER_EFFECT_IMPLEMENTED_H__
@@ -8497,14 +8871,16 @@ namespace Effekseer
 class EffectReloadingBackup
 {
 public:
-	template <class T> class Holder
+	template <class T>
+	class Holder
 	{
 	public:
 		T value;
 		int counter = 0;
 	};
 
-	template <class T> class HolderCollection
+	template <class T>
+	class HolderCollection
 	{
 		std::map<std::u16string, Holder<T>> collection;
 
@@ -8547,7 +8923,10 @@ public:
 			}
 		}
 
-		std::map<std::u16string, Holder<T>>& GetCollection() { return collection; }
+		std::map<std::u16string, Holder<T>>& GetCollection()
+		{
+			return collection;
+		}
 	};
 
 	HolderCollection<TextureData*> images;
@@ -8568,11 +8947,11 @@ class EffectImplemented : public Effect, public ReferenceObject
 	friend class EffectFactory;
 	friend class Instance;
 
-	#ifdef __EFFEKSEER_BUILD_VERSION16__
+#ifdef __EFFEKSEER_BUILD_VERSION16__
 	static const int32_t SupportBinaryVersion = 1600;
 #else
 	static const int32_t SupportBinaryVersion = 1500;
-	#endif
+#endif
 
 protected:
 	ManagerImplemented* m_pManager;
@@ -8815,9 +9194,18 @@ public:
 
 	EffectTerm CalculateTerm() const override;
 
-	virtual int GetRef() override { return ReferenceObject::GetRef(); }
-	virtual int AddRef() override { return ReferenceObject::AddRef(); }
-	virtual int Release() override { return ReferenceObject::Release(); }
+	virtual int GetRef() override
+	{
+		return ReferenceObject::GetRef();
+	}
+	virtual int AddRef() override
+	{
+		return ReferenceObject::AddRef();
+	}
+	virtual int Release() override
+	{
+		return ReferenceObject::Release();
+	}
 };
 //----------------------------------------------------------------------------------
 //
@@ -9233,9 +9621,18 @@ public:
 
 	void RessignCulling() override;
 
-	virtual int GetRef() override { return ReferenceObject::GetRef(); }
-	virtual int AddRef() override { return ReferenceObject::AddRef(); }
-	virtual int Release() override { return ReferenceObject::Release(); }
+	virtual int GetRef() override
+	{
+		return ReferenceObject::GetRef();
+	}
+	virtual int AddRef() override
+	{
+		return ReferenceObject::AddRef();
+	}
+	virtual int Release() override
+	{
+		return ReferenceObject::Release();
+	}
 };
 
 } // namespace Effekseer
@@ -9243,8 +9640,8 @@ public:
 #endif // __EFFEKSEER_MANAGER_IMPLEMENTED_H__
 
 
-#ifndef	__EFFEKSEER_INTRUSIVE_LIST_H__
-#define	__EFFEKSEER_INTRUSIVE_LIST_H__
+#ifndef __EFFEKSEER_INTRUSIVE_LIST_H__
+#define __EFFEKSEER_INTRUSIVE_LIST_H__
 
 //----------------------------------------------------------------------------------
 // Include
@@ -9253,7 +9650,8 @@ public:
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-namespace Effekseer { 
+namespace Effekseer
+{
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
@@ -9268,42 +9666,100 @@ class IntrusiveList final
 {
 public:
 	typedef T Type;
-	
+
 	class Iterator
 	{
 		Type* m_Node = nullptr;
+
 	public:
 		Iterator() = default;
-		Iterator( const Iterator& it ) = default;
-		Iterator( Type* node ): m_Node(node) {}
-		Type* operator*() const { assert( m_Node != nullptr ); return m_Node; }
-		Type* operator->() const { assert( m_Node != nullptr ); return m_Node; }
-		Iterator& operator++() { assert( m_Node != nullptr ); m_Node = m_Node->m_NextNode; return *this; }
-		Iterator operator++(int) { assert( m_Node != nullptr ); Iterator it(m_Node); m_Node = m_Node->m_NextNode; return it; }
-		bool operator==( const Iterator& rhs ) const { return m_Node == rhs.m_Node; }
-		bool operator!=( const Iterator& rhs ) const { return m_Node != rhs.m_Node; }
+		Iterator(const Iterator& it) = default;
+		Iterator(Type* node)
+			: m_Node(node)
+		{
+		}
+		Type* operator*() const
+		{
+			assert(m_Node != nullptr);
+			return m_Node;
+		}
+		Type* operator->() const
+		{
+			assert(m_Node != nullptr);
+			return m_Node;
+		}
+		Iterator& operator++()
+		{
+			assert(m_Node != nullptr);
+			m_Node = m_Node->m_NextNode;
+			return *this;
+		}
+		Iterator operator++(int)
+		{
+			assert(m_Node != nullptr);
+			Iterator it(m_Node);
+			m_Node = m_Node->m_NextNode;
+			return it;
+		}
+		bool operator==(const Iterator& rhs) const
+		{
+			return m_Node == rhs.m_Node;
+		}
+		bool operator!=(const Iterator& rhs) const
+		{
+			return m_Node != rhs.m_Node;
+		}
 	};
-	
+
 	class ReverseIterator
 	{
 		Type* m_Node = nullptr;
+
 	public:
 		ReverseIterator() = default;
-		ReverseIterator( const ReverseIterator& it ) = default;
-		ReverseIterator( Type* node ): m_Node(node) {}
-		Type* operator*() const { assert( m_Node != nullptr ); return m_Node; }
-		Type* operator->() const { assert( m_Node != nullptr ); return m_Node; }
-		ReverseIterator& operator++() { assert( m_Node != nullptr ); m_Node = m_Node->m_PrevNode; return *this; }
-		ReverseIterator operator++(int) { assert( m_Node != nullptr ); ReverseIterator it(m_Node); m_Node = m_Node->m_PrevNode; return it; }
-		bool operator==( const ReverseIterator& rhs ) const { return m_Node == rhs.m_Node; }
-		bool operator!=( const ReverseIterator& rhs ) const { return m_Node != rhs.m_Node; }
+		ReverseIterator(const ReverseIterator& it) = default;
+		ReverseIterator(Type* node)
+			: m_Node(node)
+		{
+		}
+		Type* operator*() const
+		{
+			assert(m_Node != nullptr);
+			return m_Node;
+		}
+		Type* operator->() const
+		{
+			assert(m_Node != nullptr);
+			return m_Node;
+		}
+		ReverseIterator& operator++()
+		{
+			assert(m_Node != nullptr);
+			m_Node = m_Node->m_PrevNode;
+			return *this;
+		}
+		ReverseIterator operator++(int)
+		{
+			assert(m_Node != nullptr);
+			ReverseIterator it(m_Node);
+			m_Node = m_Node->m_PrevNode;
+			return it;
+		}
+		bool operator==(const ReverseIterator& rhs) const
+		{
+			return m_Node == rhs.m_Node;
+		}
+		bool operator!=(const ReverseIterator& rhs) const
+		{
+			return m_Node != rhs.m_Node;
+		}
 	};
-	
+
 	class Node
 	{
 		friend class IntrusiveList<Type>;
 		friend class IntrusiveList<Type>::Iterator;
-		
+
 	private:
 		Type* m_PrevNode = nullptr;
 		Type* m_NextNode = nullptr;
@@ -9316,35 +9772,53 @@ private:
 
 public:
 	IntrusiveList() = default;
-	IntrusiveList( const IntrusiveList<T>& rhs ) = delete;
-	IntrusiveList<T>& operator=( const IntrusiveList<T>& rhs ) = delete;
-	IntrusiveList( IntrusiveList<T>&& rhs );
-	IntrusiveList<T>& operator=( IntrusiveList<T>&& rhs );
+	IntrusiveList(const IntrusiveList<T>& rhs) = delete;
+	IntrusiveList<T>& operator=(const IntrusiveList<T>& rhs) = delete;
+	IntrusiveList(IntrusiveList<T>&& rhs);
+	IntrusiveList<T>& operator=(IntrusiveList<T>&& rhs);
 	~IntrusiveList();
 
-	void push_back( Type* newObject );
+	void push_back(Type* newObject);
 	void pop_back();
-	void push_front( Type* newObject );
+	void push_front(Type* newObject);
 	void pop_front();
-		
-	Iterator insert( Iterator it, Type* newObject );
-	Iterator erase( Iterator it );
+
+	Iterator insert(Iterator it, Type* newObject);
+	Iterator erase(Iterator it);
 	void clear();
-		
+
 	Type* front() const;
 	Type* back() const;
 
-	bool empty() const { return m_Count == 0; }
-	size_t size() const { return m_Count; }
+	bool empty() const
+	{
+		return m_Count == 0;
+	}
+	size_t size() const
+	{
+		return m_Count;
+	}
 
-	Iterator begin() const { return Iterator( m_HeadNode ); }
-	Iterator end() const { return Iterator( nullptr ); }
-	ReverseIterator rbegin() const { return ReverseIterator( m_TailNode ); }
-	ReverseIterator rend() const { return ReverseIterator( nullptr ); }
+	Iterator begin() const
+	{
+		return Iterator(m_HeadNode);
+	}
+	Iterator end() const
+	{
+		return Iterator(nullptr);
+	}
+	ReverseIterator rbegin() const
+	{
+		return ReverseIterator(m_TailNode);
+	}
+	ReverseIterator rend() const
+	{
+		return ReverseIterator(nullptr);
+	}
 };
 
 template <typename T>
-IntrusiveList<T>::IntrusiveList( IntrusiveList<T>&& rhs )
+IntrusiveList<T>::IntrusiveList(IntrusiveList<T>&& rhs)
 {
 	m_HeadNode = rhs.m_HeadNode;
 	m_TailNode = rhs.m_TailNode;
@@ -9355,7 +9829,7 @@ IntrusiveList<T>::IntrusiveList( IntrusiveList<T>&& rhs )
 }
 
 template <typename T>
-IntrusiveList<T>& IntrusiveList<T>::operator=( IntrusiveList<T>&& rhs )
+IntrusiveList<T>& IntrusiveList<T>::operator=(IntrusiveList<T>&& rhs)
 {
 	m_HeadNode = rhs.m_HeadNode;
 	m_TailNode = rhs.m_TailNode;
@@ -9372,13 +9846,13 @@ IntrusiveList<T>::~IntrusiveList()
 }
 
 template <typename T>
-inline void IntrusiveList<T>::push_back( typename IntrusiveList<T>::Type* newObject )
+inline void IntrusiveList<T>::push_back(typename IntrusiveList<T>::Type* newObject)
 {
-	assert( newObject != nullptr );
-	assert( newObject->m_PrevNode == nullptr );
-	assert( newObject->m_NextNode == nullptr );
+	assert(newObject != nullptr);
+	assert(newObject->m_PrevNode == nullptr);
+	assert(newObject->m_NextNode == nullptr);
 
-	if( m_TailNode )
+	if (m_TailNode)
 	{
 		newObject->m_PrevNode = m_TailNode;
 		m_TailNode->m_NextNode = newObject;
@@ -9391,30 +9865,33 @@ inline void IntrusiveList<T>::push_back( typename IntrusiveList<T>::Type* newObj
 	}
 	m_Count++;
 }
-	
+
 template <typename T>
 inline void IntrusiveList<T>::pop_back()
 {
-	assert( m_TailNode != nullptr );
-	if( m_TailNode )
+	assert(m_TailNode != nullptr);
+	if (m_TailNode)
 	{
 		auto prev = m_TailNode->m_PrevNode;
 		m_TailNode->m_PrevNode = nullptr;
 		m_TailNode->m_NextNode = nullptr;
-		if( prev ){ prev->m_NextNode = nullptr; }
+		if (prev)
+		{
+			prev->m_NextNode = nullptr;
+		}
 		m_TailNode = prev;
 		m_Count--;
 	}
 }
-	
-template <typename T>
-inline void IntrusiveList<T>::push_front( typename IntrusiveList<T>::Type* newObject )
-{
-	assert( newObject != nullptr );
-	assert( newObject->m_PrevNode == nullptr );
-	assert( newObject->m_NextNode == nullptr );
 
-	if( m_HeadNode )
+template <typename T>
+inline void IntrusiveList<T>::push_front(typename IntrusiveList<T>::Type* newObject)
+{
+	assert(newObject != nullptr);
+	assert(newObject->m_PrevNode == nullptr);
+	assert(newObject->m_NextNode == nullptr);
+
+	if (m_HeadNode)
 	{
 		newObject->m_NextNode = m_HeadNode;
 		m_HeadNode->m_PrevNode = newObject;
@@ -9427,58 +9904,75 @@ inline void IntrusiveList<T>::push_front( typename IntrusiveList<T>::Type* newOb
 	}
 	m_Count++;
 }
-	
+
 template <typename T>
 inline void IntrusiveList<T>::pop_front()
 {
-	assert( m_HeadNode != nullptr );
-	if( m_HeadNode )
+	assert(m_HeadNode != nullptr);
+	if (m_HeadNode)
 	{
 		auto next = m_HeadNode->m_NextNode;
 		m_HeadNode->m_PrevNode = nullptr;
 		m_HeadNode->m_NextNode = nullptr;
-		if( next ){ next->m_PrevNode = nullptr; }
+		if (next)
+		{
+			next->m_PrevNode = nullptr;
+		}
 		m_HeadNode = next;
 		m_Count--;
 	}
 }
-	
+
 template <typename T>
 inline typename IntrusiveList<T>::Iterator
-IntrusiveList<T>::insert( typename IntrusiveList<T>::Iterator it, Type* newObject )
+IntrusiveList<T>::insert(typename IntrusiveList<T>::Iterator it, Type* newObject)
 {
-	assert( newObject != nullptr );
-	assert( newObject->m_PrevNode == nullptr );
-	assert( newObject->m_NextNode == nullptr );
+	assert(newObject != nullptr);
+	assert(newObject->m_PrevNode == nullptr);
+	assert(newObject->m_NextNode == nullptr);
 	auto prev = it->m_PrevNode;
 	newObject->m_PrevNode = prev;
 	newObject->m_NextNode = *it;
-	if( prev ){ prev->m_NextNode = newObject; }
-	else{ m_HeadNode = newObject; }
+	if (prev)
+	{
+		prev->m_NextNode = newObject;
+	}
+	else
+	{
+		m_HeadNode = newObject;
+	}
 	m_Count++;
-	return IntrusiveList<T>::Iterator( newObject );
+	return IntrusiveList<T>::Iterator(newObject);
 }
-	
+
 template <typename T>
-inline typename IntrusiveList<T>::Iterator 
-IntrusiveList<T>::erase( typename IntrusiveList<T>::Iterator it )
+inline typename IntrusiveList<T>::Iterator
+IntrusiveList<T>::erase(typename IntrusiveList<T>::Iterator it)
 {
 	auto prev = it->m_PrevNode;
 	auto next = it->m_NextNode;
 	it->m_PrevNode = nullptr;
 	it->m_NextNode = nullptr;
-	if( prev ) prev->m_NextNode = next;
-	else m_HeadNode = next;
-	if( next ){ next->m_PrevNode = prev; }
-	else{ m_TailNode = prev; }
+	if (prev)
+		prev->m_NextNode = next;
+	else
+		m_HeadNode = next;
+	if (next)
+	{
+		next->m_PrevNode = prev;
+	}
+	else
+	{
+		m_TailNode = prev;
+	}
 	m_Count--;
-	return IntrusiveList<T>::Iterator( next );
+	return IntrusiveList<T>::Iterator(next);
 }
-	
+
 template <typename T>
 inline void IntrusiveList<T>::clear()
 {
-	for( Type* it = m_HeadNode; it != nullptr; )
+	for (Type* it = m_HeadNode; it != nullptr;)
 	{
 		Type* next = it->m_NextNode;
 		it->m_PrevNode = nullptr;
@@ -9493,28 +9987,28 @@ inline void IntrusiveList<T>::clear()
 template <typename T>
 T* IntrusiveList<T>::front() const
 {
-	assert( m_HeadNode != nullptr );
+	assert(m_HeadNode != nullptr);
 	return m_HeadNode;
 }
 
 template <typename T>
 T* IntrusiveList<T>::back() const
 {
-	assert( m_TailNode != nullptr );
+	assert(m_TailNode != nullptr);
 	return m_TailNode;
 }
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
- } 
+} // namespace Effekseer
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-#endif	// __EFFEKSEER_INTRUSIVE_LIST_H__
+#endif // __EFFEKSEER_INTRUSIVE_LIST_H__
 
 
-#ifndef	__EFFEKSEER_INSTANCECONTAINER_H__
-#define	__EFFEKSEER_INSTANCECONTAINER_H__
+#ifndef __EFFEKSEER_INSTANCECONTAINER_H__
+#define __EFFEKSEER_INSTANCECONTAINER_H__
 
 //----------------------------------------------------------------------------------
 // Include
@@ -9539,27 +10033,26 @@ class InstanceContainer : public IntrusiveList<InstanceContainer>::Node
 	friend class ManagerImplemented;
 
 private:
-
 	// マネージャ
-	ManagerImplemented*	m_pManager;
+	ManagerImplemented* m_pManager;
 
 	// パラメーター
 	EffectNodeImplemented* m_pEffectNode;
 
 	// グローバル
-	InstanceGlobal*	m_pGlobal;
+	InstanceGlobal* m_pGlobal;
 
 	// 子のコンテナ
-	IntrusiveList<InstanceContainer>	m_Children;
+	IntrusiveList<InstanceContainer> m_Children;
 
 	// グループの連結リストの先頭
-	InstanceGroup*	m_headGroups;
+	InstanceGroup* m_headGroups;
 
 	// グループの連結リストの最後
-	InstanceGroup*	m_tailGroups;
+	InstanceGroup* m_tailGroups;
 
 	// コンストラクタ
-	InstanceContainer( ManagerImplemented* pManager, EffectNode* pEffectNode, InstanceGlobal* pGlobal );
+	InstanceContainer(ManagerImplemented* pManager, EffectNode* pEffectNode, InstanceGlobal* pGlobal);
 
 	// デストラクタ
 	virtual ~InstanceContainer();
@@ -9578,35 +10071,35 @@ public:
 	*/
 	InstanceGroup* GetFirstGroup() const;
 
-	void Update( bool recursive, bool shown );
+	void Update(bool recursive, bool shown);
 
-	void SetBaseMatrix( bool recursive, const Mat43f& mat );
+	void SetBaseMatrix(bool recursive, const Mat43f& mat);
 
-	void RemoveForcibly( bool recursive );
+	void RemoveForcibly(bool recursive);
 
-	void Draw( bool recursive );
+	void Draw(bool recursive);
 
-	void KillAllInstances(  bool recursive );
+	void KillAllInstances(bool recursive);
 
 	InstanceGlobal* GetRootInstance();
 
-	void AddChild( InstanceContainer* pContainter );
+	void AddChild(InstanceContainer* pContainter);
 
-	InstanceContainer* GetChild( int index );
+	InstanceContainer* GetChild(int index);
 };
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-}
+} // namespace Effekseer
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-#endif	// __EFFEKSEER_INSTANCECONTAINER_H__
+#endif // __EFFEKSEER_INSTANCECONTAINER_H__
 
 
-#ifndef	__EFFEKSEER_INSTANCE_H__
-#define	__EFFEKSEER_INSTANCE_H__
+#ifndef __EFFEKSEER_INSTANCE_H__
+#define __EFFEKSEER_INSTANCE_H__
 
 //----------------------------------------------------------------------------------
 // Include
@@ -9656,7 +10149,6 @@ class alignas(16) Instance : public IntrusiveList<Instance>::Node
 	friend class InstanceContainer;
 
 protected:
-
 	//! custom data
 	InstanceCustomData customDataValues1;
 	InstanceCustomData customDataValues2;
@@ -9665,13 +10157,13 @@ public:
 	static const int32_t ChildrenMax = 16;
 
 	// マネージャ
-	Manager*	m_pManager;
+	Manager* m_pManager;
 
 	// パラメーター
 	EffectNodeImplemented* m_pEffectNode;
 
 	// コンテナ
-	InstanceContainer*	m_pContainer;
+	InstanceContainer* m_pContainer;
 
 	// a group which the instance belongs to
 	// 自分が所属するグループ
@@ -9682,30 +10174,29 @@ public:
 	InstanceGroup* childrenGroups_;
 
 	// 親
-	Instance*	m_pParent;
-	
+	Instance* m_pParent;
+
 	// グローバル位置
-	Vec3f	m_GlobalPosition;
-	Vec3f	m_GlobalVelocity;
-	
+	Vec3f m_GlobalPosition;
+	Vec3f m_GlobalVelocity;
+
 	// グローバル位置補正
-	Vec3f	m_GlobalRevisionLocation;
-	Vec3f	m_GlobalRevisionVelocity;
-	
+	Vec3f m_GlobalRevisionLocation;
+	Vec3f m_GlobalRevisionVelocity;
+
 	//! for noise
 	Vec3f modifyWithNoise_;
 
 	// Color for binding
-	Color		ColorInheritance;
+	Color ColorInheritance;
 
 	// Parent color
-	Color		ColorParent;
+	Color ColorParent;
 
-	union 
-	{
+	union {
 		struct
 		{
-		
+
 		} fixed;
 
 		struct
@@ -9717,22 +10208,21 @@ public:
 
 		struct
 		{
-			Vec3f	start;
-			Vec3f	end;
+			Vec3f start;
+			Vec3f end;
 		} easing;
 
 		struct
 		{
-			Vec3f	offset;
+			Vec3f offset;
 		} fcruve;
 
 	} translation_values;
 
-	union 
-	{
+	union {
 		struct
 		{
-		
+
 		} fixed;
 
 		struct
@@ -9747,14 +10237,13 @@ public:
 			Vec3f start;
 			Vec3f end;
 		} easing;
-		
+
 		struct
 		{
 			float rotation;
 			Vec3f axis;
 
-			union
-			{
+			union {
 				struct
 				{
 					float rotation;
@@ -9777,37 +10266,36 @@ public:
 
 	} rotation_values;
 
-	union 
-	{
+	union {
 		struct
 		{
-		
+
 		} fixed;
 
 		struct
 		{
-			Vec3f  scale;
-			Vec3f  velocity;
-			Vec3f  acceleration;
+			Vec3f scale;
+			Vec3f velocity;
+			Vec3f acceleration;
 		} random;
 
 		struct
 		{
-			Vec3f  start;
-			Vec3f  end;
+			Vec3f start;
+			Vec3f end;
 		} easing;
-		
+
 		struct
 		{
-			float  scale;
-			float  velocity;
-			float  acceleration;
+			float scale;
+			float velocity;
+			float acceleration;
 		} single_random;
 
 		struct
 		{
-			float  start;
-			float  end;
+			float start;
+			float end;
 		} single_easing;
 
 		struct
@@ -9818,103 +10306,100 @@ public:
 	} scaling_values;
 
 	// 描画
-	union
-	{
-		EffectNodeSprite::InstanceValues	sprite;
-		EffectNodeRibbon::InstanceValues	ribbon;
-		EffectNodeRing::InstanceValues		ring;
-		EffectNodeModel::InstanceValues		model;
-		EffectNodeTrack::InstanceValues		track;
+	union {
+		EffectNodeSprite::InstanceValues sprite;
+		EffectNodeRibbon::InstanceValues ribbon;
+		EffectNodeRing::InstanceValues ring;
+		EffectNodeModel::InstanceValues model;
+		EffectNodeTrack::InstanceValues track;
 	} rendererValues;
-	
+
 	// 音
-	union
-	{
-		int32_t		delay;
+	union {
+		int32_t delay;
 	} soundValues;
 
 	// 状態
-	eInstanceState	m_State;
+	eInstanceState m_State;
 
 	// 生存時間
-	float		m_LivedTime;
+	float m_LivedTime;
 
 	// 生成されてからの時間
-	float		m_LivingTime;
+	float m_LivingTime;
 
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 	//! The time offset for UV animation
-	int32_t		uvTimeOffsets[ParameterRendererCommon::UVParameterNum];
+	int32_t uvTimeOffsets[ParameterRendererCommon::UVParameterNum];
 
 	// Scroll, FCurve area for UV
-	RectF		uvAreaOffsets[ParameterRendererCommon::UVParameterNum];
+	RectF uvAreaOffsets[ParameterRendererCommon::UVParameterNum];
 
 	// Scroll speed for UV
-	Vec2f		uvScrollSpeeds[ParameterRendererCommon::UVParameterNum];
+	Vec2f uvScrollSpeeds[ParameterRendererCommon::UVParameterNum];
 #else
 	//! The time offset for UV animation
 	int32_t uvTimeOffset = 0;
 
 	// Scroll, FCurve area for UV
-	RectF		uvAreaOffset;
+	RectF uvAreaOffset;
 
 	// Scroll speed for UV
-	Vec2f	uvScrollSpeed;
+	Vec2f uvScrollSpeed;
 #endif
 
 	// The number of generated chiledren. (fixed size)
-	int32_t		m_fixedGeneratedChildrenCount[ChildrenMax];
+	int32_t m_fixedGeneratedChildrenCount[ChildrenMax];
 
 	// The number of maximum generated chiledren. (fixed size)
 	int32_t fixedMaxGenerationChildrenCount_[ChildrenMax];
 
 	// The time to generate next child.  (fixed size)
-	float		m_fixedNextGenerationTime[ChildrenMax];
+	float m_fixedNextGenerationTime[ChildrenMax];
 
 	// The number of generated chiledren. (flexible size)
-	int32_t*		m_flexibleGeneratedChildrenCount;
+	int32_t* m_flexibleGeneratedChildrenCount;
 
 	// The number of maximum generated chiledren. (flexible size)
 	int32_t* flexibleMaxGenerationChildrenCount_ = nullptr;
 
 	// The time to generate next child.  (flexible size)
-	float*		m_flexibleNextGenerationTime;
+	float* m_flexibleNextGenerationTime;
 
 	// The number of generated chiledren. (actually used)
-	int32_t*		m_generatedChildrenCount;
+	int32_t* m_generatedChildrenCount;
 
 	// The number of maximum generated chiledren. (actually used)
 	int32_t* maxGenerationChildrenCount = nullptr;
 
 	// The time to generate next child.  (actually used)
-	float*			m_nextGenerationTime;
+	float* m_nextGenerationTime;
 
 	// Spawning Method matrix
-	Mat43f			m_GenerationLocation;
+	Mat43f m_GenerationLocation;
 
 	// 変換用行列
-	Mat43f			m_GlobalMatrix43;
+	Mat43f m_GlobalMatrix43;
 
 	// 親の変換用行列
-	Mat43f			m_ParentMatrix;
+	Mat43f m_ParentMatrix;
 
 	// 変換用行列が計算済かどうか
-	bool			m_GlobalMatrix43Calculated;
+	bool m_GlobalMatrix43Calculated;
 
 	// 親の変換用行列が計算済かどうか
-	bool			m_ParentMatrix43Calculated;
+	bool m_ParentMatrix43Calculated;
 
 	//! whether a time is allowed to pass
-	bool			is_time_step_allowed;
+	bool is_time_step_allowed;
 
 	/* 更新番号 */
-	uint32_t		m_sequenceNumber;
+	uint32_t m_sequenceNumber;
 
 #ifdef __EFFEKSEER_BUILD_VERSION16__
-	float			m_flipbookIndexAndNextRate;
+	float m_flipbookIndexAndNextRate;
 
-	union
-	{
+	union {
 		struct
 		{
 		} fixed;
@@ -9950,21 +10435,21 @@ public:
 	void ApplyEq(T& dstParam, Effect* e, InstanceGlobal* instg, int dpInd, const U& originalParam);
 
 	//! calculate dynamic equation and return a result
-	template <typename S> 
+	template <typename S>
 	Vec3f ApplyEq(const int& dpInd, const Vec3f& originalParam, const S& scale, const S& scaleInv);
 
 	//! calculate dynamic equation and return a result
 	random_float ApplyEq(const RefMinMax& dpInd, random_float originalParam);
 
 	//! calculate dynamic equation and return a result
-	template <typename S> 
+	template <typename S>
 	random_vector3d ApplyEq(const RefMinMax& dpInd, random_vector3d originalParam, const S& scale, const S& scaleInv);
 
 	//! calculate dynamic equation and return a result
 	random_int ApplyEq(const RefMinMax& dpInd, random_int originalParam);
 
 	// コンストラクタ
-	Instance( Manager* pManager, EffectNode* pEffectNode, InstanceContainer* pContainer, InstanceGroup* pGroup );
+	Instance(Manager* pManager, EffectNode* pEffectNode, InstanceContainer* pContainer, InstanceGroup* pGroup);
 
 	// デストラクタ
 	virtual ~Instance();
@@ -9991,12 +10476,12 @@ public:
 	/**
 		@brief	初期化
 	*/
-	void Initialize( Instance* parent, int32_t instanceNumber, int32_t parentTime, const Mat43f& globalMatrix);
+	void Initialize(Instance* parent, int32_t instanceNumber, int32_t parentTime, const Mat43f& globalMatrix);
 
 	/**
 		@brief	更新
 	*/
-	void Update( float deltaFrame, bool shown );
+	void Update(float deltaFrame, bool shown);
 
 	/**
 		@brief	Draw instance
@@ -10018,34 +10503,33 @@ public:
 #endif
 
 	//! get custom data
-	std::array<float,4> GetCustomData(int32_t index) const;
+	std::array<float, 4> GetCustomData(int32_t index) const;
 
 private:
 	/**
 		@brief	行列の更新
 	*/
-	void CalculateMatrix( float deltaFrame );
-	
+	void CalculateMatrix(float deltaFrame);
+
 	/**
 		@brief	行列の更新
 	*/
-	void CalculateParentMatrix( float deltaFrame );
-	
+	void CalculateParentMatrix(float deltaFrame);
+
 	/**
 		@brief	絶対パラメータの反映
 	*/
-	void ModifyMatrixFromLocationAbs( float deltaFrame );
-	
+	void ModifyMatrixFromLocationAbs(float deltaFrame);
 };
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-}
+} // namespace Effekseer
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-#endif	// __EFFEKSEER_INSTANCE_H__
+#endif // __EFFEKSEER_INSTANCE_H__
 
 
 #ifndef __EFFEKSEER_INSTANCECHUNK_H__
@@ -10075,9 +10559,15 @@ public:
 
 	Instance* CreateInstance(Manager* pManager, EffectNode* pEffectNode, InstanceContainer* pContainer, InstanceGroup* pGroup);
 
-	int32_t GetAliveCount() const { return aliveCount_; }
+	int32_t GetAliveCount() const
+	{
+		return aliveCount_;
+	}
 
-	bool IsInstanceCreatable() const { return aliveCount_ < InstancesOfChunk; }
+	bool IsInstanceCreatable() const
+	{
+		return aliveCount_ < InstancesOfChunk;
+	}
 
 private:
 	std::array<uint8_t[sizeof(Instance)], InstancesOfChunk> instances_;
@@ -10094,8 +10584,8 @@ private:
 #endif // __EFFEKSEER_INSTANCECHUNK_H__
 
 
-#ifndef	__EFFEKSEER_INSTANCEGLOBAL_H__
-#define	__EFFEKSEER_INSTANCEGLOBAL_H__
+#ifndef __EFFEKSEER_INSTANCEGLOBAL_H__
+#define __EFFEKSEER_INSTANCEGLOBAL_H__
 
 //----------------------------------------------------------------------------------
 // Include
@@ -10121,18 +10611,17 @@ class InstanceGlobal
 	friend class ManagerImplemented;
 	friend class Instance;
 
-
 private:
 	/* このエフェクトで使用しているインスタンス数 */
-	int			m_instanceCount;
-	
+	int m_instanceCount;
+
 	/* 更新されたフレーム数 */
-	float		m_updatedFrame;
+	float m_updatedFrame;
 
-	InstanceContainer*	m_rootContainer;
-	Vec3f				m_targetLocation;
+	InstanceContainer* m_rootContainer;
+	Vec3f m_targetLocation = Vec3f(0.0f, 0.0f, 0.0f);
 
-	int64_t				m_seed = 0;
+	int64_t m_seed = 0;
 
 	std::array<float, 4> dynamicInputParameters;
 
@@ -10154,12 +10643,12 @@ public:
 
 	void EndDeltaFrame();
 
-	bool		IsGlobalColorSet = false;
-	Color		GlobalColor = Color(255, 255, 255, 255);
+	bool IsGlobalColorSet = false;
+	Color GlobalColor = Color(255, 255, 255, 255);
 
 	std::array<std::array<float, 4>, 16> dynamicEqResults;
 
-	std::vector<InstanceContainer*>	RenderedInstanceContainers;
+	std::vector<InstanceContainer*> RenderedInstanceContainers;
 
 	std::array<float, 4> GetDynamicEquationResult(int32_t index);
 	void SetSeed(int64_t seed);
@@ -10185,10 +10674,10 @@ public:
 	void ResetUpdatedFrame();
 
 	InstanceContainer* GetRootContainer() const;
-	void SetRootContainer( InstanceContainer* container );
+	void SetRootContainer(InstanceContainer* container);
 
 	const Vec3f& GetTargetLocation() const;
-	void SetTargetLocation( const Vector3D& location );
+	void SetTargetLocation(const Vector3D& location);
 
 	static float Rand(void* userData);
 
@@ -10197,15 +10686,15 @@ public:
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-}
+} // namespace Effekseer
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-#endif	// __EFFEKSEER_INSTANCEGLOBAL_H__
+#endif // __EFFEKSEER_INSTANCEGLOBAL_H__
 
 
-#ifndef	__EFFEKSEER_INSTANCEGROUP_H__
-#define	__EFFEKSEER_INSTANCEGROUP_H__
+#ifndef __EFFEKSEER_INSTANCEGROUP_H__
+#define __EFFEKSEER_INSTANCEGROUP_H__
 
 //----------------------------------------------------------------------------------
 // Include
@@ -10227,15 +10716,15 @@ namespace Effekseer
 */
 class alignas(32) InstanceGroup
 {
-friend class InstanceContainer;
-friend class ManagerImplemented;
+	friend class InstanceContainer;
+	friend class ManagerImplemented;
 
 private:
-	ManagerImplemented*		m_manager;
-	EffectNodeImplemented*	m_effectNode;
-	InstanceContainer*	m_container;
-	InstanceGlobal*		m_global;
-	int32_t				m_time;
+	ManagerImplemented* m_manager;
+	EffectNodeImplemented* m_effectNode;
+	InstanceContainer* m_container;
+	InstanceGlobal* m_global;
+	int32_t m_time;
 
 	Mat43f parentMatrix_;
 	Mat43f parentRotation_;
@@ -10246,19 +10735,18 @@ private:
 	IntrusiveList<Instance> m_instances;
 	IntrusiveList<Instance> m_removingInstances;
 
-	InstanceGroup( Manager* manager, EffectNode* effectNode, InstanceContainer* container, InstanceGlobal* global );
+	InstanceGroup(Manager* manager, EffectNode* effectNode, InstanceContainer* container, InstanceGlobal* global);
 
 	~InstanceGroup();
 
 	void NotfyEraseInstance();
-public:
 
+public:
 	/** 
 		@brief	描画に必要なパラメータ
 	*/
-	union
-	{
-		EffectNodeTrack::InstanceGroupValues		track;
+	union {
+		EffectNodeTrack::InstanceGroupValues track;
 	} rendererValues;
 
 	/**
@@ -10272,15 +10760,18 @@ public:
 
 	void Update(bool shown);
 
-	void SetBaseMatrix( const Mat43f& mat );
+	void SetBaseMatrix(const Mat43f& mat);
 
-	void SetParentMatrix( const Mat43f& mat );
+	void SetParentMatrix(const Mat43f& mat);
 
 	void RemoveForcibly();
 
 	void KillAllInstances();
 
-	int32_t GetTime() const { return m_time; }
+	int32_t GetTime() const
+	{
+		return m_time;
+	}
 
 	/**
 		@brief	グループを生成したインスタンスからの参照が残っているか?
@@ -10290,28 +10781,43 @@ public:
 	/**
 		@brief	インスタンスから利用する連結リストの次のオブジェクトへのポインタ
 	*/
-	InstanceGroup*	NextUsedByInstance;
+	InstanceGroup* NextUsedByInstance;
 
 	/**
 		@brief	コンテナから利用する連結リストの次のオブジェクトへのポインタ
 	*/
-	InstanceGroup*	NextUsedByContainer;
+	InstanceGroup* NextUsedByContainer;
 
-	InstanceGlobal* GetRootInstance() const { return m_global; }
+	InstanceGlobal* GetRootInstance() const
+	{
+		return m_global;
+	}
 
-	const Mat43f& GetParentMatrix() const { return parentMatrix_; }
-	const Vec3f& GetParentTranslation() const { return parentTranslation_; }
-	const Mat43f& GetParentRotation() const { return parentRotation_; }
-	const Vec3f& GetParentScale() const { return parentScale_; }
+	const Mat43f& GetParentMatrix() const
+	{
+		return parentMatrix_;
+	}
+	const Vec3f& GetParentTranslation() const
+	{
+		return parentTranslation_;
+	}
+	const Mat43f& GetParentRotation() const
+	{
+		return parentRotation_;
+	}
+	const Vec3f& GetParentScale() const
+	{
+		return parentScale_;
+	}
 };
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-}
+} // namespace Effekseer
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-#endif	// __EFFEKSEER_INSTANCEGROUP_H__
+#endif // __EFFEKSEER_INSTANCEGROUP_H__
 
 
 
@@ -10319,7 +10825,10 @@ public:
 namespace Effekseer
 {
 
-FCurve::FCurve(float defaultValue) : defaultValue_(defaultValue) {}
+FCurve::FCurve(float defaultValue)
+	: defaultValue_(defaultValue)
+{
+}
 
 int32_t FCurve::Load(void* data, int32_t version)
 {
@@ -10444,7 +10953,10 @@ float FCurve::GetValue(float living, float life, FCurveTimelineType type) const
 	}
 }
 
-float FCurve::GetOffset(InstanceGlobal& g) const { return g.GetRand(offsetMin_, offsetMax_); }
+float FCurve::GetOffset(InstanceGlobal& g) const
+{
+	return g.GetRand(offsetMin_, offsetMax_);
+}
 
 void FCurve::ChangeCoordinate()
 {
@@ -10646,7 +11158,8 @@ std::array<float, 4> FCurveVectorColor::GetOffsets(InstanceGlobal& gl) const
 namespace Effekseer
 {
 
-LocalForceFieldTurbulenceParameter::LocalForceFieldTurbulenceParameter(int32_t seed, float scale, float strength, int octave) : Noise(seed)
+LocalForceFieldTurbulenceParameter::LocalForceFieldTurbulenceParameter(int32_t seed, float scale, float strength, int octave)
+	: Noise(seed)
 {
 	Noise.Octave = octave;
 	Noise.Scale = scale;
@@ -11421,14 +11934,23 @@ void EffectNodeImplemented::CalcCustomData(const Instance* instance, std::array<
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-Effect* EffectNodeImplemented::GetEffect() const { return m_effect; }
+Effect* EffectNodeImplemented::GetEffect() const
+{
+	return m_effect;
+}
 
-int EffectNodeImplemented::GetGeneration() const { return generation_; }
+int EffectNodeImplemented::GetGeneration() const
+{
+	return generation_;
+}
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-int EffectNodeImplemented::GetChildrenCount() const { return (int)m_Nodes.size(); }
+int EffectNodeImplemented::GetChildrenCount() const
+{
+	return (int)m_Nodes.size();
+}
 
 //----------------------------------------------------------------------------------
 //
@@ -11496,39 +12018,55 @@ void EffectNodeImplemented::LoadRendererParameter(unsigned char*& pos, Setting* 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void EffectNodeImplemented::BeginRendering(int32_t count, Manager* manager) {}
+void EffectNodeImplemented::BeginRendering(int32_t count, Manager* manager)
+{
+}
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void EffectNodeImplemented::BeginRenderingGroup(InstanceGroup* group, Manager* manager) {}
+void EffectNodeImplemented::BeginRenderingGroup(InstanceGroup* group, Manager* manager)
+{
+}
 
-void EffectNodeImplemented::EndRenderingGroup(InstanceGroup* group, Manager* manager) {}
-
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
-void EffectNodeImplemented::Rendering(const Instance& instance, const Instance* next_instance, Manager* manager) {}
-
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
-void EffectNodeImplemented::EndRendering(Manager* manager) {}
+void EffectNodeImplemented::EndRenderingGroup(InstanceGroup* group, Manager* manager)
+{
+}
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void EffectNodeImplemented::InitializeRenderedInstanceGroup(InstanceGroup& instanceGroup, Manager* manager) {}
+void EffectNodeImplemented::Rendering(const Instance& instance, const Instance* next_instance, Manager* manager)
+{
+}
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void EffectNodeImplemented::InitializeRenderedInstance(Instance& instance, Manager* manager) {}
+void EffectNodeImplemented::EndRendering(Manager* manager)
+{
+}
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void EffectNodeImplemented::UpdateRenderedInstance(Instance& instance, Manager* manager) {}
+void EffectNodeImplemented::InitializeRenderedInstanceGroup(InstanceGroup& instanceGroup, Manager* manager)
+{
+}
+
+//----------------------------------------------------------------------------------
+//
+//----------------------------------------------------------------------------------
+void EffectNodeImplemented::InitializeRenderedInstance(Instance& instance, Manager* manager)
+{
+}
+
+//----------------------------------------------------------------------------------
+//
+//----------------------------------------------------------------------------------
+void EffectNodeImplemented::UpdateRenderedInstance(Instance& instance, Manager* manager)
+{
+}
 
 //----------------------------------------------------------------------------------
 //
@@ -11558,7 +12096,7 @@ float EffectNodeImplemented::GetFadeAlpha(const Instance& instance)
 		alpha *= v;
 	}
 
-	return alpha;
+	return Clamp(alpha, 1.0f, 0.0f);
 }
 
 //----------------------------------------------------------------------------------
@@ -11616,8 +12154,8 @@ EffectInstanceTerm EffectNodeImplemented::CalculateInstanceTerm(EffectInstanceTe
 		lifeMax = INT_MAX;
 	}
 
-	auto firstBeginMin = CommonValues.GenerationTimeOffset.min;
-	auto firstBeginMax = CommonValues.GenerationTimeOffset.max;
+	auto firstBeginMin = static_cast<int32_t>(CommonValues.GenerationTimeOffset.min);
+	auto firstBeginMax = static_cast<int32_t>(CommonValues.GenerationTimeOffset.max);
 	auto firstEndMin = addWithClip(firstBeginMin, lifeMin);
 	auto firstEndMax = addWithClip(firstBeginMax, lifeMax);
 
@@ -11629,7 +12167,7 @@ EffectInstanceTerm EffectNodeImplemented::CalculateInstanceTerm(EffectInstanceTe
 	}
 	else
 	{
-		lastBeginMin = CommonValues.GenerationTimeOffset.min + (CommonValues.MaxGeneration - 1) * (CommonValues.GenerationTime.min);
+		lastBeginMin = firstBeginMin + static_cast<int32_t>((CommonValues.MaxGeneration - 1) * CommonValues.GenerationTime.min);
 	}
 
 	if (CommonValues.MaxGeneration > INT_MAX / 2)
@@ -11638,7 +12176,7 @@ EffectInstanceTerm EffectNodeImplemented::CalculateInstanceTerm(EffectInstanceTe
 	}
 	else
 	{
-		lastBeginMax = CommonValues.GenerationTimeOffset.max + (CommonValues.MaxGeneration - 1) * (CommonValues.GenerationTime.max);
+		lastBeginMax = firstBeginMax + static_cast<int32_t>((CommonValues.MaxGeneration - 1) * CommonValues.GenerationTime.max);
 	}
 
 	auto lastEndMin = addWithClip(lastBeginMin, lifeMin);
@@ -11794,24 +12332,24 @@ namespace Effekseer
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-	void EffectNodeModel::LoadRendererParameter(unsigned char*& pos, Setting* setting)
+void EffectNodeModel::LoadRendererParameter(unsigned char*& pos, Setting* setting)
 {
 	int32_t type = 0;
-	memcpy( &type, pos, sizeof(int) );
+	memcpy(&type, pos, sizeof(int));
 	pos += sizeof(int);
-	assert( type == GetType() );
+	assert(type == GetType());
 	EffekseerPrintDebug("Renderer : Model\n");
 
 	AlphaBlend = RendererCommon.AlphaBlend;
 
-	if( m_effect->GetVersion() >= 7 )
+	if (m_effect->GetVersion() >= 7)
 	{
 		float Magnification;
-		memcpy( &Magnification, pos, sizeof(float) );
+		memcpy(&Magnification, pos, sizeof(float));
 		pos += sizeof(float);
 	}
 
-	memcpy( &ModelIndex, pos, sizeof(int) );
+	memcpy(&ModelIndex, pos, sizeof(int));
 	pos += sizeof(int);
 
 	if (m_effect->GetVersion() < 15)
@@ -11849,10 +12387,10 @@ namespace Effekseer
 		}
 	}
 
-	memcpy( &Culling, pos, sizeof(int) );
+	memcpy(&Culling, pos, sizeof(int));
 	pos += sizeof(int);
 
-	AllColor.load( pos, m_effect->GetVersion() );
+	AllColor.load(pos, m_effect->GetVersion());
 }
 
 //----------------------------------------------------------------------------------
@@ -11874,7 +12412,7 @@ void EffectNodeModel::BeginRendering(int32_t count, Manager* manager)
 		nodeParameter.Billboard = Billboard;
 		nodeParameter.Magnification = m_effect->GetMaginification();
 		nodeParameter.IsRightHand = manager->GetCoordinateSystem() ==
-			CoordinateSystem::RH;
+									CoordinateSystem::RH;
 
 		nodeParameter.DepthParameterPtr = &DepthValues.DepthParameter;
 		//nodeParameter.DepthOffset = DepthValues.DepthOffset;
@@ -11893,7 +12431,7 @@ void EffectNodeModel::Rendering(const Instance& instance, const Instance* next_i
 {
 	const InstanceValues& instValues = instance.rendererValues.model;
 	ModelRenderer* renderer = manager->GetModelRenderer();
-	if( renderer != NULL )
+	if (renderer != NULL)
 	{
 		ModelRenderer::NodeParameter nodeParameter;
 		//nodeParameter.TextureFilter = RendererCommon.FilterType;
@@ -11906,7 +12444,7 @@ void EffectNodeModel::Rendering(const Instance& instance, const Instance* next_i
 		nodeParameter.Billboard = Billboard;
 		nodeParameter.Magnification = m_effect->GetMaginification();
 		nodeParameter.IsRightHand = manager->GetCoordinateSystem() ==
-			CoordinateSystem::RH;
+									CoordinateSystem::RH;
 
 		nodeParameter.DepthParameterPtr = &DepthValues.DepthParameter;
 		//nodeParameter.DepthOffset = DepthValues.DepthOffset;
@@ -11940,14 +12478,14 @@ void EffectNodeModel::Rendering(const Instance& instance, const Instance* next_i
 			_color = instValues._original;
 		}
 		instanceParameter.AllColor = _color;
-		
+
 		if (instance.m_pContainer->GetRootInstance()->IsGlobalColorSet)
 		{
 			instanceParameter.AllColor = Color::Mul(instanceParameter.AllColor, instance.m_pContainer->GetRootInstance()->GlobalColor);
 		}
 
 		nodeParameter.BasicParameterPtr = &RendererCommon.BasicParameter;
-		renderer->Rendering( nodeParameter, instanceParameter, m_userData );
+		renderer->Rendering(nodeParameter, instanceParameter, m_userData);
 	}
 }
 
@@ -11957,7 +12495,7 @@ void EffectNodeModel::Rendering(const Instance& instance, const Instance* next_i
 void EffectNodeModel::EndRendering(Manager* manager)
 {
 	ModelRenderer* renderer = manager->GetModelRenderer();
-	if( renderer != NULL )
+	if (renderer != NULL)
 	{
 		ModelRenderer::NodeParameter nodeParameter;
 		//nodeParameter.TextureFilter = RendererCommon.FilterType;
@@ -11970,7 +12508,7 @@ void EffectNodeModel::EndRendering(Manager* manager)
 		nodeParameter.Billboard = Billboard;
 		nodeParameter.Magnification = m_effect->GetMaginification();
 		nodeParameter.IsRightHand = manager->GetSetting()->GetCoordinateSystem() ==
-			CoordinateSystem::RH;
+									CoordinateSystem::RH;
 
 		nodeParameter.DepthParameterPtr = &DepthValues.DepthParameter;
 		//nodeParameter.DepthOffset = DepthValues.DepthOffset;
@@ -11978,7 +12516,7 @@ void EffectNodeModel::EndRendering(Manager* manager)
 		//nodeParameter.IsDepthOffsetScaledWithParticleScale = DepthValues.IsDepthOffsetScaledWithParticleScale;
 
 		nodeParameter.BasicParameterPtr = &RendererCommon.BasicParameter;
-		renderer->EndRendering( nodeParameter, m_userData );
+		renderer->EndRendering(nodeParameter, m_userData);
 	}
 }
 
@@ -11990,17 +12528,17 @@ void EffectNodeModel::InitializeRenderedInstance(Instance& instance, Manager* ma
 	InstanceValues& instValues = instance.rendererValues.model;
 	auto instanceGlobal = instance.m_pContainer->GetRootInstance();
 
-	if( AllColor.type == StandardColorParameter::Fixed )
+	if (AllColor.type == StandardColorParameter::Fixed)
 	{
 		instValues._original = AllColor.fixed.all;
 		instValues.allColorValues.fixed._color = instValues._original;
 	}
-	else if( AllColor.type == StandardColorParameter::Random )
+	else if (AllColor.type == StandardColorParameter::Random)
 	{
 		instValues._original = AllColor.random.all.getValue(*instanceGlobal);
 		instValues.allColorValues.random._color = instValues._original;
 	}
-	else if( AllColor.type == StandardColorParameter::Easing )
+	else if (AllColor.type == StandardColorParameter::Easing)
 	{
 		instValues.allColorValues.easing.start = AllColor.easing.all.getStartValue(*instanceGlobal);
 		instValues.allColorValues.easing.end = AllColor.easing.all.getEndValue(*instanceGlobal);
@@ -12011,16 +12549,16 @@ void EffectNodeModel::InitializeRenderedInstance(Instance& instance, Manager* ma
 			instValues._original,
 			instValues.allColorValues.easing.start,
 			instValues.allColorValues.easing.end,
-			t );
+			t);
 	}
-	else if( AllColor.type == StandardColorParameter::FCurve_RGBA )
+	else if (AllColor.type == StandardColorParameter::FCurve_RGBA)
 	{
 		instValues.allColorValues.fcurve_rgba.offset = AllColor.fcurve_rgba.FCurve->GetOffsets(*instanceGlobal);
 		auto fcurveColors = AllColor.fcurve_rgba.FCurve->GetValues(instance.m_LivingTime, instance.m_LivedTime);
-		instValues._original.R = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[0] + fcurveColors[0]), 255, 0);
-		instValues._original.G = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[1] + fcurveColors[1]), 255, 0);
-		instValues._original.B = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[2] + fcurveColors[2]), 255, 0);
-		instValues._original.A = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[3] + fcurveColors[3]), 255, 0);
+		instValues._original.R = (uint8_t)Clamp((instValues.allColorValues.fcurve_rgba.offset[0] + fcurveColors[0]), 255, 0);
+		instValues._original.G = (uint8_t)Clamp((instValues.allColorValues.fcurve_rgba.offset[1] + fcurveColors[1]), 255, 0);
+		instValues._original.B = (uint8_t)Clamp((instValues.allColorValues.fcurve_rgba.offset[2] + fcurveColors[2]), 255, 0);
+		instValues._original.A = (uint8_t)Clamp((instValues.allColorValues.fcurve_rgba.offset[3] + fcurveColors[3]), 255, 0);
 	}
 
 	if (RendererCommon.ColorBindType == BindType::Always || RendererCommon.ColorBindType == BindType::WhenCreating)
@@ -12050,7 +12588,7 @@ void EffectNodeModel::UpdateRenderedInstance(Instance& instance, Manager* manage
 	{
 		instValues._original = instValues.allColorValues.random._color;
 	}
-	else if( AllColor.type == StandardColorParameter::Easing )
+	else if (AllColor.type == StandardColorParameter::Easing)
 	{
 		float t = instance.m_LivingTime / instance.m_LivedTime;
 
@@ -12058,15 +12596,15 @@ void EffectNodeModel::UpdateRenderedInstance(Instance& instance, Manager* manage
 			instValues._original,
 			instValues.allColorValues.easing.start,
 			instValues.allColorValues.easing.end,
-			t );
+			t);
 	}
-	else if( AllColor.type == StandardColorParameter::FCurve_RGBA )
+	else if (AllColor.type == StandardColorParameter::FCurve_RGBA)
 	{
 		auto fcurveColors = AllColor.fcurve_rgba.FCurve->GetValues(instance.m_LivingTime, instance.m_LivedTime);
-		instValues._original.R = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[0] + fcurveColors[0]), 255, 0);
-		instValues._original.G = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[1] + fcurveColors[1]), 255, 0);
-		instValues._original.B = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[2] + fcurveColors[2]), 255, 0);
-		instValues._original.A = (uint8_t)Clamp( (instValues.allColorValues.fcurve_rgba.offset[3] + fcurveColors[3]), 255, 0);
+		instValues._original.R = (uint8_t)Clamp((instValues.allColorValues.fcurve_rgba.offset[0] + fcurveColors[0]), 255, 0);
+		instValues._original.G = (uint8_t)Clamp((instValues.allColorValues.fcurve_rgba.offset[1] + fcurveColors[1]), 255, 0);
+		instValues._original.B = (uint8_t)Clamp((instValues.allColorValues.fcurve_rgba.offset[2] + fcurveColors[2]), 255, 0);
+		instValues._original.A = (uint8_t)Clamp((instValues.allColorValues.fcurve_rgba.offset[3] + fcurveColors[3]), 255, 0);
 	}
 
 	float fadeAlpha = GetFadeAlpha(instance);
@@ -12090,7 +12628,7 @@ void EffectNodeModel::UpdateRenderedInstance(Instance& instance, Manager* manage
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-}
+} // namespace Effekseer
 
 //----------------------------------------------------------------------------------
 //
@@ -12330,7 +12868,6 @@ void EffectNodeRibbon::Rendering(const Instance& instance, const Instance* next_
 
 		if (RibbonColor.type == RibbonColorParameter::Default)
 		{
-
 		}
 		else if (RibbonColor.type == RibbonColorParameter::Fixed)
 		{
@@ -12464,7 +13001,7 @@ void EffectNodeRibbon::UpdateRenderedInstance(Instance& instance, Manager* manag
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-}
+} // namespace Effekseer
 
 //----------------------------------------------------------------------------------
 //
@@ -12492,27 +13029,27 @@ namespace Effekseer
 void EffectNodeRing::LoadRendererParameter(unsigned char*& pos, Setting* setting)
 {
 	int32_t type = 0;
-	memcpy( &type, pos, sizeof(int) );
+	memcpy(&type, pos, sizeof(int));
 	pos += sizeof(int);
-	assert( type == GetType() );
+	assert(type == GetType());
 	EffekseerPrintDebug("Renderer : Ring\n");
 
-	memcpy( &RenderingOrder, pos, sizeof(int) );
+	memcpy(&RenderingOrder, pos, sizeof(int));
 	pos += sizeof(int);
 
-	if( m_effect->GetVersion() >= 3)
+	if (m_effect->GetVersion() >= 3)
 	{
 		AlphaBlend = RendererCommon.AlphaBlend;
 	}
 	else
 	{
-		memcpy( &AlphaBlend, pos, sizeof(int) );
+		memcpy(&AlphaBlend, pos, sizeof(int));
 		pos += sizeof(int);
 	}
 
-	memcpy( &Billboard, pos, sizeof(int) );
+	memcpy(&Billboard, pos, sizeof(int));
 	pos += sizeof(int);
-	
+
 	if (m_effect->GetVersion() >= 15)
 	{
 		int32_t ringShape = 0;
@@ -12540,9 +13077,9 @@ void EffectNodeRing::LoadRendererParameter(unsigned char*& pos, Setting* setting
 		}
 	}
 
-	memcpy( &VertexCount, pos, sizeof(int) );
+	memcpy(&VertexCount, pos, sizeof(int));
 	pos += sizeof(int);
-	
+
 	// compatiblity
 	{
 		RingSingleParameter viewingAngle;
@@ -12581,36 +13118,36 @@ void EffectNodeRing::LoadRendererParameter(unsigned char*& pos, Setting* setting
 		}
 	}
 
-	LoadLocationParameter( pos, OuterLocation );
-	
-	LoadLocationParameter( pos, InnerLocation );
-	
-	LoadSingleParameter( pos, CenterRatio );
+	LoadLocationParameter(pos, OuterLocation);
 
-	LoadColorParameter( pos, OuterColor);
+	LoadLocationParameter(pos, InnerLocation);
 
-	LoadColorParameter( pos, CenterColor);
+	LoadSingleParameter(pos, CenterRatio);
 
-	LoadColorParameter( pos, InnerColor);
+	LoadColorParameter(pos, OuterColor);
 
-	if( m_effect->GetVersion() >= 3)
+	LoadColorParameter(pos, CenterColor);
+
+	LoadColorParameter(pos, InnerColor);
+
+	if (m_effect->GetVersion() >= 3)
 	{
 		RingTexture = RendererCommon.ColorTextureIndex;
 	}
 	else
 	{
-		memcpy( &RingTexture, pos, sizeof(int) );
+		memcpy(&RingTexture, pos, sizeof(int));
 		pos += sizeof(int);
 	}
-	
+
 	// 右手系左手系変換
 	if (setting->GetCoordinateSystem() == CoordinateSystem::LH)
 	{
-		if( OuterLocation.type == RingLocationParameter::Fixed )
+		if (OuterLocation.type == RingLocationParameter::Fixed)
 		{
 			OuterLocation.fixed.location.y *= -1;
 		}
-		else if( OuterLocation.type == RingLocationParameter::PVA )
+		else if (OuterLocation.type == RingLocationParameter::PVA)
 		{
 			OuterLocation.pva.location.min.y *= -1;
 			OuterLocation.pva.location.max.y *= -1;
@@ -12619,7 +13156,7 @@ void EffectNodeRing::LoadRendererParameter(unsigned char*& pos, Setting* setting
 			OuterLocation.pva.acceleration.min.y *= -1;
 			OuterLocation.pva.acceleration.max.y *= -1;
 		}
-		else if( OuterLocation.type == RingLocationParameter::Easing )
+		else if (OuterLocation.type == RingLocationParameter::Easing)
 		{
 			OuterLocation.easing.start.min.y *= -1;
 			OuterLocation.easing.start.max.y *= -1;
@@ -12627,11 +13164,11 @@ void EffectNodeRing::LoadRendererParameter(unsigned char*& pos, Setting* setting
 			OuterLocation.easing.end.max.y *= -1;
 		}
 
-		if( InnerLocation.type == RingLocationParameter::Fixed )
+		if (InnerLocation.type == RingLocationParameter::Fixed)
 		{
 			InnerLocation.fixed.location.y *= -1;
 		}
-		else if( InnerLocation.type == RingLocationParameter::PVA )
+		else if (InnerLocation.type == RingLocationParameter::PVA)
 		{
 			InnerLocation.pva.location.min.y *= -1;
 			InnerLocation.pva.location.max.y *= -1;
@@ -12640,7 +13177,7 @@ void EffectNodeRing::LoadRendererParameter(unsigned char*& pos, Setting* setting
 			InnerLocation.pva.acceleration.min.y *= -1;
 			InnerLocation.pva.acceleration.max.y *= -1;
 		}
-		else if( InnerLocation.type == RingLocationParameter::Easing )
+		else if (InnerLocation.type == RingLocationParameter::Easing)
 		{
 			InnerLocation.easing.start.min.y *= -1;
 			InnerLocation.easing.start.max.y *= -1;
@@ -12650,13 +13187,13 @@ void EffectNodeRing::LoadRendererParameter(unsigned char*& pos, Setting* setting
 	}
 
 	/* 位置拡大処理 */
-	if( m_effect->GetVersion() >= 8 )
+	if (m_effect->GetVersion() >= 8)
 	{
-		if( OuterLocation.type == RingLocationParameter::Fixed )
+		if (OuterLocation.type == RingLocationParameter::Fixed)
 		{
 			OuterLocation.fixed.location *= m_effect->GetMaginification();
 		}
-		else if( OuterLocation.type == RingLocationParameter::PVA )
+		else if (OuterLocation.type == RingLocationParameter::PVA)
 		{
 			OuterLocation.pva.location.min *= m_effect->GetMaginification();
 			OuterLocation.pva.location.max *= m_effect->GetMaginification();
@@ -12665,7 +13202,7 @@ void EffectNodeRing::LoadRendererParameter(unsigned char*& pos, Setting* setting
 			OuterLocation.pva.acceleration.min *= m_effect->GetMaginification();
 			OuterLocation.pva.acceleration.max *= m_effect->GetMaginification();
 		}
-		else if( OuterLocation.type == RingLocationParameter::Easing )
+		else if (OuterLocation.type == RingLocationParameter::Easing)
 		{
 			OuterLocation.easing.start.min *= m_effect->GetMaginification();
 			OuterLocation.easing.start.max *= m_effect->GetMaginification();
@@ -12673,11 +13210,11 @@ void EffectNodeRing::LoadRendererParameter(unsigned char*& pos, Setting* setting
 			OuterLocation.easing.end.max *= m_effect->GetMaginification();
 		}
 
-		if( InnerLocation.type == RingLocationParameter::Fixed )
+		if (InnerLocation.type == RingLocationParameter::Fixed)
 		{
 			InnerLocation.fixed.location *= m_effect->GetMaginification();
 		}
-		else if( InnerLocation.type == RingLocationParameter::PVA )
+		else if (InnerLocation.type == RingLocationParameter::PVA)
 		{
 			InnerLocation.pva.location.min *= m_effect->GetMaginification();
 			InnerLocation.pva.location.max *= m_effect->GetMaginification();
@@ -12686,7 +13223,7 @@ void EffectNodeRing::LoadRendererParameter(unsigned char*& pos, Setting* setting
 			InnerLocation.pva.acceleration.min *= m_effect->GetMaginification();
 			InnerLocation.pva.acceleration.max *= m_effect->GetMaginification();
 		}
-		else if( InnerLocation.type == RingLocationParameter::Easing )
+		else if (InnerLocation.type == RingLocationParameter::Easing)
 		{
 			InnerLocation.easing.start.min *= m_effect->GetMaginification();
 			InnerLocation.easing.start.max *= m_effect->GetMaginification();
@@ -12702,7 +13239,7 @@ void EffectNodeRing::LoadRendererParameter(unsigned char*& pos, Setting* setting
 void EffectNodeRing::BeginRendering(int32_t count, Manager* manager)
 {
 	RingRenderer* renderer = manager->GetRingRenderer();
-	if( renderer != NULL )
+	if (renderer != NULL)
 	{
 		nodeParameter.EffectPointer = GetEffect();
 		nodeParameter.ZTest = RendererCommon.ZTest;
@@ -12716,7 +13253,7 @@ void EffectNodeRing::BeginRendering(int32_t count, Manager* manager)
 		nodeParameter.StartingFade = Shape.StartingFade;
 		nodeParameter.EndingFade = Shape.EndingFade;
 
-		renderer->BeginRendering( nodeParameter, count, m_userData );
+		renderer->BeginRendering(nodeParameter, count, m_userData);
 	}
 }
 
@@ -12727,7 +13264,7 @@ void EffectNodeRing::Rendering(const Instance& instance, const Instance* next_in
 {
 	const InstanceValues& instValues = instance.rendererValues.ring;
 	RingRenderer* renderer = manager->GetRingRenderer();
-	if( renderer != NULL )
+	if (renderer != NULL)
 	{
 		nodeParameter.EffectPointer = GetEffect();
 		nodeParameter.ZTest = RendererCommon.ZTest;
@@ -12735,7 +13272,7 @@ void EffectNodeRing::Rendering(const Instance& instance, const Instance* next_in
 		nodeParameter.Billboard = Billboard;
 		nodeParameter.VertexCount = VertexCount;
 		nodeParameter.IsRightHand = manager->GetCoordinateSystem() ==
-			CoordinateSystem::RH;
+									CoordinateSystem::RH;
 
 		nodeParameter.DepthParameterPtr = &DepthValues.DepthParameter;
 		nodeParameter.BasicParameterPtr = &RendererCommon.BasicParameter;
@@ -12764,7 +13301,7 @@ void EffectNodeRing::Rendering(const Instance& instance, const Instance* next_in
 
 		instanceParameter.ViewingAngleStart = instValues.startingAngle.current;
 		instanceParameter.ViewingAngleEnd = instValues.endingAngle.current;
-		
+
 		instanceParameter.OuterLocation = instValues.outerLocation.current;
 		instanceParameter.InnerLocation = instValues.innerLocation.current;
 
@@ -12778,10 +13315,10 @@ void EffectNodeRing::Rendering(const Instance& instance, const Instance* next_in
 			_innerColor = Color::Mul(_innerColor, instance.m_pContainer->GetRootInstance()->GlobalColor);
 		}
 
-		instanceParameter.OuterColor  = _outerColor;
+		instanceParameter.OuterColor = _outerColor;
 		instanceParameter.CenterColor = _centerColor;
-		instanceParameter.InnerColor  = _innerColor;
-		
+		instanceParameter.InnerColor = _innerColor;
+
 #ifdef __EFFEKSEER_BUILD_VERSION16__
 		instanceParameter.UV = instance.GetUV(0);
 		instanceParameter.AlphaUV = instance.GetUV(1);
@@ -12792,10 +13329,10 @@ void EffectNodeRing::Rendering(const Instance& instance, const Instance* next_in
 #else
 		instanceParameter.UV = instance.GetUV();
 #endif
-		
+
 		CalcCustomData(&instance, instanceParameter.CustomData1, instanceParameter.CustomData2);
 
-		renderer->Rendering( nodeParameter, instanceParameter, m_userData );
+		renderer->Rendering(nodeParameter, instanceParameter, m_userData);
 	}
 }
 
@@ -12805,9 +13342,9 @@ void EffectNodeRing::Rendering(const Instance& instance, const Instance* next_in
 void EffectNodeRing::EndRendering(Manager* manager)
 {
 	RingRenderer* renderer = manager->GetRingRenderer();
-	if( renderer != NULL )
+	if (renderer != NULL)
 	{
-		renderer->EndRendering( nodeParameter, m_userData );
+		renderer->EndRendering(nodeParameter, m_userData);
 	}
 }
 
@@ -12825,7 +13362,7 @@ void EffectNodeRing::InitializeRenderedInstance(Instance& instance, Manager* man
 
 	InitializeLocationValues(OuterLocation, instValues.outerLocation, manager, instanceGlobal);
 	InitializeLocationValues(InnerLocation, instValues.innerLocation, manager, instanceGlobal);
-	
+
 	InitializeSingleValues(CenterRatio, instValues.centerRatio, manager, instanceGlobal);
 
 	InitializeColorValues(OuterColor, instValues.outerColor, manager, instanceGlobal);
@@ -12854,18 +13391,18 @@ void EffectNodeRing::InitializeRenderedInstance(Instance& instance, Manager* man
 void EffectNodeRing::UpdateRenderedInstance(Instance& instance, Manager* manager)
 {
 	InstanceValues& instValues = instance.rendererValues.ring;
-	
+
 	UpdateSingleValues(instance, Shape.StartingAngle, instValues.startingAngle);
 	UpdateSingleValues(instance, Shape.EndingAngle, instValues.endingAngle);
 
-	UpdateLocationValues( instance, OuterLocation, instValues.outerLocation );
-	UpdateLocationValues( instance, InnerLocation, instValues.innerLocation );
-	
-	UpdateSingleValues( instance, CenterRatio, instValues.centerRatio );
+	UpdateLocationValues(instance, OuterLocation, instValues.outerLocation);
+	UpdateLocationValues(instance, InnerLocation, instValues.innerLocation);
 
-	UpdateColorValues( instance, OuterColor, instValues.outerColor );
-	UpdateColorValues( instance, CenterColor, instValues.centerColor );
-	UpdateColorValues( instance, InnerColor, instValues.innerColor );
+	UpdateSingleValues(instance, CenterRatio, instValues.centerRatio);
+
+	UpdateColorValues(instance, OuterColor, instValues.outerColor);
+	UpdateColorValues(instance, CenterColor, instValues.centerColor);
+	UpdateColorValues(instance, InnerColor, instValues.innerColor);
 
 	if (RendererCommon.ColorBindType == BindType::Always || RendererCommon.ColorBindType == BindType::WhenCreating)
 	{
@@ -12886,24 +13423,24 @@ void EffectNodeRing::UpdateRenderedInstance(Instance& instance, Manager* manager
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void EffectNodeRing::LoadSingleParameter( unsigned char*& pos, RingSingleParameter& param )
+void EffectNodeRing::LoadSingleParameter(unsigned char*& pos, RingSingleParameter& param)
 {
-	memcpy( &param.type, pos, sizeof(int) );
+	memcpy(&param.type, pos, sizeof(int));
 	pos += sizeof(int);
 
-	if( param.type == RingSingleParameter::Fixed )
+	if (param.type == RingSingleParameter::Fixed)
 	{
-		memcpy( &param.fixed, pos, sizeof(float) );
+		memcpy(&param.fixed, pos, sizeof(float));
 		pos += sizeof(float);
 	}
-	else if( param.type == RingSingleParameter::Random )
+	else if (param.type == RingSingleParameter::Random)
 	{
-		memcpy( &param.random, pos, sizeof(param.random) );
+		memcpy(&param.random, pos, sizeof(param.random));
 		pos += sizeof(param.random);
 	}
-	else if( param.type == RingSingleParameter::Easing )
+	else if (param.type == RingSingleParameter::Easing)
 	{
-		memcpy( &param.easing, pos, sizeof(param.easing) );
+		memcpy(&param.easing, pos, sizeof(param.easing));
 		pos += sizeof(param.easing);
 	}
 }
@@ -12911,24 +13448,24 @@ void EffectNodeRing::LoadSingleParameter( unsigned char*& pos, RingSingleParamet
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void EffectNodeRing::LoadLocationParameter( unsigned char*& pos, RingLocationParameter& param )
+void EffectNodeRing::LoadLocationParameter(unsigned char*& pos, RingLocationParameter& param)
 {
-	memcpy( &param.type, pos, sizeof(int) );
+	memcpy(&param.type, pos, sizeof(int));
 	pos += sizeof(int);
-	
-	if( param.type == RingLocationParameter::Fixed )
+
+	if (param.type == RingLocationParameter::Fixed)
 	{
-		memcpy( &param.fixed, pos, sizeof(param.fixed) );
+		memcpy(&param.fixed, pos, sizeof(param.fixed));
 		pos += sizeof(param.fixed);
 	}
-	else if( param.type == RingLocationParameter::PVA )
+	else if (param.type == RingLocationParameter::PVA)
 	{
-		memcpy( &param.pva, pos, sizeof(param.pva) );
+		memcpy(&param.pva, pos, sizeof(param.pva));
 		pos += sizeof(param.pva);
 	}
-	else if( param.type == RingLocationParameter::Easing )
+	else if (param.type == RingLocationParameter::Easing)
 	{
-		memcpy( &param.easing, pos, sizeof(param.easing) );
+		memcpy(&param.easing, pos, sizeof(param.easing));
 		pos += sizeof(param.easing);
 	}
 }
@@ -12936,23 +13473,23 @@ void EffectNodeRing::LoadLocationParameter( unsigned char*& pos, RingLocationPar
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void EffectNodeRing::LoadColorParameter( unsigned char*& pos, RingColorParameter& param )
+void EffectNodeRing::LoadColorParameter(unsigned char*& pos, RingColorParameter& param)
 {
-	memcpy( &param.type, pos, sizeof(int) );
+	memcpy(&param.type, pos, sizeof(int));
 	pos += sizeof(int);
-	
-	if( param.type == RingColorParameter::Fixed )
+
+	if (param.type == RingColorParameter::Fixed)
 	{
-		memcpy( &param.fixed, pos, sizeof(param.fixed) );
+		memcpy(&param.fixed, pos, sizeof(param.fixed));
 		pos += sizeof(param.fixed);
 	}
-	else if( param.type == RingColorParameter::Random )
+	else if (param.type == RingColorParameter::Random)
 	{
-		param.random.load( m_effect->GetVersion(), pos );
+		param.random.load(m_effect->GetVersion(), pos);
 	}
-	else if( param.type == RingColorParameter::Easing )
+	else if (param.type == RingColorParameter::Easing)
 	{
-		param.easing.load( m_effect->GetVersion(), pos );
+		param.easing.load(m_effect->GetVersion(), pos);
 	}
 }
 
@@ -12961,21 +13498,21 @@ void EffectNodeRing::LoadColorParameter( unsigned char*& pos, RingColorParameter
 //----------------------------------------------------------------------------------
 void EffectNodeRing::InitializeSingleValues(const RingSingleParameter& param, RingSingleValues& values, Manager* manager, InstanceGlobal* instanceGlobal)
 {
-	switch( param.type )
+	switch (param.type)
 	{
-		case RingSingleParameter::Fixed:
-			values.current = param.fixed;
-			break;
-		case RingSingleParameter::Random:
-			values.current = param.random.getValue(*instanceGlobal);
-			break;
-		case RingSingleParameter::Easing:
-			values.easing.start = param.easing.start.getValue(*instanceGlobal);
-			values.easing.end = param.easing.end.getValue(*instanceGlobal);
-			values.current = values.easing.start;
-			break;
-		default:
-			break;
+	case RingSingleParameter::Fixed:
+		values.current = param.fixed;
+		break;
+	case RingSingleParameter::Random:
+		values.current = param.random.getValue(*instanceGlobal);
+		break;
+	case RingSingleParameter::Easing:
+		values.easing.start = param.easing.start.getValue(*instanceGlobal);
+		values.easing.end = param.easing.end.getValue(*instanceGlobal);
+		values.current = values.easing.start;
+		break;
+	default:
+		break;
 	}
 }
 
@@ -12984,24 +13521,24 @@ void EffectNodeRing::InitializeSingleValues(const RingSingleParameter& param, Ri
 //----------------------------------------------------------------------------------
 void EffectNodeRing::InitializeLocationValues(const RingLocationParameter& param, RingLocationValues& values, Manager* manager, InstanceGlobal* instanceGlobal)
 {
-	switch( param.type )
+	switch (param.type)
 	{
-		case RingLocationParameter::Fixed:
-			values.current = param.fixed.location;
-			break;
-		case RingLocationParameter::PVA:
-			values.pva.start = param.pva.location.getValue(*instanceGlobal);
-			values.pva.velocity = param.pva.velocity.getValue(*instanceGlobal);
-			values.pva.acceleration = param.pva.acceleration.getValue(*instanceGlobal);
-			values.current = values.pva.start;
-			break;
-		case RingLocationParameter::Easing:
-			values.easing.start = param.easing.start.getValue(*instanceGlobal);
-			values.easing.end = param.easing.end.getValue(*instanceGlobal);
-			values.current = values.easing.start;
-			break;
-		default:
-			break;
+	case RingLocationParameter::Fixed:
+		values.current = param.fixed.location;
+		break;
+	case RingLocationParameter::PVA:
+		values.pva.start = param.pva.location.getValue(*instanceGlobal);
+		values.pva.velocity = param.pva.velocity.getValue(*instanceGlobal);
+		values.pva.acceleration = param.pva.acceleration.getValue(*instanceGlobal);
+		values.current = values.pva.start;
+		break;
+	case RingLocationParameter::Easing:
+		values.easing.start = param.easing.start.getValue(*instanceGlobal);
+		values.easing.end = param.easing.end.getValue(*instanceGlobal);
+		values.current = values.easing.start;
+		break;
+	default:
+		break;
 	}
 }
 
@@ -13010,62 +13547,60 @@ void EffectNodeRing::InitializeLocationValues(const RingLocationParameter& param
 //----------------------------------------------------------------------------------
 void EffectNodeRing::InitializeColorValues(const RingColorParameter& param, RingColorValues& values, Manager* manager, InstanceGlobal* instanceGlobal)
 {
-	switch( param.type )
+	switch (param.type)
 	{
-		case RingColorParameter::Fixed:
-			values.original = param.fixed;
-			values.fixed._color = values.original;
-			break;
-		case RingColorParameter::Random:
-			values.original = param.random.getValue(*instanceGlobal);
-			values.random._color = values.original;
-			break;
-		case RingColorParameter::Easing:
-			values.easing.start = param.easing.getStartValue(*instanceGlobal);
-			values.easing.end = param.easing.getEndValue(*instanceGlobal);
-			values.original = values.easing.start;
-			break;
-		default:
-			break;
+	case RingColorParameter::Fixed:
+		values.original = param.fixed;
+		values.fixed._color = values.original;
+		break;
+	case RingColorParameter::Random:
+		values.original = param.random.getValue(*instanceGlobal);
+		values.random._color = values.original;
+		break;
+	case RingColorParameter::Easing:
+		values.easing.start = param.easing.getStartValue(*instanceGlobal);
+		values.easing.end = param.easing.getEndValue(*instanceGlobal);
+		values.original = values.easing.start;
+		break;
+	default:
+		break;
 	}
 }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void EffectNodeRing::UpdateSingleValues( Instance& instance, const RingSingleParameter& param, RingSingleValues& values )
+void EffectNodeRing::UpdateSingleValues(Instance& instance, const RingSingleParameter& param, RingSingleValues& values)
 {
-	if( param.type == RingSingleParameter::Easing )
+	if (param.type == RingSingleParameter::Easing)
 	{
 		values.current = param.easing.getValue(
-			values.easing.start, values.easing.end,
-			instance.m_LivingTime / instance.m_LivedTime );
+			values.easing.start, values.easing.end, instance.m_LivingTime / instance.m_LivedTime);
 	}
 }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void EffectNodeRing::UpdateLocationValues( Instance& instance, const RingLocationParameter& param, RingLocationValues& values )
+void EffectNodeRing::UpdateLocationValues(Instance& instance, const RingLocationParameter& param, RingLocationValues& values)
 {
-	if( param.type == RingLocationParameter::PVA )
+	if (param.type == RingLocationParameter::PVA)
 	{
 		values.current = values.pva.start +
-			values.pva.velocity * instance.m_LivingTime +
-			values.pva.acceleration * instance.m_LivingTime * instance.m_LivingTime * 0.5f;
+						 values.pva.velocity * instance.m_LivingTime +
+						 values.pva.acceleration * instance.m_LivingTime * instance.m_LivingTime * 0.5f;
 	}
-	else if( param.type == RingLocationParameter::Easing )
+	else if (param.type == RingLocationParameter::Easing)
 	{
 		values.current = param.easing.getValue(
-			values.easing.start, values.easing.end,
-			instance.m_LivingTime / instance.m_LivedTime );
+			values.easing.start, values.easing.end, instance.m_LivingTime / instance.m_LivedTime);
 	}
 }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void EffectNodeRing::UpdateColorValues( Instance& instance, const RingColorParameter& param, RingColorValues& values )
+void EffectNodeRing::UpdateColorValues(Instance& instance, const RingColorParameter& param, RingColorValues& values)
 {
 	if (param.type == RingColorParameter::Fixed)
 	{
@@ -13075,13 +13610,13 @@ void EffectNodeRing::UpdateColorValues( Instance& instance, const RingColorParam
 	{
 		values.original = values.random._color;
 	}
-	else if( param.type == RingColorParameter::Easing )
+	else if (param.type == RingColorParameter::Easing)
 	{
 		param.easing.setValueToArg(
-			values.original, 
+			values.original,
 			values.easing.start,
 			values.easing.end,
-			instance.m_LivingTime / instance.m_LivedTime );
+			instance.m_LivingTime / instance.m_LivedTime);
 	}
 
 	float fadeAlpha = GetFadeAlpha(instance);
@@ -13094,7 +13629,7 @@ void EffectNodeRing::UpdateColorValues( Instance& instance, const RingColorParam
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-}
+} // namespace Effekseer
 
 //----------------------------------------------------------------------------------
 //
@@ -13115,23 +13650,20 @@ namespace Effekseer
 //
 //----------------------------------------------------------------------------------
 
-
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-}
-
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
-
-
+} // namespace Effekseer
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
 
 
+
+//----------------------------------------------------------------------------------
+//
+//----------------------------------------------------------------------------------
 
 
 
@@ -13145,7 +13677,7 @@ namespace Effekseer
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-	void EffectNodeSprite::LoadRendererParameter(unsigned char*& pos, Setting* setting)
+void EffectNodeSprite::LoadRendererParameter(unsigned char*& pos, Setting* setting)
 {
 	int32_t type = 0;
 	memcpy(&type, pos, sizeof(int));
@@ -13153,7 +13685,7 @@ namespace Effekseer
 	assert(type == GetType());
 	EffekseerPrintDebug("Renderer : Sprite\n");
 
-	auto ef = (EffectImplemented*) m_effect;
+	auto ef = (EffectImplemented*)m_effect;
 
 	memcpy(&RenderingOrder, pos, sizeof(int));
 	pos += sizeof(int);
@@ -13222,7 +13754,7 @@ namespace Effekseer
 	{
 		std::array<Vector2D, 4> fixed;
 		memcpy(fixed.data(), pos, sizeof(Vector2D) * 4);
-		
+
 		// This code causes bugs on asmjs
 		// const Vector2D* fixed = (const Vector2D*)pos;
 		SpritePosition.fixed.ll = fixed[0];
@@ -13271,7 +13803,7 @@ namespace Effekseer
 void EffectNodeSprite::BeginRendering(int32_t count, Manager* manager)
 {
 	SpriteRenderer* renderer = manager->GetSpriteRenderer();
-	if( renderer != NULL )
+	if (renderer != NULL)
 	{
 		SpriteRenderer::NodeParameter nodeParameter;
 		//nodeParameter.TextureFilter = RendererCommon.FilterType;
@@ -13281,14 +13813,14 @@ void EffectNodeSprite::BeginRendering(int32_t count, Manager* manager)
 		nodeParameter.Billboard = Billboard;
 		nodeParameter.EffectPointer = GetEffect();
 		nodeParameter.IsRightHand = manager->GetCoordinateSystem() ==
-			CoordinateSystem::RH;
+									CoordinateSystem::RH;
 
 		nodeParameter.DepthParameterPtr = &DepthValues.DepthParameter;
 		nodeParameter.BasicParameterPtr = &RendererCommon.BasicParameter;
 
 		nodeParameter.ZSort = DepthValues.ZSort;
 
-		renderer->BeginRendering( nodeParameter, count, m_userData );
+		renderer->BeginRendering(nodeParameter, count, m_userData);
 	}
 }
 
@@ -13299,7 +13831,7 @@ void EffectNodeSprite::Rendering(const Instance& instance, const Instance* next_
 {
 	const InstanceValues& instValues = instance.rendererValues.sprite;
 	SpriteRenderer* renderer = manager->GetSpriteRenderer();
-	if( renderer != NULL )
+	if (renderer != NULL)
 	{
 		SpriteRenderer::NodeParameter nodeParameter;
 		//nodeParameter.TextureFilter = RendererCommon.FilterType;
@@ -13309,7 +13841,7 @@ void EffectNodeSprite::Rendering(const Instance& instance, const Instance* next_
 		nodeParameter.Billboard = Billboard;
 		nodeParameter.EffectPointer = GetEffect();
 		nodeParameter.IsRightHand = manager->GetCoordinateSystem() ==
-			CoordinateSystem::RH;
+									CoordinateSystem::RH;
 
 		nodeParameter.DepthParameterPtr = &DepthValues.DepthParameter;
 		nodeParameter.BasicParameterPtr = &RendererCommon.BasicParameter;
@@ -13337,22 +13869,22 @@ void EffectNodeSprite::Rendering(const Instance& instance, const Instance* next_
 		Color color_ul = _color;
 		Color color_ur = _color;
 
-		if( SpriteColor.type == SpriteColorParameter::Default )
+		if (SpriteColor.type == SpriteColorParameter::Default)
 		{
 		}
-		else if( SpriteColor.type == SpriteColorParameter::Fixed )
+		else if (SpriteColor.type == SpriteColorParameter::Fixed)
 		{
-			color_ll = Color::Mul( color_ll, SpriteColor.fixed.ll );
-			color_lr = Color::Mul( color_lr, SpriteColor.fixed.lr );
-			color_ul = Color::Mul( color_ul, SpriteColor.fixed.ul );
-			color_ur = Color::Mul( color_ur, SpriteColor.fixed.ur );
+			color_ll = Color::Mul(color_ll, SpriteColor.fixed.ll);
+			color_lr = Color::Mul(color_lr, SpriteColor.fixed.lr);
+			color_ul = Color::Mul(color_ul, SpriteColor.fixed.ul);
+			color_ur = Color::Mul(color_ur, SpriteColor.fixed.ur);
 		}
 
 		instanceParameter.Colors[0] = color_ll;
 		instanceParameter.Colors[1] = color_lr;
 		instanceParameter.Colors[2] = color_ul;
 		instanceParameter.Colors[3] = color_ur;
-		
+
 		// Apply global Color
 		if (instance.m_pContainer->GetRootInstance()->IsGlobalColorSet)
 		{
@@ -13362,14 +13894,14 @@ void EffectNodeSprite::Rendering(const Instance& instance, const Instance* next_
 			instanceParameter.Colors[3] = Color::Mul(instanceParameter.Colors[3], instance.m_pContainer->GetRootInstance()->GlobalColor);
 		}
 
-		if( SpritePosition.type == SpritePosition.Default )
+		if (SpritePosition.type == SpritePosition.Default)
 		{
 			instanceParameter.Positions[0] = {-0.5f, -0.5f};
 			instanceParameter.Positions[1] = {0.5f, -0.5f};
 			instanceParameter.Positions[2] = {-0.5f, 0.5f};
 			instanceParameter.Positions[3] = {0.5f, 0.5f};
 		}
-		else if( SpritePosition.type == SpritePosition.Fixed )
+		else if (SpritePosition.type == SpritePosition.Fixed)
 		{
 			instanceParameter.Positions[0] = SpritePosition.fixed.ll;
 			instanceParameter.Positions[1] = SpritePosition.fixed.lr;
@@ -13389,7 +13921,7 @@ void EffectNodeSprite::Rendering(const Instance& instance, const Instance* next_
 #endif
 		CalcCustomData(&instance, instanceParameter.CustomData1, instanceParameter.CustomData2);
 
-		renderer->Rendering( nodeParameter, instanceParameter, m_userData );
+		renderer->Rendering(nodeParameter, instanceParameter, m_userData);
 	}
 }
 
@@ -13399,7 +13931,7 @@ void EffectNodeSprite::Rendering(const Instance& instance, const Instance* next_
 void EffectNodeSprite::EndRendering(Manager* manager)
 {
 	SpriteRenderer* renderer = manager->GetSpriteRenderer();
-	if( renderer != NULL )
+	if (renderer != NULL)
 	{
 		SpriteRenderer::NodeParameter nodeParameter;
 		//nodeParameter.TextureFilter = RendererCommon.FilterType;
@@ -13409,14 +13941,14 @@ void EffectNodeSprite::EndRendering(Manager* manager)
 		nodeParameter.Billboard = Billboard;
 		nodeParameter.EffectPointer = GetEffect();
 		nodeParameter.IsRightHand = manager->GetCoordinateSystem() ==
-			CoordinateSystem::RH;
+									CoordinateSystem::RH;
 
 		nodeParameter.ZSort = DepthValues.ZSort;
 
 		nodeParameter.DepthParameterPtr = &DepthValues.DepthParameter;
 		nodeParameter.BasicParameterPtr = &RendererCommon.BasicParameter;
 
-		renderer->EndRendering( nodeParameter, m_userData );
+		renderer->EndRendering(nodeParameter, m_userData);
 	}
 }
 
@@ -13428,17 +13960,17 @@ void EffectNodeSprite::InitializeRenderedInstance(Instance& instance, Manager* m
 	InstanceValues& instValues = instance.rendererValues.sprite;
 	auto instanceGlobal = instance.m_pContainer->GetRootInstance();
 
-	if( SpriteAllColor.type == StandardColorParameter::Fixed )
+	if (SpriteAllColor.type == StandardColorParameter::Fixed)
 	{
 		instValues.allColorValues.fixed._color = SpriteAllColor.fixed.all;
 		instValues._originalColor = instValues.allColorValues.fixed._color;
 	}
-	else if( SpriteAllColor.type == StandardColorParameter::Random )
+	else if (SpriteAllColor.type == StandardColorParameter::Random)
 	{
 		instValues.allColorValues.random._color = SpriteAllColor.random.all.getValue(*instanceGlobal);
 		instValues._originalColor = instValues.allColorValues.random._color;
 	}
-	else if( SpriteAllColor.type == StandardColorParameter::Easing )
+	else if (SpriteAllColor.type == StandardColorParameter::Easing)
 	{
 		instValues.allColorValues.easing.start = SpriteAllColor.easing.all.getStartValue(*instanceGlobal);
 		instValues.allColorValues.easing.end = SpriteAllColor.easing.all.getEndValue(*instanceGlobal);
@@ -13449,7 +13981,7 @@ void EffectNodeSprite::InitializeRenderedInstance(Instance& instance, Manager* m
 			instValues._originalColor,
 			instValues.allColorValues.easing.start,
 			instValues.allColorValues.easing.end,
-			t );
+			t);
 	}
 	else if (SpriteAllColor.type == StandardColorParameter::FCurve_RGBA)
 	{
@@ -13469,7 +14001,7 @@ void EffectNodeSprite::InitializeRenderedInstance(Instance& instance, Manager* m
 	{
 		instValues._color = instValues._originalColor;
 	}
-	
+
 	instance.ColorInheritance = instValues._color;
 }
 
@@ -13488,15 +14020,15 @@ void EffectNodeSprite::UpdateRenderedInstance(Instance& instance, Manager* manag
 	{
 		instValues._originalColor = instValues.allColorValues.random._color;
 	}
-	if( SpriteAllColor.type == StandardColorParameter::Easing )
+	if (SpriteAllColor.type == StandardColorParameter::Easing)
 	{
 		float t = instance.m_LivingTime / instance.m_LivedTime;
 
 		SpriteAllColor.easing.all.setValueToArg(
-			instValues._originalColor, 
+			instValues._originalColor,
 			instValues.allColorValues.easing.start,
 			instValues.allColorValues.easing.end,
-			t );
+			t);
 	}
 	else if (SpriteAllColor.type == StandardColorParameter::FCurve_RGBA)
 	{
@@ -13528,7 +14060,7 @@ void EffectNodeSprite::UpdateRenderedInstance(Instance& instance, Manager* manag
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-}
+} // namespace Effekseer
 
 //----------------------------------------------------------------------------------
 //
@@ -13643,7 +14175,7 @@ void EffectNodeTrack::BeginRenderingGroup(InstanceGroup* group, Manager* manager
 
 		m_instanceParameter.InstanceCount = group->GetInstanceCount();
 		m_instanceParameter.InstanceIndex = 0;
-		
+
 		if (group->GetFirst() != nullptr)
 		{
 #ifdef __EFFEKSEER_BUILD_VERSION16__
@@ -13827,7 +14359,7 @@ void EffectNodeTrack::SetValues(Color& c, const Instance& instance, InstanceGrou
 	}
 	else if (param.type == StandardColorParameter::FCurve_RGBA)
 	{
-		auto fcurveColors = param.fcurve_rgba.FCurve->GetValues(time, livedTime);
+		auto fcurveColors = param.fcurve_rgba.FCurve->GetValues(static_cast<float>(time), static_cast<float>(livedTime));
 		c.R = (uint8_t)Clamp((value.color.fcurve_rgba.offset[0] + fcurveColors[0]), 255, 0);
 		c.G = (uint8_t)Clamp((value.color.fcurve_rgba.offset[1] + fcurveColors[1]), 255, 0);
 		c.B = (uint8_t)Clamp((value.color.fcurve_rgba.offset[2] + fcurveColors[2]), 255, 0);
@@ -13881,12 +14413,11 @@ void EffectNodeTrack::LoadValues(TrackSizeParameter& param, unsigned char*& pos)
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-}
+} // namespace Effekseer
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-
 
 
 //----------------------------------------------------------------------------------
@@ -13903,43 +14434,47 @@ namespace Effekseer
 static void PathCombine(EFK_CHAR* dst, const EFK_CHAR* src1, const EFK_CHAR* src2)
 {
 	int len1 = 0, len2 = 0;
-	if( src1 != NULL )
+	if (src1 != NULL)
 	{
-		for( len1 = 0; src1[len1] != L'\0'; len1++ ) {}
-		memcpy( dst, src1, len1 * sizeof(EFK_CHAR) );
-		if( len1 > 0 && src1[len1 - 1] != L'/' && src1[len1 - 1] != L'\\' )
+		for (len1 = 0; src1[len1] != L'\0'; len1++)
+		{
+		}
+		memcpy(dst, src1, len1 * sizeof(EFK_CHAR));
+		if (len1 > 0 && src1[len1 - 1] != L'/' && src1[len1 - 1] != L'\\')
 		{
 			dst[len1++] = L'/';
 		}
 	}
-	if( src2 != NULL)
+	if (src2 != NULL)
 	{
-		for( len2 = 0; src2[len2] != L'\0'; len2++ ) {}
-		memcpy( &dst[len1], src2, len2 * sizeof(EFK_CHAR) );
+		for (len2 = 0; src2[len2] != L'\0'; len2++)
+		{
+		}
+		memcpy(&dst[len1], src2, len2 * sizeof(EFK_CHAR));
 	}
-    
-    for(int i = 0; i < len1 + len2; i++)
-    {
-        if(dst[i] == u'\\')
-        {
-            dst[i] = u'/';
-        }
-    }
-    
+
+	for (int i = 0; i < len1 + len2; i++)
+	{
+		if (dst[i] == u'\\')
+		{
+			dst[i] = u'/';
+		}
+	}
+
 	dst[len1 + len2] = L'\0';
 }
 
 static void GetParentDir(EFK_CHAR* dst, const EFK_CHAR* src)
 {
 	int i, last = -1;
-	for( i = 0; src[i] != L'\0'; i++ )
+	for (i = 0; src[i] != L'\0'; i++)
 	{
-		if( src[i] == L'/' || src[i] == L'\\' )
+		if (src[i] == L'/' || src[i] == L'\\')
 			last = i;
 	}
-	if( last >= 0 )
+	if (last >= 0)
 	{
-		memcpy( dst, src, last * sizeof(EFK_CHAR) );
+		memcpy(dst, src, last * sizeof(EFK_CHAR));
 		dst[last] = L'\0';
 	}
 	else
@@ -14011,16 +14546,15 @@ void EffectFactory::SetTexture(Effect* effect, int32_t index, TextureType type, 
 }
 
 void EffectFactory::SetSound(Effect* effect, int32_t index, void* data)
-{ 
-	auto effect_ = static_cast<EffectImplemented*>(effect); 
+{
+	auto effect_ = static_cast<EffectImplemented*>(effect);
 
 	assert(0 <= index && index < effect_->m_WaveCount);
 	effect_->m_pWaves[index] = data;
-	
 }
 
 void EffectFactory::SetModel(Effect* effect, int32_t index, void* data)
-{ 
+{
 	auto effect_ = static_cast<EffectImplemented*>(effect);
 	assert(0 <= index && index < effect_->modelCount_);
 	effect_->models_[index] = data;
@@ -14033,26 +14567,29 @@ void EffectFactory::SetMaterial(Effect* effect, int32_t index, MaterialData* dat
 	effect_->materials_[index] = data;
 }
 
-void EffectFactory::SetLoadingParameter(Effect* effect, ReferenceObject* parameter) {
+void EffectFactory::SetLoadingParameter(Effect* effect, ReferenceObject* parameter)
+{
 	auto effect_ = static_cast<EffectImplemented*>(effect);
 	effect_->SetLoadingParameter(parameter);
 }
 
-
 bool EffectFactory::OnCheckIsBinarySupported(const void* data, int32_t size)
-{ 
+{
 	// EFKS
 	int head = 0;
 	memcpy(&head, data, sizeof(int));
 	if (memcmp(&head, "SKFE", 4) != 0)
 		return false;
-	return true; 
+	return true;
 }
 
-bool EffectFactory::OnCheckIsReloadSupported() { return true; }
+bool EffectFactory::OnCheckIsReloadSupported()
+{
+	return true;
+}
 
 bool EffectFactory::OnLoading(Effect* effect, const void* data, int32_t size, float magnification, const EFK_CHAR* materialPath)
-{ 
+{
 	return this->LoadBody(effect, data, size, magnification, materialPath);
 }
 
@@ -14130,8 +14667,9 @@ void EffectFactory::OnLoadingResource(Effect* effect, const void* data, int32_t 
 	}
 }
 
-void EffectFactory::OnUnloadingResource(Effect* effect) { 
-	auto textureLoader = effect->GetSetting()->GetTextureLoader(); 
+void EffectFactory::OnUnloadingResource(Effect* effect)
+{
+	auto textureLoader = effect->GetSetting()->GetTextureLoader();
 	auto soundLoader = effect->GetSetting()->GetSoundLoader();
 	auto modelLoader = effect->GetSetting()->GetModelLoader();
 	auto materialLoader = effect->GetSetting()->GetMaterialLoader();
@@ -14174,7 +14712,7 @@ void EffectFactory::OnUnloadingResource(Effect* effect) {
 			SetModel(effect, i, nullptr);
 		}
 	}
-	
+
 	if (materialLoader != nullptr)
 	{
 		for (auto i = 0; i < effect->GetMaterialCount(); i++)
@@ -14185,24 +14723,28 @@ void EffectFactory::OnUnloadingResource(Effect* effect) {
 	}
 }
 
-const char* EffectFactory::GetName() const 
-{ 
+const char* EffectFactory::GetName() const
+{
 	static const char* name = "Default";
 	return name;
 }
 
- bool EffectFactory::GetIsResourcesLoadedAutomatically() const { return true; }
+bool EffectFactory::GetIsResourcesLoadedAutomatically() const
+{
+	return true;
+}
 
-EffectFactory::EffectFactory() {
+EffectFactory::EffectFactory()
+{
 }
 
 EffectFactory::~EffectFactory()
 {
 }
 
-Effect* Effect::Create(Manager * manager, void* data, int32_t size, float magnification, const EFK_CHAR* materialPath)
+Effect* Effect::Create(Manager* manager, void* data, int32_t size, float magnification, const EFK_CHAR* materialPath)
 {
-	return EffectImplemented::Create( manager, data, size, magnification, materialPath );
+	return EffectImplemented::Create(manager, data, size, magnification, materialPath);
 }
 
 Effect* Effect::Create(Manager* manager, const EFK_CHAR* path, float magnification, const EFK_CHAR* materialPath)
@@ -14211,12 +14753,14 @@ Effect* Effect::Create(Manager* manager, const EFK_CHAR* path, float magnificati
 
 	EffectLoader* eLoader = setting->GetEffectLoader();
 
-	if (setting == NULL) return NULL;
+	if (setting == NULL)
+		return NULL;
 
 	void* data = NULL;
 	int32_t size = 0;
 
-	if (!eLoader->Load(path, data, size)) return NULL;
+	if (!eLoader->Load(path, data, size))
+		return NULL;
 
 	EFK_CHAR parentDir[512];
 	if (materialPath == NULL)
@@ -14371,7 +14915,7 @@ bool EffectImplemented::LoadBody(const uint8_t* data, int32_t size, float mag)
 	{
 		// material
 		binaryReader.Read(materialCount_, 0, elementCountMax);
-		
+
 		if (materialCount_ > 0)
 		{
 			materialPaths_ = new EFK_CHAR*[materialCount_];
@@ -14467,7 +15011,7 @@ bool EffectImplemented::LoadBody(const uint8_t* data, int32_t size, float mag)
 			binaryReader.Read(Culling.Location.X);
 			binaryReader.Read(Culling.Location.Y);
 			binaryReader.Read(Culling.Location.Z);
-			
+
 			Culling.Sphere.Radius *= m_maginification;
 			Culling.Location.X *= m_maginification;
 			Culling.Location.Y *= m_maginification;
@@ -14482,24 +15026,25 @@ bool EffectImplemented::LoadBody(const uint8_t* data, int32_t size, float mag)
 	// Nodes
 	auto nodeData = pos + binaryReader.GetOffset();
 	m_pRoot = EffectNodeImplemented::Create(this, nullptr, nodeData);
-	
+
 	return true;
 }
 
 void EffectImplemented::ResetReloadingBackup()
 {
-	if(reloadingBackup == nullptr) return;
+	if (reloadingBackup == nullptr)
+		return;
 
 	Setting* loader = GetSetting();
 
 	TextureLoader* textureLoader = loader->GetTextureLoader();
 	if (textureLoader != NULL)
 	{
-		for (auto it: reloadingBackup->images.GetCollection())
+		for (auto it : reloadingBackup->images.GetCollection())
 		{
 			textureLoader->Unload(it.second.value);
 		}
-	
+
 		for (auto it : reloadingBackup->normalImages.GetCollection())
 		{
 			textureLoader->Unload(it.second.value);
@@ -14534,13 +15079,13 @@ void EffectImplemented::ResetReloadingBackup()
 	reloadingBackup.reset();
 }
 
-
-Effect* EffectImplemented::Create( Manager* pManager, void* pData, int size, float magnification, const EFK_CHAR* materialPath )
+Effect* EffectImplemented::Create(Manager* pManager, void* pData, int size, float magnification, const EFK_CHAR* materialPath)
 {
-	if( pData == NULL || size == 0 ) return NULL;
+	if (pData == NULL || size == 0)
+		return NULL;
 
-	EffectImplemented* effect = new EffectImplemented( pManager, pData, size );
-	if ( !effect->Load( pData, size, magnification, materialPath, ReloadingThreadType::Main) )
+	EffectImplemented* effect = new EffectImplemented(pManager, pData, size);
+	if (!effect->Load(pData, size, magnification, materialPath, ReloadingThreadType::Main))
 	{
 		effect->Release();
 		effect = NULL;
@@ -14551,25 +15096,28 @@ Effect* EffectImplemented::Create( Manager* pManager, void* pData, int size, flo
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-Effect* Effect::Create( Setting* setting, void* data, int32_t size, float magnification, const EFK_CHAR* materialPath )
+Effect* Effect::Create(Setting* setting, void* data, int32_t size, float magnification, const EFK_CHAR* materialPath)
 {
-	return EffectImplemented::Create(setting, data, size, magnification, materialPath );
+	return EffectImplemented::Create(setting, data, size, magnification, materialPath);
 }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-Effect* Effect::Create( Setting* setting, const EFK_CHAR* path, float magnification, const EFK_CHAR* materialPath)
+Effect* Effect::Create(Setting* setting, const EFK_CHAR* path, float magnification, const EFK_CHAR* materialPath)
 {
-	if(setting == NULL) return NULL;
+	if (setting == NULL)
+		return NULL;
 	EffectLoader* eLoader = setting->GetEffectLoader();
 
-	if (setting == NULL) return NULL;
+	if (setting == NULL)
+		return NULL;
 
 	void* data = NULL;
 	int32_t size = 0;
 
-	if (!eLoader->Load(path, data, size)) return NULL;
+	if (!eLoader->Load(path, data, size))
+		return NULL;
 
 	EFK_CHAR parentDir[512];
 	if (materialPath == NULL)
@@ -14590,12 +15138,13 @@ Effect* Effect::Create( Setting* setting, const EFK_CHAR* path, float magnificat
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-Effect* EffectImplemented::Create( Setting* setting, void* pData, int size, float magnification, const EFK_CHAR* materialPath )
+Effect* EffectImplemented::Create(Setting* setting, void* pData, int size, float magnification, const EFK_CHAR* materialPath)
 {
-	if( pData == NULL || size == 0 ) return NULL;
+	if (pData == NULL || size == 0)
+		return NULL;
 
-	EffectImplemented* effect = new EffectImplemented( setting, pData, size );
-	if ( !effect->Load( pData, size, magnification, materialPath, ReloadingThreadType::Main) )
+	EffectImplemented* effect = new EffectImplemented(setting, pData, size);
+	if (!effect->Load(pData, size, magnification, materialPath, ReloadingThreadType::Main))
 	{
 		effect->Release();
 		effect = NULL;
@@ -14614,24 +15163,24 @@ Effect* EffectImplemented::Create( Setting* setting, void* pData, int size, floa
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-EffectImplemented::EffectImplemented( Manager* pManager, void* pData, int size )
-	: m_pManager		( (ManagerImplemented*)pManager )
-	, m_setting			(NULL)
-	, m_reference		( 1 )
-	, m_version			( 0 )
-	, m_ImageCount		( 0 )
-	, m_ImagePaths		( NULL )
-	, m_pImages			( NULL )
+EffectImplemented::EffectImplemented(Manager* pManager, void* pData, int size)
+	: m_pManager((ManagerImplemented*)pManager)
+	, m_setting(NULL)
+	, m_reference(1)
+	, m_version(0)
+	, m_ImageCount(0)
+	, m_ImagePaths(NULL)
+	, m_pImages(NULL)
 	, m_normalImageCount(0)
 	, m_normalImagePaths(nullptr)
 	, m_normalImages(nullptr)
 	, m_distortionImageCount(0)
 	, m_distortionImagePaths(nullptr)
 	, m_distortionImages(nullptr)
-	, m_defaultRandomSeed	(-1)
+	, m_defaultRandomSeed(-1)
 
 {
-	ES_SAFE_ADDREF( m_pManager );
+	ES_SAFE_ADDREF(m_pManager);
 
 	Culling.Shape = CullingShape::NoneShape;
 }
@@ -14639,14 +15188,14 @@ EffectImplemented::EffectImplemented( Manager* pManager, void* pData, int size )
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-EffectImplemented::EffectImplemented( Setting* setting, void* pData, int size )
-	: m_pManager		( NULL )
-	, m_setting			(setting)
-	, m_reference		( 1 )
-	, m_version			( 0 )
-	, m_ImageCount		( 0 )
-	, m_ImagePaths		( NULL )
-	, m_pImages			( NULL )
+EffectImplemented::EffectImplemented(Setting* setting, void* pData, int size)
+	: m_pManager(NULL)
+	, m_setting(setting)
+	, m_reference(1)
+	, m_version(0)
+	, m_ImageCount(0)
+	, m_ImagePaths(NULL)
+	, m_pImages(NULL)
 	, m_normalImageCount(0)
 	, m_normalImagePaths(nullptr)
 	, m_normalImages(nullptr)
@@ -14654,8 +15203,8 @@ EffectImplemented::EffectImplemented( Setting* setting, void* pData, int size )
 	, m_distortionImagePaths(nullptr)
 	, m_distortionImages(nullptr)
 {
-	ES_SAFE_ADDREF( m_setting );
-	
+	ES_SAFE_ADDREF(m_setting);
+
 	Culling.Shape = CullingShape::NoneShape;
 }
 
@@ -14668,8 +15217,8 @@ EffectImplemented::~EffectImplemented()
 	Reset();
 	SetLoadingParameter(nullptr);
 
-	ES_SAFE_RELEASE( m_setting );
-	ES_SAFE_RELEASE( m_pManager );
+	ES_SAFE_RELEASE(m_setting);
+	ES_SAFE_RELEASE(m_pManager);
 
 	ES_SAFE_RELEASE(factory);
 }
@@ -14693,17 +15242,17 @@ float EffectImplemented::GetMaginification() const
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-bool EffectImplemented::Load( void* pData, int size, float mag, const EFK_CHAR* materialPath, ReloadingThreadType reloadingThreadType)
+bool EffectImplemented::Load(void* pData, int size, float mag, const EFK_CHAR* materialPath, ReloadingThreadType reloadingThreadType)
 {
 	ES_SAFE_RELEASE(factory);
 
-	if(m_setting != nullptr)
+	if (m_setting != nullptr)
 	{
 		for (int i = 0; i < m_setting->GetEffectFactoryCount(); i++)
 		{
 			auto f = m_setting->GetEffectFactory(i);
 
-			if(f->OnCheckIsBinarySupported(pData, size))
+			if (f->OnCheckIsBinarySupported(pData, size))
 			{
 				ES_SAFE_ADDREF(f);
 				factory = f;
@@ -14739,13 +15288,14 @@ bool EffectImplemented::Load( void* pData, int size, float mag, const EFK_CHAR* 
 
 	EffekseerPrintDebug("** Create : Effect\n");
 
-	if(!factory->OnLoading(this, pData, size, mag, materialPath))
+	if (!factory->OnLoading(this, pData, size, mag, materialPath))
 	{
 		return false;
 	}
 
 	// save materialPath for reloading
-    if (materialPath != nullptr) m_materialPath = materialPath;
+	if (materialPath != nullptr)
+		m_materialPath = materialPath;
 
 	if (factory->GetIsResourcesLoadedAutomatically())
 	{
@@ -14762,20 +15312,22 @@ void EffectImplemented::Reset()
 {
 	UnloadResources();
 
-	for( int i = 0; i < m_ImageCount; i++ )
+	for (int i = 0; i < m_ImageCount; i++)
 	{
-		if( m_ImagePaths[i] != NULL ) delete [] m_ImagePaths[i];
+		if (m_ImagePaths[i] != NULL)
+			delete[] m_ImagePaths[i];
 	}
 
 	m_ImageCount = 0;
 
-	ES_SAFE_DELETE_ARRAY( m_ImagePaths );
+	ES_SAFE_DELETE_ARRAY(m_ImagePaths);
 	ES_SAFE_DELETE_ARRAY(m_pImages);
 
 	{
 		for (int i = 0; i < m_normalImageCount; i++)
 		{
-			if (m_normalImagePaths[i] != NULL) delete [] m_normalImagePaths[i];
+			if (m_normalImagePaths[i] != NULL)
+				delete[] m_normalImagePaths[i];
 		}
 
 		m_normalImageCount = 0;
@@ -14787,7 +15339,8 @@ void EffectImplemented::Reset()
 	{
 		for (int i = 0; i < m_distortionImageCount; i++)
 		{
-			if (m_distortionImagePaths[i] != NULL) delete [] m_distortionImagePaths[i];
+			if (m_distortionImagePaths[i] != NULL)
+				delete[] m_distortionImagePaths[i];
 		}
 
 		m_distortionImageCount = 0;
@@ -14796,23 +15349,25 @@ void EffectImplemented::Reset()
 		ES_SAFE_DELETE_ARRAY(m_distortionImages);
 	}
 
-	for( int i = 0; i < m_WaveCount; i++ )
+	for (int i = 0; i < m_WaveCount; i++)
 	{
-		if( m_WavePaths[i] != NULL ) delete [] m_WavePaths[i];
+		if (m_WavePaths[i] != NULL)
+			delete[] m_WavePaths[i];
 	}
 	m_WaveCount = 0;
 
-	ES_SAFE_DELETE_ARRAY( m_WavePaths );
-	ES_SAFE_DELETE_ARRAY( m_pWaves );
+	ES_SAFE_DELETE_ARRAY(m_WavePaths);
+	ES_SAFE_DELETE_ARRAY(m_pWaves);
 
-	for( int i = 0; i < modelCount_; i++ )
+	for (int i = 0; i < modelCount_; i++)
 	{
-		if( modelPaths_[i] != NULL ) delete [] modelPaths_[i];
+		if (modelPaths_[i] != NULL)
+			delete[] modelPaths_[i];
 	}
 	modelCount_ = 0;
 
-	ES_SAFE_DELETE_ARRAY( modelPaths_ );
-	ES_SAFE_DELETE_ARRAY( models_ );
+	ES_SAFE_DELETE_ARRAY(modelPaths_);
+	ES_SAFE_DELETE_ARRAY(models_);
 
 	for (int i = 0; i < materialCount_; i++)
 	{
@@ -14824,7 +15379,7 @@ void EffectImplemented::Reset()
 	ES_SAFE_DELETE_ARRAY(materialPaths_);
 	ES_SAFE_DELETE_ARRAY(materials_);
 
-	ES_SAFE_DELETE( m_pRoot );
+	ES_SAFE_DELETE(m_pRoot);
 }
 
 bool EffectImplemented::IsDyanamicMagnificationValid() const
@@ -14832,12 +15387,13 @@ bool EffectImplemented::IsDyanamicMagnificationValid() const
 	return GetVersion() >= 8 || GetVersion() < 2;
 }
 
-ReferenceObject* EffectImplemented::GetLoadingParameter() const {
+ReferenceObject* EffectImplemented::GetLoadingParameter() const
+{
 	return loadingObject;
 }
 
 void EffectImplemented::SetLoadingParameter(ReferenceObject* obj)
-{ 
+{
 	ES_SAFE_ADDREF(obj);
 	ES_SAFE_RELEASE(loadingObject);
 	loadingObject = obj;
@@ -14845,7 +15401,7 @@ void EffectImplemented::SetLoadingParameter(ReferenceObject* obj)
 
 Manager* EffectImplemented::GetManager() const
 {
-	return m_pManager;	
+	return m_pManager;
 }
 
 const char16_t* EffectImplemented::GetName() const
@@ -14860,7 +15416,8 @@ void EffectImplemented::SetName(const char16_t* name)
 
 Setting* EffectImplemented::GetSetting() const
 {
-	if(m_setting != NULL) return m_setting;
+	if (m_setting != NULL)
+		return m_setting;
 	return m_pManager->GetSetting();
 }
 
@@ -14875,9 +15432,9 @@ int EffectImplemented::GetVersion() const
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-TextureData* EffectImplemented::GetColorImage( int n ) const
+TextureData* EffectImplemented::GetColorImage(int n) const
 {
-	return m_pImages[ n ];
+	return m_pImages[n];
 }
 
 int32_t EffectImplemented::GetColorImageCount() const
@@ -14885,7 +15442,10 @@ int32_t EffectImplemented::GetColorImageCount() const
 	return m_ImageCount;
 }
 
-const EFK_CHAR* EffectImplemented::GetColorImagePath(int n) const { return m_ImagePaths[n]; }
+const EFK_CHAR* EffectImplemented::GetColorImagePath(int n) const
+{
+	return m_ImagePaths[n];
+}
 
 TextureData* EffectImplemented::GetNormalImage(int n) const
 {
@@ -14903,7 +15463,10 @@ int32_t EffectImplemented::GetNormalImageCount() const
 	return m_normalImageCount;
 }
 
-const EFK_CHAR* EffectImplemented::GetNormalImagePath(int n) const { return m_normalImagePaths[n]; }
+const EFK_CHAR* EffectImplemented::GetNormalImagePath(int n) const
+{
+	return m_normalImagePaths[n];
+}
 
 TextureData* EffectImplemented::GetDistortionImage(int n) const
 {
@@ -14921,11 +15484,14 @@ int32_t EffectImplemented::GetDistortionImageCount() const
 	return m_distortionImageCount;
 }
 
-const EFK_CHAR* EffectImplemented::GetDistortionImagePath(int n) const { return m_distortionImagePaths[n]; }
-
-void* EffectImplemented::GetWave( int n ) const
+const EFK_CHAR* EffectImplemented::GetDistortionImagePath(int n) const
 {
-	return m_pWaves[ n ];
+	return m_distortionImagePaths[n];
+}
+
+void* EffectImplemented::GetWave(int n) const
+{
+	return m_pWaves[n];
 }
 
 int32_t EffectImplemented::GetWaveCount() const
@@ -14933,11 +15499,14 @@ int32_t EffectImplemented::GetWaveCount() const
 	return m_WaveCount;
 }
 
-const EFK_CHAR* EffectImplemented::GetWavePath(int n) const { return m_WavePaths[n]; }
-
-void* EffectImplemented::GetModel( int n ) const
+const EFK_CHAR* EffectImplemented::GetWavePath(int n) const
 {
-	return models_[ n ];
+	return m_WavePaths[n];
+}
+
+void* EffectImplemented::GetModel(int n) const
+{
+	return models_[n];
 }
 
 int32_t EffectImplemented::GetModelCount() const
@@ -14945,13 +15514,25 @@ int32_t EffectImplemented::GetModelCount() const
 	return modelCount_;
 }
 
-const EFK_CHAR* EffectImplemented::GetModelPath(int n) const { return modelPaths_[n]; }
+const EFK_CHAR* EffectImplemented::GetModelPath(int n) const
+{
+	return modelPaths_[n];
+}
 
-MaterialData* EffectImplemented::GetMaterial(int n) const { return materials_[n]; }
+MaterialData* EffectImplemented::GetMaterial(int n) const
+{
+	return materials_[n];
+}
 
-int32_t EffectImplemented::GetMaterialCount() const { return materialCount_; }
+int32_t EffectImplemented::GetMaterialCount() const
+{
+	return materialCount_;
+}
 
-const EFK_CHAR* EffectImplemented::GetMaterialPath(int n) const { return materialPaths_[n]; }
+const EFK_CHAR* EffectImplemented::GetMaterialPath(int n) const
+{
+	return materialPaths_[n];
+}
 
 void EffectImplemented::SetTexture(int32_t index, TextureType type, TextureData* data)
 {
@@ -15030,22 +15611,24 @@ void EffectImplemented::SetMaterial(int32_t index, MaterialData* data)
 	materials_[index] = data;
 }
 
-bool EffectImplemented::Reload( void* data, int32_t size, const EFK_CHAR* materialPath, ReloadingThreadType reloadingThreadType)
+bool EffectImplemented::Reload(void* data, int32_t size, const EFK_CHAR* materialPath, ReloadingThreadType reloadingThreadType)
 {
-	if(m_pManager == NULL ) return false;
+	if (m_pManager == NULL)
+		return false;
 
 	std::array<Manager*, 1> managers;
 	managers[0] = m_pManager;
 
-	return Reload( managers.data(), static_cast<int32_t>(managers.size()), data, size, materialPath, reloadingThreadType);
+	return Reload(managers.data(), static_cast<int32_t>(managers.size()), data, size, materialPath, reloadingThreadType);
 }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-bool EffectImplemented::Reload( const EFK_CHAR* path, const EFK_CHAR* materialPath, ReloadingThreadType reloadingThreadType)
+bool EffectImplemented::Reload(const EFK_CHAR* path, const EFK_CHAR* materialPath, ReloadingThreadType reloadingThreadType)
 {
-	if(m_pManager == NULL ) return false;
+	if (m_pManager == NULL)
+		return false;
 
 	std::array<Manager*, 1> managers;
 	managers[0] = m_pManager;
@@ -15056,14 +15639,14 @@ bool EffectImplemented::Reload( const EFK_CHAR* path, const EFK_CHAR* materialPa
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-bool EffectImplemented::Reload( Manager** managers, int32_t managersCount, void* data, int32_t size, const EFK_CHAR* materialPath, ReloadingThreadType reloadingThreadType)
+bool EffectImplemented::Reload(Manager** managers, int32_t managersCount, void* data, int32_t size, const EFK_CHAR* materialPath, ReloadingThreadType reloadingThreadType)
 {
 	if (!factory->OnCheckIsReloadSupported())
 		return false;
 
 	const EFK_CHAR* matPath = materialPath != NULL ? materialPath : m_materialPath.c_str();
-	
-	for( int32_t i = 0; i < managersCount; i++)
+
+	for (int32_t i = 0; i < managersCount; i++)
 	{
 		// to call only once
 		for (int32_t j = 0; j < i; j++)
@@ -15073,7 +15656,7 @@ bool EffectImplemented::Reload( Manager** managers, int32_t managersCount, void*
 		}
 
 		auto manager = static_cast<ManagerImplemented*>(managers[i]);
-		manager->BeginReloadEffect( this, true);
+		manager->BeginReloadEffect(this, true);
 	}
 
 	// HACK for scale
@@ -15082,7 +15665,7 @@ bool EffectImplemented::Reload( Manager** managers, int32_t managersCount, void*
 
 	isReloadingOnRenderingThread = true;
 	Reset();
-	Load( data, size, originalMag * originalMagExt, matPath, reloadingThreadType);
+	Load(data, size, originalMag * originalMagExt, matPath, reloadingThreadType);
 
 	// HACK for scale
 	m_maginification = originalMag * originalMagExt;
@@ -15090,7 +15673,7 @@ bool EffectImplemented::Reload( Manager** managers, int32_t managersCount, void*
 
 	isReloadingOnRenderingThread = false;
 
-	for( int32_t i = 0; i < managersCount; i++)
+	for (int32_t i = 0; i < managersCount; i++)
 	{
 		// to call only once
 		for (int32_t j = 0; j < i; j++)
@@ -15100,7 +15683,7 @@ bool EffectImplemented::Reload( Manager** managers, int32_t managersCount, void*
 		}
 
 		auto manager = static_cast<ManagerImplemented*>(managers[i]);
-		manager->EndReloadEffect( this, true);
+		manager->EndReloadEffect(this, true);
 	}
 
 	return false;
@@ -15109,23 +15692,25 @@ bool EffectImplemented::Reload( Manager** managers, int32_t managersCount, void*
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-bool EffectImplemented::Reload( Manager** managers, int32_t managersCount, const EFK_CHAR* path, const EFK_CHAR* materialPath, ReloadingThreadType reloadingThreadType)
+bool EffectImplemented::Reload(Manager** managers, int32_t managersCount, const EFK_CHAR* path, const EFK_CHAR* materialPath, ReloadingThreadType reloadingThreadType)
 {
 	if (!factory->OnCheckIsReloadSupported())
 		return false;
 
 	Setting* loader = GetSetting();
-	
+
 	EffectLoader* eLoader = loader->GetEffectLoader();
-	if( loader == NULL ) return false;
+	if (loader == NULL)
+		return false;
 
 	void* data = NULL;
 	int32_t size = 0;
 
-	if( !eLoader->Load( path, data, size ) ) return false;
+	if (!eLoader->Load(path, data, size))
+		return false;
 
 	EFK_CHAR parentDir[512];
-	if( materialPath == NULL )
+	if (materialPath == NULL)
 	{
 		GetParentDir(parentDir, path);
 		materialPath = parentDir;
@@ -15133,7 +15718,7 @@ bool EffectImplemented::Reload( Manager** managers, int32_t managersCount, const
 
 	int lockCount = 0;
 
-	for( int32_t i = 0; i < managersCount; i++)
+	for (int32_t i = 0; i < managersCount; i++)
 	{
 		auto manager = static_cast<ManagerImplemented*>(managers[i]);
 		manager->BeginReloadEffect(this, lockCount == 0);
@@ -15142,10 +15727,10 @@ bool EffectImplemented::Reload( Manager** managers, int32_t managersCount, const
 
 	isReloadingOnRenderingThread = true;
 	Reset();
-	Load( data, size, m_maginificationExternal, materialPath, reloadingThreadType);
+	Load(data, size, m_maginificationExternal, materialPath, reloadingThreadType);
 	isReloadingOnRenderingThread = false;
 
-	for( int32_t i = 0; i < managersCount; i++)
+	for (int32_t i = 0; i < managersCount; i++)
 	{
 		lockCount--;
 		auto manager = static_cast<ManagerImplemented*>(managers[i]);
@@ -15165,7 +15750,7 @@ void EffectImplemented::ReloadResources(const void* data, int32_t size, const EF
 	UnloadResources();
 
 	const EFK_CHAR* matPath = materialPath != NULL ? materialPath : m_materialPath.c_str();
-	
+
 	Setting* loader = GetSetting();
 
 	// reloading on render thread
@@ -15184,31 +15769,31 @@ void EffectImplemented::ReloadResources(const void* data, int32_t size, const EF
 				m_pImages[ind] = value;
 			}
 		}
-	
+
 		for (int32_t ind = 0; ind < m_normalImageCount; ind++)
 		{
 			EFK_CHAR fullPath[512];
 			PathCombine(fullPath, matPath, m_normalImagePaths[ind]);
-			
+
 			TextureData* value = nullptr;
 			if (reloadingBackup->normalImages.Pop(fullPath, value))
 			{
 				m_normalImages[ind] = value;
 			}
 		}
-				
+
 		for (int32_t ind = 0; ind < m_distortionImageCount; ind++)
 		{
 			EFK_CHAR fullPath[512];
 			PathCombine(fullPath, matPath, m_distortionImagePaths[ind]);
-			
+
 			TextureData* value = nullptr;
 			if (reloadingBackup->distortionImages.Pop(fullPath, value))
 			{
 				m_distortionImages[ind] = value;
 			}
 		}
-				
+
 		for (int32_t ind = 0; ind < m_WaveCount; ind++)
 		{
 			EFK_CHAR fullPath[512];
@@ -15220,14 +15805,12 @@ void EffectImplemented::ReloadResources(const void* data, int32_t size, const EF
 				m_pWaves[ind] = value;
 			}
 		}
-		
-		
-		
+
 		for (int32_t ind = 0; ind < modelCount_; ind++)
 		{
 			EFK_CHAR fullPath[512];
 			PathCombine(fullPath, matPath, modelPaths_[ind]);
-			
+
 			void* value = nullptr;
 			if (reloadingBackup->models.Pop(fullPath, value))
 			{
@@ -15246,7 +15829,7 @@ void EffectImplemented::ReloadResources(const void* data, int32_t size, const EF
 				materials_[ind] = value;
 			}
 		}
-			
+
 		return;
 	}
 
@@ -15269,7 +15852,8 @@ void EffectImplemented::UnloadResources(const EFK_CHAR* materialPath)
 
 		for (int32_t ind = 0; ind < m_ImageCount; ind++)
 		{
-			if (m_pImages[ind] == nullptr) continue;
+			if (m_pImages[ind] == nullptr)
+				continue;
 
 			EFK_CHAR fullPath[512];
 			PathCombine(fullPath, matPath, m_ImagePaths[ind]);
@@ -15278,7 +15862,8 @@ void EffectImplemented::UnloadResources(const EFK_CHAR* materialPath)
 
 		for (int32_t ind = 0; ind < m_normalImageCount; ind++)
 		{
-			if (m_normalImages[ind] == nullptr) continue;
+			if (m_normalImages[ind] == nullptr)
+				continue;
 
 			EFK_CHAR fullPath[512];
 			PathCombine(fullPath, matPath, m_normalImagePaths[ind]);
@@ -15287,7 +15872,8 @@ void EffectImplemented::UnloadResources(const EFK_CHAR* materialPath)
 
 		for (int32_t ind = 0; ind < m_distortionImageCount; ind++)
 		{
-			if (m_distortionImagePaths[ind] == nullptr) continue;
+			if (m_distortionImagePaths[ind] == nullptr)
+				continue;
 
 			EFK_CHAR fullPath[512];
 			PathCombine(fullPath, matPath, m_distortionImagePaths[ind]);
@@ -15296,7 +15882,8 @@ void EffectImplemented::UnloadResources(const EFK_CHAR* materialPath)
 
 		for (int32_t ind = 0; ind < m_WaveCount; ind++)
 		{
-			if (m_pWaves[ind] == nullptr) continue;
+			if (m_pWaves[ind] == nullptr)
+				continue;
 
 			EFK_CHAR fullPath[512];
 			PathCombine(fullPath, matPath, m_WavePaths[ind]);
@@ -15305,7 +15892,8 @@ void EffectImplemented::UnloadResources(const EFK_CHAR* materialPath)
 
 		for (int32_t ind = 0; ind < modelCount_; ind++)
 		{
-			if (models_[ind] == nullptr) continue;
+			if (models_[ind] == nullptr)
+				continue;
 
 			EFK_CHAR fullPath[512];
 			PathCombine(fullPath, matPath, modelPaths_[ind]);
@@ -15331,7 +15919,7 @@ void EffectImplemented::UnloadResources(const EFK_CHAR* materialPath)
 
 	if (factory != nullptr)
 	{
-		factory->OnUnloadingResource(this);	
+		factory->OnUnloadingResource(this);
 	}
 }
 
@@ -15341,18 +15929,17 @@ void EffectImplemented::UnloadResources()
 }
 
 EffectTerm EffectImplemented::CalculateTerm() const
-{ 
-	
+{
+
 	EffectTerm effectTerm;
 	effectTerm.TermMin = 0;
 	effectTerm.TermMax = 0;
 
-	auto root = GetRoot(); 
+	auto root = GetRoot();
 	EffectInstanceTerm rootTerm;
 
 	std::function<void(EffectNode*, EffectInstanceTerm&)> recurse;
-	recurse = [&effectTerm, &recurse](EffectNode* node, EffectInstanceTerm& term) -> void
-	{
+	recurse = [&effectTerm, &recurse](EffectNode* node, EffectInstanceTerm& term) -> void {
 		for (int i = 0; i < node->GetChildrenCount(); i++)
 		{
 			auto cterm = node->GetChild(i)->CalculateInstanceTerm(term);
@@ -15371,8 +15958,7 @@ EffectTerm EffectImplemented::CalculateTerm() const
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-}
-
+} // namespace Effekseer
 
 
 
@@ -15392,9 +15978,15 @@ static int64_t GetTime(void)
 	return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
 }
 
-Manager::DrawParameter::DrawParameter() { CameraCullingMask = 1; }
+Manager::DrawParameter::DrawParameter()
+{
+	CameraCullingMask = 1;
+}
 
-Manager* Manager::Create(int instance_max, bool autoFlip) { return new ManagerImplemented(instance_max, autoFlip); }
+Manager* Manager::Create(int instance_max, bool autoFlip)
+{
+	return new ManagerImplemented(instance_max, autoFlip);
+}
 
 Mat43f* ManagerImplemented::DrawSet::GetEnabledGlobalMatrix()
 {
@@ -15662,7 +16254,10 @@ void ManagerImplemented::ReleaseInstanceContainer(InstanceContainer* container)
 	pooledContainers_.push(container);
 }
 
-void* EFK_STDCALL ManagerImplemented::Malloc(unsigned int size) { return (void*)new char*[size]; }
+void* EFK_STDCALL ManagerImplemented::Malloc(unsigned int size)
+{
+	return (void*)new char*[size];
+}
 
 void EFK_STDCALL ManagerImplemented::Free(void* p, unsigned int size)
 {
@@ -15670,7 +16265,10 @@ void EFK_STDCALL ManagerImplemented::Free(void* p, unsigned int size)
 	delete[] pData;
 }
 
-int EFK_STDCALL ManagerImplemented::Rand() { return rand(); }
+int EFK_STDCALL ManagerImplemented::Rand()
+{
+	return rand();
+}
 
 void ManagerImplemented::ExecuteEvents()
 {
@@ -15854,29 +16452,65 @@ void ManagerImplemented::Destroy()
 	Release();
 }
 
-uint32_t ManagerImplemented::GetSequenceNumber() const { return m_sequenceNumber; }
+uint32_t ManagerImplemented::GetSequenceNumber() const
+{
+	return m_sequenceNumber;
+}
 
-MallocFunc ManagerImplemented::GetMallocFunc() const { return m_MallocFunc; }
+MallocFunc ManagerImplemented::GetMallocFunc() const
+{
+	return m_MallocFunc;
+}
 
-void ManagerImplemented::SetMallocFunc(MallocFunc func) { m_MallocFunc = func; }
+void ManagerImplemented::SetMallocFunc(MallocFunc func)
+{
+	m_MallocFunc = func;
+}
 
-FreeFunc ManagerImplemented::GetFreeFunc() const { return m_FreeFunc; }
+FreeFunc ManagerImplemented::GetFreeFunc() const
+{
+	return m_FreeFunc;
+}
 
-void ManagerImplemented::SetFreeFunc(FreeFunc func) { m_FreeFunc = func; }
+void ManagerImplemented::SetFreeFunc(FreeFunc func)
+{
+	m_FreeFunc = func;
+}
 
-RandFunc ManagerImplemented::GetRandFunc() const { return m_randFunc; }
+RandFunc ManagerImplemented::GetRandFunc() const
+{
+	return m_randFunc;
+}
 
-void ManagerImplemented::SetRandFunc(RandFunc func) { m_randFunc = func; }
+void ManagerImplemented::SetRandFunc(RandFunc func)
+{
+	m_randFunc = func;
+}
 
-int ManagerImplemented::GetRandMax() const { return m_randMax; }
+int ManagerImplemented::GetRandMax() const
+{
+	return m_randMax;
+}
 
-void ManagerImplemented::SetRandMax(int max_) { m_randMax = max_; }
+void ManagerImplemented::SetRandMax(int max_)
+{
+	m_randMax = max_;
+}
 
-CoordinateSystem ManagerImplemented::GetCoordinateSystem() const { return m_setting->GetCoordinateSystem(); }
+CoordinateSystem ManagerImplemented::GetCoordinateSystem() const
+{
+	return m_setting->GetCoordinateSystem();
+}
 
-void ManagerImplemented::SetCoordinateSystem(CoordinateSystem coordinateSystem) { m_setting->SetCoordinateSystem(coordinateSystem); }
+void ManagerImplemented::SetCoordinateSystem(CoordinateSystem coordinateSystem)
+{
+	m_setting->SetCoordinateSystem(coordinateSystem);
+}
 
-SpriteRenderer* ManagerImplemented::GetSpriteRenderer() { return m_spriteRenderer; }
+SpriteRenderer* ManagerImplemented::GetSpriteRenderer()
+{
+	return m_spriteRenderer;
+}
 
 void ManagerImplemented::SetSpriteRenderer(SpriteRenderer* renderer)
 {
@@ -15884,7 +16518,10 @@ void ManagerImplemented::SetSpriteRenderer(SpriteRenderer* renderer)
 	m_spriteRenderer = renderer;
 }
 
-RibbonRenderer* ManagerImplemented::GetRibbonRenderer() { return m_ribbonRenderer; }
+RibbonRenderer* ManagerImplemented::GetRibbonRenderer()
+{
+	return m_ribbonRenderer;
+}
 
 void ManagerImplemented::SetRibbonRenderer(RibbonRenderer* renderer)
 {
@@ -15892,7 +16529,10 @@ void ManagerImplemented::SetRibbonRenderer(RibbonRenderer* renderer)
 	m_ribbonRenderer = renderer;
 }
 
-RingRenderer* ManagerImplemented::GetRingRenderer() { return m_ringRenderer; }
+RingRenderer* ManagerImplemented::GetRingRenderer()
+{
+	return m_ringRenderer;
+}
 
 void ManagerImplemented::SetRingRenderer(RingRenderer* renderer)
 {
@@ -15900,7 +16540,10 @@ void ManagerImplemented::SetRingRenderer(RingRenderer* renderer)
 	m_ringRenderer = renderer;
 }
 
-ModelRenderer* ManagerImplemented::GetModelRenderer() { return m_modelRenderer; }
+ModelRenderer* ManagerImplemented::GetModelRenderer()
+{
+	return m_modelRenderer;
+}
 
 void ManagerImplemented::SetModelRenderer(ModelRenderer* renderer)
 {
@@ -15908,7 +16551,10 @@ void ManagerImplemented::SetModelRenderer(ModelRenderer* renderer)
 	m_modelRenderer = renderer;
 }
 
-TrackRenderer* ManagerImplemented::GetTrackRenderer() { return m_trackRenderer; }
+TrackRenderer* ManagerImplemented::GetTrackRenderer()
+{
+	return m_trackRenderer;
+}
 
 void ManagerImplemented::SetTrackRenderer(TrackRenderer* renderer)
 {
@@ -15916,7 +16562,10 @@ void ManagerImplemented::SetTrackRenderer(TrackRenderer* renderer)
 	m_trackRenderer = renderer;
 }
 
-SoundPlayer* ManagerImplemented::GetSoundPlayer() { return m_soundPlayer; }
+SoundPlayer* ManagerImplemented::GetSoundPlayer()
+{
+	return m_soundPlayer;
+}
 
 void ManagerImplemented::SetSoundPlayer(SoundPlayer* soundPlayer)
 {
@@ -15924,7 +16573,10 @@ void ManagerImplemented::SetSoundPlayer(SoundPlayer* soundPlayer)
 	m_soundPlayer = soundPlayer;
 }
 
-Setting* ManagerImplemented::GetSetting() { return m_setting; }
+Setting* ManagerImplemented::GetSetting()
+{
+	return m_setting;
+}
 
 void ManagerImplemented::SetSetting(Setting* setting)
 {
@@ -15933,25 +16585,55 @@ void ManagerImplemented::SetSetting(Setting* setting)
 	ES_SAFE_ADDREF(m_setting);
 }
 
-EffectLoader* ManagerImplemented::GetEffectLoader() { return m_setting->GetEffectLoader(); }
+EffectLoader* ManagerImplemented::GetEffectLoader()
+{
+	return m_setting->GetEffectLoader();
+}
 
-void ManagerImplemented::SetEffectLoader(EffectLoader* effectLoader) { m_setting->SetEffectLoader(effectLoader); }
+void ManagerImplemented::SetEffectLoader(EffectLoader* effectLoader)
+{
+	m_setting->SetEffectLoader(effectLoader);
+}
 
-TextureLoader* ManagerImplemented::GetTextureLoader() { return m_setting->GetTextureLoader(); }
+TextureLoader* ManagerImplemented::GetTextureLoader()
+{
+	return m_setting->GetTextureLoader();
+}
 
-void ManagerImplemented::SetTextureLoader(TextureLoader* textureLoader) { m_setting->SetTextureLoader(textureLoader); }
+void ManagerImplemented::SetTextureLoader(TextureLoader* textureLoader)
+{
+	m_setting->SetTextureLoader(textureLoader);
+}
 
-SoundLoader* ManagerImplemented::GetSoundLoader() { return m_setting->GetSoundLoader(); }
+SoundLoader* ManagerImplemented::GetSoundLoader()
+{
+	return m_setting->GetSoundLoader();
+}
 
-void ManagerImplemented::SetSoundLoader(SoundLoader* soundLoader) { m_setting->SetSoundLoader(soundLoader); }
+void ManagerImplemented::SetSoundLoader(SoundLoader* soundLoader)
+{
+	m_setting->SetSoundLoader(soundLoader);
+}
 
-ModelLoader* ManagerImplemented::GetModelLoader() { return m_setting->GetModelLoader(); }
+ModelLoader* ManagerImplemented::GetModelLoader()
+{
+	return m_setting->GetModelLoader();
+}
 
-void ManagerImplemented::SetModelLoader(ModelLoader* modelLoader) { m_setting->SetModelLoader(modelLoader); }
+void ManagerImplemented::SetModelLoader(ModelLoader* modelLoader)
+{
+	m_setting->SetModelLoader(modelLoader);
+}
 
-MaterialLoader* ManagerImplemented::GetMaterialLoader() { return m_setting->GetMaterialLoader(); }
+MaterialLoader* ManagerImplemented::GetMaterialLoader()
+{
+	return m_setting->GetMaterialLoader();
+}
 
-void ManagerImplemented::SetMaterialLoader(MaterialLoader* loader) { m_setting->SetMaterialLoader(loader); }
+void ManagerImplemented::SetMaterialLoader(MaterialLoader* loader)
+{
+	m_setting->SetMaterialLoader(loader);
+}
 
 void ManagerImplemented::StopEffect(Handle handle)
 {
@@ -16098,7 +16780,10 @@ void ManagerImplemented::SetLocation(Handle handle, float x, float y, float z)
 	}
 }
 
-void ManagerImplemented::SetLocation(Handle handle, const Vector3D& location) { SetLocation(handle, location.X, location.Y, location.Z); }
+void ManagerImplemented::SetLocation(Handle handle, const Vector3D& location)
+{
+	SetLocation(handle, location.X, location.Y, location.Z);
+}
 
 void ManagerImplemented::AddLocation(Handle handle, const Vector3D& location)
 {
@@ -16204,7 +16889,10 @@ void ManagerImplemented::SetAllColor(Handle handle, Color color)
 	}
 }
 
-void ManagerImplemented::SetTargetLocation(Handle handle, float x, float y, float z) { SetTargetLocation(handle, Vector3D(x, y, z)); }
+void ManagerImplemented::SetTargetLocation(Handle handle, float x, float y, float z)
+{
+	SetTargetLocation(handle, Vector3D(x, y, z));
+}
 
 void ManagerImplemented::SetTargetLocation(Handle handle, const Vector3D& location)
 {
@@ -16452,7 +17140,7 @@ void ManagerImplemented::Flip()
 						location.Y = mat_->Y.GetW();
 						location.Z = mat_->Z.GetW();
 					}
-					
+
 					ds.CullingObjectPointer->SetPosition(Culling3D::Vector3DF(location.X, location.Y, location.Z));
 
 					if (effect->Culling.Shape == CullingShape::Sphere)
@@ -16479,7 +17167,7 @@ void ManagerImplemented::Flip()
 
 					if (isCreated)
 					{
-						m_cullingWorld->AddObject(ds.CullingObjectPointer);					
+						m_cullingWorld->AddObject(ds.CullingObjectPointer);
 					}
 				}
 				ds.IsParameterChanged = false;
@@ -16909,7 +17597,10 @@ void ManagerImplemented::DrawFront(const Manager::DrawParameter& drawParameter)
 	m_drawTime = (int)(Effekseer::GetTime() - beginTime);
 }
 
-Handle ManagerImplemented::Play(Effect* effect, float x, float y, float z) { return Play(effect, Vector3D(x, y, z), 0); }
+Handle ManagerImplemented::Play(Effect* effect, float x, float y, float z)
+{
+	return Play(effect, Vector3D(x, y, z), 0);
+}
 
 Handle ManagerImplemented::Play(Effect* effect, const Vector3D& position, int32_t startFrame)
 {
@@ -17132,9 +17823,15 @@ void ManagerImplemented::DrawHandleFront(Handle handle, const Manager::DrawParam
 	}
 }
 
-int ManagerImplemented::GetUpdateTime() const { return m_updateTime; };
+int ManagerImplemented::GetUpdateTime() const
+{
+	return m_updateTime;
+};
 
-int ManagerImplemented::GetDrawTime() const { return m_drawTime; };
+int ManagerImplemented::GetDrawTime() const
+{
+	return m_drawTime;
+};
 
 int32_t ManagerImplemented::GetRestInstancesCount() const
 {
@@ -17380,9 +18077,9 @@ InstanceContainer::~InstanceContainer()
 	assert(m_headGroups == NULL);
 	assert(m_tailGroups == NULL);
 
-	for( auto child : m_Children )
+	for (auto child : m_Children)
 	{
-		m_pManager->ReleaseInstanceContainer( child );
+		m_pManager->ReleaseInstanceContainer(child);
 	}
 }
 
@@ -17391,7 +18088,7 @@ InstanceContainer::~InstanceContainer()
 //----------------------------------------------------------------------------------
 void InstanceContainer::AddChild(InstanceContainer* pContainter)
 {
-	m_Children.push_back( pContainter );
+	m_Children.push_back(pContainter);
 }
 
 InstanceContainer* InstanceContainer::GetChild(int index)
@@ -17399,7 +18096,8 @@ InstanceContainer* InstanceContainer::GetChild(int index)
 	assert(index < static_cast<int32_t>(m_Children.size()));
 
 	auto it = m_Children.begin();
-	for( int i = 0; i < index; i++) {
+	for (int i = 0; i < index; i++)
+	{
 		it++;
 	}
 	return *it;
@@ -17413,12 +18111,12 @@ void InstanceContainer::RemoveInvalidGroups()
 	/* 最後に存在する有効なグループ */
 	InstanceGroup* tailGroup = NULL;
 
-	for (InstanceGroup* group = m_headGroups; group != NULL; )
+	for (InstanceGroup* group = m_headGroups; group != NULL;)
 	{
 		if (!group->IsReferencedFromInstance && group->GetInstanceCount() == 0)
 		{
 			InstanceGroup* next = group->NextUsedByContainer;
-			m_pManager->ReleaseGroup( group );
+			m_pManager->ReleaseGroup(group);
 
 			if (m_headGroups == group)
 			{
@@ -17438,7 +18136,6 @@ void InstanceContainer::RemoveInvalidGroups()
 		}
 	}
 
-
 	m_tailGroups = tailGroup;
 
 	assert(m_tailGroups == NULL || m_tailGroups->NextUsedByContainer == NULL);
@@ -17449,7 +18146,7 @@ void InstanceContainer::RemoveInvalidGroups()
 //----------------------------------------------------------------------------------
 InstanceGroup* InstanceContainer::CreateInstanceGroup()
 {
-	InstanceGroup* group = m_pManager->CreateInstanceGroup( m_pEffectNode, this, m_pGlobal );
+	InstanceGroup* group = m_pManager->CreateInstanceGroup(m_pEffectNode, this, m_pGlobal);
 	if (group == nullptr)
 	{
 		return nullptr;
@@ -17531,7 +18228,6 @@ void InstanceContainer::SetBaseMatrix(bool recursive, const Mat43f& mat)
 void InstanceContainer::RemoveForcibly(bool recursive)
 {
 	KillAllInstances(false);
-
 
 	for (InstanceGroup* group = m_headGroups; group != NULL; group = group->NextUsedByContainer)
 	{
@@ -17674,7 +18370,7 @@ InstanceGlobal* InstanceContainer::GetRootInstance()
 //
 //----------------------------------------------------------------------------------
 
-}
+} // namespace Effekseer
 
 //----------------------------------------------------------------------------------
 //
@@ -17691,7 +18387,7 @@ InstanceGlobal* InstanceContainer::GetRootInstance()
 namespace Effekseer
 {
 
-template<typename T, typename U>
+template <typename T, typename U>
 void Instance::ApplyEq(T& dstParam, Effect* e, InstanceGlobal* instg, int dpInd, const U& originalParam)
 {
 	static_assert(sizeof(T) == sizeof(U), "size is not mismatched");
@@ -17735,7 +18431,8 @@ void Instance::ApplyEq(T& dstParam, Effect* e, InstanceGlobal* instg, int dpInd,
 	}
 }
 
-template <typename S> Vec3f Instance::ApplyEq(const int& dpInd, const Vec3f& originalParam, const S& scale, const S& scaleInv)
+template <typename S>
+Vec3f Instance::ApplyEq(const int& dpInd, const Vec3f& originalParam, const S& scale, const S& scaleInv)
 {
 	const auto& e = this->m_pEffectNode->m_effect;
 	const auto& instg = this->m_pContainer->GetRootInstance();
@@ -17854,24 +18551,24 @@ Instance::Instance(Manager* pManager, EffectNode* pEffectNode, InstanceContainer
 	m_generatedChildrenCount = m_fixedGeneratedChildrenCount;
 	maxGenerationChildrenCount = fixedMaxGenerationChildrenCount_;
 	m_nextGenerationTime = m_fixedNextGenerationTime;
-	
+
 	ColorInheritance = Color(255, 255, 255, 255);
 	ColorParent = Color(255, 255, 255, 255);
 
 	InstanceGroup* group = NULL;
 
-	for( int i = 0; i < m_pEffectNode->GetChildrenCount(); i++ )
+	for (int i = 0; i < m_pEffectNode->GetChildrenCount(); i++)
 	{
-		InstanceContainer* childContainer = m_pContainer->GetChild( i );
+		InstanceContainer* childContainer = m_pContainer->GetChild(i);
 		auto allocated = childContainer->CreateInstanceGroup();
-		
-		// lack of memory 
+
+		// lack of memory
 		if (allocated == nullptr)
 		{
 			break;
 		}
 
-		if( group != NULL )
+		if (group != NULL)
 		{
 			group->NextUsedByInstance = allocated;
 			group = allocated;
@@ -17896,7 +18593,7 @@ Instance::Instance(Manager* pManager, EffectNode* pEffectNode, InstanceContainer
 //----------------------------------------------------------------------------------
 Instance::~Instance()
 {
-	assert( m_State != INSTANCE_STATE_ACTIVE );
+	assert(m_State != INSTANCE_STATE_ACTIVE);
 
 	auto parameter = (EffectNodeImplemented*)m_pEffectNode;
 
@@ -17927,7 +18624,7 @@ bool Instance::IsRequiredToCreateChildren(float currentTime)
 	for (int32_t i = 0; i < parameter->GetChildrenCount(); i++, group = group->NextUsedByInstance)
 	{
 		auto node = (EffectNodeImplemented*)parameter->GetChild(i);
-		
+
 		// Lack of memory
 		if (group == nullptr)
 		{
@@ -17961,7 +18658,6 @@ void Instance::GenerateChildrenInRequired(float currentTime)
 		{
 			return;
 		}
-
 
 		while (true)
 		{
@@ -18027,17 +18723,17 @@ const Mat43f& Instance::GetGlobalMatrix43() const
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void Instance::Initialize( Instance* parent, int32_t instanceNumber, int32_t parentTime, const Mat43f& globalMatrix)
+void Instance::Initialize(Instance* parent, int32_t instanceNumber, int32_t parentTime, const Mat43f& globalMatrix)
 {
 	assert(this->m_pContainer != nullptr);
-	
+
 	// Invalidate matrix
 	m_GlobalMatrix43Calculated = false;
 	m_ParentMatrix43Calculated = false;
 
 	auto instanceGlobal = this->m_pContainer->GetRootInstance();
 
-	auto parameter = (EffectNodeImplemented*) m_pEffectNode;
+	auto parameter = (EffectNodeImplemented*)m_pEffectNode;
 
 	// Extend array
 	if (parameter->GetChildrenCount() >= ChildrenMax)
@@ -18057,7 +18753,7 @@ void Instance::Initialize( Instance* parent, int32_t instanceNumber, int32_t par
 	// initialize children
 	for (int32_t i = 0; i < parameter->GetChildrenCount(); i++)
 	{
-		auto pNode = (EffectNodeImplemented*) parameter->GetChild(i);
+		auto pNode = (EffectNodeImplemented*)parameter->GetChild(i);
 
 		m_generatedChildrenCount[i] = 0;
 
@@ -18073,7 +18769,7 @@ void Instance::Initialize( Instance* parent, int32_t instanceNumber, int32_t par
 					this->m_pContainer->GetRootInstance(),
 					pNode->CommonValues.RefEqMaxGeneration,
 					maxGene);
-			maxGenerationChildrenCount[i] = maxGene;
+			maxGenerationChildrenCount[i] = static_cast<int32_t>(maxGene);
 		}
 		else
 		{
@@ -18081,7 +18777,7 @@ void Instance::Initialize( Instance* parent, int32_t instanceNumber, int32_t par
 		}
 	}
 
-	if( m_pParent == NULL )
+	if (m_pParent == NULL)
 	{
 		// ROOTの場合
 
@@ -18108,7 +18804,7 @@ void Instance::Initialize( Instance* parent, int32_t instanceNumber, int32_t par
 		GenerateChildrenInRequired(0.0f);
 		return;
 	}
-	
+
 	// 状態の初期化
 	m_State = INSTANCE_STATE_ACTIVE;
 
@@ -18123,7 +18819,7 @@ void Instance::Initialize( Instance* parent, int32_t instanceNumber, int32_t par
 
 	// calculate parent matrixt to get matrix
 	m_pParent->CalculateMatrix(0);
-	
+
 	const Mat43f& parentMatrix = m_pParent->GetGlobalMatrix43();
 	m_GlobalPosition = parentMatrix.GetTranslation();
 	m_GlobalRevisionLocation = Vec3f(0.0f, 0.0f, 0.0f);
@@ -18134,9 +18830,9 @@ void Instance::Initialize( Instance* parent, int32_t instanceNumber, int32_t par
 	assert(m_GlobalMatrix43.IsValid());
 
 	// 親の初期化
-	if( parameter->CommonValues.TranslationBindType == BindType::WhenCreating ||
+	if (parameter->CommonValues.TranslationBindType == BindType::WhenCreating ||
 		parameter->CommonValues.RotationBindType == BindType::WhenCreating ||
-		parameter->CommonValues.ScalingBindType == BindType::WhenCreating )
+		parameter->CommonValues.ScalingBindType == BindType::WhenCreating)
 	{
 		m_ParentMatrix = parentMatrix;
 		assert(m_ParentMatrix.IsValid());
@@ -18153,10 +18849,10 @@ void Instance::Initialize( Instance* parent, int32_t instanceNumber, int32_t par
 	}
 
 	// Translation
-	if( m_pEffectNode->TranslationType == ParameterTranslationType_Fixed )
+	if (m_pEffectNode->TranslationType == ParameterTranslationType_Fixed)
 	{
 	}
-	else if( m_pEffectNode->TranslationType == ParameterTranslationType_PVA )
+	else if (m_pEffectNode->TranslationType == ParameterTranslationType_PVA)
 	{
 		auto rvl = ApplyEq(m_pEffectNode->TranslationPVA.RefEqP,
 						   m_pEffectNode->TranslationPVA.location,
@@ -18175,9 +18871,8 @@ void Instance::Initialize( Instance* parent, int32_t instanceNumber, int32_t par
 						   m_pEffectNode->DynamicFactor.Tra,
 						   m_pEffectNode->DynamicFactor.TraInv);
 		translation_values.random.acceleration = rva.getValue(*this->m_pContainer->GetRootInstance());
-
 	}
-	else if( m_pEffectNode->TranslationType == ParameterTranslationType_Easing )
+	else if (m_pEffectNode->TranslationType == ParameterTranslationType_Easing)
 	{
 		auto rvs = ApplyEq(m_pEffectNode->TranslationEasing.RefEqS,
 						   m_pEffectNode->TranslationEasing.location.start,
@@ -18191,18 +18886,18 @@ void Instance::Initialize( Instance* parent, int32_t instanceNumber, int32_t par
 		translation_values.easing.start = rvs.getValue(*this->m_pContainer->GetRootInstance());
 		translation_values.easing.end = rve.getValue(*this->m_pContainer->GetRootInstance());
 	}
-	else if( m_pEffectNode->TranslationType == ParameterTranslationType_FCurve )
+	else if (m_pEffectNode->TranslationType == ParameterTranslationType_FCurve)
 	{
-		assert( m_pEffectNode->TranslationFCurve != NULL );
+		assert(m_pEffectNode->TranslationFCurve != NULL);
 
-		translation_values.fcruve.offset = m_pEffectNode->TranslationFCurve->GetOffsets( *instanceGlobal );
+		translation_values.fcruve.offset = m_pEffectNode->TranslationFCurve->GetOffsets(*instanceGlobal);
 	}
-	
+
 	// Rotation
-	if( m_pEffectNode->RotationType == ParameterRotationType_Fixed )
+	if (m_pEffectNode->RotationType == ParameterRotationType_Fixed)
 	{
 	}
-	else if( m_pEffectNode->RotationType == ParameterRotationType_PVA )
+	else if (m_pEffectNode->RotationType == ParameterRotationType_PVA)
 	{
 		auto rvl = ApplyEq(m_pEffectNode->RotationPVA.RefEqP,
 						   m_pEffectNode->RotationPVA.rotation,
@@ -18221,7 +18916,7 @@ void Instance::Initialize( Instance* parent, int32_t instanceNumber, int32_t par
 		rotation_values.random.velocity = rvv.getValue(*instanceGlobal);
 		rotation_values.random.acceleration = rva.getValue(*instanceGlobal);
 	}
-	else if( m_pEffectNode->RotationType == ParameterRotationType_Easing )
+	else if (m_pEffectNode->RotationType == ParameterRotationType_Easing)
 	{
 		auto rvs = ApplyEq(m_pEffectNode->RotationEasing.RefEqS,
 						   m_pEffectNode->RotationEasing.rotation.start,
@@ -18235,7 +18930,7 @@ void Instance::Initialize( Instance* parent, int32_t instanceNumber, int32_t par
 		rotation_values.easing.start = rvs.getValue(*instanceGlobal);
 		rotation_values.easing.end = rve.getValue(*instanceGlobal);
 	}
-	else if( m_pEffectNode->RotationType == ParameterRotationType_AxisPVA )
+	else if (m_pEffectNode->RotationType == ParameterRotationType_AxisPVA)
 	{
 		rotation_values.axis.random.rotation = m_pEffectNode->RotationAxisPVA.rotation.getValue(*instanceGlobal);
 		rotation_values.axis.random.velocity = m_pEffectNode->RotationAxisPVA.velocity.getValue(*instanceGlobal);
@@ -18248,7 +18943,7 @@ void Instance::Initialize( Instance* parent, int32_t instanceNumber, int32_t par
 		}
 		rotation_values.axis.axis.Normalize();
 	}
-	else if( m_pEffectNode->RotationType == ParameterRotationType_AxisEasing )
+	else if (m_pEffectNode->RotationType == ParameterRotationType_AxisEasing)
 	{
 		rotation_values.axis.easing.start = m_pEffectNode->RotationAxisEasing.easing.start.getValue(*instanceGlobal);
 		rotation_values.axis.easing.end = m_pEffectNode->RotationAxisEasing.easing.end.getValue(*instanceGlobal);
@@ -18260,18 +18955,18 @@ void Instance::Initialize( Instance* parent, int32_t instanceNumber, int32_t par
 		}
 		rotation_values.axis.axis.Normalize();
 	}
-	else if( m_pEffectNode->RotationType == ParameterRotationType_FCurve )
+	else if (m_pEffectNode->RotationType == ParameterRotationType_FCurve)
 	{
-		assert( m_pEffectNode->RotationFCurve != NULL );
+		assert(m_pEffectNode->RotationFCurve != NULL);
 
-		rotation_values.fcruve.offset = m_pEffectNode->RotationFCurve->GetOffsets( *instanceGlobal );
+		rotation_values.fcruve.offset = m_pEffectNode->RotationFCurve->GetOffsets(*instanceGlobal);
 	}
 
 	// Scaling
-	if( m_pEffectNode->ScalingType == ParameterScalingType_Fixed )
+	if (m_pEffectNode->ScalingType == ParameterScalingType_Fixed)
 	{
 	}
-	else if( m_pEffectNode->ScalingType == ParameterScalingType_PVA )
+	else if (m_pEffectNode->ScalingType == ParameterScalingType_PVA)
 	{
 		auto rvl = ApplyEq(m_pEffectNode->ScalingPVA.RefEqP, m_pEffectNode->ScalingPVA.Position, m_pEffectNode->DynamicFactor.Scale, m_pEffectNode->DynamicFactor.ScaleInv);
 		auto rvv = ApplyEq(m_pEffectNode->ScalingPVA.RefEqV,
@@ -18287,7 +18982,7 @@ void Instance::Initialize( Instance* parent, int32_t instanceNumber, int32_t par
 		scaling_values.random.velocity = rvv.getValue(*instanceGlobal);
 		scaling_values.random.acceleration = rva.getValue(*instanceGlobal);
 	}
-	else if( m_pEffectNode->ScalingType == ParameterScalingType_Easing )
+	else if (m_pEffectNode->ScalingType == ParameterScalingType_Easing)
 	{
 		auto rvs = ApplyEq(m_pEffectNode->ScalingEasing.RefEqS,
 						   m_pEffectNode->ScalingEasing.Position.start,
@@ -18301,29 +18996,29 @@ void Instance::Initialize( Instance* parent, int32_t instanceNumber, int32_t par
 		scaling_values.easing.start = rvs.getValue(*instanceGlobal);
 		scaling_values.easing.end = rve.getValue(*instanceGlobal);
 	}
-	else if( m_pEffectNode->ScalingType == ParameterScalingType_SinglePVA )
+	else if (m_pEffectNode->ScalingType == ParameterScalingType_SinglePVA)
 	{
 		scaling_values.single_random.scale = m_pEffectNode->ScalingSinglePVA.Position.getValue(*instanceGlobal);
 		scaling_values.single_random.velocity = m_pEffectNode->ScalingSinglePVA.Velocity.getValue(*instanceGlobal);
 		scaling_values.single_random.acceleration = m_pEffectNode->ScalingSinglePVA.Acceleration.getValue(*instanceGlobal);
 	}
-	else if( m_pEffectNode->ScalingType == ParameterScalingType_SingleEasing )
+	else if (m_pEffectNode->ScalingType == ParameterScalingType_SingleEasing)
 	{
 		scaling_values.single_easing.start = m_pEffectNode->ScalingSingleEasing.start.getValue(*instanceGlobal);
 		scaling_values.single_easing.end = m_pEffectNode->ScalingSingleEasing.end.getValue(*instanceGlobal);
 	}
-	else if( m_pEffectNode->ScalingType == ParameterScalingType_FCurve )
+	else if (m_pEffectNode->ScalingType == ParameterScalingType_FCurve)
 	{
-		assert( m_pEffectNode->ScalingFCurve != NULL );
+		assert(m_pEffectNode->ScalingFCurve != NULL);
 
-		scaling_values.fcruve.offset = m_pEffectNode->ScalingFCurve->GetOffsets( *instanceGlobal );
+		scaling_values.fcruve.offset = m_pEffectNode->ScalingFCurve->GetOffsets(*instanceGlobal);
 	}
 
 	// Spawning Method
-	if( m_pEffectNode->GenerationLocation.type == ParameterGenerationLocation::TYPE_POINT )
+	if (m_pEffectNode->GenerationLocation.type == ParameterGenerationLocation::TYPE_POINT)
 	{
 		Vec3f p = m_pEffectNode->GenerationLocation.point.location.getValue(*instanceGlobal);
-		m_GenerationLocation = Mat43f::Translation( p.GetX(), p.GetY(), p.GetZ() );
+		m_GenerationLocation = Mat43f::Translation(p.GetX(), p.GetY(), p.GetZ());
 	}
 	else if (m_pEffectNode->GenerationLocation.type == ParameterGenerationLocation::TYPE_LINE)
 	{
@@ -18336,13 +19031,13 @@ void Instance::Initialize( Instance* parent, int32_t instanceNumber, int32_t par
 
 		if (dir.IsZero())
 		{
-			m_GenerationLocation = Mat43f::Translation(0 ,0, 0);
+			m_GenerationLocation = Mat43f::Translation(0, 0, 0);
 		}
 		else
 		{
 			auto len = dir.GetLength();
 			dir /= len;
-		
+
 			int32_t target = 0;
 			if (m_pEffectNode->GenerationLocation.line.type == ParameterGenerationLocation::LineType::Order)
 			{
@@ -18350,8 +19045,9 @@ void Instance::Initialize( Instance* parent, int32_t instanceNumber, int32_t par
 			}
 			else if (m_pEffectNode->GenerationLocation.line.type == ParameterGenerationLocation::LineType::Random)
 			{
-				target = (int32_t)((division) * instanceGlobal->GetRand());
-				if (target == division) target -= 1;
+				target = (int32_t)((division)*instanceGlobal->GetRand());
+				if (target == division)
+					target -= 1;
 			}
 
 			auto d = 0.0f;
@@ -18361,7 +19057,7 @@ void Instance::Initialize( Instance* parent, int32_t instanceNumber, int32_t par
 			}
 
 			d += noize;
-		
+
 			s += dir * d;
 
 			Vec3f xdir;
@@ -18405,69 +19101,69 @@ void Instance::Initialize( Instance* parent, int32_t instanceNumber, int32_t par
 			m_GenerationLocation.Z.SetW(s.GetZ());
 		}
 	}
-	else if( m_pEffectNode->GenerationLocation.type == ParameterGenerationLocation::TYPE_SPHERE )
+	else if (m_pEffectNode->GenerationLocation.type == ParameterGenerationLocation::TYPE_SPHERE)
 	{
-		Mat43f mat_x = Mat43f::RotationX( m_pEffectNode->GenerationLocation.sphere.rotation_x.getValue( *instanceGlobal ) );
-		Mat43f mat_y = Mat43f::RotationY( m_pEffectNode->GenerationLocation.sphere.rotation_y.getValue( *instanceGlobal ) );
+		Mat43f mat_x = Mat43f::RotationX(m_pEffectNode->GenerationLocation.sphere.rotation_x.getValue(*instanceGlobal));
+		Mat43f mat_y = Mat43f::RotationY(m_pEffectNode->GenerationLocation.sphere.rotation_y.getValue(*instanceGlobal));
 		float r = m_pEffectNode->GenerationLocation.sphere.radius.getValue(*instanceGlobal);
-		m_GenerationLocation = Mat43f::Translation( 0, r, 0 ) * mat_x * mat_y;
+		m_GenerationLocation = Mat43f::Translation(0, r, 0) * mat_x * mat_y;
 	}
-	else if( m_pEffectNode->GenerationLocation.type == ParameterGenerationLocation::TYPE_MODEL )
+	else if (m_pEffectNode->GenerationLocation.type == ParameterGenerationLocation::TYPE_MODEL)
 	{
 		m_GenerationLocation = Mat43f::Identity;
 
 		int32_t modelIndex = m_pEffectNode->GenerationLocation.model.index;
-		if( modelIndex >= 0 )
+		if (modelIndex >= 0)
 		{
-			Model* model = (Model*)m_pEffectNode->GetEffect()->GetModel( modelIndex );
-			if( model != NULL )
+			Model* model = (Model*)m_pEffectNode->GetEffect()->GetModel(modelIndex);
+			if (model != NULL)
 			{
 				Model::Emitter emitter;
-				
-				if( m_pEffectNode->GenerationLocation.model.type == ParameterGenerationLocation::MODELTYPE_RANDOM )
+
+				if (m_pEffectNode->GenerationLocation.model.type == ParameterGenerationLocation::MODELTYPE_RANDOM)
 				{
-					emitter = model->GetEmitter( 
-						instanceGlobal, 
-						parentTime,
-						m_pManager->GetCoordinateSystem(), 
-						((EffectImplemented*)m_pEffectNode->GetEffect())->GetMaginification() );
-				}
-				else if( m_pEffectNode->GenerationLocation.model.type == ParameterGenerationLocation::MODELTYPE_VERTEX )
-				{
-					emitter = model->GetEmitterFromVertex( 
-						instanceNumber,
-						parentTime,
-						m_pManager->GetCoordinateSystem(), 
-						((EffectImplemented*)m_pEffectNode->GetEffect())->GetMaginification() );
-				}
-				else if( m_pEffectNode->GenerationLocation.model.type == ParameterGenerationLocation::MODELTYPE_VERTEX_RANDOM )
-				{
-					emitter = model->GetEmitterFromVertex( 
+					emitter = model->GetEmitter(
 						instanceGlobal,
 						parentTime,
-						m_pManager->GetCoordinateSystem(), 
-						((EffectImplemented*)m_pEffectNode->GetEffect())->GetMaginification() );
+						m_pManager->GetCoordinateSystem(),
+						((EffectImplemented*)m_pEffectNode->GetEffect())->GetMaginification());
 				}
-				else if( m_pEffectNode->GenerationLocation.model.type == ParameterGenerationLocation::MODELTYPE_FACE )
+				else if (m_pEffectNode->GenerationLocation.model.type == ParameterGenerationLocation::MODELTYPE_VERTEX)
 				{
-					emitter = model->GetEmitterFromFace( 
+					emitter = model->GetEmitterFromVertex(
 						instanceNumber,
 						parentTime,
-						m_pManager->GetCoordinateSystem(), 
-						((EffectImplemented*)m_pEffectNode->GetEffect())->GetMaginification() );
+						m_pManager->GetCoordinateSystem(),
+						((EffectImplemented*)m_pEffectNode->GetEffect())->GetMaginification());
 				}
-				else if( m_pEffectNode->GenerationLocation.model.type == ParameterGenerationLocation::MODELTYPE_FACE_RANDOM )
+				else if (m_pEffectNode->GenerationLocation.model.type == ParameterGenerationLocation::MODELTYPE_VERTEX_RANDOM)
 				{
-					emitter = model->GetEmitterFromFace( 
+					emitter = model->GetEmitterFromVertex(
 						instanceGlobal,
 						parentTime,
-						m_pManager->GetCoordinateSystem(), 
-						((EffectImplemented*)m_pEffectNode->GetEffect())->GetMaginification() );
+						m_pManager->GetCoordinateSystem(),
+						((EffectImplemented*)m_pEffectNode->GetEffect())->GetMaginification());
+				}
+				else if (m_pEffectNode->GenerationLocation.model.type == ParameterGenerationLocation::MODELTYPE_FACE)
+				{
+					emitter = model->GetEmitterFromFace(
+						instanceNumber,
+						parentTime,
+						m_pManager->GetCoordinateSystem(),
+						((EffectImplemented*)m_pEffectNode->GetEffect())->GetMaginification());
+				}
+				else if (m_pEffectNode->GenerationLocation.model.type == ParameterGenerationLocation::MODELTYPE_FACE_RANDOM)
+				{
+					emitter = model->GetEmitterFromFace(
+						instanceGlobal,
+						parentTime,
+						m_pManager->GetCoordinateSystem(),
+						((EffectImplemented*)m_pEffectNode->GetEffect())->GetMaginification());
 				}
 
-				m_GenerationLocation = Mat43f::Translation( emitter.Position );
+				m_GenerationLocation = Mat43f::Translation(emitter.Position);
 
-				if( m_pEffectNode->GenerationLocation.EffectsRotation )
+				if (m_pEffectNode->GenerationLocation.EffectsRotation)
 				{
 					m_GenerationLocation.X.SetX(emitter.Binormal.X);
 					m_GenerationLocation.Y.SetX(emitter.Binormal.Y);
@@ -18484,7 +19180,7 @@ void Instance::Initialize( Instance* parent, int32_t instanceNumber, int32_t par
 			}
 		}
 	}
-	else if( m_pEffectNode->GenerationLocation.type == ParameterGenerationLocation::TYPE_CIRCLE )
+	else if (m_pEffectNode->GenerationLocation.type == ParameterGenerationLocation::TYPE_CIRCLE)
 	{
 		m_GenerationLocation = Mat43f::Identity;
 		float radius = m_pEffectNode->GenerationLocation.circle.radius.getValue(*instanceGlobal);
@@ -18493,18 +19189,19 @@ void Instance::Initialize( Instance* parent, int32_t instanceNumber, int32_t par
 		int32_t div = Max(m_pEffectNode->GenerationLocation.circle.division, 1);
 
 		int32_t target = 0;
-		if(m_pEffectNode->GenerationLocation.circle.type == ParameterGenerationLocation::CIRCLE_TYPE_ORDER)
+		if (m_pEffectNode->GenerationLocation.circle.type == ParameterGenerationLocation::CIRCLE_TYPE_ORDER)
 		{
 			target = instanceNumber % div;
 		}
-		else if(m_pEffectNode->GenerationLocation.circle.type == ParameterGenerationLocation::CIRCLE_TYPE_REVERSE_ORDER)
+		else if (m_pEffectNode->GenerationLocation.circle.type == ParameterGenerationLocation::CIRCLE_TYPE_REVERSE_ORDER)
 		{
 			target = div - 1 - (instanceNumber % div);
 		}
-		else if(m_pEffectNode->GenerationLocation.circle.type == ParameterGenerationLocation::CIRCLE_TYPE_RANDOM)
+		else if (m_pEffectNode->GenerationLocation.circle.type == ParameterGenerationLocation::CIRCLE_TYPE_RANDOM)
 		{
-			target = (int32_t)( (div) * instanceGlobal->GetRand() );
-			if (target == div) target -= 1;
+			target = (int32_t)((div)*instanceGlobal->GetRand());
+			if (target == div)
+				target -= 1;
 		}
 
 		float angle = (end - start) * ((float)target / (float)div) + start;
@@ -18513,21 +19210,21 @@ void Instance::Initialize( Instance* parent, int32_t instanceNumber, int32_t par
 
 		switch (m_pEffectNode->GenerationLocation.circle.axisDirection)
 		{
-			case ParameterGenerationLocation::AxisType::X:
-				m_GenerationLocation = Mat43f::Translation(0, 0, radius) * Mat43f::RotationX(angle);
-				break;
-			case ParameterGenerationLocation::AxisType::Y:
-				m_GenerationLocation = Mat43f::Translation(radius, 0, 0) * Mat43f::RotationY(angle);
-				break;
-			case ParameterGenerationLocation::AxisType::Z:
-				m_GenerationLocation = Mat43f::Translation(0, radius, 0) * Mat43f::RotationZ(angle);
-				break;
+		case ParameterGenerationLocation::AxisType::X:
+			m_GenerationLocation = Mat43f::Translation(0, 0, radius) * Mat43f::RotationX(angle);
+			break;
+		case ParameterGenerationLocation::AxisType::Y:
+			m_GenerationLocation = Mat43f::Translation(radius, 0, 0) * Mat43f::RotationY(angle);
+			break;
+		case ParameterGenerationLocation::AxisType::Z:
+			m_GenerationLocation = Mat43f::Translation(0, radius, 0) * Mat43f::RotationZ(angle);
+			break;
 		}
 	}
 
-	if( m_pEffectNode->SoundType == ParameterSoundType_Use )
+	if (m_pEffectNode->SoundType == ParameterSoundType_Use)
 	{
-		soundValues.delay = (int32_t)m_pEffectNode->Sound.Delay.getValue( *instanceGlobal );
+		soundValues.delay = (int32_t)m_pEffectNode->Sound.Delay.getValue(*instanceGlobal);
 	}
 
 	// UV
@@ -18582,12 +19279,12 @@ void Instance::Initialize( Instance* parent, int32_t instanceNumber, int32_t par
 		auto& fpiValue = alpha_crunch_values.four_point_interpolation;
 		auto& nodeAlphaCrunchValue = m_pEffectNode->AlphaCrunch.FourPointInterpolation;
 
-		fpiValue.begin_threshold	= nodeAlphaCrunchValue.BeginThreshold.getValue(*instanceGlobal);
-		fpiValue.transition_frame	= nodeAlphaCrunchValue.TransitionFrameNum.getValue(*instanceGlobal);
-		fpiValue.no2_threshold		= nodeAlphaCrunchValue.No2Threshold.getValue(*instanceGlobal);
-		fpiValue.no3_threshold		= nodeAlphaCrunchValue.No3Threshold.getValue(*instanceGlobal);
-		fpiValue.transition_frame2	= nodeAlphaCrunchValue.TransitionFrameNum2.getValue(*instanceGlobal);
-		fpiValue.end_threshold		= nodeAlphaCrunchValue.EndThreshold.getValue(*instanceGlobal);
+		fpiValue.begin_threshold = nodeAlphaCrunchValue.BeginThreshold.getValue(*instanceGlobal);
+		fpiValue.transition_frame = nodeAlphaCrunchValue.TransitionFrameNum.getValue(*instanceGlobal);
+		fpiValue.no2_threshold = nodeAlphaCrunchValue.No2Threshold.getValue(*instanceGlobal);
+		fpiValue.no3_threshold = nodeAlphaCrunchValue.No3Threshold.getValue(*instanceGlobal);
+		fpiValue.transition_frame2 = nodeAlphaCrunchValue.TransitionFrameNum2.getValue(*instanceGlobal);
+		fpiValue.end_threshold = nodeAlphaCrunchValue.EndThreshold.getValue(*instanceGlobal);
 	}
 	else if (m_pEffectNode->AlphaCrunch.Type == ParameterAlphaCrunch::EType::EASING)
 	{
@@ -18610,7 +19307,7 @@ void Instance::Initialize( Instance* parent, int32_t instanceNumber, int32_t par
 		uvTimeOffset = (int32_t)m_pEffectNode->RendererCommon.UV.Animation.StartFrame.getValue(*instanceGlobal);
 		uvTimeOffset *= m_pEffectNode->RendererCommon.UV.Animation.FrameLength;
 	}
-	
+
 	if (m_pEffectNode->RendererCommon.UVType == ParameterRendererCommon::UV_SCROLL)
 	{
 		auto xy = m_pEffectNode->RendererCommon.UV.Scroll.Position.getValue(*instanceGlobal);
@@ -18691,10 +19388,10 @@ void Instance::Initialize( Instance* parent, int32_t instanceNumber, int32_t par
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void Instance::Update( float deltaFrame, bool shown )
+void Instance::Update(float deltaFrame, bool shown)
 {
 	assert(this->m_pContainer != nullptr);
-	
+
 	// Invalidate matrix
 	m_GlobalMatrix43Calculated = false;
 	m_ParentMatrix43Calculated = false;
@@ -18707,7 +19404,7 @@ void Instance::Update( float deltaFrame, bool shown )
 			float living_time = m_LivingTime;
 			float living_time_p = living_time + deltaFrame;
 
-			if (living_time <= (float) soundValues.delay && (float) soundValues.delay < living_time_p)
+			if (living_time <= (float)soundValues.delay && (float)soundValues.delay < living_time_p)
 			{
 				m_pEffectNode->PlaySound_(*this, m_pContainer->GetRootInstance(), m_pManager);
 			}
@@ -18724,17 +19421,14 @@ void Instance::Update( float deltaFrame, bool shown )
 		m_LivingTime += deltaFrame;
 	}
 
-	if(shown)
+	if (shown)
 	{
-		CalculateMatrix( deltaFrame );
+		CalculateMatrix(deltaFrame);
 	}
-	else if (m_pEffectNode->LocationAbs.type != LocationAbsType::None 
-		|| m_pEffectNode->LocalForceFields[0].Turbulence != nullptr 
-		|| m_pEffectNode->LocalForceFields[1].Turbulence != nullptr 
-		|| m_pEffectNode->LocalForceFields[2].Turbulence != nullptr)
+	else if (m_pEffectNode->LocationAbs.type != LocationAbsType::None || m_pEffectNode->LocalForceFields[0].Turbulence != nullptr || m_pEffectNode->LocalForceFields[1].Turbulence != nullptr || m_pEffectNode->LocalForceFields[2].Turbulence != nullptr)
 	{
 		// If attraction forces are not default, updating is needed in each frame.
-		CalculateMatrix( deltaFrame );
+		CalculateMatrix(deltaFrame);
 	}
 
 	// Get parent color.
@@ -18749,12 +19443,12 @@ void Instance::Update( float deltaFrame, bool shown )
 	/* 親の削除処理 */
 	if (m_pParent != NULL && m_pParent->GetState() != INSTANCE_STATE_ACTIVE)
 	{
-		CalculateParentMatrix( deltaFrame );
+		CalculateParentMatrix(deltaFrame);
 		m_pParent = nullptr;
 	}
 
 	// Create child particles
-	if( is_time_step_allowed && (originalTime <= m_LivedTime || !m_pEffectNode->CommonValues.RemoveWhenLifeIsExtinct) )
+	if (is_time_step_allowed && (originalTime <= m_LivedTime || !m_pEffectNode->CommonValues.RemoveWhenLifeIsExtinct))
 	{
 		GenerateChildrenInRequired(originalTime + deltaFrame);
 	}
@@ -18769,21 +19463,21 @@ void Instance::Update( float deltaFrame, bool shown )
 
 	// check whether killed?
 	bool killed = false;
-	if( m_pEffectNode->GetType() != EFFECT_NODE_TYPE_ROOT )
+	if (m_pEffectNode->GetType() != EFFECT_NODE_TYPE_ROOT)
 	{
 		// if pass time
-		if( m_pEffectNode->CommonValues.RemoveWhenLifeIsExtinct )
+		if (m_pEffectNode->CommonValues.RemoveWhenLifeIsExtinct)
 		{
-			if( m_LivingTime > m_LivedTime )
+			if (m_LivingTime > m_LivedTime)
 			{
 				killed = true;
 			}
 		}
 
 		// if remove parent
-		if( m_pEffectNode->CommonValues.RemoveWhenParentIsRemoved )
+		if (m_pEffectNode->CommonValues.RemoveWhenParentIsRemoved)
 		{
-			if( m_pParent == nullptr || m_pParent->GetState() != INSTANCE_STATE_ACTIVE )
+			if (m_pParent == nullptr || m_pParent->GetState() != INSTANCE_STATE_ACTIVE)
 			{
 				m_pParent = nullptr;
 				killed = true;
@@ -18791,14 +19485,14 @@ void Instance::Update( float deltaFrame, bool shown )
 		}
 
 		// if children are removed and going not to generate a child
-		if( !killed && m_pEffectNode->CommonValues.RemoveWhenChildrenIsExtinct )
+		if (!killed && m_pEffectNode->CommonValues.RemoveWhenChildrenIsExtinct)
 		{
 			int maxcreate_count = 0;
 			InstanceGroup* group = childrenGroups_;
 
 			for (int i = 0; i < m_pEffectNode->GetChildrenCount(); i++, group = group->NextUsedByInstance)
 			{
-				auto child = (EffectNodeImplemented*) m_pEffectNode->GetChild(i);
+				auto child = (EffectNodeImplemented*)m_pEffectNode->GetChild(i);
 
 				if (maxGenerationChildrenCount[i] <= m_generatedChildrenCount[i] && group->GetInstanceCount() == 0)
 				{
@@ -18809,8 +19503,8 @@ void Instance::Update( float deltaFrame, bool shown )
 					break;
 				}
 			}
-			
-			if( maxcreate_count == m_pEffectNode->GetChildrenCount() )
+
+			if (maxcreate_count == m_pEffectNode->GetChildrenCount())
 			{
 				killed = true;
 			}
@@ -18889,12 +19583,8 @@ void Instance::Update( float deltaFrame, bool shown )
 			auto val = alpha_crunch_values.four_point_interpolation;
 
 			float p[4][2] =
-			{
-				0.0f, val.begin_threshold, 
-				float(val.transition_frame) / m_LivedTime, val.no2_threshold,
-				(m_LivedTime - float(val.transition_frame2)) / m_LivedTime, val.no3_threshold,
-				1.0f, val.end_threshold
-			};
+				{
+					0.0f, val.begin_threshold, float(val.transition_frame) / m_LivedTime, val.no2_threshold, (m_LivedTime - float(val.transition_frame2)) / m_LivedTime, val.no3_threshold, 1.0f, val.end_threshold};
 
 			for (int32_t i = 1; i < 4; i++)
 			{
@@ -18908,12 +19598,10 @@ void Instance::Update( float deltaFrame, bool shown )
 		}
 		else if (m_pEffectNode->AlphaCrunch.Type == ParameterAlphaCrunch::EType::EASING)
 		{
-			m_AlphaThreshold = m_pEffectNode->AlphaCrunch.Easing.Threshold.getValue
-			(
+			m_AlphaThreshold = m_pEffectNode->AlphaCrunch.Easing.Threshold.getValue(
 				alpha_crunch_values.easing.start,
 				alpha_crunch_values.easing.end,
-				m_LivingTime / m_LivedTime
-			);
+				m_LivingTime / m_LivedTime);
 		}
 		else if (m_pEffectNode->AlphaCrunch.Type == ParameterAlphaCrunch::EType::F_CURVE)
 		{
@@ -18924,10 +19612,10 @@ void Instance::Update( float deltaFrame, bool shown )
 	}
 #endif
 
-	if(killed)
+	if (killed)
 	{
 		// if it need to calculate a matrix
-		if( m_pEffectNode->GetChildrenCount() > 0)
+		if (m_pEffectNode->GetChildrenCount() > 0)
 		{
 			// Get parent color.
 			if (m_pParent != nullptr)
@@ -18951,154 +19639,150 @@ void Instance::Update( float deltaFrame, bool shown )
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void Instance::CalculateMatrix( float deltaFrame )
+void Instance::CalculateMatrix(float deltaFrame)
 {
 	// 計算済なら終了
-	if( m_GlobalMatrix43Calculated ) return;
-	
+	if (m_GlobalMatrix43Calculated)
+		return;
+
 	//if( m_sequenceNumber == ((ManagerImplemented*)m_pManager)->GetSequenceNumber() ) return;
 	m_sequenceNumber = ((ManagerImplemented*)m_pManager)->GetSequenceNumber();
 
-	assert( m_pEffectNode != NULL );
-	assert( m_pContainer != NULL );
+	assert(m_pEffectNode != NULL);
+	assert(m_pContainer != NULL);
 
 	// 親の処理
-	if( m_pParent != NULL )
+	if (m_pParent != NULL)
 	{
-		CalculateParentMatrix( deltaFrame );
+		CalculateParentMatrix(deltaFrame);
 	}
 
 	/* 更新処理 */
-	if( m_pEffectNode->GetType() != EFFECT_NODE_TYPE_ROOT )
+	if (m_pEffectNode->GetType() != EFFECT_NODE_TYPE_ROOT)
 	{
 		Vec3f localPosition;
 		Vec3f localAngle;
 		Vec3f localScaling;
 
 		/* 位置の更新(時間から直接求めれるよう対応済み) */
-		if( m_pEffectNode->TranslationType == ParameterTranslationType_None )
+		if (m_pEffectNode->TranslationType == ParameterTranslationType_None)
 		{
 			localPosition = {0, 0, 0};
 		}
-		else if( m_pEffectNode->TranslationType == ParameterTranslationType_Fixed )
+		else if (m_pEffectNode->TranslationType == ParameterTranslationType_Fixed)
 		{
 			localPosition = ApplyEq(m_pEffectNode->TranslationFixed.RefEq,
 									m_pEffectNode->TranslationFixed.Position,
 									m_pEffectNode->DynamicFactor.Tra,
 									m_pEffectNode->DynamicFactor.TraInv);
 		}
-		else if( m_pEffectNode->TranslationType == ParameterTranslationType_PVA )
+		else if (m_pEffectNode->TranslationType == ParameterTranslationType_PVA)
 		{
 			/* 現在位置 = 初期座標 + (初期速度 * t) + (初期加速度 * t * t * 0.5)*/
 			localPosition = translation_values.random.location +
-				(translation_values.random.velocity * m_LivingTime) +
-				(translation_values.random.acceleration * (m_LivingTime * m_LivingTime * 0.5f));
+							(translation_values.random.velocity * m_LivingTime) +
+							(translation_values.random.acceleration * (m_LivingTime * m_LivingTime * 0.5f));
 		}
-		else if( m_pEffectNode->TranslationType == ParameterTranslationType_Easing )
+		else if (m_pEffectNode->TranslationType == ParameterTranslationType_Easing)
 		{
 			localPosition = m_pEffectNode->TranslationEasing.location.getValue(
-				translation_values.easing.start, translation_values.easing.end,
-				m_LivingTime / m_LivedTime );
+				translation_values.easing.start, translation_values.easing.end, m_LivingTime / m_LivedTime);
 		}
-		else if( m_pEffectNode->TranslationType == ParameterTranslationType_FCurve )
+		else if (m_pEffectNode->TranslationType == ParameterTranslationType_FCurve)
 		{
-			assert( m_pEffectNode->TranslationFCurve != NULL );
+			assert(m_pEffectNode->TranslationFCurve != NULL);
 			auto fcurve = m_pEffectNode->TranslationFCurve->GetValues(m_LivingTime, m_LivedTime);
 			localPosition = fcurve + translation_values.fcruve.offset;
 		}
 
-		if( !m_pEffectNode->GenerationLocation.EffectsRotation )
+		if (!m_pEffectNode->GenerationLocation.EffectsRotation)
 		{
 			localPosition += m_GenerationLocation.GetTranslation();
 		}
 
 		/* 回転の更新(時間から直接求めれるよう対応済み) */
-		if( m_pEffectNode->RotationType == ParameterRotationType_None )
+		if (m_pEffectNode->RotationType == ParameterRotationType_None)
 		{
 			localAngle = {0, 0, 0};
 		}
-		else if( m_pEffectNode->RotationType == ParameterRotationType_Fixed )
+		else if (m_pEffectNode->RotationType == ParameterRotationType_Fixed)
 		{
 			localAngle = ApplyEq(m_pEffectNode->RotationFixed.RefEq,
 								 m_pEffectNode->RotationFixed.Position,
 								 m_pEffectNode->DynamicFactor.Rot,
 								 m_pEffectNode->DynamicFactor.RotInv);
 		}
-		else if( m_pEffectNode->RotationType == ParameterRotationType_PVA )
+		else if (m_pEffectNode->RotationType == ParameterRotationType_PVA)
 		{
 			/* 現在位置 = 初期座標 + (初期速度 * t) + (初期加速度 * t * t * 0.5)*/
 			localAngle = rotation_values.random.rotation +
-				(rotation_values.random.velocity * m_LivingTime) +
-				(rotation_values.random.acceleration * (m_LivingTime * m_LivingTime * 0.5f));
+						 (rotation_values.random.velocity * m_LivingTime) +
+						 (rotation_values.random.acceleration * (m_LivingTime * m_LivingTime * 0.5f));
 		}
-		else if( m_pEffectNode->RotationType == ParameterRotationType_Easing )
+		else if (m_pEffectNode->RotationType == ParameterRotationType_Easing)
 		{
 			localAngle = m_pEffectNode->RotationEasing.rotation.getValue(
-				rotation_values.easing.start, rotation_values.easing.end,
-				m_LivingTime / m_LivedTime );
+				rotation_values.easing.start, rotation_values.easing.end, m_LivingTime / m_LivedTime);
 		}
-		else if( m_pEffectNode->RotationType == ParameterRotationType_AxisPVA )
+		else if (m_pEffectNode->RotationType == ParameterRotationType_AxisPVA)
 		{
-			rotation_values.axis.rotation = 
+			rotation_values.axis.rotation =
 				rotation_values.axis.random.rotation +
 				rotation_values.axis.random.velocity * m_LivingTime +
 				rotation_values.axis.random.acceleration * (m_LivingTime * m_LivingTime * 0.5f);
 		}
-		else if( m_pEffectNode->RotationType == ParameterRotationType_AxisEasing )
+		else if (m_pEffectNode->RotationType == ParameterRotationType_AxisEasing)
 		{
 			rotation_values.axis.rotation = m_pEffectNode->RotationAxisEasing.easing.getValue(
-				rotation_values.axis.easing.start, rotation_values.axis.easing.end,
-				m_LivingTime / m_LivedTime );
+				rotation_values.axis.easing.start, rotation_values.axis.easing.end, m_LivingTime / m_LivedTime);
 		}
-		else if( m_pEffectNode->RotationType == ParameterRotationType_FCurve )
+		else if (m_pEffectNode->RotationType == ParameterRotationType_FCurve)
 		{
-			assert( m_pEffectNode->RotationFCurve != NULL );
+			assert(m_pEffectNode->RotationFCurve != NULL);
 			auto fcurve = m_pEffectNode->RotationFCurve->GetValues(m_LivingTime, m_LivedTime);
 			localAngle = fcurve + rotation_values.fcruve.offset;
 		}
 
 		/* 拡大の更新(時間から直接求めれるよう対応済み) */
-		if( m_pEffectNode->ScalingType == ParameterScalingType_None )
+		if (m_pEffectNode->ScalingType == ParameterScalingType_None)
 		{
 			localScaling = {1.0f, 1.0f, 1.0f};
 		}
-		else if( m_pEffectNode->ScalingType == ParameterScalingType_Fixed )
+		else if (m_pEffectNode->ScalingType == ParameterScalingType_Fixed)
 		{
 			localScaling = ApplyEq(m_pEffectNode->ScalingFixed.RefEq,
 								   m_pEffectNode->ScalingFixed.Position,
 								   m_pEffectNode->DynamicFactor.Scale,
 								   m_pEffectNode->DynamicFactor.ScaleInv);
 		}
-		else if( m_pEffectNode->ScalingType == ParameterScalingType_PVA )
+		else if (m_pEffectNode->ScalingType == ParameterScalingType_PVA)
 		{
 			/* 現在位置 = 初期座標 + (初期速度 * t) + (初期加速度 * t * t * 0.5)*/
 			localScaling = scaling_values.random.scale +
-				(scaling_values.random.velocity * m_LivingTime) +
-				(scaling_values.random.acceleration * (m_LivingTime * m_LivingTime * 0.5f));
+						   (scaling_values.random.velocity * m_LivingTime) +
+						   (scaling_values.random.acceleration * (m_LivingTime * m_LivingTime * 0.5f));
 		}
-		else if( m_pEffectNode->ScalingType == ParameterScalingType_Easing )
+		else if (m_pEffectNode->ScalingType == ParameterScalingType_Easing)
 		{
 			localScaling = m_pEffectNode->ScalingEasing.Position.getValue(
-				scaling_values.easing.start, scaling_values.easing.end,
-				m_LivingTime / m_LivedTime );
+				scaling_values.easing.start, scaling_values.easing.end, m_LivingTime / m_LivedTime);
 		}
-		else if( m_pEffectNode->ScalingType == ParameterScalingType_SinglePVA )
+		else if (m_pEffectNode->ScalingType == ParameterScalingType_SinglePVA)
 		{
 			float s = scaling_values.single_random.scale +
-				scaling_values.single_random.velocity * m_LivingTime +
-				scaling_values.single_random.acceleration * m_LivingTime * m_LivingTime * 0.5f;
+					  scaling_values.single_random.velocity * m_LivingTime +
+					  scaling_values.single_random.acceleration * m_LivingTime * m_LivingTime * 0.5f;
 			localScaling = {s, s, s};
 		}
-		else if( m_pEffectNode->ScalingType == ParameterScalingType_SingleEasing )
+		else if (m_pEffectNode->ScalingType == ParameterScalingType_SingleEasing)
 		{
 			float s = m_pEffectNode->ScalingSingleEasing.getValue(
-				scaling_values.single_easing.start, scaling_values.single_easing.end,
-				m_LivingTime / m_LivedTime );
+				scaling_values.single_easing.start, scaling_values.single_easing.end, m_LivingTime / m_LivedTime);
 			localScaling = {s, s, s};
 		}
-		else if( m_pEffectNode->ScalingType == ParameterScalingType_FCurve )
+		else if (m_pEffectNode->ScalingType == ParameterScalingType_FCurve)
 		{
-			assert( m_pEffectNode->ScalingFCurve != NULL );
+			assert(m_pEffectNode->ScalingFCurve != NULL);
 			auto fcurve = m_pEffectNode->ScalingFCurve->GetValues(m_LivingTime, m_LivedTime);
 			localScaling = fcurve + scaling_values.fcruve.offset;
 		}
@@ -19128,27 +19812,26 @@ void Instance::CalculateMatrix( float deltaFrame )
 				auto mag = static_cast<EffectImplemented*>(m_pEffectNode->GetEffect())->GetMaginification();
 				modifyWithNoise_ += field.Turbulence->Noise.Get(currentLocalPosition / mag) * field.Turbulence->Strength * mag;
 			}
-
 		}
 
 		/* 描画部分の更新 */
-		m_pEffectNode->UpdateRenderedInstance( *this, m_pManager );
+		m_pEffectNode->UpdateRenderedInstance(*this, m_pManager);
 
 		// 回転行列の作成
 		Mat43f MatRot;
-		if( m_pEffectNode->RotationType == ParameterRotationType_Fixed ||
+		if (m_pEffectNode->RotationType == ParameterRotationType_Fixed ||
 			m_pEffectNode->RotationType == ParameterRotationType_PVA ||
 			m_pEffectNode->RotationType == ParameterRotationType_Easing ||
-			m_pEffectNode->RotationType == ParameterRotationType_FCurve )
+			m_pEffectNode->RotationType == ParameterRotationType_FCurve)
 		{
-			MatRot = Mat43f::RotationZXY( localAngle.GetZ(), localAngle.GetX(), localAngle.GetY() );
+			MatRot = Mat43f::RotationZXY(localAngle.GetZ(), localAngle.GetX(), localAngle.GetY());
 		}
-		else if( m_pEffectNode->RotationType == ParameterRotationType_AxisPVA ||
-				 m_pEffectNode->RotationType == ParameterRotationType_AxisEasing )
+		else if (m_pEffectNode->RotationType == ParameterRotationType_AxisPVA ||
+				 m_pEffectNode->RotationType == ParameterRotationType_AxisEasing)
 		{
 			Vec3f axis = rotation_values.axis.axis;
 
-			MatRot = Mat43f::RotationAxis( axis, rotation_values.axis.rotation );
+			MatRot = Mat43f::RotationAxis(axis, rotation_values.axis.rotation);
 		}
 		else
 		{
@@ -19177,7 +19860,7 @@ void Instance::CalculateMatrix( float deltaFrame )
 		m_GlobalMatrix43 *= m_ParentMatrix;
 		assert(m_GlobalMatrix43.IsValid());
 
-		if( m_pEffectNode->LocationAbs.type != LocationAbsType::None )
+		if (m_pEffectNode->LocationAbs.type != LocationAbsType::None)
 		{
 			Vec3f currentTranslation = m_GlobalMatrix43.GetTranslation();
 			assert(m_GlobalMatrix43.IsValid());
@@ -19185,20 +19868,21 @@ void Instance::CalculateMatrix( float deltaFrame )
 			m_GlobalVelocity = currentTranslation - m_GlobalPosition;
 			m_GlobalPosition = currentTranslation;
 
-			ModifyMatrixFromLocationAbs( deltaFrame );
+			ModifyMatrixFromLocationAbs(deltaFrame);
 		}
 	}
 
 	m_GlobalMatrix43Calculated = true;
 }
 
-void Instance::CalculateParentMatrix( float deltaFrame )
+void Instance::CalculateParentMatrix(float deltaFrame)
 {
 	// 計算済なら終了
-	if( m_ParentMatrix43Calculated ) return;
+	if (m_ParentMatrix43Calculated)
+		return;
 
 	// 親の行列を計算
-	m_pParent->CalculateMatrix( deltaFrame );
+	m_pParent->CalculateMatrix(deltaFrame);
 
 	if (m_pEffectNode->GetType() != EFFECT_NODE_TYPE_ROOT)
 	{
@@ -19246,41 +19930,41 @@ void Instance::CalculateParentMatrix( float deltaFrame )
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void Instance::ModifyMatrixFromLocationAbs( float deltaFrame )
+void Instance::ModifyMatrixFromLocationAbs(float deltaFrame)
 {
 	InstanceGlobal* instanceGlobal = m_pContainer->GetRootInstance();
 
 	// Update attraction forces
-	if( m_pEffectNode->LocationAbs.type == LocationAbsType::None )
-	{	
+	if (m_pEffectNode->LocationAbs.type == LocationAbsType::None)
+	{
 	}
-	else if( m_pEffectNode->LocationAbs.type == LocationAbsType::Gravity )
+	else if (m_pEffectNode->LocationAbs.type == LocationAbsType::Gravity)
 	{
 		m_GlobalRevisionLocation = m_pEffectNode->LocationAbs.gravity *
-			(m_LivingTime * m_LivingTime * 0.5f);
+								   (m_LivingTime * m_LivingTime * 0.5f);
 	}
-	else if( m_pEffectNode->LocationAbs.type == LocationAbsType::AttractiveForce )
+	else if (m_pEffectNode->LocationAbs.type == LocationAbsType::AttractiveForce)
 	{
 		float force = m_pEffectNode->LocationAbs.attractiveForce.force;
 		float control = m_pEffectNode->LocationAbs.attractiveForce.control;
 		float minRange = m_pEffectNode->LocationAbs.attractiveForce.minRange;
 		float maxRange = m_pEffectNode->LocationAbs.attractiveForce.maxRange;
-		
+
 		Vec3f position = m_GlobalPosition - m_GlobalVelocity + m_GlobalRevisionLocation;
 
 		Vec3f targetDifference = instanceGlobal->GetTargetLocation() - position;
 		float targetDistance = targetDifference.GetLength();
-		if( targetDistance > 0.0f )
+		if (targetDistance > 0.0f)
 		{
 			Vec3f targetDirection = targetDifference / targetDistance;
-		
-			if( minRange > 0.0f || maxRange > 0.0f )
+
+			if (minRange > 0.0f || maxRange > 0.0f)
 			{
-				if( targetDistance >= m_pEffectNode->LocationAbs.attractiveForce.maxRange )
+				if (targetDistance >= m_pEffectNode->LocationAbs.attractiveForce.maxRange)
 				{
 					force = 0.0f;
 				}
-				else if( targetDistance > m_pEffectNode->LocationAbs.attractiveForce.minRange )
+				else if (targetDistance > m_pEffectNode->LocationAbs.attractiveForce.minRange)
 				{
 					force *= 1.0f - (targetDistance - minRange) / (maxRange - minRange);
 				}
@@ -19299,7 +19983,7 @@ void Instance::ModifyMatrixFromLocationAbs( float deltaFrame )
 		}
 	}
 
-	Mat43f MatTraGlobal = Mat43f::Translation( m_GlobalRevisionLocation );
+	Mat43f MatTraGlobal = Mat43f::Translation(m_GlobalRevisionLocation);
 	m_GlobalMatrix43 *= MatTraGlobal;
 	assert(m_GlobalMatrix43.IsValid());
 }
@@ -19309,13 +19993,14 @@ void Instance::ModifyMatrixFromLocationAbs( float deltaFrame )
 //----------------------------------------------------------------------------------
 void Instance::Draw(Instance* next)
 {
-	assert( m_pEffectNode != NULL );
+	assert(m_pEffectNode != NULL);
 
-	if( !m_pEffectNode->IsRendered ) return;
+	if (!m_pEffectNode->IsRendered)
+		return;
 
-	if( m_sequenceNumber != ((ManagerImplemented*)m_pManager)->GetSequenceNumber() )
+	if (m_sequenceNumber != ((ManagerImplemented*)m_pManager)->GetSequenceNumber())
 	{
-		CalculateMatrix( 0 );
+		CalculateMatrix(0);
 	}
 
 	m_pEffectNode->Rendering(*this, next, m_pManager);
@@ -19326,9 +20011,9 @@ void Instance::Draw(Instance* next)
 //----------------------------------------------------------------------------------
 void Instance::Kill()
 {
-	if( m_State == INSTANCE_STATE_ACTIVE )
+	if (m_State == INSTANCE_STATE_ACTIVE)
 	{
-		for( InstanceGroup* group = childrenGroups_; group != NULL; group = group->NextUsedByInstance )
+		for (InstanceGroup* group = childrenGroups_; group != NULL; group = group->NextUsedByInstance)
 		{
 			group->IsReferencedFromInstance = false;
 		}
@@ -19348,43 +20033,51 @@ RectF Instance::GetUV(const int32_t index) const
 	const auto& UVType = m_pEffectNode->RendererCommon.UVTypes[index];
 	const auto& UV = m_pEffectNode->RendererCommon.UVs[index];
 
-	if( UVType == ParameterRendererCommon::UV_DEFAULT )
+	if (UVType == ParameterRendererCommon::UV_DEFAULT)
 	{
-		return RectF( 0.0f, 0.0f, 1.0f, 1.0f );
+		return RectF(0.0f, 0.0f, 1.0f, 1.0f);
 	}
-	else if( UVType == ParameterRendererCommon::UV_FIXED )
+	else if (UVType == ParameterRendererCommon::UV_FIXED)
 	{
 		uv = RectF(
 			UV.Fixed.Position.x,
 			UV.Fixed.Position.y,
 			UV.Fixed.Position.w,
-			UV.Fixed.Position.h );
+			UV.Fixed.Position.h);
 	}
-	else if( UVType == ParameterRendererCommon::UV_ANIMATION )
+	else if (UVType == ParameterRendererCommon::UV_ANIMATION)
 	{
-		auto& uvTimeOffset = uvTimeOffsets[index];
+		auto uvTimeOffset = uvTimeOffsets[index];
+
+		// TODO : refactor
+
+		// Avoid overflow
+		if(uvTimeOffset > std::numeric_limits<int32_t>::max() / 1000)
+		{
+			uvTimeOffset = std::numeric_limits<int32_t>::max() / 1000;
+		}
 
 		auto time = m_LivingTime + uvTimeOffset;
 
 		int32_t frameNum = (int32_t)(time / UV.Animation.FrameLength);
 		int32_t frameCount = UV.Animation.FrameCountX * UV.Animation.FrameCountY;
 
-		if( UV.Animation.LoopType == UV.Animation.LOOPTYPE_ONCE )
+		if (UV.Animation.LoopType == UV.Animation.LOOPTYPE_ONCE)
 		{
-			if( frameNum >= frameCount )
+			if (frameNum >= frameCount)
 			{
 				frameNum = frameCount - 1;
 			}
 		}
-		else if ( UV.Animation.LoopType == UV.Animation.LOOPTYPE_LOOP )
+		else if (UV.Animation.LoopType == UV.Animation.LOOPTYPE_LOOP)
 		{
 			frameNum %= frameCount;
 		}
-		else if ( UV.Animation.LoopType == UV.Animation.LOOPTYPE_REVERSELOOP )
+		else if (UV.Animation.LoopType == UV.Animation.LOOPTYPE_REVERSELOOP)
 		{
 			bool rev = (frameNum / frameCount) % 2 == 1;
 			frameNum %= frameCount;
-			if( rev )
+			if (rev)
 			{
 				frameNum = frameCount - 1 - frameNum;
 			}
@@ -19397,9 +20090,9 @@ RectF Instance::GetUV(const int32_t index) const
 			UV.Animation.Position.x + UV.Animation.Position.w * frameX,
 			UV.Animation.Position.y + UV.Animation.Position.h * frameY,
 			UV.Animation.Position.w,
-			UV.Animation.Position.h );
+			UV.Animation.Position.h);
 	}
-	else if( UVType == ParameterRendererCommon::UV_SCROLL )
+	else if (UVType == ParameterRendererCommon::UV_SCROLL)
 	{
 		auto& uvAreaOffset = uvAreaOffsets[index];
 		auto& uvScrollSpeed = uvScrollSpeeds[index];
@@ -19412,7 +20105,7 @@ RectF Instance::GetUV(const int32_t index) const
 			uvAreaOffset.Width,
 			uvAreaOffset.Height);
 	}
-	else if ( UVType == ParameterRendererCommon::UV_FCURVE)
+	else if (UVType == ParameterRendererCommon::UV_FCURVE)
 	{
 		auto& uvAreaOffset = uvAreaOffsets[index];
 
@@ -19457,41 +20150,41 @@ RectF Instance::GetUV() const
 {
 	RectF uv(0.0f, 0.0f, 1.0f, 1.0f);
 
-	if( m_pEffectNode->RendererCommon.UVType == ParameterRendererCommon::UV_DEFAULT )
+	if (m_pEffectNode->RendererCommon.UVType == ParameterRendererCommon::UV_DEFAULT)
 	{
-		return RectF( 0.0f, 0.0f, 1.0f, 1.0f );
+		return RectF(0.0f, 0.0f, 1.0f, 1.0f);
 	}
-	else if( m_pEffectNode->RendererCommon.UVType == ParameterRendererCommon::UV_FIXED )
+	else if (m_pEffectNode->RendererCommon.UVType == ParameterRendererCommon::UV_FIXED)
 	{
 		uv = RectF(
 			m_pEffectNode->RendererCommon.UV.Fixed.Position.x,
 			m_pEffectNode->RendererCommon.UV.Fixed.Position.y,
 			m_pEffectNode->RendererCommon.UV.Fixed.Position.w,
-			m_pEffectNode->RendererCommon.UV.Fixed.Position.h );
+			m_pEffectNode->RendererCommon.UV.Fixed.Position.h);
 	}
-	else if( m_pEffectNode->RendererCommon.UVType == ParameterRendererCommon::UV_ANIMATION )
+	else if (m_pEffectNode->RendererCommon.UVType == ParameterRendererCommon::UV_ANIMATION)
 	{
 		auto time = m_LivingTime + uvTimeOffset;
 
 		int32_t frameNum = (int32_t)(time / m_pEffectNode->RendererCommon.UV.Animation.FrameLength);
 		int32_t frameCount = m_pEffectNode->RendererCommon.UV.Animation.FrameCountX * m_pEffectNode->RendererCommon.UV.Animation.FrameCountY;
 
-		if( m_pEffectNode->RendererCommon.UV.Animation.LoopType == m_pEffectNode->RendererCommon.UV.Animation.LOOPTYPE_ONCE )
+		if (m_pEffectNode->RendererCommon.UV.Animation.LoopType == m_pEffectNode->RendererCommon.UV.Animation.LOOPTYPE_ONCE)
 		{
-			if( frameNum >= frameCount )
+			if (frameNum >= frameCount)
 			{
 				frameNum = frameCount - 1;
 			}
 		}
-		else if ( m_pEffectNode->RendererCommon.UV.Animation.LoopType == m_pEffectNode->RendererCommon.UV.Animation.LOOPTYPE_LOOP )
+		else if (m_pEffectNode->RendererCommon.UV.Animation.LoopType == m_pEffectNode->RendererCommon.UV.Animation.LOOPTYPE_LOOP)
 		{
 			frameNum %= frameCount;
 		}
-		else if ( m_pEffectNode->RendererCommon.UV.Animation.LoopType == m_pEffectNode->RendererCommon.UV.Animation.LOOPTYPE_REVERSELOOP )
+		else if (m_pEffectNode->RendererCommon.UV.Animation.LoopType == m_pEffectNode->RendererCommon.UV.Animation.LOOPTYPE_REVERSELOOP)
 		{
 			bool rev = (frameNum / frameCount) % 2 == 1;
 			frameNum %= frameCount;
-			if( rev )
+			if (rev)
 			{
 				frameNum = frameCount - 1 - frameNum;
 			}
@@ -19504,9 +20197,9 @@ RectF Instance::GetUV() const
 			m_pEffectNode->RendererCommon.UV.Animation.Position.x + m_pEffectNode->RendererCommon.UV.Animation.Position.w * frameX,
 			m_pEffectNode->RendererCommon.UV.Animation.Position.y + m_pEffectNode->RendererCommon.UV.Animation.Position.h * frameY,
 			m_pEffectNode->RendererCommon.UV.Animation.Position.w,
-			m_pEffectNode->RendererCommon.UV.Animation.Position.h );
+			m_pEffectNode->RendererCommon.UV.Animation.Position.h);
 	}
-	else if( m_pEffectNode->RendererCommon.UVType == ParameterRendererCommon::UV_SCROLL )
+	else if (m_pEffectNode->RendererCommon.UVType == ParameterRendererCommon::UV_SCROLL)
 	{
 		auto time = (int32_t)m_LivingTime;
 
@@ -19524,32 +20217,32 @@ RectF Instance::GetUV() const
 		auto fcurveSize = m_pEffectNode->RendererCommon.UV.FCurve.Size->GetValues(m_LivingTime, m_LivedTime);
 
 		uv = RectF(uvAreaOffset.X + fcurvePos.GetX(),
-					 uvAreaOffset.Y + fcurvePos.GetY(),
-					 uvAreaOffset.Width + fcurveSize.GetX(),
-					 uvAreaOffset.Height + fcurveSize.GetY());
+				   uvAreaOffset.Y + fcurvePos.GetY(),
+				   uvAreaOffset.Width + fcurveSize.GetX(),
+				   uvAreaOffset.Height + fcurveSize.GetY());
 	}
 
 	// For webgl bug (it makes slow if sampling points are too far on WebGL)
-	float far = 4.0;
+	float loopFar = 4.0;
 
-	if (uv.X < -far && uv.X + uv.Width < -far)
+	if (uv.X < -loopFar && uv.X + uv.Width < -loopFar)
 	{
-		uv.X += (-static_cast<int32_t>(uv.X) - far);
+		uv.X += (-static_cast<int32_t>(uv.X) - loopFar);
 	}
 
-	if (uv.X > far && uv.X + uv.Width > far)
+	if (uv.X > loopFar && uv.X + uv.Width > loopFar)
 	{
-		uv.X -= (static_cast<int32_t>(uv.X) - far);
+		uv.X -= (static_cast<int32_t>(uv.X) - loopFar);
 	}
 
-	if (uv.Y < -far && uv.Y + uv.Height < -far)
+	if (uv.Y < -loopFar && uv.Y + uv.Height < -loopFar)
 	{
-		uv.Y += (-static_cast<int32_t>(uv.Y) - far);
+		uv.Y += (-static_cast<int32_t>(uv.Y) - loopFar);
 	}
 
-	if (uv.Y > far && uv.Y + uv.Height > far)
+	if (uv.Y > loopFar && uv.Y + uv.Height > loopFar)
 	{
-		uv.Y -= (static_cast<int32_t>(uv.Y) - far);
+		uv.Y -= (static_cast<int32_t>(uv.Y) - loopFar);
 	}
 
 	return uv;
@@ -19595,8 +20288,7 @@ std::array<float, 4> Instance::GetCustomData(int32_t index) const
 	else if (parameterCustomData->Type == ParameterCustomDataType::Easing2D)
 	{
 		Vec2f v = parameterCustomData->Easing.Values.getValue(
-			instanceCustomData->easing.start, instanceCustomData->easing.end, 
-			m_LivingTime / m_LivedTime);
+			instanceCustomData->easing.start, instanceCustomData->easing.end, m_LivingTime / m_LivedTime);
 		return std::array<float, 4>{v.GetX(), v.GetY(), 0, 0};
 	}
 	else if (parameterCustomData->Type == ParameterCustomDataType::FCurve2D)
@@ -19627,7 +20319,7 @@ std::array<float, 4> Instance::GetCustomData(int32_t index) const
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-}
+} // namespace Effekseer
 
 //----------------------------------------------------------------------------------
 //
@@ -19639,9 +20331,14 @@ std::array<float, 4> Instance::GetCustomData(int32_t index) const
 namespace Effekseer
 {
 
-InstanceChunk::InstanceChunk() { std::fill(instancesAlive_.begin(), instancesAlive_.end(), false); }
+InstanceChunk::InstanceChunk()
+{
+	std::fill(instancesAlive_.begin(), instancesAlive_.end(), false);
+}
 
-InstanceChunk::~InstanceChunk() {}
+InstanceChunk::~InstanceChunk()
+{
+}
 
 void InstanceChunk::UpdateInstances()
 {
@@ -19677,8 +20374,9 @@ void InstanceChunk::UpdateInstancesByInstanceGlobal(const InstanceGlobal* global
 		if (instancesAlive_[i])
 		{
 			Instance* instance = reinterpret_cast<Instance*>(instances_[i]);
-			
-			if (global != instance->GetInstanceGlobal()) {
+
+			if (global != instance->GetInstanceGlobal())
+			{
 				continue;
 			}
 
@@ -19736,16 +20434,19 @@ namespace Effekseer
 void* InstanceGlobal::operator new(size_t size)
 {
 	assert(sizeof(InstanceGlobal) == size);
-	return GetMallocFunc()(size);
+	return GetMallocFunc()(static_cast<uint32_t>(size));
 }
 
-void InstanceGlobal::operator delete(void* p) {GetFreeFunc()(p, sizeof(InstanceGlobal)); }
+void InstanceGlobal::operator delete(void* p)
+{
+	GetFreeFunc()(p, sizeof(InstanceGlobal));
+}
 
 InstanceGlobal::InstanceGlobal()
-	: m_instanceCount	( 0 )
-	, m_updatedFrame	( 0 )
-	, m_rootContainer	( NULL )
-{ 
+	: m_instanceCount(0)
+	, m_updatedFrame(0)
+	, m_rootContainer(NULL)
+{
 	dynamicInputParameters.fill(0);
 }
 
@@ -19754,10 +20455,12 @@ InstanceGlobal::InstanceGlobal()
 //----------------------------------------------------------------------------------
 InstanceGlobal::~InstanceGlobal()
 {
-	
 }
 
-void InstanceGlobal::BeginDeltaFrame(float frame) { NextDeltaFrame = frame; }
+void InstanceGlobal::BeginDeltaFrame(float frame)
+{
+	NextDeltaFrame = frame;
+}
 
 void InstanceGlobal::EndDeltaFrame()
 {
@@ -19765,7 +20468,8 @@ void InstanceGlobal::EndDeltaFrame()
 	NextDeltaFrame = 0.0f;
 }
 
-std::array<float, 4> InstanceGlobal::GetDynamicEquationResult(int32_t index) {
+std::array<float, 4> InstanceGlobal::GetDynamicEquationResult(int32_t index)
+{
 	assert(0 <= index && index < dynamicEqResults.size());
 	return dynamicEqResults[index];
 }
@@ -19780,11 +20484,11 @@ float InstanceGlobal::GetRand()
 	const int a = 1103515245;
 	const int c = 12345;
 	const int m = 2147483647;
-	
+
 	m_seed = (m_seed * a + c) & m;
 	auto ret = m_seed % 0x7fff;
 
-	return (float)ret / (float) (0x7fff - 1);
+	return (float)ret / (float)(0x7fff - 1);
 }
 
 float InstanceGlobal::GetRand(float min_, float max_)
@@ -19824,7 +20528,10 @@ float InstanceGlobal::GetUpdatedFrame()
 	return m_updatedFrame;
 }
 
-void InstanceGlobal::ResetUpdatedFrame() { m_updatedFrame = 0.0f; }
+void InstanceGlobal::ResetUpdatedFrame()
+{
+	m_updatedFrame = 0.0f;
+}
 
 //----------------------------------------------------------------------------------
 //
@@ -19837,7 +20544,7 @@ InstanceContainer* InstanceGlobal::GetRootContainer() const
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void InstanceGlobal::SetRootContainer( InstanceContainer* container )
+void InstanceGlobal::SetRootContainer(InstanceContainer* container)
 {
 	m_rootContainer = container;
 }
@@ -19850,12 +20557,13 @@ const Vec3f& InstanceGlobal::GetTargetLocation() const
 	return m_targetLocation;
 }
 
-void InstanceGlobal::SetTargetLocation( const Vector3D& location )
+void InstanceGlobal::SetTargetLocation(const Vector3D& location)
 {
 	m_targetLocation = location;
 }
 
-float InstanceGlobal::Rand(void* userData) { 
+float InstanceGlobal::Rand(void* userData)
+{
 	auto g = reinterpret_cast<InstanceGlobal*>(userData);
 	return g->GetRand();
 }
@@ -19876,7 +20584,7 @@ float InstanceGlobal::RandSeed(void* userData, float randSeed)
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-}
+} // namespace Effekseer
 
 //----------------------------------------------------------------------------------
 //
@@ -19894,19 +20602,18 @@ float InstanceGlobal::RandSeed(void* userData, float randSeed)
 namespace Effekseer
 {
 
-
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-InstanceGroup::InstanceGroup( Manager* manager, EffectNode* effectNode, InstanceContainer* container, InstanceGlobal* global )
-	: m_manager		( (ManagerImplemented*)manager )
-	, m_effectNode((EffectNodeImplemented*) effectNode)
-	, m_container	( container )
-	, m_global		( global )
-	, m_time		( 0 )
-	, IsReferencedFromInstance	( true )
-	, NextUsedByInstance	( NULL )
-	, NextUsedByContainer	( NULL )
+InstanceGroup::InstanceGroup(Manager* manager, EffectNode* effectNode, InstanceContainer* container, InstanceGlobal* global)
+	: m_manager((ManagerImplemented*)manager)
+	, m_effectNode((EffectNodeImplemented*)effectNode)
+	, m_container(container)
+	, m_global(global)
+	, m_time(0)
+	, IsReferencedFromInstance(true)
+	, NextUsedByInstance(NULL)
+	, NextUsedByContainer(NULL)
 {
 	parentMatrix_ = Mat43f::Identity;
 }
@@ -19919,7 +20626,10 @@ InstanceGroup::~InstanceGroup()
 	RemoveForcibly();
 }
 
-void InstanceGroup::NotfyEraseInstance() { m_global->DecInstanceCount(); }
+void InstanceGroup::NotfyEraseInstance()
+{
+	m_global->DecInstanceCount();
+}
 
 //----------------------------------------------------------------------------------
 //
@@ -19928,11 +20638,11 @@ Instance* InstanceGroup::CreateInstance()
 {
 	Instance* instance = NULL;
 
-	instance = m_manager->CreateInstance( m_effectNode, m_container, this );
-	
-	if( instance )
+	instance = m_manager->CreateInstance(m_effectNode, m_container, this);
+
+	if (instance)
 	{
-		m_instances.push_back( instance );
+		m_instances.push_back(instance);
 		m_global->IncInstanceCount();
 	}
 	return instance;
@@ -19943,7 +20653,7 @@ Instance* InstanceGroup::CreateInstance()
 //----------------------------------------------------------------------------------
 Instance* InstanceGroup::GetFirst()
 {
-	if( m_instances.size() > 0 )
+	if (m_instances.size() > 0)
 	{
 		return m_instances.front();
 	}
@@ -19984,7 +20694,7 @@ void InstanceGroup::Update(bool shown)
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void InstanceGroup::SetBaseMatrix( const Mat43f& mat )
+void InstanceGroup::SetBaseMatrix(const Mat43f& mat)
 {
 	for (auto instance : m_instances)
 	{
@@ -20092,7 +20802,7 @@ void InstanceGroup::KillAllInstances()
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-}
+} // namespace Effekseer
 
 //----------------------------------------------------------------------------------
 //
@@ -20162,9 +20872,13 @@ float InternalScript::GetRegisterValue(int index,
 	return 0.0f;
 }
 
-InternalScript::InternalScript() {}
+InternalScript::InternalScript()
+{
+}
 
-InternalScript ::~InternalScript() {}
+InternalScript ::~InternalScript()
+{
+}
 bool InternalScript::Load(uint8_t* data, int size)
 {
 	if (data == nullptr || size <= 0)
@@ -20194,7 +20908,7 @@ bool InternalScript::Load(uint8_t* data, int size)
 		}
 	}
 
-	reader.Read(operators, size - reader.GetOffset());
+	reader.Read(operators, static_cast<int32_t>(size - reader.GetOffset()));
 
 	if (reader.GetStatus() == BinaryReaderStatus::Failed)
 		return false;
@@ -20276,7 +20990,7 @@ std::array<float, 4> InternalScript::Execute(const std::array<float, 4>& externa
 		return ret;
 	}
 
-	int offset = 0;
+	size_t offset = 0;
 	for (int i = 0; i < operatorCount_; i++)
 	{
 		// type
@@ -20330,11 +21044,11 @@ std::array<float, 4> InternalScript::Execute(const std::array<float, 4>& externa
 				registers[index] = tempInputs[0] / tempInputs[1];
 			else if (type == OperatorType::Sine)
 			{
-				registers[index] = sin(tempInputs[j]);
+				registers[index] = sinf(tempInputs[j]);
 			}
 			else if (type == OperatorType::Cos)
 			{
-				registers[index] = cos(tempInputs[j]);
+				registers[index] = cosf(tempInputs[j]);
 			}
 			else if (type == OperatorType::UnaryAdd)
 			{
@@ -20382,7 +21096,8 @@ std::array<float, 4> InternalScript::Execute(const std::array<float, 4>& externa
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-namespace Effekseer {
+namespace Effekseer
+{
 
 //----------------------------------------------------------------------------------
 //
@@ -20509,7 +21224,8 @@ void Setting::SetSoundLoader(SoundLoader* loader)
 }
 
 MaterialLoader* Setting::GetMaterialLoader()
-{ return m_materialLoader;
+{
+	return m_materialLoader;
 }
 
 void Setting::SetMaterialLoader(MaterialLoader* loader)
@@ -20518,11 +21234,12 @@ void Setting::SetMaterialLoader(MaterialLoader* loader)
 	m_materialLoader = loader;
 }
 
-void Setting::AddEffectFactory(EffectFactory* effectFactory) { 
-	
+void Setting::AddEffectFactory(EffectFactory* effectFactory)
+{
+
 	if (effectFactory == nullptr)
 		return;
-	ES_SAFE_ADDREF(effectFactory); 
+	ES_SAFE_ADDREF(effectFactory);
 	effectFactories.push_back(effectFactory);
 }
 
@@ -20537,30 +21254,27 @@ void Setting::ClearEffectFactory()
 
 EffectFactory* Setting::GetEffectFactory(int32_t ind) const
 {
-	return effectFactories[ind]; 
+	return effectFactories[ind];
 }
 
-int32_t Setting::GetEffectFactoryCount() const { 
-	return effectFactories.size();
+int32_t Setting::GetEffectFactoryCount() const
+{
+	return static_cast<int32_t>(effectFactories.size());
 }
 
-}
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
+} // namespace Effekseer
+  //----------------------------------------------------------------------------------
+  //
+  //----------------------------------------------------------------------------------
 
 namespace Effekseer
 {
-	
+
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
 const Mat43f Mat43f::Identity = Mat43f(
-	1, 0, 0, 
-	0, 1, 0, 
-	0, 0, 1, 
-	0, 0, 0
-);
+	1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0);
 
 //----------------------------------------------------------------------------------
 //
@@ -20581,12 +21295,12 @@ bool Mat43f::IsValid() const
 {
 	const SIMD4f nan{NAN};
 	const SIMD4f inf{INFINITY};
-	SIMD4f res = 
-		SIMD4f::Equal(X, nan) | 
-		SIMD4f::Equal(Y, nan) | 
+	SIMD4f res =
+		SIMD4f::Equal(X, nan) |
+		SIMD4f::Equal(Y, nan) |
 		SIMD4f::Equal(Z, nan) |
-		SIMD4f::Equal(X, inf) | 
-		SIMD4f::Equal(Y, inf) | 
+		SIMD4f::Equal(X, inf) |
+		SIMD4f::Equal(Y, inf) |
 		SIMD4f::Equal(Z, inf);
 	return SIMD4f::MoveMask(res) == 0;
 }
@@ -20680,7 +21394,6 @@ bool Mat43f::Equal(const Mat43f& lhs, const Mat43f& rhs, float epsilon)
 		SIMD4f::NearEqual(lhs.Y, rhs.Y, epsilon) &
 		SIMD4f::NearEqual(lhs.Z, rhs.Z, epsilon);
 	return (SIMD4f::MoveMask(ret) & 0xf) == 0xf;
-
 }
 
 //----------------------------------------------------------------------------------
@@ -20733,7 +21446,7 @@ Mat43f Mat43f::RotationX(float angle)
 	Mat43f ret;
 	ret.X = {1.0f, 0.0f, 0.0f, 0.0f};
 	ret.Y = {0.0f, c, -s, 0.0f};
-	ret.Z = {0.0f, s,  c, 0.0f};
+	ret.Z = {0.0f, s, c, 0.0f};
 	return ret;
 }
 
@@ -20746,7 +21459,7 @@ Mat43f Mat43f::RotationY(float angle)
 	::Effekseer::SinCos(angle, s, c);
 
 	Mat43f ret;
-	ret.X = { c, 0.0f, s, 0.0f};
+	ret.X = {c, 0.0f, s, 0.0f};
 	ret.Y = {0.0f, 1.0f, 0.0f, 0.0f};
 	ret.Z = {-s, 0.0f, c, 0.0f};
 	return ret;
@@ -20762,7 +21475,7 @@ Mat43f Mat43f::RotationZ(float angle)
 
 	Mat43f ret;
 	ret.X = {c, -s, 0.0f, 0.0f};
-	ret.Y = {s,  c, 0.0f, 0.0f};
+	ret.Y = {s, c, 0.0f, 0.0f};
 	ret.Z = {0.0f, 0.0f, 1.0f, 0.0f};
 	return ret;
 }
@@ -20807,7 +21520,7 @@ Mat43f Mat43f::RotationXYZ(float rx, float ry, float rz)
 	float m02 = -sy;
 
 	float m10 = sx * sy * -sz + cx * -sz;
-	float m11 = sx * sy *  sz + cx *  cz;
+	float m11 = sx * sy * sz + cx * cz;
 	float m12 = sx * cy;
 
 	float m20 = cx * sy * cz + sx * sz;
@@ -20880,8 +21593,8 @@ Mat43f Mat43f::RotationZXY(float rz, float rx, float ry)
 //----------------------------------------------------------------------------------
 Mat43f Mat43f::RotationAxis(const Vec3f& axis, float angle)
 {
-	const float c = cosf( angle );
-	const float s = sinf( angle );
+	const float c = cosf(angle);
+	const float s = sinf(angle);
 	return RotationAxis(axis, s, c);
 }
 
@@ -20935,21 +21648,17 @@ Mat43f Mat43f::Translation(const Vec3f& pos)
 	return ret;
 }
 
-}
+} // namespace Effekseer
 
 
 namespace Effekseer
 {
-	
+
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
 const Mat44f Mat44f::Identity = Mat44f(
-	1, 0, 0, 0, 
-	0, 1, 0, 0, 
-	0, 0, 1, 0, 
-	0, 0, 0, 1
-);
+	1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1);
 
 //----------------------------------------------------------------------------------
 //
@@ -20970,14 +21679,14 @@ bool Mat44f::IsValid() const
 {
 	const SIMD4f nan{NAN};
 	const SIMD4f inf{INFINITY};
-	SIMD4f res = 
-		SIMD4f::Equal(X, nan) | 
-		SIMD4f::Equal(Y, nan) | 
+	SIMD4f res =
+		SIMD4f::Equal(X, nan) |
+		SIMD4f::Equal(Y, nan) |
 		SIMD4f::Equal(Z, nan) |
 		SIMD4f::Equal(W, nan) |
-		SIMD4f::Equal(X, inf) | 
-		SIMD4f::Equal(Y, inf) | 
-		SIMD4f::Equal(Z, inf) | 
+		SIMD4f::Equal(X, inf) |
+		SIMD4f::Equal(Y, inf) |
+		SIMD4f::Equal(Z, inf) |
 		SIMD4f::Equal(W, inf);
 	return SIMD4f::MoveMask(res) == 0;
 }
@@ -21072,7 +21781,6 @@ bool Mat44f::Equal(const Mat44f& lhs, const Mat44f& rhs, float epsilon)
 		SIMD4f::NearEqual(lhs.Z, rhs.Z, epsilon) &
 		SIMD4f::NearEqual(lhs.W, rhs.W, epsilon);
 	return (SIMD4f::MoveMask(ret) & 0xf) == 0xf;
-
 }
 
 //----------------------------------------------------------------------------------
@@ -21128,7 +21836,7 @@ Mat44f Mat44f::RotationX(float angle)
 	Mat44f ret;
 	ret.X = {1.0f, 0.0f, 0.0f, 0.0f};
 	ret.Y = {0.0f, c, -s, 0.0f};
-	ret.Z = {0.0f, s,  c, 0.0f};
+	ret.Z = {0.0f, s, c, 0.0f};
 	ret.W = {0.0f, 0.0f, 0.0f, 1.0f};
 	return ret;
 }
@@ -21142,7 +21850,7 @@ Mat44f Mat44f::RotationY(float angle)
 	::Effekseer::SinCos(angle, s, c);
 
 	Mat44f ret;
-	ret.X = { c, 0.0f, s, 0.0f};
+	ret.X = {c, 0.0f, s, 0.0f};
 	ret.Y = {0.0f, 1.0f, 0.0f, 0.0f};
 	ret.Z = {-s, 0.0f, c, 0.0f};
 	ret.W = {0.0f, 0.0f, 0.0f, 1.0f};
@@ -21159,7 +21867,7 @@ Mat44f Mat44f::RotationZ(float angle)
 
 	Mat44f ret;
 	ret.X = {c, -s, 0.0f, 0.0f};
-	ret.Y = {s,  c, 0.0f, 0.0f};
+	ret.Y = {s, c, 0.0f, 0.0f};
 	ret.Z = {0.0f, 0.0f, 1.0f, 0.0f};
 	ret.W = {0.0f, 0.0f, 0.0f, 1.0f};
 	return ret;
@@ -21205,7 +21913,7 @@ Mat44f Mat44f::RotationXYZ(float rx, float ry, float rz)
 	float m02 = -sy;
 
 	float m10 = sx * sy * -sz + cx * -sz;
-	float m11 = sx * sy *  sz + cx *  cz;
+	float m11 = sx * sy * sz + cx * cz;
 	float m12 = sx * cy;
 
 	float m20 = cx * sy * cz + sx * sz;
@@ -21280,8 +21988,8 @@ Mat44f Mat44f::RotationZXY(float rz, float rx, float ry)
 //----------------------------------------------------------------------------------
 Mat44f Mat44f::RotationAxis(const Vec3f& axis, float angle)
 {
-	const float c = cosf( angle );
-	const float s = sinf( angle );
+	const float c = cosf(angle);
+	const float s = sinf(angle);
 	return RotationAxis(axis, s, c);
 }
 
@@ -21338,12 +22046,12 @@ Mat44f Mat44f::Translation(const Vec3f& pos)
 	return ret;
 }
 
-}
+} // namespace Effekseer
 
 
 namespace Effekseer
 {
-	
+
 //----------------------------------------------------------------------------------
 // Temporary implementation
 //----------------------------------------------------------------------------------
@@ -21367,25 +22075,24 @@ Vec3f::Vec3f(const Vector3D& vec)
 {
 }
 
-
 } // namespace Effekseer
 
 
 #if PLATFORM_WINDOWS
 
-#ifndef	__EFFEKSEER_SOCKET_H__
-#define	__EFFEKSEER_SOCKET_H__
+#ifndef __EFFEKSEER_SOCKET_H__
+#define __EFFEKSEER_SOCKET_H__
 
-#if !( defined(_PSVITA) || defined(_XBOXONE) )
+#if !(defined(_PSVITA) || defined(_XBOXONE))
 
 //----------------------------------------------------------------------------------
 // Include
 //----------------------------------------------------------------------------------
 
-#if defined(_WIN32) && !defined(_PS4) 
+#if defined(_WIN32) && !defined(_PS4)
 #else
 
-#if !defined(_PS4) 
+#if !defined(_PS4)
 #endif
 
 #endif
@@ -21393,22 +22100,23 @@ Vec3f::Vec3f(const Vector3D& vec)
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-namespace Effekseer {
+namespace Effekseer
+{
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
 
-#if defined(_WIN32) && !defined(_PS4) 
+#if defined(_WIN32) && !defined(_PS4)
 
-typedef SOCKET	EfkSocket;
-typedef int		SOCKLEN;
+typedef SOCKET EfkSocket;
+typedef int SOCKLEN;
 const EfkSocket InvalidSocket = INVALID_SOCKET;
 const int32_t SocketError = SOCKET_ERROR;
 const int32_t InaddrNone = INADDR_NONE;
 
 #else
 
-typedef int32_t	EfkSocket;
+typedef int32_t EfkSocket;
 typedef socklen_t SOCKLEN;
 const EfkSocket InvalidSocket = -1;
 const int32_t SocketError = -1;
@@ -21421,7 +22129,7 @@ typedef struct sockaddr SOCKADDR;
 
 #endif
 
-#if defined(_WIN32) && !defined(_PS4) 
+#if defined(_WIN32) && !defined(_PS4)
 static void Sleep_(int32_t ms)
 {
 	Sleep(ms);
@@ -21433,43 +22141,41 @@ static void Sleep_(int32_t ms)
 }
 #endif
 
-
 class Socket
 {
 private:
-
 public:
 	static void Initialize();
 	static void Finalize();
 
 	static EfkSocket GenSocket();
 
-	static void Close( EfkSocket s );
-	static void Shutsown( EfkSocket s );
+	static void Close(EfkSocket s);
+	static void Shutsown(EfkSocket s);
 
-	static bool Listen( EfkSocket s, int32_t backlog );
+	static bool Listen(EfkSocket s, int32_t backlog);
 };
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
- } 
+} // namespace Effekseer
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
 
-#endif	// #if !( defined(_PSVITA) || defined(_XBOXONE) )
+#endif // #if !( defined(_PSVITA) || defined(_XBOXONE) )
 
-#endif	// __EFFEKSEER_SOCKET_H__
+#endif // __EFFEKSEER_SOCKET_H__
 
 
-#if !( defined(_PSVITA) || defined(_XBOXONE) )
+#if !(defined(_PSVITA) || defined(_XBOXONE))
 
 //----------------------------------------------------------------------------------
 // Include
 //----------------------------------------------------------------------------------
-#if defined(_WIN32) && !defined(_PS4) 
-#pragma comment( lib, "ws2_32.lib" )
+#if defined(_WIN32) && !defined(_PS4)
+#pragma comment(lib, "ws2_32.lib")
 #else
 #endif
 
@@ -21477,16 +22183,17 @@ public:
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-namespace Effekseer {
+namespace Effekseer
+{
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
 void Socket::Initialize()
 {
-#if defined(_WIN32) && !defined(_PS4) 
+#if defined(_WIN32) && !defined(_PS4)
 	// Initialize  Winsock
 	WSADATA m_WsaData;
-	::WSAStartup( MAKEWORD(2,0), &m_WsaData );
+	::WSAStartup(MAKEWORD(2, 0), &m_WsaData);
 #endif
 }
 
@@ -21495,7 +22202,7 @@ void Socket::Initialize()
 //----------------------------------------------------------------------------------
 void Socket::Finalize()
 {
-#if defined(_WIN32) && !defined(_PS4) 
+#if defined(_WIN32) && !defined(_PS4)
 	// Dispose winsock or decrease a counter
 	WSACleanup();
 #endif
@@ -21506,61 +22213,60 @@ void Socket::Finalize()
 //----------------------------------------------------------------------------------
 EfkSocket Socket::GenSocket()
 {
-	return ::socket( AF_INET, SOCK_STREAM, IPPROTO_TCP );
+	return ::socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void Socket::Close( EfkSocket s )
+void Socket::Close(EfkSocket s)
 {
-#if defined(_WIN32) && !defined(_PS4) 
-	::closesocket( s );
+#if defined(_WIN32) && !defined(_PS4)
+	::closesocket(s);
 #else
-	::close( s );
+	::close(s);
 #endif
 }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void Socket::Shutsown( EfkSocket s )
+void Socket::Shutsown(EfkSocket s)
 {
-#if defined(_WIN32) && !defined(_PS4) 
-	::shutdown( s, SD_BOTH );
+#if defined(_WIN32) && !defined(_PS4)
+	::shutdown(s, SD_BOTH);
 #else
-	::shutdown( s, SHUT_RDWR );
+	::shutdown(s, SHUT_RDWR);
 #endif
 }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-bool Socket::Listen( EfkSocket s, int32_t backlog )
+bool Socket::Listen(EfkSocket s, int32_t backlog)
 {
-#if defined(_WIN32) && !defined(_PS4) 
-	return ::listen( s, backlog ) != SocketError;
+#if defined(_WIN32) && !defined(_PS4)
+	return ::listen(s, backlog) != SocketError;
 #else
-	return listen( s, backlog ) >= 0;
+	return listen(s, backlog) >= 0;
 #endif
 }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
- } 
+} // namespace Effekseer
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
 
-#endif	// #if !( defined(_PSVITA) || defined(_XBOXONE) )
+#endif // #if !( defined(_PSVITA) || defined(_XBOXONE) )
 
 
+#ifndef __EFFEKSEER_SERVER_IMPLEMENTED_H__
+#define __EFFEKSEER_SERVER_IMPLEMENTED_H__
 
-#ifndef	__EFFEKSEER_SERVER_IMPLEMENTED_H__
-#define	__EFFEKSEER_SERVER_IMPLEMENTED_H__
-
-#if !( defined(_PSVITA) || defined(_SWITCH) || defined(_XBOXONE) )
+#if !(defined(_PSVITA) || defined(_SWITCH) || defined(_XBOXONE))
 
 //----------------------------------------------------------------------------------
 // Include
@@ -21572,7 +22278,8 @@ bool Socket::Listen( EfkSocket s, int32_t backlog )
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-namespace Effekseer {
+namespace Effekseer
+{
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
@@ -21582,52 +22289,51 @@ private:
 	class InternalClient
 	{
 	public:
-		std::thread		m_threadRecv;
-		EfkSocket	m_socket;
-		ServerImplemented*		m_server;
-		bool		m_active;
+		std::thread m_threadRecv;
+		EfkSocket m_socket;
+		ServerImplemented* m_server;
+		bool m_active;
 
-		std::vector<uint8_t>	m_recvBuffer;
+		std::vector<uint8_t> m_recvBuffer;
 
-		std::vector<std::vector<uint8_t> >	m_recvBuffers;
-		std::mutex						m_ctrlRecvBuffers;
+		std::vector<std::vector<uint8_t>> m_recvBuffers;
+		std::mutex m_ctrlRecvBuffers;
 
-		static void RecvAsync( void* data );
+		static void RecvAsync(void* data);
 
 	public:
-		InternalClient( EfkSocket socket_, ServerImplemented* server );
+		InternalClient(EfkSocket socket_, ServerImplemented* server);
 		~InternalClient();
 		void ShutDown();
 	};
 
 private:
-	EfkSocket	m_socket;
-	uint16_t	m_port;
+	EfkSocket m_socket;
+	uint16_t m_port;
 
-	std::thread		m_thread;
-	std::mutex		m_ctrlClients;
+	std::thread m_thread;
+	std::mutex m_ctrlClients;
 
-	bool		m_running;
+	bool m_running;
 
-	std::set<InternalClient*>	m_clients;
-	std::set<InternalClient*>	m_removedClients;
+	std::set<InternalClient*> m_clients;
+	std::set<InternalClient*> m_removedClients;
 
-	std::map<std::u16string,Effect*>	m_effects;
+	std::map<std::u16string, Effect*> m_effects;
 
-	std::map<std::u16string,std::vector<uint8_t> >	m_data;
+	std::map<std::u16string, std::vector<uint8_t>> m_data;
 
-	std::vector<EFK_CHAR>	m_materialPath;
+	std::vector<EFK_CHAR> m_materialPath;
 
-	void AddClient( InternalClient* client );
-	void RemoveClient( InternalClient* client );
-	static void AcceptAsync( void* data );
+	void AddClient(InternalClient* client);
+	void RemoveClient(InternalClient* client);
+	static void AcceptAsync(void* data);
 
 public:
-
 	ServerImplemented();
 	virtual ~ServerImplemented();
 
-	bool Start( uint16_t port ) override;
+	bool Start(uint16_t port) override;
 
 	void Stop() override;
 
@@ -21637,50 +22343,50 @@ public:
 
 	void Update(Manager** managers, int32_t managerCount, ReloadingThreadType reloadingThreadType) override;
 
-	void SetMaterialPath( const EFK_CHAR* materialPath ) override;
+	void SetMaterialPath(const EFK_CHAR* materialPath) override;
 
 	void Regist(const EFK_CHAR* key, Effect* effect) override;
 
 	void Unregist(Effect* effect) override;
-
 };
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
- } 
+} // namespace Effekseer
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
 
-#endif	// #if !( defined(_PSVITA) || defined(_SWITCH) || defined(_XBOXONE) )
+#endif // #if !( defined(_PSVITA) || defined(_SWITCH) || defined(_XBOXONE) )
 
-#endif	// __EFFEKSEER_SERVER_IMPLEMENTED_H__
+#endif // __EFFEKSEER_SERVER_IMPLEMENTED_H__
 
 
-#if !( defined(_PSVITA) || defined(_XBOXONE) )
+#if !(defined(_PSVITA) || defined(_XBOXONE))
 
 //----------------------------------------------------------------------------------
 // Include
 //----------------------------------------------------------------------------------
 
 
-#if defined(_WIN32) && !defined(_PS4) 
+#if defined(_WIN32) && !defined(_PS4)
 #else
 #endif
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-namespace Effekseer {
+namespace Effekseer
+{
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void ServerImplemented::InternalClient::RecvAsync( void* data )
+void ServerImplemented::InternalClient::RecvAsync(void* data)
 {
 	InternalClient* client = (InternalClient*)data;
 
-	while(true)
+	while (true)
 	{
 		client->m_recvBuffer.clear();
 
@@ -21688,39 +22394,39 @@ void ServerImplemented::InternalClient::RecvAsync( void* data )
 		int32_t restSize = 0;
 
 		restSize = 4;
-		while(restSize > 0)
+		while (restSize > 0)
 		{
-			auto recvSize = ::recv( client->m_socket, (char*)(&size), restSize, 0 );
+			auto recvSize = ::recv(client->m_socket, (char*)(&size), restSize, 0);
 			restSize -= recvSize;
 
-			if( recvSize == 0 || recvSize == -1 )
+			if (recvSize == 0 || recvSize == -1)
 			{
 				// Failed
-				client->m_server->RemoveClient( client );
+				client->m_server->RemoveClient(client);
 				client->ShutDown();
 				return;
 			}
 		}
 
 		restSize = size;
-		while(restSize > 0)
+		while (restSize > 0)
 		{
 			uint8_t buf[256];
 
-			auto recvSize = ::recv( client->m_socket, (char*)(buf), Min(restSize,256), 0 );
+			auto recvSize = ::recv(client->m_socket, (char*)(buf), Min(restSize, 256), 0);
 			restSize -= recvSize;
 
-			if( recvSize == 0 || recvSize == -1 )
+			if (recvSize == 0 || recvSize == -1)
 			{
 				// Failed
-				client->m_server->RemoveClient( client );
+				client->m_server->RemoveClient(client);
 				client->ShutDown();
 				return;
 			}
 
-			for( int32_t i = 0; i < recvSize; i++ )
+			for (int32_t i = 0; i < recvSize; i++)
 			{
-				client->m_recvBuffer.push_back( buf[i] );
+				client->m_recvBuffer.push_back(buf[i]);
 			}
 		}
 
@@ -21734,16 +22440,15 @@ void ServerImplemented::InternalClient::RecvAsync( void* data )
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-ServerImplemented::InternalClient::InternalClient( EfkSocket socket_, ServerImplemented* server )
-	: m_socket	( socket_ )
-	, m_server	( server )
-	, m_active	( true )
+ServerImplemented::InternalClient::InternalClient(EfkSocket socket_, ServerImplemented* server)
+	: m_socket(socket_)
+	, m_server(server)
+	, m_active(true)
 {
 	m_threadRecv = std::thread(
-		[this]() 
-	{
-		RecvAsync(this);
-	});
+		[this]() {
+			RecvAsync(this);
+		});
 }
 
 //----------------------------------------------------------------------------------
@@ -21759,10 +22464,10 @@ ServerImplemented::InternalClient::~InternalClient()
 //----------------------------------------------------------------------------------
 void ServerImplemented::InternalClient::ShutDown()
 {
-	if ( m_socket != InvalidSocket )
+	if (m_socket != InvalidSocket)
 	{
-		Socket::Shutsown( m_socket );
-		Socket::Close( m_socket );
+		Socket::Shutsown(m_socket);
+		Socket::Close(m_socket);
 		m_socket = InvalidSocket;
 		m_active = false;
 	}
@@ -21772,7 +22477,7 @@ void ServerImplemented::InternalClient::ShutDown()
 //
 //----------------------------------------------------------------------------------
 ServerImplemented::ServerImplemented()
-	: m_running		( false )
+	: m_running(false)
 {
 	Socket::Initialize();
 }
@@ -21798,95 +22503,94 @@ Server* Server::Create()
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void ServerImplemented::AddClient( InternalClient* client )
+void ServerImplemented::AddClient(InternalClient* client)
 {
 	std::lock_guard<std::mutex> lock(m_ctrlClients);
-	m_clients.insert( client );
+	m_clients.insert(client);
 }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void ServerImplemented::RemoveClient( InternalClient* client )
+void ServerImplemented::RemoveClient(InternalClient* client)
 {
 	std::lock_guard<std::mutex> lock(m_ctrlClients);
-	if( m_clients.count( client ) > 0 )
+	if (m_clients.count(client) > 0)
 	{
-		m_clients.erase( client );
-		m_removedClients.insert( client );
+		m_clients.erase(client);
+		m_removedClients.insert(client);
 	}
 }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void ServerImplemented::AcceptAsync( void* data )
+void ServerImplemented::AcceptAsync(void* data)
 {
 	ServerImplemented* server = (ServerImplemented*)data;
 
-	while(true)
+	while (true)
 	{
 		SOCKADDR_IN socketAddrIn;
 		int32_t Size = sizeof(SOCKADDR_IN);
 
-		EfkSocket socket_ = ::accept( 
-			server->m_socket, 
+		EfkSocket socket_ = ::accept(
+			server->m_socket,
 			(SOCKADDR*)(&socketAddrIn),
-			(SOCKLEN*)(&Size) );
+			(SOCKLEN*)(&Size));
 
-		if ( server->m_socket == InvalidSocket || socket_ == InvalidSocket )
+		if (server->m_socket == InvalidSocket || socket_ == InvalidSocket)
 		{
 			break;
 		}
 
 		// Accept and add an internal client
-		server->AddClient( new InternalClient( socket_, server ) );
+		server->AddClient(new InternalClient(socket_, server));
 
 		EffekseerPrintDebug("Server : AcceptClient\n");
-
 	}
 }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-bool ServerImplemented::Start( uint16_t port )
+bool ServerImplemented::Start(uint16_t port)
 {
-	if( m_running )
+	if (m_running)
 	{
 		Stop();
 	}
 
 	int32_t returnCode;
-	sockaddr_in sockAddr = { AF_INET };
+	sockaddr_in sockAddr = {AF_INET};
 
 	// Create a socket
 	EfkSocket socket_ = Socket::GenSocket();
-	if ( socket_ == InvalidSocket )
+	if (socket_ == InvalidSocket)
 	{
 		return false;
 	}
 
-	memset( &sockAddr, 0, sizeof(SOCKADDR_IN));
-	sockAddr.sin_family	= AF_INET;
-	sockAddr.sin_port	= htons( port );
+	memset(&sockAddr, 0, sizeof(SOCKADDR_IN));
+	sockAddr.sin_family = AF_INET;
+	sockAddr.sin_port = htons(port);
 
-	returnCode = ::bind( socket_, (sockaddr*)&sockAddr, sizeof(sockaddr_in) );
-	if ( returnCode == SocketError )
+	returnCode = ::bind(socket_, (sockaddr*)&sockAddr, sizeof(sockaddr_in));
+	if (returnCode == SocketError)
 	{
-		if ( socket_ != InvalidSocket )
+		if (socket_ != InvalidSocket)
 		{
-			Socket::Close( socket_ );
+			Socket::Close(socket_);
 		}
 		return false;
 	}
 
 	// Connect
-	if ( !Socket::Listen( socket_, 30 ) )
+	if (!Socket::Listen(socket_, 30))
 	{
-		if ( socket_ != InvalidSocket )
+		if (socket_ != InvalidSocket)
 		{
-			Socket::Close( socket_ );
+			Socket::Close(socket_);
 		}
 		return false;
 	}
@@ -21896,10 +22600,9 @@ bool ServerImplemented::Start( uint16_t port )
 	m_port = port;
 
 	m_thread = std::thread(
-		[this]()
-	{
-		AcceptAsync(this);
-	});
+		[this]() {
+			AcceptAsync(this);
+		});
 
 	EffekseerPrintDebug("Server : Start\n");
 
@@ -21911,41 +22614,42 @@ bool ServerImplemented::Start( uint16_t port )
 //----------------------------------------------------------------------------------
 void ServerImplemented::Stop()
 {
-	if( !m_running ) return;
+	if (!m_running)
+		return;
 
-	Socket::Shutsown( m_socket );
-	Socket::Close( m_socket );
+	Socket::Shutsown(m_socket);
+	Socket::Close(m_socket);
 	m_socket = InvalidSocket;
-	
+
 	m_running = false;
 
 	m_thread.join();
 
 	// Stop clients
 	m_ctrlClients.lock();
-	for( std::set<InternalClient*>::iterator it = m_clients.begin(); it != m_clients.end(); ++it )
+	for (std::set<InternalClient*>::iterator it = m_clients.begin(); it != m_clients.end(); ++it)
 	{
 		(*it)->ShutDown();
 	}
 	m_ctrlClients.unlock();
-	
 
 	// Wait clients to be removed
-	while(true)
+	while (true)
 	{
 		m_ctrlClients.lock();
 		int32_t size = (int32_t)m_clients.size();
 		m_ctrlClients.unlock();
-	
-		if( size == 0 ) break;
+
+		if (size == 0)
+			break;
 
 		std::this_thread::sleep_for(std::chrono::milliseconds(1));
 	}
 
 	// Delete clients
-	for( std::set<InternalClient*>::iterator it = m_removedClients.begin(); it != m_removedClients.end(); ++it )
+	for (std::set<InternalClient*>::iterator it = m_removedClients.begin(); it != m_removedClients.end(); ++it)
 	{
-		while( (*it)->m_active )
+		while ((*it)->m_active)
 		{
 			std::this_thread::sleep_for(std::chrono::milliseconds(1));
 		}
@@ -21956,13 +22660,14 @@ void ServerImplemented::Stop()
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void ServerImplemented::Register( const EFK_CHAR* key, Effect* effect )
+void ServerImplemented::Register(const EFK_CHAR* key, Effect* effect)
 {
-	if( effect == NULL ) return;
+	if (effect == NULL)
+		return;
 
-	std::u16string key_( (const char16_t*)key );
+	std::u16string key_((const char16_t*)key);
 
-	if( m_effects.count( key_ ) > 0 )
+	if (m_effects.count(key_) > 0)
 	{
 		m_effects[key_]->Release();
 	}
@@ -21970,15 +22675,15 @@ void ServerImplemented::Register( const EFK_CHAR* key, Effect* effect )
 	m_effects[key_] = effect;
 	m_effects[key_]->AddRef();
 
-	if( m_data.count( key_ ) > 0 )
+	if (m_data.count(key_) > 0)
 	{
-		if( m_materialPath.size() > 1 )
+		if (m_materialPath.size() > 1)
 		{
-			m_effects[key_]->Reload( &(m_data[key_][0]), (int32_t)m_data.size(), &(m_materialPath[0]) );
+			m_effects[key_]->Reload(&(m_data[key_][0]), (int32_t)m_data.size(), &(m_materialPath[0]));
 		}
 		else
 		{
-			m_effects[key_]->Reload( &(m_data[key_][0]), (int32_t)m_data.size() );
+			m_effects[key_]->Reload(&(m_data[key_][0]), (int32_t)m_data.size());
 		}
 	}
 }
@@ -21986,19 +22691,20 @@ void ServerImplemented::Register( const EFK_CHAR* key, Effect* effect )
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void ServerImplemented::Unregister( Effect* effect )
+void ServerImplemented::Unregister(Effect* effect)
 {
-	if( effect == NULL ) return;
+	if (effect == NULL)
+		return;
 
 	auto it = m_effects.begin();
 	auto it_end = m_effects.end();
 
-	while( it != it_end )
+	while (it != it_end)
 	{
-		if( (*it).second == effect )
+		if ((*it).second == effect)
 		{
 			(*it).second->Release();
-			m_effects.erase( it );
+			m_effects.erase(it);
 			return;
 		}
 
@@ -22013,9 +22719,9 @@ void ServerImplemented::Update(Manager** managers, int32_t managerCount, Reloadi
 {
 	m_ctrlClients.lock();
 
-	for( std::set<InternalClient*>::iterator it = m_removedClients.begin(); it != m_removedClients.end(); ++it )
+	for (std::set<InternalClient*>::iterator it = m_removedClients.begin(); it != m_removedClients.end(); ++it)
 	{
-		while( (*it)->m_active )
+		while ((*it)->m_active)
 		{
 			std::this_thread::sleep_for(std::chrono::milliseconds(1));
 		}
@@ -22023,41 +22729,41 @@ void ServerImplemented::Update(Manager** managers, int32_t managerCount, Reloadi
 	}
 	m_removedClients.clear();
 
-	for( std::set<InternalClient*>::iterator it = m_clients.begin(); it != m_clients.end(); ++it )
+	for (std::set<InternalClient*>::iterator it = m_clients.begin(); it != m_clients.end(); ++it)
 	{
 		(*it)->m_ctrlRecvBuffers.lock();
 
-		for( size_t i = 0; i < (*it)->m_recvBuffers.size(); i++ )
+		for (size_t i = 0; i < (*it)->m_recvBuffers.size(); i++)
 		{
 			std::vector<uint8_t>& buf = (*it)->m_recvBuffers[i];
 
 			uint8_t* p = &(buf[0]);
-		
+
 			int32_t keylen = 0;
-			memcpy( &keylen, p, sizeof(int32_t) );
+			memcpy(&keylen, p, sizeof(int32_t));
 			p += sizeof(int32_t);
 
 			std::u16string key;
-			for( int32_t k = 0; k < keylen; k++ )
+			for (int32_t k = 0; k < keylen; k++)
 			{
-				key.push_back( ((char16_t*)p)[0] );
+				key.push_back(((char16_t*)p)[0]);
 				p += sizeof(char16_t);
 			}
 
 			uint8_t* recv_data = p;
-			auto datasize = (int32_t)buf.size() - (p-&(buf[0]));
-		
-			if( m_data.count( key ) > 0 )
+			auto datasize = (int32_t)buf.size() - (p - &(buf[0]));
+
+			if (m_data.count(key) > 0)
 			{
 				m_data[key].clear();
 			}
 
-			for( int32_t d = 0; d < datasize; d++ )
+			for (int32_t d = 0; d < datasize; d++)
 			{
-				m_data[key].push_back( recv_data[d] );
+				m_data[key].push_back(recv_data[d]);
 			}
 
-			if( m_effects.count( key ) > 0 )
+			if (m_effects.count(key) > 0)
 			{
 				if (managers != nullptr)
 				{
@@ -22085,29 +22791,26 @@ void ServerImplemented::Update(Manager** managers, int32_t managerCount, Reloadi
 						m_effects[key]->Reload(data_.data(), (int32_t)data_.size(), nullptr, reloadingThreadType);
 					}
 				}
-				
 			}
 		}
 
 		(*it)->m_recvBuffers.clear();
 		(*it)->m_ctrlRecvBuffers.unlock();
-
 	}
 	m_ctrlClients.unlock();
-	
 }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void ServerImplemented::SetMaterialPath( const EFK_CHAR* materialPath )
+void ServerImplemented::SetMaterialPath(const EFK_CHAR* materialPath)
 {
 	m_materialPath.clear();
 
 	int32_t pos = 0;
-	while( materialPath[pos] != 0 )
+	while (materialPath[pos] != 0)
 	{
-		m_materialPath.push_back( materialPath[pos] );
+		m_materialPath.push_back(materialPath[pos]);
 		pos++;
 	}
 	m_materialPath.push_back(0);
@@ -22126,17 +22829,17 @@ void ServerImplemented::Unregist(Effect* effect)
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-} 
+} // namespace Effekseer
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
 
-#endif	// #if !( defined(_PSVITA) || defined(_XBOXONE) )
+#endif // #if !( defined(_PSVITA) || defined(_XBOXONE) )
 
-#ifndef	__EFFEKSEER_CLIENT_IMPLEMENTED_H__
-#define	__EFFEKSEER_CLIENT_IMPLEMENTED_H__
+#ifndef __EFFEKSEER_CLIENT_IMPLEMENTED_H__
+#define __EFFEKSEER_CLIENT_IMPLEMENTED_H__
 
-#if !( defined(_PSVITA) || defined(_PS4) || defined(_SWITCH) || defined(_XBOXONE) )
+#if !(defined(_PSVITA) || defined(_PS4) || defined(_SWITCH) || defined(_XBOXONE))
 
 //----------------------------------------------------------------------------------
 // Include
@@ -22146,7 +22849,8 @@ void ServerImplemented::Unregist(Effect* effect)
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-namespace Effekseer {
+namespace Effekseer
+{
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
@@ -22154,30 +22858,31 @@ class ClientImplemented : public Client
 {
 private:
 	bool isThreadRunning = false;
-	std::thread	m_threadRecv;
+	std::thread m_threadRecv;
 
-	EfkSocket	m_socket;
-	uint16_t	m_port;
-	std::vector<uint8_t>	m_sendBuffer;
+	EfkSocket m_socket;
+	uint16_t m_port;
+	std::vector<uint8_t> m_sendBuffer;
 
-	bool		m_running;
-	std::mutex	mutexStop;
+	bool m_running;
+	std::mutex mutexStop;
 
-	bool GetAddr( const char* host, IN_ADDR* addr);
+	bool GetAddr(const char* host, IN_ADDR* addr);
 
-	static void RecvAsync( void* data );
+	static void RecvAsync(void* data);
 	void StopInternal();
+
 public:
 	ClientImplemented();
 	~ClientImplemented();
 
-	bool Start( char* host, uint16_t port );
+	bool Start(char* host, uint16_t port);
 	void Stop();
 
-	bool Send( void* data, int32_t datasize );
+	bool Send(void* data, int32_t datasize);
 
-	void Reload( const EFK_CHAR* key, void* data, int32_t size );
-	void Reload( Manager* manager, const EFK_CHAR* path, const EFK_CHAR* key );
+	void Reload(const EFK_CHAR* key, void* data, int32_t size);
+	void Reload(Manager* manager, const EFK_CHAR* path, const EFK_CHAR* key);
 
 	bool IsConnected();
 };
@@ -22185,38 +22890,39 @@ public:
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
- } 
+} // namespace Effekseer
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
 
-#endif	// #if !( defined(_PSVITA) || defined(_PS4) || defined(_SWITCH) || defined(_XBOXONE) )
+#endif // #if !( defined(_PSVITA) || defined(_PS4) || defined(_SWITCH) || defined(_XBOXONE) )
 
-#endif	// __EFFEKSEER_CLIENT_IMPLEMENTED_H__
-
-
-#if !( defined(_PSVITA) || defined(_PS4) || defined(_SWITCH) || defined(_XBOXONE) )
+#endif // __EFFEKSEER_CLIENT_IMPLEMENTED_H__
 
 
+#if !(defined(_PSVITA) || defined(_PS4) || defined(_SWITCH) || defined(_XBOXONE))
 
-namespace Effekseer {
 
-void ClientImplemented::RecvAsync( void* data )
+
+namespace Effekseer
+{
+
+void ClientImplemented::RecvAsync(void* data)
 {
 	auto client = (ClientImplemented*)data;
 
-	while(true)
+	while (true)
 	{
 		int32_t size = 0;
 		int32_t restSize = 0;
 
 		restSize = 4;
-		while(restSize > 0)
+		while (restSize > 0)
 		{
-			auto recvSize = ::recv( client->m_socket, (char*)(&size), restSize, 0 );
+			auto recvSize = ::recv(client->m_socket, (char*)(&size), restSize, 0);
 			restSize -= recvSize;
 
-			if( recvSize == 0 || recvSize == -1 )
+			if (recvSize == 0 || recvSize == -1)
 			{
 				client->StopInternal();
 				return;
@@ -22229,7 +22935,8 @@ void ClientImplemented::StopInternal()
 {
 	std::lock_guard<std::mutex> lock(mutexStop);
 
-	if (!m_running) return;
+	if (!m_running)
+		return;
 	m_running = false;
 
 	Socket::Shutsown(m_socket);
@@ -22239,7 +22946,7 @@ void ClientImplemented::StopInternal()
 }
 
 ClientImplemented::ClientImplemented()
-	: m_running		( false )
+	: m_running(false)
 {
 	Socket::Initialize();
 }
@@ -22302,15 +23009,16 @@ bool ClientImplemented::GetAddr(const char* host, IN_ADDR* addr)
 			return false;
 		}
 
-		addr->s_addr = *(unsigned int *)hostEntry->h_addr_list[0];
+		addr->s_addr = *(unsigned int*)hostEntry->h_addr_list[0];
 	}
 
 	return true;
 }
 
-bool ClientImplemented::Start( char* host, uint16_t port )
+bool ClientImplemented::Start(char* host, uint16_t port)
 {
-	if( m_running ) return false;
+	if (m_running)
+		return false;
 
 	// to stop thread
 	Stop();
@@ -22319,7 +23027,7 @@ bool ClientImplemented::Start( char* host, uint16_t port )
 
 	// create a socket
 	EfkSocket socket_ = Socket::GenSocket();
-	if ( socket_ == InvalidSocket )
+	if (socket_ == InvalidSocket)
 	{
 		return false;
 	}
@@ -22328,21 +23036,23 @@ bool ClientImplemented::Start( char* host, uint16_t port )
 	IN_ADDR addr;
 	if (!GetAddr(host, &addr))
 	{
-		if (socket_ != InvalidSocket) Socket::Close(socket_);
+		if (socket_ != InvalidSocket)
+			Socket::Close(socket_);
 		return false;
 	}
 
 	// generate data to connect
-	memset( &sockAddr, 0, sizeof(SOCKADDR_IN) );
-	sockAddr.sin_family	= AF_INET;
-	sockAddr.sin_port	= htons( port );
-	sockAddr.sin_addr	= addr;
+	memset(&sockAddr, 0, sizeof(SOCKADDR_IN));
+	sockAddr.sin_family = AF_INET;
+	sockAddr.sin_port = htons(port);
+	sockAddr.sin_addr = addr;
 
 	// connect
-	int32_t ret = ::connect( socket_, (SOCKADDR*)(&sockAddr), sizeof(SOCKADDR_IN) );
-	if ( ret == SocketError )
+	int32_t ret = ::connect(socket_, (SOCKADDR*)(&sockAddr), sizeof(SOCKADDR_IN));
+	if (ret == SocketError)
 	{
-		if ( socket_ != InvalidSocket ) Socket::Close( socket_ );
+		if (socket_ != InvalidSocket)
+			Socket::Close(socket_);
 		return false;
 	}
 
@@ -22353,9 +23063,9 @@ bool ClientImplemented::Start( char* host, uint16_t port )
 
 	isThreadRunning = true;
 	m_threadRecv = std::thread(
-		[this](){
-		RecvAsync(this);
-	});
+		[this]() {
+			RecvAsync(this);
+		});
 
 	EffekseerPrintDebug("Client : Start\n");
 
@@ -22375,26 +23085,27 @@ void ClientImplemented::Stop()
 	EffekseerPrintDebug("Client : Stop\n");
 }
 
-bool ClientImplemented::Send( void* data, int32_t datasize )
+bool ClientImplemented::Send(void* data, int32_t datasize)
 {
-	if( !m_running ) return false;
+	if (!m_running)
+		return false;
 
 	m_sendBuffer.clear();
-	for( int32_t i = 0; i < sizeof(int32_t); i++ )
+	for (int32_t i = 0; i < sizeof(int32_t); i++)
 	{
-		m_sendBuffer.push_back( ((uint8_t*)(&datasize))[i] );
+		m_sendBuffer.push_back(((uint8_t*)(&datasize))[i]);
 	}
 
-	for( int32_t i = 0; i < datasize; i++ )
+	for (int32_t i = 0; i < datasize; i++)
 	{
-		m_sendBuffer.push_back( ((uint8_t*)(data))[i] );
+		m_sendBuffer.push_back(((uint8_t*)(data))[i]);
 	}
 
 	int32_t size = (int32_t)m_sendBuffer.size();
-	while( size > 0 )
+	while (size > 0)
 	{
-		auto ret = ::send( m_socket, (const char*)(&(m_sendBuffer[m_sendBuffer.size()-size])), size, 0 );
-		if( ret == 0 || ret < 0 )
+		auto ret = ::send(m_socket, (const char*)(&(m_sendBuffer[m_sendBuffer.size() - size])), size, 0);
+		if (ret == 0 || ret < 0)
 		{
 			Stop();
 			return false;
@@ -22405,49 +23116,51 @@ bool ClientImplemented::Send( void* data, int32_t datasize )
 	return true;
 }
 
-void ClientImplemented::Reload( const EFK_CHAR* key, void* data, int32_t size )
+void ClientImplemented::Reload(const EFK_CHAR* key, void* data, int32_t size)
 {
 	int32_t keylen = 0;
-	for( ; ; keylen++ )
+	for (;; keylen++)
 	{
-		if(key[keylen] == 0 ) break;
+		if (key[keylen] == 0)
+			break;
 	}
 
 	std::vector<uint8_t> buf;
 
-	for( int32_t i = 0; i < sizeof(int32_t); i++ )
+	for (int32_t i = 0; i < sizeof(int32_t); i++)
 	{
-		buf.push_back( ((uint8_t*)(&keylen))[i] );
+		buf.push_back(((uint8_t*)(&keylen))[i]);
 	}
 
-	for( int32_t i = 0; i < keylen * 2; i++ )
+	for (int32_t i = 0; i < keylen * 2; i++)
 	{
-		buf.push_back( ((uint8_t*)(key))[i] );
+		buf.push_back(((uint8_t*)(key))[i]);
 	}
 
-	for( int32_t i = 0; i < size; i++ )
+	for (int32_t i = 0; i < size; i++)
 	{
-		buf.push_back( ((uint8_t*)(data))[i] );
+		buf.push_back(((uint8_t*)(data))[i]);
 	}
 
-	Send( &(buf[0]), (int32_t)buf.size() );
+	Send(&(buf[0]), (int32_t)buf.size());
 }
 
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
-void ClientImplemented::Reload( Manager* manager, const EFK_CHAR* path, const EFK_CHAR* key )
+void ClientImplemented::Reload(Manager* manager, const EFK_CHAR* path, const EFK_CHAR* key)
 {
 	EffectLoader* loader = manager->GetEffectLoader();
-	
+
 	void* data = NULL;
 	int32_t size = 0;
 
-	if( !loader->Load( path, data, size ) ) return;
+	if (!loader->Load(path, data, size))
+		return;
 
-	Reload( key, data, size );
+	Reload(key, data, size);
 
-	loader->Unload( data, size );
+	loader->Unload(data, size);
 }
 
 //----------------------------------------------------------------------------------
@@ -22461,12 +23174,12 @@ bool ClientImplemented::IsConnected()
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
- } 
+} // namespace Effekseer
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
 
-#endif	// #if !( defined(_PSVITA) || defined(_PS4) || defined(_SWITCH) || defined(_XBOXONE) )
+#endif // #if !( defined(_PSVITA) || defined(_PS4) || defined(_SWITCH) || defined(_XBOXONE) )
 
 #endif
 
