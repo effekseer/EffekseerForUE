@@ -370,6 +370,14 @@ public:
 	// This function can be called out of renderThread.
 	void UpdateData(EffekseerUpdateData* updateData)
 	{
+#if ENGINE_MINOR_VERSION >= 26
+		ENQUEUE_RENDER_COMMAND(
+			EffekseerUpdateDataCommand)([this, updateData](FRHICommandListImmediate& RHICmdList)
+				{
+					this->UpdateData_RenderThread(updateData);
+				}
+		);
+#else
 		ENQUEUE_UNIQUE_RENDER_COMMAND_TWOPARAMETER(
 			ParticleUpdateDataCommand,
 			FEffekseerSystemSceneProxy*, Proxy, this,
@@ -378,6 +386,7 @@ public:
 				Proxy->UpdateData_RenderThread(Data);
 			}
 		);
+#endif
 	}
 
 	TArray<int32_t> PopRemovedHandles()
