@@ -700,7 +700,9 @@ namespace EffekseerRendererUE4
 
 	::Effekseer::RingRendererRef RendererImplemented::CreateRingRenderer()
 	{
-		return Effekseer::MakeRefPtr < ::EffekseerRenderer::RingRendererBase<RendererImplemented, false>>(this);
+		auto ret = Effekseer::MakeRefPtr <::EffekseerRenderer::RingRendererBase<RendererImplemented, false>>(this);
+		ret->SetFasterSngleRingModeEnabled(false);
+		return ret;
 	}
 
 	::Effekseer::ModelRendererRef RendererImplemented::CreateModelRenderer()
@@ -890,44 +892,13 @@ namespace EffekseerRendererUE4
 			return;
 		}
 
-		// is single ring?
-		bool isSingleRing = false;
-		auto stanMat = ((Effekseer::Matrix44*)m_currentShader->GetVertexConstantBuffer())[0];
-		auto cameraMat = GetCameraMatrix();
-		Effekseer::Matrix44 ringMat;
-
-		if (m_currentShader != nullptr && m_currentShader->GetType() == Effekseer::RendererMaterialType::File)
-		{
-		}
-		else
-		{
-			for (int32_t r = 0; r < 4; r++)
-			{
-				for (int32_t c = 0; c < 4; c++)
-				{
-					if (stanMat.Values[r][c] != cameraMat.Values[r][c])
-					{
-						isSingleRing = true;
-						goto Exit;
-					}
-				}
-			}
-		}
-
-	Exit:;
-
-		if (isSingleRing)
-		{
-			Effekseer::Matrix44 inv;
-			Effekseer::Matrix44::Mul(ringMat, stanMat, Effekseer::Matrix44::Inverse(inv, cameraMat));
-		}
-
 		Effekseer::RendererMaterialType MaterialType = m_currentShader->GetType();
 		bool IsAdvanced = m_currentShader->IsAdvancedMaterial();
 
 		if (MaterialType == Effekseer::RendererMaterialType::BackDistortion)
 		{
-			auto intensity = ((float*)m_currentShader->GetPixelConstantBuffer())[0];
+			auto pixelBuffer = reinterpret_cast<EffekseerRenderer::PixelConstantBufferDistortion*>(m_currentShader->GetPixelConstantBuffer());
+			auto intensity = pixelBuffer->DistortionIntencity[0];
 			SetDistortionIntensity(intensity);
 		}
 
@@ -937,30 +908,30 @@ namespace EffekseerRendererUE4
 		{
 			if (MaterialType == Effekseer::RendererMaterialType::Default)
 			{
-				AddVertex<Effekseer::RendererMaterialType::Default, false>(meshBuilder, spriteCount, vertexOffset, isSingleRing, ringMat);
+				AddVertex<Effekseer::RendererMaterialType::Default, false>(meshBuilder, spriteCount, vertexOffset);
 			}
 			else if (MaterialType == Effekseer::RendererMaterialType::BackDistortion)
 			{
-				AddVertex<Effekseer::RendererMaterialType::BackDistortion, false>(meshBuilder, spriteCount, vertexOffset, isSingleRing, ringMat);
+				AddVertex<Effekseer::RendererMaterialType::BackDistortion, false>(meshBuilder, spriteCount, vertexOffset);
 			}
 			else if (MaterialType == Effekseer::RendererMaterialType::Lighting)
 			{
-				AddVertex<Effekseer::RendererMaterialType::Lighting, false>(meshBuilder, spriteCount, vertexOffset, isSingleRing, ringMat);
+				AddVertex<Effekseer::RendererMaterialType::Lighting, false>(meshBuilder, spriteCount, vertexOffset);
 			}
 		}
 		else
 		{
 			if (MaterialType == Effekseer::RendererMaterialType::Default)
 			{
-				AddVertex<Effekseer::RendererMaterialType::Default, true>(meshBuilder, spriteCount, vertexOffset, isSingleRing, ringMat);
+				AddVertex<Effekseer::RendererMaterialType::Default, true>(meshBuilder, spriteCount, vertexOffset);
 			}
 			else if (MaterialType == Effekseer::RendererMaterialType::BackDistortion)
 			{
-				AddVertex<Effekseer::RendererMaterialType::BackDistortion, true>(meshBuilder, spriteCount, vertexOffset, isSingleRing, ringMat);
+				AddVertex<Effekseer::RendererMaterialType::BackDistortion, true>(meshBuilder, spriteCount, vertexOffset);
 			}
 			else if (MaterialType == Effekseer::RendererMaterialType::Lighting)
 			{
-				AddVertex<Effekseer::RendererMaterialType::Lighting, true>(meshBuilder, spriteCount, vertexOffset, isSingleRing, ringMat);
+				AddVertex<Effekseer::RendererMaterialType::Lighting, true>(meshBuilder, spriteCount, vertexOffset);
 			}
 		}
 		
@@ -989,23 +960,13 @@ namespace EffekseerRendererUE4
 	}
 
 	template<> void RendererImplemented::AddVertex<Effekseer::RendererMaterialType::Default, false>
-		(FDynamicMeshBuilder& meshBuilder, int32_t spriteCount, int32_t vertexOffset, bool isSingleRing, const Effekseer::Matrix44& ringMat)
+		(FDynamicMeshBuilder& meshBuilder, int32_t spriteCount, int32_t vertexOffset)
 	{
 		Vertex* vs = (Vertex*)m_vertexBuffer->GetResource();
 
 		for (int32_t vi = vertexOffset; vi < vertexOffset + spriteCount * 4; vi++)
 		{
 			auto& v = vs[vi];
-
-			if (isSingleRing)
-			{
-				Effekseer::Matrix44 trans;
-				trans.Translation(v.Pos.X, v.Pos.Y, v.Pos.Z);
-				Effekseer::Matrix44::Mul(trans, trans, ringMat);
-				v.Pos.X = trans.Values[3][0];
-				v.Pos.Y = trans.Values[3][1];
-				v.Pos.Z = trans.Values[3][2];
-			}
 
 			FDynamicMeshVertex DynamicVertex;
 			DynamicVertex.Position = FVector(v.Pos.X, v.Pos.Z, v.Pos.Y);
@@ -1024,23 +985,13 @@ namespace EffekseerRendererUE4
 	}
 
 	template<> void RendererImplemented::AddVertex<Effekseer::RendererMaterialType::Default, true>
-		(FDynamicMeshBuilder& meshBuilder, int32_t spriteCount, int32_t vertexOffset, bool isSingleRing, const Effekseer::Matrix44& ringMat)
+		(FDynamicMeshBuilder& meshBuilder, int32_t spriteCount, int32_t vertexOffset)
 	{
 		AdvancedVertex* vs = (AdvancedVertex*)m_vertexBuffer->GetResource();
 
 		for (int32_t vi = vertexOffset; vi < vertexOffset + spriteCount * 4; vi++)
 		{
 			auto& v = vs[vi];
-
-			if (isSingleRing)
-			{
-				Effekseer::Matrix44 trans;
-				trans.Translation(v.Pos.X, v.Pos.Y, v.Pos.Z);
-				Effekseer::Matrix44::Mul(trans, trans, ringMat);
-				v.Pos.X = trans.Values[3][0];
-				v.Pos.Y = trans.Values[3][1];
-				v.Pos.Z = trans.Values[3][2];
-			}
 
 			FDynamicMeshVertex DynamicVertex;
 			DynamicVertex.Position = FVector(v.Pos.X, v.Pos.Z, v.Pos.Y);
@@ -1059,7 +1010,7 @@ namespace EffekseerRendererUE4
 	}
 
 	template<> void RendererImplemented::AddVertex<Effekseer::RendererMaterialType::BackDistortion, false>
-		(FDynamicMeshBuilder& meshBuilder, int32_t spriteCount, int32_t vertexOffset, bool isSingleRing, const Effekseer::Matrix44& ringMat)
+		(FDynamicMeshBuilder& meshBuilder, int32_t spriteCount, int32_t vertexOffset)
 	{
 		VertexDistortion* vs = (VertexDistortion*)m_vertexBuffer->GetResource();
 
@@ -1067,25 +1018,17 @@ namespace EffekseerRendererUE4
 		{
 			auto& v = vs[vi];
 
-			if (isSingleRing)
-			{
-				Effekseer::Matrix44 trans;
-				trans.Translation(v.Pos.X, v.Pos.Y, v.Pos.Z);
-				Effekseer::Matrix44::Mul(trans, trans, ringMat);
-				v.Pos.X = trans.Values[3][0];
-				v.Pos.Y = trans.Values[3][1];
-				v.Pos.Z = trans.Values[3][2];
-			}
-
-			Effekseer::Vector3D normal;
-			Effekseer::Vector3D::Cross(normal, v.Binormal, v.Tangent);
+			auto normal = UnpackVector3DF(v.Normal);
+			auto tangent = UnpackVector3DF(v.Tangent);
+			Effekseer::Vector3D binormal;
+			Effekseer::Vector3D::Cross(binormal, normal, tangent);
 
 			FDynamicMeshVertex DynamicVertex;
 			DynamicVertex.Position = FVector(v.Pos.X, v.Pos.Z, v.Pos.Y);
 			DynamicVertex.Color = FColor(v.Col.R, v.Col.G, v.Col.B, v.Col.A);
 			DynamicVertex.SetTangents(
-				FVector(v.Binormal.X, v.Binormal.Z ,v.Binormal.Y), 
-				FVector(v.Tangent.X, v.Tangent.Z, v.Tangent.Y), 
+				FVector(binormal.X, binormal.Z, binormal.Y),
+				FVector(tangent.X, tangent.Z, tangent.Y),
 				FVector(normal.X, normal.Z, normal.Y));
 			DynamicVertex.TextureCoordinate[0] = FVector2D(v.UV[0], v.UV[1]);
 			DynamicVertex.TextureCoordinate[1] =
@@ -1100,7 +1043,7 @@ namespace EffekseerRendererUE4
 	}
 
 	template<> void RendererImplemented::AddVertex<Effekseer::RendererMaterialType::BackDistortion, true>
-		(FDynamicMeshBuilder& meshBuilder, int32_t spriteCount, int32_t vertexOffset, bool isSingleRing, const Effekseer::Matrix44& ringMat)
+		(FDynamicMeshBuilder& meshBuilder, int32_t spriteCount, int32_t vertexOffset)
 	{
 		AdvancedVertexDistortion* vs = (AdvancedVertexDistortion*)m_vertexBuffer->GetResource();
 
@@ -1108,25 +1051,17 @@ namespace EffekseerRendererUE4
 		{
 			auto& v = vs[vi];
 
-			if (isSingleRing)
-			{
-				Effekseer::Matrix44 trans;
-				trans.Translation(v.Pos.X, v.Pos.Y, v.Pos.Z);
-				Effekseer::Matrix44::Mul(trans, trans, ringMat);
-				v.Pos.X = trans.Values[3][0];
-				v.Pos.Y = trans.Values[3][1];
-				v.Pos.Z = trans.Values[3][2];
-			}
-
-			Effekseer::Vector3D normal;
-			Effekseer::Vector3D::Cross(normal, v.Binormal, v.Tangent);
+			auto normal = UnpackVector3DF(v.Normal);
+			auto tangent = UnpackVector3DF(v.Tangent);
+			Effekseer::Vector3D binormal;
+			Effekseer::Vector3D::Cross(binormal, normal, tangent);
 
 			FDynamicMeshVertex DynamicVertex;
 			DynamicVertex.Position = FVector(v.Pos.X, v.Pos.Z, v.Pos.Y);
 			DynamicVertex.Color = FColor(v.Col.R, v.Col.G, v.Col.B, v.Col.A);
 			DynamicVertex.SetTangents(
-				FVector(v.Binormal.X, v.Binormal.Z ,v.Binormal.Y), 
-				FVector(v.Tangent.X, v.Tangent.Z, v.Tangent.Y), 
+				FVector(binormal.X, binormal.Z, binormal.Y),
+				FVector(tangent.X, tangent.Z, tangent.Y),
 				FVector(normal.X, normal.Z, normal.Y));
 			DynamicVertex.TextureCoordinate[0] = FVector2D(v.UV[0], v.UV[1]);
 			DynamicVertex.TextureCoordinate[1] = FVector2D(v.AlphaUV[0], v.AlphaUV[1]);
@@ -1141,23 +1076,13 @@ namespace EffekseerRendererUE4
 	}
 
 	template<> void RendererImplemented::AddVertex<Effekseer::RendererMaterialType::Lighting, false>
-		(FDynamicMeshBuilder& meshBuilder, int32_t spriteCount, int32_t vertexOffset, bool isSingleRing, const Effekseer::Matrix44& ringMat)
+		(FDynamicMeshBuilder& meshBuilder, int32_t spriteCount, int32_t vertexOffset)
 	{
 		VertexLighting* vs = (VertexLighting*)m_vertexBuffer->GetResource();
 
 		for (int32_t vi = vertexOffset; vi < vertexOffset + spriteCount * 4; vi++)
 		{
 			auto& v = vs[vi];
-
-			if (isSingleRing)
-			{
-				Effekseer::Matrix44 trans;
-				trans.Translation(v.Pos.X, v.Pos.Y, v.Pos.Z);
-				Effekseer::Matrix44::Mul(trans, trans, ringMat);
-				v.Pos.X = trans.Values[3][0];
-				v.Pos.Y = trans.Values[3][1];
-				v.Pos.Z = trans.Values[3][2];
-			}
 
 			FDynamicMeshVertex meshVert;
 
@@ -1187,23 +1112,13 @@ namespace EffekseerRendererUE4
 	}
 
 	template<> void RendererImplemented::AddVertex<Effekseer::RendererMaterialType::Lighting, true>
-		(FDynamicMeshBuilder& meshBuilder, int32_t spriteCount, int32_t vertexOffset, bool isSingleRing, const Effekseer::Matrix44& ringMat)
+		(FDynamicMeshBuilder& meshBuilder, int32_t spriteCount, int32_t vertexOffset)
 	{
 		AdvancedVertexLighting* vs = (AdvancedVertexLighting*)m_vertexBuffer->GetResource();
 
 		for (int32_t vi = vertexOffset; vi < vertexOffset + spriteCount * 4; vi++)
 		{
 			auto& v = vs[vi];
-
-			if (isSingleRing)
-			{
-				Effekseer::Matrix44 trans;
-				trans.Translation(v.Pos.X, v.Pos.Y, v.Pos.Z);
-				Effekseer::Matrix44::Mul(trans, trans, ringMat);
-				v.Pos.X = trans.Values[3][0];
-				v.Pos.Y = trans.Values[3][1];
-				v.Pos.Z = trans.Values[3][2];
-			}
 
 			FDynamicMeshVertex meshVert;
 

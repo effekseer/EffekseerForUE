@@ -108,7 +108,7 @@ protected:
 		}
 		else if (collector.ShaderType == RendererShaderType::AdvancedBackDistortion)
 		{
-			Rendering_Internal<AdvancedVertexDistortion, FLIP_RGB_FLAG>(parameter, instanceParameter, userData, camera);
+			Rendering_Internal<AdvancedLightingVertex, FLIP_RGB_FLAG>(parameter, instanceParameter, userData, camera);
 		}
 		else if (collector.ShaderType == RendererShaderType::AdvancedUnlit)
 		{
@@ -120,7 +120,7 @@ protected:
 		}
 		else if (collector.ShaderType == RendererShaderType::BackDistortion)
 		{
-			Rendering_Internal<VertexDistortion, FLIP_RGB_FLAG>(parameter, instanceParameter, userData, camera);
+			Rendering_Internal<LightingVertex, FLIP_RGB_FLAG>(parameter, instanceParameter, userData, camera);
 		}
 		else
 		{
@@ -462,75 +462,99 @@ protected:
 				advancedUVtexNext[uvi] = advancedUVCurrent[uvi] + advancedUVStep[uvi];
 			}
 
-			v[0].SetAlphaUV(advancedUVCurrent[0], 0);
-			v[0].SetAlphaUV(advancedUVv1[0], 1);
-			v[0].SetUVDistortionUV(advancedUVCurrent[1], 0);
-			v[0].SetUVDistortionUV(advancedUVv1[1], 1);
-			v[0].SetBlendUV(advancedUVCurrent[2], 0);
-			v[0].SetBlendUV(advancedUVv1[2], 1);
-			v[0].SetBlendAlphaUV(advancedUVCurrent[3], 0);
-			v[0].SetBlendAlphaUV(advancedUVv1[3], 1);
-			v[0].SetBlendUVDistortionUV(advancedUVCurrent[4], 0);
-			v[0].SetBlendUVDistortionUV(advancedUVv1[4], 1);
+			SetVertexAlphaUV(v[0], advancedUVCurrent[0], 0);
+			SetVertexAlphaUV(v[0], advancedUVv1[0], 1);
 
-			v[1].SetAlphaUV(advancedUVCurrent[0], 0);
-			v[1].SetAlphaUV(advancedUVv2[0], 1);
-			v[1].SetUVDistortionUV(advancedUVCurrent[1], 0);
-			v[1].SetUVDistortionUV(advancedUVv2[1], 1);
-			v[1].SetBlendUV(advancedUVCurrent[2], 0);
-			v[1].SetBlendUV(advancedUVv2[2], 1);
-			v[1].SetBlendAlphaUV(advancedUVCurrent[3], 0);
-			v[1].SetBlendAlphaUV(advancedUVv2[3], 1);
-			v[1].SetBlendUVDistortionUV(advancedUVCurrent[4], 0);
-			v[1].SetBlendUVDistortionUV(advancedUVv2[4], 1);
+			SetVertexUVDistortionUV(v[0], advancedUVCurrent[1], 0);
+			SetVertexUVDistortionUV(v[0], advancedUVv1[1], 1);
 
-			v[2].SetAlphaUV(advancedUVtexNext[0], 0);
-			v[2].SetAlphaUV(advancedUVv1[0], 1);
-			v[2].SetUVDistortionUV(advancedUVtexNext[1], 0);
-			v[2].SetUVDistortionUV(advancedUVv1[1], 1);
-			v[2].SetBlendUV(advancedUVtexNext[2], 0);
-			v[2].SetBlendUV(advancedUVv1[2], 1);
-			v[2].SetBlendAlphaUV(advancedUVtexNext[3], 0);
-			v[2].SetBlendAlphaUV(advancedUVv1[3], 1);
-			v[2].SetBlendUVDistortionUV(advancedUVtexNext[4], 0);
-			v[2].SetBlendUVDistortionUV(advancedUVv1[4], 1);
+			SetVertexBlendUV(v[0], advancedUVCurrent[2], 0);
+			SetVertexBlendUV(v[0], advancedUVv1[2], 1);
 
-			v[3].SetAlphaUV(advancedUVtexNext[0], 0);
-			v[3].SetAlphaUV(advancedUVv2[0], 1);
-			v[3].SetUVDistortionUV(advancedUVtexNext[1], 0);
-			v[3].SetUVDistortionUV(advancedUVv2[1], 1);
-			v[3].SetBlendUV(advancedUVtexNext[2], 0);
-			v[3].SetBlendUV(advancedUVv2[2], 1);
-			v[3].SetBlendAlphaUV(advancedUVtexNext[3], 0);
-			v[3].SetBlendAlphaUV(advancedUVv2[3], 1);
-			v[3].SetBlendUVDistortionUV(advancedUVtexNext[4], 0);
-			v[3].SetBlendUVDistortionUV(advancedUVv2[4], 1);
+			SetVertexBlendAlphaUV(v[0], advancedUVCurrent[3], 0);
+			SetVertexBlendAlphaUV(v[0], advancedUVv1[3], 1);
+
+			SetVertexBlendUVDistortionUV(v[0], advancedUVCurrent[4], 0);
+			SetVertexBlendUVDistortionUV(v[0], advancedUVv1[4], 1);
+
+			SetVertexAlphaUV(v[1], advancedUVCurrent[0], 0);
+			SetVertexAlphaUV(v[1], advancedUVv2[0], 1);
+
+			SetVertexUVDistortionUV(v[1], advancedUVCurrent[1], 0);
+			SetVertexUVDistortionUV(v[1], advancedUVv2[1], 1);
+
+			SetVertexBlendUV(v[1], advancedUVCurrent[2], 0);
+			SetVertexBlendUV(v[1], advancedUVv2[2], 1);
+
+			SetVertexBlendAlphaUV(v[1], advancedUVCurrent[3], 0);
+			SetVertexBlendAlphaUV(v[1], advancedUVv2[3], 1);
+
+			SetVertexBlendUVDistortionUV(v[1], advancedUVCurrent[4], 0);
+			SetVertexBlendUVDistortionUV(v[1], advancedUVv2[4], 1);
+
+			SetVertexAlphaUV(v[2], advancedUVtexNext[0], 0);
+			SetVertexAlphaUV(v[2], advancedUVv1[0], 1);
+
+			SetVertexUVDistortionUV(v[2], advancedUVtexNext[1], 0);
+			SetVertexUVDistortionUV(v[2], advancedUVv1[1], 1);
+
+			SetVertexBlendUV(v[2], advancedUVtexNext[2], 0);
+			SetVertexBlendUV(v[2], advancedUVv1[2], 1);
+
+			SetVertexBlendAlphaUV(v[2], advancedUVtexNext[3], 0);
+			SetVertexBlendAlphaUV(v[2], advancedUVv1[3], 1);
+
+			SetVertexBlendUVDistortionUV(v[2], advancedUVtexNext[4], 0);
+			SetVertexBlendUVDistortionUV(v[2], advancedUVv1[4], 1);
+
+			SetVertexAlphaUV(v[3], advancedUVtexNext[0], 0);
+			SetVertexAlphaUV(v[3], advancedUVv2[0], 1);
+
+			SetVertexUVDistortionUV(v[3], advancedUVtexNext[1], 0);
+			SetVertexUVDistortionUV(v[3], advancedUVv2[1], 1);
+
+			SetVertexBlendUV(v[3], advancedUVtexNext[2], 0);
+			SetVertexBlendUV(v[3], advancedUVv2[2], 1);
+
+			SetVertexBlendAlphaUV(v[3], advancedUVtexNext[3], 0);
+			SetVertexBlendAlphaUV(v[3], advancedUVv2[3], 1);
+
+			SetVertexBlendUVDistortionUV(v[3], advancedUVtexNext[4], 0);
+			SetVertexBlendUVDistortionUV(v[3], advancedUVv2[4], 1);
 
 			v[4] = v[1];
 
-			v[5].SetAlphaUV(advancedUVCurrent[0], 0);
-			v[5].SetAlphaUV(advancedUVv3[0], 1);
-			v[5].SetUVDistortionUV(advancedUVCurrent[1], 0);
-			v[5].SetUVDistortionUV(advancedUVv3[1], 1);
-			v[5].SetBlendUV(advancedUVCurrent[2], 0);
-			v[5].SetBlendUV(advancedUVv3[2], 1);
-			v[5].SetBlendAlphaUV(advancedUVCurrent[3], 0);
-			v[5].SetBlendAlphaUV(advancedUVv3[3], 1);
-			v[5].SetBlendUVDistortionUV(advancedUVCurrent[4], 0);
-			v[5].SetBlendUVDistortionUV(advancedUVv3[4], 1);
+			SetVertexAlphaUV(v[5], advancedUVCurrent[0], 0);
+			SetVertexAlphaUV(v[5], advancedUVv3[0], 1);
+
+			SetVertexUVDistortionUV(v[5], advancedUVCurrent[1], 0);
+			SetVertexUVDistortionUV(v[5], advancedUVv3[1], 1);
+
+			SetVertexBlendUV(v[5], advancedUVCurrent[2], 0);
+			SetVertexBlendUV(v[5], advancedUVv3[2], 1);
+
+			SetVertexBlendAlphaUV(v[5], advancedUVCurrent[3], 0);
+			SetVertexBlendAlphaUV(v[5], advancedUVv3[3], 1);
+
+			SetVertexBlendUVDistortionUV(v[5], advancedUVCurrent[4], 0);
+			SetVertexBlendUVDistortionUV(v[5], advancedUVv3[4], 1);
 
 			v[6] = v[3];
 
-			v[7].SetAlphaUV(advancedUVtexNext[0], 0);
-			v[7].SetAlphaUV(advancedUVv3[0], 1);
-			v[7].SetUVDistortionUV(advancedUVtexNext[1], 0);
-			v[7].SetUVDistortionUV(advancedUVv3[1], 1);
-			v[7].SetBlendUV(advancedUVtexNext[2], 0);
-			v[7].SetBlendUV(advancedUVv3[2], 1);
-			v[7].SetBlendAlphaUV(advancedUVtexNext[3], 0);
-			v[7].SetBlendAlphaUV(advancedUVv3[3], 1);
-			v[7].SetBlendUVDistortionUV(advancedUVtexNext[4], 0);
-			v[7].SetBlendUVDistortionUV(advancedUVv3[4], 1);
+			SetVertexAlphaUV(v[7], advancedUVtexNext[0], 0);
+			SetVertexAlphaUV(v[7], advancedUVv3[0], 1);
+
+			SetVertexUVDistortionUV(v[7], advancedUVtexNext[1], 0);
+			SetVertexUVDistortionUV(v[7], advancedUVv3[1], 1);
+
+			SetVertexBlendUV(v[7], advancedUVtexNext[2], 0);
+			SetVertexBlendUV(v[7], advancedUVv3[2], 1);
+
+			SetVertexBlendAlphaUV(v[7], advancedUVtexNext[3], 0);
+			SetVertexBlendAlphaUV(v[7], advancedUVv3[3], 1);
+
+			SetVertexBlendUVDistortionUV(v[7], advancedUVtexNext[4], 0);
+			SetVertexBlendUVDistortionUV(v[7], advancedUVv3[4], 1);
 
 			for (int32_t vi = 0; vi < 8; vi++)
 			{
@@ -538,54 +562,7 @@ protected:
 				v[vi].SetAlphaThreshold(instanceParameter.AlphaThreshold);
 			}
 
-			// distortion
-			if (IsDistortionVertex<VERTEX>())
-			{
-				StrideView<VERTEX> vs(&verteies[i], stride_, 8);
-				const auto binormalCurrent = ::Effekseer::SIMD::ToStruct(v[5].Pos - v[0].Pos);
-				const auto binormalNext = ::Effekseer::SIMD::ToStruct(v[7].Pos - v[2].Pos);
-
-				// return back
-				float t_b;
-				t_b = old_c * (stepC)-old_s * (-stepS);
-				auto s_b = old_s * (stepC) + old_c * (-stepS);
-				auto c_b = t_b;
-
-				::Effekseer::SIMD::Vec3f outerBefore(c_b * outerRadius, s_b * outerRadius, outerHeight);
-
-				// next
-				auto t_n = cos_ * stepC - sin_ * stepS;
-				auto s_n = sin_ * stepC + cos_ * stepS;
-				auto c_n = t_n;
-
-				::Effekseer::SIMD::Vec3f outerNN(c_n * outerRadius, s_n * outerRadius, outerHeight);
-
-				::Effekseer::SIMD::Vec3f tangent0 = (outerCurrent - outerBefore).Normalize();
-				::Effekseer::SIMD::Vec3f tangent1 = (outerNext - outerCurrent).Normalize();
-				::Effekseer::SIMD::Vec3f tangent2 = (outerNN - outerNext).Normalize();
-
-				const auto tangentCurrent = ToStruct((tangent0 + tangent1) / 2.0f);
-				const auto tangentNext = ToStruct((tangent1 + tangent2) / 2.0f);
-
-				vs[0].SetTangent(tangentCurrent);
-				vs[0].SetBinormal(binormalCurrent);
-				vs[1].SetTangent(tangentCurrent);
-				vs[1].SetBinormal(binormalCurrent);
-				vs[2].SetTangent(tangentNext);
-				vs[2].SetBinormal(binormalNext);
-				vs[3].SetTangent(tangentNext);
-				vs[3].SetBinormal(binormalNext);
-
-				vs[4].SetTangent(tangentCurrent);
-				vs[4].SetBinormal(binormalCurrent);
-				vs[5].SetTangent(tangentCurrent);
-				vs[5].SetBinormal(binormalCurrent);
-				vs[6].SetTangent(tangentNext);
-				vs[6].SetBinormal(binormalNext);
-				vs[7].SetTangent(tangentNext);
-				vs[7].SetBinormal(binormalNext);
-			}
-			else if (IsDynamicVertex<VERTEX>() || IsLightingVertex<VERTEX>())
+			if (VertexNormalRequired<VERTEX>())
 			{
 				StrideView<VERTEX> vs(&verteies[i], stride_, 8);
 
