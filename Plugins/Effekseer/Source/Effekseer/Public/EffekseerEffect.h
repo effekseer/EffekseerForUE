@@ -29,21 +29,6 @@ public:
 
 	UPROPERTY()
 	bool			IsDistorted = false;
-
-	bool operator == (const UEffekseerEffectMaterialParameterHolder* Other)
-	{
-		return
-			Texture == Other->Texture &&
-			AlphaBlend == Other->AlphaBlend &&
-			IsDepthTestDisabled == Other->IsDepthTestDisabled &&
-			IsLighting == Other->IsLighting &&
-			IsDistorted == Other->IsDistorted;
-	}
-
-	friend uint32 GetTypeHash(const UEffekseerEffectMaterialParameterHolder* Other)
-	{
-		return GetTypeHash(Other->Texture);
-	}
 };
 
 struct EffekseerEffectMaterial

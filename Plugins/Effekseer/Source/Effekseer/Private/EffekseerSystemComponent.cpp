@@ -637,17 +637,30 @@ FEffekseerHandle UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVect
 
 		if (mat != nullptr)
 		{
-			auto dynamicMaterial = UMaterialInstanceDynamic::Create(mat, this);
-			dynamicMaterial->SetTextureParameterValue(TEXT("ColorTexture"), m->Texture);
-			Materials.Add(m, dynamicMaterial);
-
 			EffekseerEffectMaterial mkey;
 			mkey.Texture = m->Texture;
 			mkey.AlphaBlend = m->AlphaBlend;
 			mkey.IsDepthTestDisabled = m->IsDepthTestDisabled;
 			mkey.IsLighting = m->IsLighting;
 			mkey.IsDistorted = m->IsDistorted;
-			NMaterials[mkey] = dynamicMaterial;
+
+			const auto found = NMaterials.find(mkey);
+
+			UMaterialInstanceDynamic* created = nullptr;
+			if (found != NMaterials.end())
+			{
+				created = found->second;
+			}
+			else
+			{
+				auto dynamicMaterial = UMaterialInstanceDynamic::Create(mat, this);
+				dynamicMaterial->SetTextureParameterValue(TEXT("ColorTexture"), m->Texture);
+
+				created = dynamicMaterial;
+				NMaterials[mkey] = dynamicMaterial;
+			}
+
+			Materials.Add(m, created);
 		}
 	}
 
