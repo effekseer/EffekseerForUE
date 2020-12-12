@@ -78,7 +78,7 @@ USTRUCT()
 struct FEdgeParameters
 {
 	GENERATED_USTRUCT_BODY()
-	FLinearColor Color;
+	FLinearColor Color = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);
 	float Threshold = 0;
 	int32_t ColorScaling = 1;
 
@@ -123,9 +123,9 @@ struct FFalloffParameter
 	GENERATED_USTRUCT_BODY()
 
 	int32			ColorBlendType = 0;
-	FLinearColor	BeginColor;
-	FLinearColor	EndColor;
-	int32			Pow = 1;
+	FLinearColor	BeginColor = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);
+	FLinearColor	EndColor = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);
+	float			Pow = 1.0f;
 
 	bool operator==(const FFalloffParameter& rhs) const
 	{
@@ -175,8 +175,8 @@ struct EffekseerEffectMaterialKey
 	FFalloffParameter FalloffParam;
 	float			EmissiveScaling = 1;
 	FEdgeParameters	EdgeParams;
-	EEffekseerAlphaBlendType	AlphaBlend;
-	bool			IsDepthTestDisabled;
+	EEffekseerAlphaBlendType	AlphaBlend = EEffekseerAlphaBlendType::Opacity;
+	bool			IsDepthTestDisabled = false;
 	bool			IsLighting = false;
 	bool			IsDistorted = false;
 
@@ -384,7 +384,7 @@ public:
 	FEdgeParameters	EdgeParams;
 
 	UPROPERTY()
-	EEffekseerAlphaBlendType	AlphaBlend;
+	EEffekseerAlphaBlendType	AlphaBlend = EEffekseerAlphaBlendType::Opacity;;
 
 	UPROPERTY()
 	bool			IsDepthTestDisabled;
@@ -396,40 +396,6 @@ public:
 	bool			IsDistorted = false;
 
 	EffekseerEffectMaterialKey Key;
-
-	bool operator == (const UEffekseerEffectMaterialParameterHolder* Other)
-	{
-		return
-			Texture == Other->Texture &&
-			TextureAddressType == Other->TextureAddressType &&
-			AlphaTexture == Other->AlphaTexture &&
-			AlphaTextureAddressType == Other->AlphaTextureAddressType &&
-			UVDistortionTexture == Other->UVDistortionTexture &&
-			UVDistortionTextureAddressType == Other->UVDistortionTextureAddressType &&
-			BlendTexture == Other->BlendTexture &&
-			BlendTextureAddress == Other->BlendTextureAddress &&
-			BlendAlphaTexture == Other->BlendAlphaTexture &&
-			BlendAlphaTextureAddress == Other->BlendAlphaTextureAddress &&
-			BlendUVDistortionTexture == Other->BlendUVDistortionTexture &&
-			BlendUVDistortionTextureAddress == Other->BlendUVDistortionTextureAddress &&
-			FlipbookParams == Other->FlipbookParams &&
-			UVDistortionIntensity == Other->UVDistortionIntensity && 
-			TextureBlendType == Other->TextureBlendType &&
-			BlendUVDistortionIntensity == Other->BlendUVDistortionIntensity &&
-			EnableFalloff == Other->EnableFalloff &&
-			FalloffParam == Other->FalloffParam &&
-			EmissiveScaling == Other->EmissiveScaling &&
-			EdgeParams == Other->EdgeParams &&
-			AlphaBlend == Other->AlphaBlend &&
-			IsDepthTestDisabled == Other->IsDepthTestDisabled &&
-			IsLighting == Other->IsLighting &&
-			IsDistorted == Other->IsDistorted;
-	}
-
-	friend uint32 GetTypeHash(const UEffekseerEffectMaterialParameterHolder* Other)
-	{
-		return GetTypeHash(Other->Texture);
-	}
 };
 
 UCLASS()

@@ -615,44 +615,57 @@ FEffekseerHandle UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVect
 
 		if (mat != nullptr)
 		{
-			auto dynamicMaterial = UMaterialInstanceDynamic::Create(mat, this);
-			dynamicMaterial->SetTextureParameterValue(TEXT("ColorTexture"), m->Texture);
+			UMaterialInstanceDynamic* created = nullptr;
 
-			dynamicMaterial->SetTextureParameterValue(TEXT("AlphaTexture"), m->AlphaTexture);
-			dynamicMaterial->SetTextureParameterValue(TEXT("UVDistortionTexture"), m->UVDistortionTexture);
-			dynamicMaterial->SetTextureParameterValue(TEXT("BlendTexture"), m->BlendTexture);
-			dynamicMaterial->SetTextureParameterValue(TEXT("BlendAlphaTexture"), m->BlendAlphaTexture);
-			dynamicMaterial->SetTextureParameterValue(TEXT("BlendUVDistortionTexture"), m->BlendUVDistortionTexture);
-			
-			dynamicMaterial->SetScalarParameterValue(TEXT("TextureTilingType"), m->TextureAddressType);
-			dynamicMaterial->SetScalarParameterValue(TEXT("AlphaTextureTilingType"), m->AlphaTextureAddressType);
-			dynamicMaterial->SetScalarParameterValue(TEXT("UVDistortionTextureTilingType"), m->UVDistortionTextureAddressType);
-			dynamicMaterial->SetScalarParameterValue(TEXT("BlendTextureTilingType"), m->BlendTextureAddress);
-			dynamicMaterial->SetScalarParameterValue(TEXT("BlendAlphaTextureTilingType"), m->BlendAlphaTextureAddress);
-			dynamicMaterial->SetScalarParameterValue(TEXT("BlendUVDistortionTextureTilingType"), m->BlendUVDistortionTextureAddress);
+			auto found = NMaterials.find(m->Key);
 
-			dynamicMaterial->SetVectorParameterValue(TEXT("FlipbookParameters"), FLinearColor(float(m->FlipbookParams.Enable), m->FlipbookParams.LoopType, m->FlipbookParams.DivideX, m->FlipbookParams.DivideY));
+			if (found != NMaterials.end())
+			{
+				created = found->second;
+			}
+			else
+			{
+				auto dynamicMaterial = UMaterialInstanceDynamic::Create(mat, this);
+				dynamicMaterial->SetTextureParameterValue(TEXT("ColorTexture"), m->Texture);
 
-			dynamicMaterial->SetScalarParameterValue(TEXT("UVDistortionIntensity"), m->UVDistortionIntensity);
+				dynamicMaterial->SetTextureParameterValue(TEXT("AlphaTexture"), m->AlphaTexture);
+				dynamicMaterial->SetTextureParameterValue(TEXT("UVDistortionTexture"), m->UVDistortionTexture);
+				dynamicMaterial->SetTextureParameterValue(TEXT("BlendTexture"), m->BlendTexture);
+				dynamicMaterial->SetTextureParameterValue(TEXT("BlendAlphaTexture"), m->BlendAlphaTexture);
+				dynamicMaterial->SetTextureParameterValue(TEXT("BlendUVDistortionTexture"), m->BlendUVDistortionTexture);
 
-			dynamicMaterial->SetScalarParameterValue(TEXT("TextureBlendType"), m->TextureBlendType);
+				dynamicMaterial->SetScalarParameterValue(TEXT("TextureTilingType"), m->TextureAddressType);
+				dynamicMaterial->SetScalarParameterValue(TEXT("AlphaTextureTilingType"), m->AlphaTextureAddressType);
+				dynamicMaterial->SetScalarParameterValue(TEXT("UVDistortionTextureTilingType"), m->UVDistortionTextureAddressType);
+				dynamicMaterial->SetScalarParameterValue(TEXT("BlendTextureTilingType"), m->BlendTextureAddress);
+				dynamicMaterial->SetScalarParameterValue(TEXT("BlendAlphaTextureTilingType"), m->BlendAlphaTextureAddress);
+				dynamicMaterial->SetScalarParameterValue(TEXT("BlendUVDistortionTextureTilingType"), m->BlendUVDistortionTextureAddress);
 
-			dynamicMaterial->SetScalarParameterValue(TEXT("BlendUVDistortionIntensity"), m->BlendUVDistortionIntensity);
+				dynamicMaterial->SetVectorParameterValue(TEXT("FlipbookParameters"), FLinearColor(float(m->FlipbookParams.Enable), m->FlipbookParams.LoopType, m->FlipbookParams.DivideX, m->FlipbookParams.DivideY));
 
-			dynamicMaterial->SetScalarParameterValue(TEXT("EnableFalloff"), static_cast<float>(m->EnableFalloff));
-			dynamicMaterial->SetScalarParameterValue(TEXT("FalloffBlendType"), static_cast<float>(m->FalloffParam.ColorBlendType));
-			dynamicMaterial->SetVectorParameterValue(TEXT("BeginColor"), m->FalloffParam.BeginColor);
-			dynamicMaterial->SetVectorParameterValue(TEXT("EndColor"), m->FalloffParam.EndColor);
-			dynamicMaterial->SetScalarParameterValue(TEXT("FalloffPow"), static_cast<float>(m->FalloffParam.Pow));
+				dynamicMaterial->SetScalarParameterValue(TEXT("UVDistortionIntensity"), m->UVDistortionIntensity);
 
-			dynamicMaterial->SetScalarParameterValue(TEXT("EmissiveScaling"), m->EmissiveScaling);
+				dynamicMaterial->SetScalarParameterValue(TEXT("TextureBlendType"), m->TextureBlendType);
 
-			dynamicMaterial->SetVectorParameterValue(TEXT("EdgeColor"), m->EdgeParams.Color);
-			dynamicMaterial->SetScalarParameterValue(TEXT("EdgeThreshold"), m->EdgeParams.Threshold);
-			dynamicMaterial->SetScalarParameterValue(TEXT("EdgeColorScaling"), static_cast<float>(m->EdgeParams.ColorScaling));
+				dynamicMaterial->SetScalarParameterValue(TEXT("BlendUVDistortionIntensity"), m->BlendUVDistortionIntensity);
 
-			Materials.Add(m, dynamicMaterial);
-			NMaterials[m->Key] = dynamicMaterial;
+				dynamicMaterial->SetScalarParameterValue(TEXT("EnableFalloff"), static_cast<float>(m->EnableFalloff));
+				dynamicMaterial->SetScalarParameterValue(TEXT("FalloffBlendType"), static_cast<float>(m->FalloffParam.ColorBlendType));
+				dynamicMaterial->SetVectorParameterValue(TEXT("BeginColor"), m->FalloffParam.BeginColor);
+				dynamicMaterial->SetVectorParameterValue(TEXT("EndColor"), m->FalloffParam.EndColor);
+				dynamicMaterial->SetScalarParameterValue(TEXT("FalloffPow"), static_cast<float>(m->FalloffParam.Pow));
+
+				dynamicMaterial->SetScalarParameterValue(TEXT("EmissiveScaling"), m->EmissiveScaling);
+
+				dynamicMaterial->SetVectorParameterValue(TEXT("EdgeColor"), m->EdgeParams.Color);
+				dynamicMaterial->SetScalarParameterValue(TEXT("EdgeThreshold"), m->EdgeParams.Threshold);
+				dynamicMaterial->SetScalarParameterValue(TEXT("EdgeColorScaling"), static_cast<float>(m->EdgeParams.ColorScaling));
+				NMaterials[m->Key] = dynamicMaterial;
+
+				created = dynamicMaterial;
+			}
+
+			Materials.Add(m, created);
 		}
 	}
 

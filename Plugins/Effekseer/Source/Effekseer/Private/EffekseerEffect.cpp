@@ -698,10 +698,13 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 			mat->BlendUVDistortionIntensity = param.BlendUVDistortionIntensity;
 
 			mat->EnableFalloff = param.EnableFalloff;
-			mat->FalloffParam.ColorBlendType = param.FalloffParam.ColorBlendType;
-			mat->FalloffParam.BeginColor = FLinearColor(param.FalloffParam.BeginColor[0], param.FalloffParam.BeginColor[1], param.FalloffParam.BeginColor[2], param.FalloffParam.BeginColor[3]);
-			mat->FalloffParam.EndColor = FLinearColor(param.FalloffParam.EndColor[0], param.FalloffParam.EndColor[1], param.FalloffParam.EndColor[2], param.FalloffParam.EndColor[3]);
-			mat->FalloffParam.Pow = param.FalloffParam.Pow;
+			if (mat->EnableFalloff)
+			{
+				mat->FalloffParam.ColorBlendType = param.FalloffParam.ColorBlendType;
+				mat->FalloffParam.BeginColor = FLinearColor(param.FalloffParam.BeginColor[0], param.FalloffParam.BeginColor[1], param.FalloffParam.BeginColor[2], param.FalloffParam.BeginColor[3]);
+				mat->FalloffParam.EndColor = FLinearColor(param.FalloffParam.EndColor[0], param.FalloffParam.EndColor[1], param.FalloffParam.EndColor[2], param.FalloffParam.EndColor[3]);
+				mat->FalloffParam.Pow = param.FalloffParam.Pow;
+			}
 
 			mat->EmissiveScaling = param.EmissiveScaling;
 
