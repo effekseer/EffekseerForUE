@@ -10,6 +10,7 @@
 #include <atomic>
 #include <cfloat>
 #include <climits>
+#include <functional>
 #include <memory>
 #include <stdint.h>
 #include <stdio.h>
@@ -276,7 +277,7 @@ enum class ZSortType : int32_t
 //-----------------------------------------------------------------------------------
 enum class RenderMode : int32_t
 {
-	Normal,	// 通常描画
+	Normal,	   // 通常描画
 	Wireframe, // ワイヤーフレーム描画
 };
 
@@ -650,6 +651,9 @@ class RefPtr
 {
 	T* ptr_ = nullptr;
 
+	template <typename U>
+	friend class RefPtr;
+
 public:
 	RefPtr() = default;
 
@@ -708,10 +712,28 @@ public:
 	}
 
 	template <class U>
+	void operator=(RefPtr<U>&& o)
+	{
+		auto ptr = o.Get();
+		o.ptr_ = nullptr;
+		SafeRelease(ptr_);
+		ptr_ = ptr;
+	}
+
+	template <class U>
 	RefPtr(const RefPtr<U>& o)
 	{
 		auto ptr = o.Get();
 		SafeAddRef(ptr);
+		SafeRelease(ptr_);
+		ptr_ = ptr;
+	}
+
+	template <class U>
+	RefPtr(RefPtr<U>&& o)
+	{
+		auto ptr = o.Get();
+		o.ptr_ = nullptr;
 		SafeRelease(ptr_);
 		ptr_ = ptr;
 	}
@@ -753,6 +775,12 @@ template <class T, class U>
 inline bool operator!=(const RefPtr<T>& lhs, const RefPtr<U>& rhs)
 {
 	return lhs.Get() != rhs.Get();
+}
+
+template <class T>
+inline bool operator<(const RefPtr<T>& lhs, const RefPtr<T>& rhs)
+{
+	return lhs.Get() < rhs.Get();
 }
 
 template <class T>
@@ -877,6 +905,18 @@ public:
 //----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
+
+enum class LogType
+{
+	Info,
+	Warning,
+	Error,
+	Debug,
+};
+
+void SetLogger(const std::function<void(LogType, const std::string&)>& logger);
+
+void Log(LogType logType, const std::string& message);
 
 enum class ColorSpaceType : int32_t
 {
@@ -3149,13 +3189,13 @@ public:
 	/**
 		@brief	設定クラスを取得する。
 	*/
-	virtual const RefPtr<Setting>& GetSetting() const = 0;
+	virtual const SettingRef& GetSetting() const = 0;
 
 	/**
 		@brief	設定クラスを設定する。
 		@param	setting	[in]	設定
 	*/
-	virtual void SetSetting(const RefPtr<Setting>& setting) = 0;
+	virtual void SetSetting(const SettingRef& setting) = 0;
 
 	/**
 		@brief	エフェクト読込クラスを取得する。
@@ -3791,7 +3831,7 @@ public:
 	/**
 		@brief	設定インスタンスを生成する。
 	*/
-	static RefPtr<Setting> Create();
+	static SettingRef Create();
 
 	/**
 	@brief	座標系を取得する。
@@ -4195,6 +4235,13 @@ enum class ShaderStageType
 	Pixel,
 };
 
+enum class TextureType
+{
+	Color2D,
+	Render,
+	Depth,
+};
+
 struct UniformLayoutElement
 {
 	ShaderStageType Stage = ShaderStageType::Vertex;
@@ -4293,6 +4340,7 @@ class Texture
 	: public ReferenceObject
 {
 protected:
+	TextureType type_ = {};
 	TextureFormatType format_;
 	std::array<int32_t, 2> size_;
 	bool hasMipmap_;
@@ -4314,6 +4362,11 @@ public:
 	bool GetHasMipmap() const
 	{
 		return hasMipmap_;
+	}
+
+	TextureType GetTextureType() const
+	{
+		return type_;
 	}
 };
 

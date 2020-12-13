@@ -41,6 +41,22 @@ static int64_t GetTime(void)
 	return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
 }
 
+//! TODO should be moved
+static std::function<void(LogType, const std::string&)> g_logger;
+
+void SetLogger(const std::function<void(LogType, const std::string&)>& logger)
+{
+	g_logger = logger;
+}
+
+void Log(LogType logType, const std::string& message)
+{
+	if (g_logger != nullptr)
+	{
+		g_logger(logType, message);
+	}
+}
+
 Manager::DrawParameter::DrawParameter()
 {
 	CameraCullingMask = 1;
@@ -628,12 +644,12 @@ void ManagerImplemented::SetSoundPlayer(SoundPlayerRef soundPlayer)
 	m_soundPlayer = soundPlayer;
 }
 
-const RefPtr<Setting>& ManagerImplemented::GetSetting() const
+const SettingRef& ManagerImplemented::GetSetting() const
 {
 	return m_setting;
 }
 
-void ManagerImplemented::SetSetting(const RefPtr<Setting>& setting)
+void ManagerImplemented::SetSetting(const SettingRef& setting)
 {
 	m_setting = setting;
 }
