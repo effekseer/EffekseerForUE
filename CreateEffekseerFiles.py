@@ -16,6 +16,8 @@ os.remove("./Plugins/Effekseer/Source/Effekseer/Private/EffekseerRendererCommon/
 os.remove("./Plugins/Effekseer/Source/Effekseer/Private/EffekseerRendererCommon/EffekseerRenderer.TGATextureLoader.h")
 os.remove("./Plugins/Effekseer/Source/Effekseer/Private/EffekseerRendererCommon/EffekseerRenderer.PngTextureLoader.cpp")
 os.remove("./Plugins/Effekseer/Source/Effekseer/Private/EffekseerRendererCommon/EffekseerRenderer.PngTextureLoader.h")
+os.remove("./Plugins/Effekseer/Source/Effekseer/Private/EffekseerRendererCommon/ModelLoader.h")
+os.remove("./Plugins/Effekseer/Source/Effekseer/Private/EffekseerRendererCommon/ModelLoader.cpp")
 
 
 

@@ -15,18 +15,15 @@ namespace EffekseerRendererUE4
 	}
 
 	Shader::Shader(Effekseer::RendererMaterialType type, bool isAdvancedMaterial)
-		: parameterGenerator_(::Effekseer::Material(), false, 0, 1)
+		: parameterGenerator_(::Effekseer::MaterialFile(), false, 0, 1)
 		, type_(type)
 		, isAdvancedMaterial_(isAdvancedMaterial)
 	{
-		
 		auto vertexConstantBufferSize = sizeof(EffekseerRenderer::ModelRendererAdvancedVertexConstantBuffer<1>);
 		vertexConstantBufferSize = std::max(vertexConstantBufferSize, sizeof(EffekseerRenderer::ModelRendererVertexConstantBuffer<1>));
 		vertexConstantBufferSize = std::max(vertexConstantBufferSize, sizeof(EffekseerRenderer::StandardRendererVertexBuffer));
 
 		vertexConstantBuffer.resize(vertexConstantBufferSize);
-
-		
 
 		pixelConstantBuffer.resize(std::max(sizeof(EffekseerRenderer::PixelConstantBuffer), sizeof(EffekseerRenderer::PixelConstantBufferDistortion)));
 	}

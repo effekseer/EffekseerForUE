@@ -7,6 +7,11 @@
 #include "EditorFramework/AssetImportData.h"
 #include "EffekseerCurve.generated.h"
 
+namespace Effekseer
+{
+	class Curve;
+};
+
 struct FEffekseerCurve
 {
 	int mControllPointCount;
@@ -28,8 +33,8 @@ class EFFEKSEER_API UEffekseerCurve : public UObject
 {
 	GENERATED_BODY()
 private:
-	void*			curvePtr = nullptr;
-	TArray<uint8>	buffer;
+	Effekseer::Curve* curvePtr = nullptr;
+	TArray<uint8> buffer;
 
 	void LoadModel(const uint8_t* data, int32_t size, const TCHAR* path);
 	void ReleaseModel();
@@ -48,7 +53,7 @@ public:
 
 	FEffekseerCurve GetCurve();
 
-	void* GetNativePtr() { return curvePtr; }
+	Effekseer::Curve* GetNativePtr() const { return curvePtr; }
 
 	virtual void Serialize(FArchive& Ar) override;
 };
