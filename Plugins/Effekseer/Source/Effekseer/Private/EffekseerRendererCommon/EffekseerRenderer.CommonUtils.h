@@ -41,9 +41,9 @@ inline Effekseer::Color PackVector3DF(const Effekseer::SIMD::Vec3f& v)
 inline Effekseer::Vector3D UnpackVector3DF(const Effekseer::Color& v)
 {
 	Effekseer::Vector3D ret;
-	ret.X = (v.R / 255.0 * 2.0f - 1.0f);
-	ret.Y = (v.G / 255.0 * 2.0f - 1.0f);
-	ret.Z = (v.B / 255.0 * 2.0f - 1.0f);
+	ret.X = (static_cast<float>(v.R) / 255.0f * 2.0f - 1.0f);
+	ret.Y = (static_cast<float>(v.G) / 255.0f * 2.0f - 1.0f);
+	ret.Z = (static_cast<float>(v.B) / 255.0f * 2.0f - 1.0f);
 	return ret;
 }
 
@@ -716,20 +716,20 @@ struct MaterialShaderParameterGenerator
 	int32_t VertexModelCustomData1Offset = -1;
 	int32_t VertexModelCustomData2Offset = -1;
 
-	MaterialShaderParameterGenerator(const ::Effekseer::Material& material, bool isModel, int32_t stage, int32_t instanceCount)
+	MaterialShaderParameterGenerator(const ::Effekseer::MaterialFile& materialFile, bool isModel, int32_t stage, int32_t instanceCount)
 	{
 		if (isModel)
 		{
 			VertexSize = sizeof(::Effekseer::Model::Vertex);
 		}
-		else if (material.GetIsSimpleVertex())
+		else if (materialFile.GetIsSimpleVertex())
 		{
 			VertexSize = sizeof(EffekseerRenderer::SimpleVertex);
 		}
 		else
 		{
 			VertexSize = sizeof(EffekseerRenderer::DynamicVertex) +
-						 sizeof(float) * (material.GetCustomData1Count() + material.GetCustomData2Count());
+						 sizeof(float) * (materialFile.GetCustomData1Count() + materialFile.GetCustomData2Count());
 		}
 
 		if (isModel)
@@ -756,20 +756,20 @@ struct MaterialShaderParameterGenerator
 			VertexCameraPositionOffset = vsOffset;
 			vsOffset += sizeof(float) * 4;
 
-			if (material.GetCustomData1Count() > 0)
+			if (materialFile.GetCustomData1Count() > 0)
 			{
 				VertexModelCustomData1Offset = vsOffset;
 				vsOffset += sizeof(float) * 4 * instanceCount;
 			}
 
-			if (material.GetCustomData2Count() > 0)
+			if (materialFile.GetCustomData2Count() > 0)
 			{
 				VertexModelCustomData2Offset = vsOffset;
 				vsOffset += sizeof(float) * 4 * instanceCount;
 			}
 
 			VertexUserUniformOffset = vsOffset;
-			vsOffset += sizeof(float) * 4 * material.GetUniformCount();
+			vsOffset += sizeof(float) * 4 * materialFile.GetUniformCount();
 
 			VertexShaderUniformBufferSize = vsOffset;
 		}
@@ -792,7 +792,7 @@ struct MaterialShaderParameterGenerator
 			vsOffset += sizeof(float) * 4;
 
 			VertexUserUniformOffset = vsOffset;
-			vsOffset += sizeof(float) * 4 * material.GetUniformCount();
+			vsOffset += sizeof(float) * 4 * materialFile.GetUniformCount();
 
 			VertexShaderUniformBufferSize = vsOffset;
 		}
@@ -814,7 +814,7 @@ struct MaterialShaderParameterGenerator
 		PixelReconstructionParam2Offset = psOffset;
 		psOffset += sizeof(float) * 4;
 
-		if (material.GetShadingModel() == ::Effekseer::ShadingModelType::Lit)
+		if (materialFile.GetShadingModel() == ::Effekseer::ShadingModelType::Lit)
 		{
 			PixelLightDirectionOffset = psOffset;
 			psOffset += sizeof(float) * 4;
@@ -826,14 +826,14 @@ struct MaterialShaderParameterGenerator
 			psOffset += sizeof(float) * 4;
 		}
 
-		if (material.GetHasRefraction() && stage == 1)
+		if (materialFile.GetHasRefraction() && stage == 1)
 		{
 			PixelCameraMatrixOffset = psOffset;
 			psOffset += sizeof(Effekseer::SIMD::Mat44f);
 		}
 
 		PixelUserUniformOffset = psOffset;
-		psOffset += sizeof(float) * 4 * material.GetUniformCount();
+		psOffset += sizeof(float) * 4 * materialFile.GetUniformCount();
 
 		PixelShaderUniformBufferSize = psOffset;
 	}
@@ -854,11 +854,11 @@ struct ShaderParameterCollector
 {
 	RendererShaderType ShaderType{};
 
-	Effekseer::MaterialParameter* MaterialParam = nullptr;
-	Effekseer::MaterialData* MaterialDataPtr = nullptr;
+	Effekseer::MaterialRenderData* MaterialRenderDataPtr = nullptr;
+	Effekseer::MaterialRef MaterialDataPtr = nullptr;
 
 	int32_t TextureCount = 0;
-	std::array<::Effekseer::TextureData*, Effekseer::TextureSlotMax> Textures;
+	std::array<::Effekseer::Backend::TextureRef, Effekseer::TextureSlotMax> Textures;
 	std::array<::Effekseer::TextureFilterType, Effekseer::TextureSlotMax> TextureFilterTypes;
 	std::array<::Effekseer::TextureWrapType, Effekseer::TextureSlotMax> TextureWrapTypes;
 
@@ -880,7 +880,7 @@ struct ShaderParameterCollector
 		if (ShaderType != state.ShaderType)
 			return true;
 
-		if (MaterialParam != state.MaterialParam)
+		if (MaterialRenderDataPtr != state.MaterialRenderDataPtr)
 			return true;
 
 		if (MaterialDataPtr != state.MaterialDataPtr)
@@ -915,13 +915,13 @@ struct ShaderParameterCollector
 
 	void Collect(Renderer* renderer, Effekseer::Effect* effect, Effekseer::NodeRendererBasicParameter* param, bool edgeFalloff, bool isSoftParticleEnabled)
 	{
-		::Effekseer::TextureData* TexturePtr = nullptr;
-		::Effekseer::TextureData* NormalTexturePtr = nullptr;
-		::Effekseer::TextureData* AlphaTexturePtr = nullptr;
-		::Effekseer::TextureData* UVDistortionTexturePtr = nullptr;
-		::Effekseer::TextureData* BlendTexturePtr = nullptr;
-		::Effekseer::TextureData* BlendAlphaTexturePtr = nullptr;
-		::Effekseer::TextureData* BlendUVDistortionTexturePtr = nullptr;
+		::Effekseer::Backend::TextureRef TexturePtr = nullptr;
+		::Effekseer::Backend::TextureRef NormalTexturePtr = nullptr;
+		::Effekseer::Backend::TextureRef AlphaTexturePtr = nullptr;
+		::Effekseer::Backend::TextureRef UVDistortionTexturePtr = nullptr;
+		::Effekseer::Backend::TextureRef BlendTexturePtr = nullptr;
+		::Effekseer::Backend::TextureRef BlendAlphaTexturePtr = nullptr;
+		::Effekseer::Backend::TextureRef BlendUVDistortionTexturePtr = nullptr;
 
 		Textures.fill(nullptr);
 		TextureFilterTypes.fill(::Effekseer::TextureFilterType::Linear);
@@ -937,10 +937,10 @@ struct ShaderParameterCollector
 
 		if (param->MaterialType == ::Effekseer::RendererMaterialType::File)
 		{
-			MaterialParam = param->MaterialParameterPtr;
-			if (MaterialParam != nullptr)
+			MaterialRenderDataPtr = param->MaterialRenderDataPtr;
+			if (MaterialRenderDataPtr != nullptr)
 			{
-				MaterialDataPtr = effect->GetMaterial(param->MaterialParameterPtr->MaterialIndex);
+				MaterialDataPtr = effect->GetMaterial(param->MaterialRenderDataPtr->MaterialIndex);
 
 				if (MaterialDataPtr != nullptr && !MaterialDataPtr->IsSimpleVertex)
 				{
@@ -951,16 +951,16 @@ struct ShaderParameterCollector
 				else
 				{
 					ShaderType = RendererShaderType::Unlit;
-					MaterialParam = nullptr;
+					MaterialRenderDataPtr = nullptr;
 					MaterialDataPtr = nullptr;
 				}
 
 				// Validate parameters
-				if (MaterialDataPtr != nullptr && (MaterialDataPtr->TextureCount != MaterialParam->MaterialTextures.size() ||
-												   MaterialDataPtr->UniformCount != MaterialParam->MaterialUniforms.size()))
+				if (MaterialDataPtr != nullptr && (MaterialDataPtr->TextureCount != MaterialRenderDataPtr->MaterialTextures.size() ||
+												   MaterialDataPtr->UniformCount != MaterialRenderDataPtr->MaterialUniforms.size()))
 				{
 					ShaderType = RendererShaderType::Unlit;
-					MaterialParam = nullptr;
+					MaterialRenderDataPtr = nullptr;
 					MaterialDataPtr = nullptr;
 				}
 			}
@@ -996,16 +996,17 @@ struct ShaderParameterCollector
 			assert(0);
 		}
 
-		if (MaterialParam != nullptr && MaterialDataPtr != nullptr)
+		if (MaterialRenderDataPtr != nullptr && MaterialDataPtr != nullptr)
 		{
-			TextureCount = static_cast<int32_t>(Effekseer::Min(MaterialParam->MaterialTextures.size(), ::Effekseer::UserTextureSlotMax));
+			TextureCount = static_cast<int32_t>(Effekseer::Min(MaterialRenderDataPtr->MaterialTextures.size(), ::Effekseer::UserTextureSlotMax));
 			for (size_t i = 0; i < TextureCount; i++)
 			{
-				if (MaterialParam->MaterialTextures[i].Type == 1)
+				if (MaterialRenderDataPtr->MaterialTextures[i].Type == 1)
 				{
-					if (MaterialParam->MaterialTextures[i].Index >= 0)
+					if (MaterialRenderDataPtr->MaterialTextures[i].Index >= 0)
 					{
-						Textures[i] = effect->GetNormalImage(MaterialParam->MaterialTextures[i].Index);
+						auto resource = effect->GetNormalImage(MaterialRenderDataPtr->MaterialTextures[i].Index);
+						Textures[i] = (resource != nullptr) ? resource->GetBackend() : nullptr;
 					}
 					else
 					{
@@ -1014,9 +1015,10 @@ struct ShaderParameterCollector
 				}
 				else
 				{
-					if (MaterialParam->MaterialTextures[i].Index >= 0)
+					if (MaterialRenderDataPtr->MaterialTextures[i].Index >= 0)
 					{
-						Textures[i] = effect->GetColorImage(MaterialParam->MaterialTextures[i].Index);
+						auto resource = effect->GetColorImage(MaterialRenderDataPtr->MaterialTextures[i].Index);
+						Textures[i] = (resource != nullptr) ? resource->GetBackend() : nullptr;
 					}
 					else
 					{
@@ -1086,11 +1088,13 @@ struct ShaderParameterCollector
 			// color/distortion
 			if (param->MaterialType == ::Effekseer::RendererMaterialType::BackDistortion)
 			{
-				TexturePtr = effect->GetDistortionImage(param->Texture1Index);
+				auto resource = effect->GetDistortionImage(param->TextureIndexes[0]);
+				TexturePtr = (resource != nullptr) ? resource->GetBackend() : nullptr;
 			}
 			else
 			{
-				TexturePtr = effect->GetColorImage(param->Texture1Index);
+				auto resource = effect->GetColorImage(param->TextureIndexes[0]);
+				TexturePtr = (resource != nullptr) ? resource->GetBackend() : nullptr;
 			}
 
 			if (TexturePtr == nullptr && renderer != nullptr)
@@ -1099,8 +1103,8 @@ struct ShaderParameterCollector
 			}
 
 			Textures[0] = TexturePtr;
-			TextureFilterTypes[0] = param->TextureFilter1;
-			TextureWrapTypes[0] = param->TextureWrap1;
+			TextureFilterTypes[0] = param->TextureFilters[0];
+			TextureWrapTypes[0] = param->TextureWraps[0];
 
 			// normal/background
 			if (param->MaterialType != ::Effekseer::RendererMaterialType::Default)
@@ -1113,7 +1117,8 @@ struct ShaderParameterCollector
 				}
 				else if (param->MaterialType == ::Effekseer::RendererMaterialType::Lighting)
 				{
-					NormalTexturePtr = effect->GetNormalImage(param->Texture2Index);
+					auto resource = effect->GetNormalImage(param->TextureIndexes[1]);
+					NormalTexturePtr = (resource != nullptr) ? resource->GetBackend() : nullptr;
 
 					if (NormalTexturePtr == nullptr && renderer != nullptr)
 					{
@@ -1130,8 +1135,8 @@ struct ShaderParameterCollector
 				}
 				else
 				{
-					TextureFilterTypes[1] = param->TextureFilter2;
-					TextureWrapTypes[1] = param->TextureWrap2;
+					TextureFilterTypes[1] = param->TextureFilters[1];
+					TextureWrapTypes[1] = param->TextureWraps[1];
 				}
 			}
 
@@ -1139,11 +1144,13 @@ struct ShaderParameterCollector
 			{
 				if (param->MaterialType == ::Effekseer::RendererMaterialType::BackDistortion)
 				{
-					AlphaTexturePtr = effect->GetDistortionImage(param->Texture3Index);
+					auto resource = effect->GetDistortionImage(param->TextureIndexes[2]);
+					AlphaTexturePtr = (resource != nullptr) ? resource->GetBackend() : nullptr;
 				}
 				else
 				{
-					AlphaTexturePtr = effect->GetColorImage(param->Texture3Index);
+					auto resource = effect->GetColorImage(param->TextureIndexes[2]);
+					AlphaTexturePtr = (resource != nullptr) ? resource->GetBackend() : nullptr;
 				}
 
 				if (AlphaTexturePtr == nullptr && renderer != nullptr)
@@ -1153,11 +1160,13 @@ struct ShaderParameterCollector
 
 				if (param->MaterialType == ::Effekseer::RendererMaterialType::BackDistortion)
 				{
-					UVDistortionTexturePtr = effect->GetDistortionImage(param->Texture4Index);
+					auto resource = effect->GetDistortionImage(param->TextureIndexes[3]);
+					UVDistortionTexturePtr = (resource != nullptr) ? resource->GetBackend() : nullptr;
 				}
 				else
 				{
-					UVDistortionTexturePtr = effect->GetColorImage(param->Texture4Index);
+					auto resource = effect->GetColorImage(param->TextureIndexes[3]);
+					UVDistortionTexturePtr = (resource != nullptr) ? resource->GetBackend() : nullptr;
 				}
 
 				if (UVDistortionTexturePtr == nullptr && renderer != nullptr)
@@ -1167,11 +1176,13 @@ struct ShaderParameterCollector
 
 				if (param->MaterialType == ::Effekseer::RendererMaterialType::BackDistortion)
 				{
-					BlendTexturePtr = effect->GetDistortionImage(param->Texture5Index);
+					auto resource = effect->GetDistortionImage(param->TextureIndexes[4]);
+					BlendTexturePtr = (resource != nullptr) ? resource->GetBackend() : nullptr;
 				}
 				else
 				{
-					BlendTexturePtr = effect->GetColorImage(param->Texture5Index);
+					auto resource = effect->GetColorImage(param->TextureIndexes[4]);
+					BlendTexturePtr = (resource != nullptr) ? resource->GetBackend() : nullptr;
 				}
 
 				if (BlendTexturePtr == nullptr && renderer != nullptr)
@@ -1181,11 +1192,13 @@ struct ShaderParameterCollector
 
 				if (param->MaterialType == ::Effekseer::RendererMaterialType::BackDistortion)
 				{
-					BlendAlphaTexturePtr = effect->GetDistortionImage(param->Texture6Index);
+					auto resource = effect->GetDistortionImage(param->TextureIndexes[5]);
+					BlendAlphaTexturePtr = (resource != nullptr) ? resource->GetBackend() : nullptr;
 				}
 				else
 				{
-					BlendAlphaTexturePtr = effect->GetColorImage(param->Texture6Index);
+					auto resource = effect->GetColorImage(param->TextureIndexes[5]);
+					BlendAlphaTexturePtr = (resource != nullptr) ? resource->GetBackend() : nullptr;
 				}
 
 				if (BlendAlphaTexturePtr == nullptr && renderer != nullptr)
@@ -1195,11 +1208,13 @@ struct ShaderParameterCollector
 
 				if (param->MaterialType == ::Effekseer::RendererMaterialType::BackDistortion)
 				{
-					BlendUVDistortionTexturePtr = effect->GetDistortionImage(param->Texture7Index);
+					auto resource = effect->GetDistortionImage(param->TextureIndexes[6]);
+					BlendUVDistortionTexturePtr = (resource != nullptr) ? resource->GetBackend() : nullptr;
 				}
 				else
 				{
-					BlendUVDistortionTexturePtr = effect->GetColorImage(param->Texture7Index);
+					auto resource = effect->GetColorImage(param->TextureIndexes[6]);
+					BlendUVDistortionTexturePtr = (resource != nullptr) ? resource->GetBackend() : nullptr;
 				}
 
 				if (BlendUVDistortionTexturePtr == nullptr && renderer != nullptr)
@@ -1215,24 +1230,24 @@ struct ShaderParameterCollector
 				}
 
 				Textures[offset + 0] = AlphaTexturePtr;
-				TextureFilterTypes[offset + 0] = param->TextureFilter3;
-				TextureWrapTypes[offset + 0] = param->TextureWrap3;
+				TextureFilterTypes[offset + 0] = param->TextureFilters[2];
+				TextureWrapTypes[offset + 0] = param->TextureWraps[2];
 
 				Textures[offset + 1] = UVDistortionTexturePtr;
-				TextureFilterTypes[offset + 1] = param->TextureFilter4;
-				TextureWrapTypes[offset + 1] = param->TextureWrap4;
+				TextureFilterTypes[offset + 1] = param->TextureFilters[3];
+				TextureWrapTypes[offset + 1] = param->TextureWraps[3];
 
 				Textures[offset + 2] = BlendTexturePtr;
-				TextureFilterTypes[offset + 2] = param->TextureFilter5;
-				TextureWrapTypes[offset + 2] = param->TextureWrap5;
+				TextureFilterTypes[offset + 2] = param->TextureFilters[4];
+				TextureWrapTypes[offset + 2] = param->TextureWraps[4];
 
 				Textures[offset + 3] = BlendAlphaTexturePtr;
-				TextureFilterTypes[offset + 3] = param->TextureFilter6;
-				TextureWrapTypes[offset + 3] = param->TextureWrap6;
+				TextureFilterTypes[offset + 3] = param->TextureFilters[5];
+				TextureWrapTypes[offset + 3] = param->TextureWraps[5];
 
 				Textures[offset + 4] = BlendUVDistortionTexturePtr;
-				TextureFilterTypes[offset + 4] = param->TextureFilter7;
-				TextureWrapTypes[offset + 4] = param->TextureWrap7;
+				TextureFilterTypes[offset + 4] = param->TextureFilters[6];
+				TextureWrapTypes[offset + 4] = param->TextureWraps[6];
 			}
 		}
 	}
@@ -1310,7 +1325,7 @@ struct EmmisiveParameter
 
 struct EdgeParameter
 {
-	float EdgeColor[4];
+	std::array<float, 4> EdgeColor;
 
 	union {
 		float Buffer[4];
@@ -1336,8 +1351,8 @@ struct FalloffParameter
 		};
 	};
 
-	float BeginColor[4];
-	float EndColor[4];
+	std::array<float,4> BeginColor;
+	std::array<float,4> EndColor;
 };
 
 struct PixelConstantBuffer

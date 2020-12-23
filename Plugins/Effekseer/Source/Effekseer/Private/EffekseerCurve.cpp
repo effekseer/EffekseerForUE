@@ -18,7 +18,7 @@ void UEffekseerCurve::LoadModel(const uint8_t* data, int32_t size, const TCHAR* 
 void UEffekseerCurve::ReleaseModel()
 {
 	auto p = (EffekseerInternalCurve*)curvePtr;
-	ES_SAFE_DELETE(p);
+	ES_SAFE_RELEASE(p);
 	curvePtr = nullptr;
 }
 

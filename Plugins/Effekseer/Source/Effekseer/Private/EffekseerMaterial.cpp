@@ -1,10 +1,10 @@
 #include "EffekseerMaterial.h"
 #include "EffekseerCustomVersion.h"
-#include <Effekseer/Material/Effekseer.Material.h>
+#include <Effekseer/Material/Effekseer.MaterialFile.h>
 
 void UEffekseerMaterial::LoadMaterial(const uint8_t* data, int32_t size, const TCHAR* path)
 {
-	internal_ = new Effekseer::Material();
+	internal_ = new Effekseer::MaterialFile();
 	internal_->Load(data, size);
 }
 

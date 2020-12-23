@@ -85,6 +85,8 @@ namespace EffekseerRendererUE4
 
 		float m_distortionIntensity = 0.0f;
 
+		::Effekseer::Backend::TextureRef backgroundTexture_;
+
 		EffekseerRenderer::StandardRenderer<RendererImplemented, Shader>*	m_standardRenderer = nullptr;
 	public:
 		
@@ -202,6 +204,8 @@ namespace EffekseerRendererUE4
 		*/
 		void SetDistortingCallback(::EffekseerRenderer::DistortingCallback* callback) override;
 
+		const ::Effekseer::Backend::TextureRef& GetBackground() override;
+
 		int32_t GetDrawCallCount() const override { return 0; }
 
 		int32_t GetDrawVertexCount() const override { return 0; }
@@ -211,8 +215,6 @@ namespace EffekseerRendererUE4
 		void ResetDrawVertexCount() override { }
 
 		void SetRenderMode(Effekseer::RenderMode renderMode) override { }
-
-		Effekseer::TextureData* GetBackground();
 
 		VertexBuffer* GetVertexBuffer();
 
@@ -264,7 +266,7 @@ namespace EffekseerRendererUE4
 
 		void SetPixelBufferToShader(const void* data, int32_t size, int32_t dstOffset);
 
-		void SetTextures(Shader* shader, Effekseer::TextureData** textures, int32_t count);
+		void SetTextures(Shader* shader, ::Effekseer::Backend::TextureRef* textures, int32_t count);
 		void SetDistortionIntensity(float value) { m_distortionIntensity = value; }
 
 		void SetLocalToWorld(FMatrix localToWorld);

@@ -80,7 +80,7 @@ struct FEdgeParameters
 	GENERATED_USTRUCT_BODY()
 	FLinearColor Color = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);
 	float Threshold = 0;
-	int32_t ColorScaling = 1;
+	float ColorScaling = 1;
 
 	bool operator==(const FEdgeParameters& rhs) const
 	{

@@ -12,7 +12,7 @@
 namespace Effekseer
 {
 
-class Material;
+class MaterialFile;
 
 }
 
@@ -56,7 +56,7 @@ class EFFEKSEER_API UEffekseerMaterial
 {
 	GENERATED_BODY()
 private:
-	Effekseer::Material* internal_ = nullptr;
+	Effekseer::MaterialFile* internal_ = nullptr;
 	TArray<uint8> buffer_;
 
 #if WITH_EDITOR
@@ -113,7 +113,7 @@ public:
 
 	UMaterialInterface* FindMatrial(EEffekseerAlphaBlendType alphaBlend) const;
 
-	Effekseer::Material* GetNativePtr() { return internal_; }
+	Effekseer::MaterialFile* GetNativePtr() { return internal_; }
 
 	virtual void BeginDestroy() override;
 

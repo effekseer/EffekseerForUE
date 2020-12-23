@@ -15,6 +15,7 @@
 #include <EffekseerRenderer.SpriteRendererBase.h>
 #include <EffekseerRenderer.RibbonRendererBase.h>
 #include <EffekseerRenderer.RingRendererBase.h>
+#include "EffekseerInternalTexture.h"
 
 #define GET_MAT_PARAM_NAME
 
@@ -418,12 +419,12 @@ namespace EffekseerRendererUE4
 
 	void ExtractTextures(const Effekseer::Effect* effect,
 		const Effekseer::NodeRendererBasicParameter* param,
-		std::array<Effekseer::TextureData*, ::Effekseer::TextureSlotMax>& textures,
+		std::array<Effekseer::Backend::TextureRef, ::Effekseer::TextureSlotMax>& textures,
 		int32_t& textureCount)
 	{
 		if (param->MaterialType == Effekseer::RendererMaterialType::File)
 		{
-			auto materialParam = param->MaterialParameterPtr;
+			auto materialParam = param->MaterialRenderDataPtr;
 
 			textureCount = 0;
 
@@ -435,9 +436,9 @@ namespace EffekseerRendererUE4
 				{
 					if (materialParam->MaterialTextures[i].Type == 1)
 					{
-						if (materialParam->MaterialTextures[i].Index >= 0)
+						if (materialParam->MaterialTextures[i].Index >= 0 && effect->GetNormalImage(materialParam->MaterialTextures[i].Index) != nullptr)
 						{
-							textures[i] = effect->GetNormalImage(materialParam->MaterialTextures[i].Index);
+							textures[i] = effect->GetNormalImage(materialParam->MaterialTextures[i].Index)->GetBackend();
 						}
 						else
 						{
@@ -446,9 +447,9 @@ namespace EffekseerRendererUE4
 					}
 					else
 					{
-						if (materialParam->MaterialTextures[i].Index >= 0)
+						if (materialParam->MaterialTextures[i].Index >= 0 && effect->GetColorImage(materialParam->MaterialTextures[i].Index) != nullptr)
 						{
-							textures[i] = effect->GetColorImage(materialParam->MaterialTextures[i].Index);
+							textures[i] = effect->GetColorImage(materialParam->MaterialTextures[i].Index)->GetBackend();
 						}
 						else
 						{
@@ -496,13 +497,12 @@ namespace EffekseerRendererUE4
 		auto& param = parameter;
 		auto& renderer = m_renderer;
 
-		EffekseerInternalModel* model = (EffekseerInternalModel*)parameter.EffectPointer->GetModel(parameter.ModelIndex);
+		auto model = (EffekseerInternalModel*)parameter.EffectPointer->GetModel(parameter.ModelIndex).Get();
 		if (model == nullptr) return;
 
 		if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::File)
 		{
-			Effekseer::MaterialData* material =
-				parameter.EffectPointer->GetMaterial(parameter.BasicParameterPtr->MaterialParameterPtr->MaterialIndex);
+			auto material = parameter.EffectPointer->GetMaterial(parameter.BasicParameterPtr->MaterialRenderDataPtr->MaterialIndex);
 			if (material == nullptr)
 				return;
 		}
@@ -522,21 +522,21 @@ namespace EffekseerRendererUE4
 		Shader* shader = m_renderer->GetShader(type);
 
 		if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::File &&
-			param.BasicParameterPtr->MaterialParameterPtr != nullptr &&
-			param.BasicParameterPtr->MaterialParameterPtr->MaterialIndex >= 0 &&
-			param.EffectPointer->GetMaterial(param.BasicParameterPtr->MaterialParameterPtr->MaterialIndex) != nullptr)
+			param.BasicParameterPtr->MaterialRenderDataPtr != nullptr &&
+			param.BasicParameterPtr->MaterialRenderDataPtr->MaterialIndex >= 0 &&
+			param.EffectPointer->GetMaterial(param.BasicParameterPtr->MaterialRenderDataPtr->MaterialIndex) != nullptr)
 		{
-			shader = (Shader*)param.EffectPointer->GetMaterial(param.BasicParameterPtr->MaterialParameterPtr->MaterialIndex)->ModelUserPtr;
+			shader = (Shader*)param.EffectPointer->GetMaterial(param.BasicParameterPtr->MaterialRenderDataPtr->MaterialIndex)->ModelUserPtr;
 		}
 
 		m_renderer->BeginShader(shader);
 
 		if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::File)
 		{
-			auto materialParam = param.BasicParameterPtr->MaterialParameterPtr;
+			auto materialParam = param.BasicParameterPtr->MaterialRenderDataPtr;
 
 			int32_t textureCount = 0;
-			std::array<Effekseer::TextureData*, ::Effekseer::TextureSlotMax> textures;
+			std::array<Effekseer::Backend::TextureRef, ::Effekseer::TextureSlotMax> textures;
 
 			ExtractTextures(parameter.EffectPointer, parameter.BasicParameterPtr, textures, textureCount);
 
@@ -549,8 +549,7 @@ namespace EffekseerRendererUE4
 			float* cutomData1Ptr = nullptr;
 			float* cutomData2Ptr = nullptr;
 			int stageInd = 1;
-			Effekseer::MaterialData* material =
-				parameter.EffectPointer->GetMaterial(parameter.BasicParameterPtr->MaterialParameterPtr->MaterialIndex);
+			auto material = parameter.EffectPointer->GetMaterial(parameter.BasicParameterPtr->MaterialRenderDataPtr->MaterialIndex);
 
 			StoreFileUniform<RendererImplemented, Shader, 1>(
 				m_renderer, shader, material, materialParam, parameter, stageInd, cutomData1Ptr, cutomData2Ptr);
@@ -602,6 +601,10 @@ namespace EffekseerRendererUE4
 		}
 
 		textures_.fill(nullptr);
+
+		auto internalBackgroundTexture_ = Effekseer::MakeRefPtr<EffekseerInternalTexture>();
+		internalBackgroundTexture_->UserData = reinterpret_cast<void*>(0x1);
+		backgroundTexture_ = internalBackgroundTexture_;
 	}
 
 	RendererImplemented::~RendererImplemented()
@@ -739,9 +742,9 @@ namespace EffekseerRendererUE4
 
 	}
 
-	Effekseer::TextureData* RendererImplemented::GetBackground()
+	const ::Effekseer::Backend::TextureRef& RendererImplemented::GetBackground()
 	{
-		return (Effekseer::TextureData*)1;
+		return backgroundTexture_;
 	}
 
 	VertexBuffer* RendererImplemented::GetVertexBuffer()
@@ -1398,15 +1401,16 @@ namespace EffekseerRendererUE4
 		memcpy(p, data, size);
 	}
 
-	void RendererImplemented::SetTextures(Shader* shader, Effekseer::TextureData** textures, int32_t count)
+	void RendererImplemented::SetTextures(Shader* shader, ::Effekseer::Backend::TextureRef* textures, int32_t count)
 	{
 		if (count > 0)
 		{
 			for (int32_t i = 0; i < count; i++)
 			{
-				if (textures[i] != nullptr && textures[i] != (void*)1)
+				auto texture = static_cast<EffekseerInternalTexture*>(textures[i].Get());
+				if (texture != nullptr && texture != (void*)1)
 				{
-					textures_[i] = textures[i]->UserPtr;
+					textures_[i] = texture->UserData;
 				}
 				else
 				{
@@ -1416,7 +1420,7 @@ namespace EffekseerRendererUE4
 		}
 		else
 		{
-			textures_[0] = nullptr;
+			textures_.fill(nullptr);
 		}
 	}
 

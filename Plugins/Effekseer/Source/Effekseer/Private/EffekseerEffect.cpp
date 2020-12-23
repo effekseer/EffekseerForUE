@@ -5,11 +5,12 @@
 #include <functional>
 #include <vector>
 #include <Effekseer.h>
-#include <Effekseer/Effekseer/Material/Effekseer.Material.h>
+#include <Effekseer/Effekseer/Material/Effekseer.MaterialFile.h>
 #include "EffekseerRenderingUserData.h"
 
 #include "EffekseerRendererShader.h"
 #include "EffekseerCustomVersion.h"
+#include "EffekseerInternalTexture.h"
 
 template <size_t size_>
 struct tStr
@@ -127,8 +128,8 @@ public:
 	virtual ~TextureLoader();
 
 public:
-	Effekseer::TextureData* Load(const EFK_CHAR* path, ::Effekseer::TextureType textureType) override;
-	void Unload(Effekseer::TextureData* data) override;
+	Effekseer::TextureRef Load(const EFK_CHAR* path, ::Effekseer::TextureType textureType) override;
+	void Unload(Effekseer::TextureRef data) override;
 	void SetUObject(UEffekseerEffect* uobject, bool requiredToCreateResource)
 	{
 		m_uobject = uobject;
@@ -151,7 +152,7 @@ TextureLoader::~TextureLoader()
 
 }
 
-Effekseer::TextureData* TextureLoader::Load(const EFK_CHAR* path, ::Effekseer::TextureType textureType)
+Effekseer::TextureRef TextureLoader::Load(const EFK_CHAR* path, ::Effekseer::TextureType textureType)
 {
 	if (textureType != ::Effekseer::TextureType::Color &&
 		textureType != ::Effekseer::TextureType::Distortion) return nullptr;
@@ -172,9 +173,11 @@ Effekseer::TextureData* TextureLoader::Load(const EFK_CHAR* path, ::Effekseer::T
 				UE_LOG(LogScript, Warning, TEXT("Failed to load %s"), path_.c_str());
 			}
 
-			Effekseer::TextureData* data = new Effekseer::TextureData();
-			data->UserPtr = texture;
-			return data;
+			auto data = Effekseer::MakeRefPtr<EffekseerInternalTexture>();
+			data->UserData = texture;
+			auto textureRef = Effekseer::MakeRefPtr<Effekseer::Texture>();
+			textureRef->SetBackend(data);
+			return textureRef;
 		}
 		else
 		{
@@ -183,9 +186,11 @@ Effekseer::TextureData* TextureLoader::Load(const EFK_CHAR* path, ::Effekseer::T
 			auto o = m_uobject->ColorTextures[m_loadingColorIndex];
 			m_loadingColorIndex++;
 
-			Effekseer::TextureData* data = new Effekseer::TextureData();
-			data->UserPtr = o;
-			return data;
+			auto data = Effekseer::MakeRefPtr<EffekseerInternalTexture>();
+			data->UserData = o;
+			auto textureRef = Effekseer::MakeRefPtr<Effekseer::Texture>();
+			textureRef->SetBackend(data);
+			return textureRef;
 		}
 	}
 
@@ -201,9 +206,11 @@ Effekseer::TextureData* TextureLoader::Load(const EFK_CHAR* path, ::Effekseer::T
 				UE_LOG(LogScript, Warning, TEXT("Failed to load %s"), path_.c_str());
 			}
 
-			Effekseer::TextureData* data = new Effekseer::TextureData();
-			data->UserPtr = texture;
-			return data;
+			auto data = Effekseer::MakeRefPtr<EffekseerInternalTexture>();
+			data->UserData = texture;
+			auto textureRef = Effekseer::MakeRefPtr<Effekseer::Texture>();
+			textureRef->SetBackend(data);
+			return textureRef;
 		}
 		else
 		{
@@ -212,22 +219,19 @@ Effekseer::TextureData* TextureLoader::Load(const EFK_CHAR* path, ::Effekseer::T
 			auto o = m_uobject->DistortionTextures[m_loadingDistortionIndex];
 			m_loadingDistortionIndex++;
 
-			Effekseer::TextureData* data = new Effekseer::TextureData();
-			data->UserPtr = o;
-			return data;
+			auto data = Effekseer::MakeRefPtr<EffekseerInternalTexture>();
+			data->UserData = o;
+			auto textureRef = Effekseer::MakeRefPtr<Effekseer::Texture>();
+			textureRef->SetBackend(data);
+			return textureRef;
 		}
 	}
 
-	return NULL;
+	return nullptr;
 }
 
-void TextureLoader::Unload(Effekseer::TextureData* data)
+void TextureLoader::Unload(Effekseer::TextureRef data)
 {
-	if (data != NULL)
-	{
-		auto p = (Effekseer::TextureData*)data;
-		delete p;
-	}
 }
 
 class ModelLoader
@@ -243,8 +247,8 @@ public:
 	virtual ~ModelLoader();
 
 public:
-	::Effekseer::Model* Load(const EFK_CHAR* path) override;
-	void Unload(::Effekseer::Model* data) override;
+	::Effekseer::ModelRef Load(const EFK_CHAR* path) override;
+	void Unload(::Effekseer::ModelRef data) override;
 	void SetUObject(UEffekseerEffect* uobject, bool requiredToCreateResource)
 	{
 		m_uobject = uobject;
@@ -266,7 +270,7 @@ ModelLoader::~ModelLoader()
 
 }
 
-::Effekseer::Model* ModelLoader::Load(const EFK_CHAR* path)
+::Effekseer::ModelRef ModelLoader::Load(const EFK_CHAR* path)
 {
 	auto path_we = GetFileNameWithoutExtension(path);
 	auto epath_ = (const char16_t*)path_we.c_str();
@@ -279,7 +283,9 @@ ModelLoader::~ModelLoader()
 
 		if (model != nullptr)
 		{
-			return model->GetNativePtr();
+			auto ret = model->GetNativePtr();
+			Effekseer::SafeAddRef(ret);
+			return ::Effekseer::ModelRef(ret);
 		}
 		else
 		{
@@ -295,19 +301,17 @@ ModelLoader::~ModelLoader()
 		
 		if (o != nullptr)
 		{
-			return o->GetNativePtr();
+			auto ret = o->GetNativePtr();
+			Effekseer::SafeAddRef(ret);
+			return ::Effekseer::ModelRef(ret);
 		}
 	}
 
 	return nullptr;
 }
 
-void ModelLoader::Unload(::Effekseer::Model* data)
+void ModelLoader::Unload(::Effekseer::ModelRef data)
 {
-	if (data != NULL)
-	{
-	
-	}
 }
 
 class MaterialLoader
@@ -323,8 +327,8 @@ public:
 	virtual ~MaterialLoader() = default;
 
 public:
-	::Effekseer::MaterialData* Load(const EFK_CHAR* path) override;
-	void Unload(::Effekseer::MaterialData* data) override;
+	::Effekseer::MaterialRef Load(const EFK_CHAR* path) override;
+	void Unload(::Effekseer::MaterialRef data) override;
 	void SetUObject(UEffekseerEffect* uobject, bool requiredToCreateResource)
 	{
 		uobject_ = uobject;
@@ -337,7 +341,7 @@ public:
 	}
 };
 
-::Effekseer::MaterialData* MaterialLoader::Load(const EFK_CHAR* path)
+::Effekseer::MaterialRef MaterialLoader::Load(const EFK_CHAR* path)
 {
 	auto path_we = GetFileNameWithoutExtension(path);
 	auto path_ = tStr<512>(path_we.c_str());
@@ -349,7 +353,7 @@ public:
 
 		if (material != nullptr)
 		{
-			auto data = new ::Effekseer::MaterialData();
+			auto data = new ::Effekseer::Material();
 			data->UserPtr = new EffekseerRendererUE4::Shader(material, false, false);
 			data->ModelUserPtr = new EffekseerRendererUE4::Shader(material, true, false);
 
@@ -372,7 +376,7 @@ public:
 				data->TextureWrapTypes.at(i) = material->GetNativePtr()->GetTextureWrap(i);
 			}
 
-			return data;
+			return ::Effekseer::MaterialRef(data);
 		}
 		else
 		{
@@ -390,7 +394,7 @@ public:
 
 		if (o != nullptr)
 		{
-			auto data = new ::Effekseer::MaterialData();
+			auto data = new ::Effekseer::Material();
 			data->UserPtr = new EffekseerRendererUE4::Shader(o, false, false);
 			data->ModelUserPtr = new EffekseerRendererUE4::Shader(o, true, false);
 
@@ -414,14 +418,14 @@ public:
 				data->TextureWrapTypes.at(i) = material->GetNativePtr()->GetTextureWrap(i);
 			}
 
-			return data;
+			return ::Effekseer::MaterialRef(data);
 		}
 
 		return nullptr;
 	}
 }
 
-void MaterialLoader::Unload(::Effekseer::MaterialData* data)
+void MaterialLoader::Unload(::Effekseer::MaterialRef data)
 {
 	if (data == nullptr) return;
 	auto p1 = (EffekseerRendererUE4::Shader*)data->UserPtr;
@@ -432,7 +436,6 @@ void MaterialLoader::Unload(::Effekseer::MaterialData* data)
 	ES_SAFE_DELETE(p2);
 	ES_SAFE_DELETE(p3);
 	ES_SAFE_DELETE(p4);
-	ES_SAFE_DELETE(data);
 }
 
 class CurveLoader 
@@ -448,8 +451,8 @@ public:
 	virtual ~CurveLoader();
 
 public:
-	void* Load(const EFK_CHAR* path) override;
-	void Unload(void* data) override;
+	Effekseer::CurveRef Load(const EFK_CHAR* path) override;
+	void Unload(Effekseer::CurveRef data) override;
 	void SetUObject(UEffekseerEffect* uobject, bool requiredToCreateResource)
 	{
 		m_uobject = uobject;
@@ -470,7 +473,7 @@ CurveLoader::~CurveLoader()
 {
 }
 
-void* CurveLoader::Load(const EFK_CHAR* path)
+Effekseer::CurveRef CurveLoader::Load(const EFK_CHAR* path)
 {
 	auto path_we = GetFileNameWithoutExtension(path);
 	auto epath_ = (const char16_t*)path_we.c_str();
@@ -483,14 +486,14 @@ void* CurveLoader::Load(const EFK_CHAR* path)
 
 		if (curve != nullptr)
 		{
-			return (void*)curve->GetNativePtr();
+			auto ret = curve->GetNativePtr();
+			Effekseer::SafeAddRef(ret);
+			return Effekseer::CurveRef(ret);
 		}
 		else
 		{
 			UE_LOG(LogScript, Warning, TEXT("Failed to load %s"), path_.c_str());
 		}
-
-		return curve;
 	}
 	else
 	{
@@ -501,19 +504,17 @@ void* CurveLoader::Load(const EFK_CHAR* path)
 
 		if (o != nullptr)
 		{
-			return (void*)o->GetNativePtr();
+			auto ret = o->GetNativePtr();
+			Effekseer::SafeAddRef(ret);
+			return Effekseer::CurveRef(ret);
 		}
-
-		return o;
 	}
+
+	return nullptr;
 }
 
-void CurveLoader::Unload(void* data)
+void CurveLoader::Unload(Effekseer::CurveRef data)
 {
-	if (data != NULL)
-	{
-
-	}
 }
 
 static ::Effekseer::RefPtr<::Effekseer::Setting> CreateSetting()
@@ -777,12 +778,14 @@ void UEffekseerEffect::SetTextureAddressMode(::Effekseer::EffectNode* node)
 	auto SetAtTextureAddressWrap = [](::Effekseer::EffectNode* node, int tex_index, bool is_distotion)
 	{
 		auto texture = (is_distotion == false) ? node->GetEffect()->GetColorImage(tex_index) : node->GetEffect()->GetDistortionImage(tex_index);
-		if (texture == nullptr || ((UTexture2D*)texture->UserPtr) == nullptr)
+		if (texture == nullptr || texture->GetBackend() == nullptr)
 		{
 			return;
 		}
 
-		auto u_texture = ((UTexture2D*)texture->UserPtr);
+		auto backend = static_cast<EffekseerInternalTexture*>(texture->GetBackend().Get());
+		
+		auto u_texture = ((UTexture2D*)backend->UserData);
 
 		// ※クランプはマテリアルでUVを計算して行うので、テクスチャはインポート時に強制的にWrapに変更する
 		u_texture->AddressX = TextureAddress::TA_Wrap;
