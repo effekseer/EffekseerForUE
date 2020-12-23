@@ -18,7 +18,7 @@ void UEffekseerModel::LoadModel(const uint8_t* data, int32_t size, const TCHAR* 
 void UEffekseerModel::ReleaseModel()
 {
 	auto p = (EffekseerInternalModel*)modelPtr;
-	ES_SAFE_DELETE(p);
+	ES_SAFE_RELEASE(p);
 	modelPtr = nullptr;
 }
 
