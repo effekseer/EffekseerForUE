@@ -614,8 +614,9 @@ namespace EffekseerRendererUE4
 		ES_SAFE_DELETE(m_vertexBuffer);
 	}
 
-	bool RendererImplemented::Initialize(int32_t squareMaxCount)
+	bool RendererImplemented::Initialize(int32_t squareMaxCount, EEffekseerColorSpaceType colorSpace)
 	{
+		colorSpace_ = colorSpace;
 		m_squareMaxCount = squareMaxCount;
 		m_renderState = new RenderState();
 		m_vertexBuffer = new VertexBuffer(EffekseerRenderer::GetMaximumVertexSizeInAllTypes() * m_squareMaxCount * 4, true);

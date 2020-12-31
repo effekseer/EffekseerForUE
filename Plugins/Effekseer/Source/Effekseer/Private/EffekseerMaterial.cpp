@@ -57,8 +57,14 @@ void UEffekseerMaterial::StoreData(const uint8_t* data, uint32_t size)
 	buffer_.Append(data, size);
 }
 
-UMaterialInterface* UEffekseerMaterial::FindMatrial(EEffekseerAlphaBlendType alphaBlend) const
+UMaterialInterface* UEffekseerMaterial::FindMatrial(EEffekseerAlphaBlendType alphaBlend)
 {
+	auto material = ColorSpaceMaterials.FindOrAdd(alphaBlend);
+	if (material != nullptr)
+	{
+		return material;
+	}
+
 	for (const auto& e : MaterialElements)
 	{
 		if (e.AlphaBlend == alphaBlend && e.Material != nullptr)
@@ -69,6 +75,47 @@ UMaterialInterface* UEffekseerMaterial::FindMatrial(EEffekseerAlphaBlendType alp
 
 	UE_LOG(LogTemp, Warning, TEXT("Material %d is not found."), (int)alphaBlend);
 	return Material;
+}
+
+bool UEffekseerMaterial::GenerateColorSpaceMaterial(EEffekseerAlphaBlendType alphaBlend, EEffekseerColorSpaceType colorSpaceType)
+{
+	if (materialPrevious_ != Material)
+	{
+		ColorSpaceMaterials.Reset();
+	}
+	materialPrevious_ = Material;
+
+	auto material = ColorSpaceMaterials.Find(alphaBlend);
+	if (material != nullptr)
+	{
+		return true;
+	}
+
+	for (const auto& e : MaterialElements)
+	{
+		if (e.AlphaBlend == alphaBlend && e.Material != nullptr)
+		{
+			auto dynamicMaterial = UMaterialInstanceDynamic::Create(e.Material, this);
+			ColorSpaceMaterials.Add(alphaBlend, dynamicMaterial);
+
+			if (colorSpaceType == EEffekseerColorSpaceType::Gamma)
+			{
+				dynamicMaterial->SetScalarParameterValue(TEXT("GammaScale"), 2.2f);
+				dynamicMaterial->SetScalarParameterValue(TEXT("InvGammaScale"), 1.0f / 2.2f);
+				dynamicMaterial->SetScalarParameterValue(TEXT("GammaScaleEnabled"), 1.0f);
+			}
+			else
+			{
+				dynamicMaterial->SetScalarParameterValue(TEXT("GammaScale"), 1.0f);
+				dynamicMaterial->SetScalarParameterValue(TEXT("InvGammaScale"), 1.0f);
+				dynamicMaterial->SetScalarParameterValue(TEXT("GammaScaleEnabled"), 0.0f);
+			}
+
+			return true;
+		}
+	}
+	
+	return false;
 }
 
 void UEffekseerMaterial::ReassignSearchingMaps()

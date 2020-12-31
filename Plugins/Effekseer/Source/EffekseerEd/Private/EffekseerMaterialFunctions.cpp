@@ -49,8 +49,8 @@ class ConvertedNodeOutput : public ConvertedNode
 private:
 	UMaterial* material_ = nullptr;
 	std::shared_ptr<EffekseerMaterial::Node> effekseerNode_;
-	UMaterialExpressionPower* baseColorPower_ = nullptr;
-	UMaterialExpressionPower* emissiveColorPower_ = nullptr;
+	UMaterialExpressionMaterialFunctionCall* baseColorPower_ = nullptr;
+	UMaterialExpressionMaterialFunctionCall* emissiveColorPower_ = nullptr;
 	UMaterialExpressionMaterialFunctionCall* opacityCullingFunction_ = nullptr;
 	UMaterialExpressionMaterialFunctionCall* opacityMaskCullingFunction_ = nullptr;
 	UMaterialExpressionMaterialFunctionCall* opacityFunction_ = nullptr;
@@ -75,6 +75,10 @@ public:
 
 		}
 
+		baseColorPower_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
+		material->Expressions.Add(baseColorPower_);
+		emissiveColorPower_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
+		material->Expressions.Add(emissiveColorPower_);
 		opacityFunction_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
 		material->Expressions.Add(opacityFunction_);
 		opacityCullingFunction_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
@@ -106,21 +110,23 @@ public:
 	{
 		if (targetInd == effekseerNode_->GetInputPinIndex("BaseColor"))
 		{
-			baseColorPower_ = NewObject<UMaterialExpressionPower>(material_);
+			FStringAssetReference assetPath("/Effekseer/MaterialFunctions/EfkToLinear3.EfkToLinear3");
+			UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
+			baseColorPower_->SetMaterialFunction(func);
 			material_->Expressions.Add(baseColorPower_);
-			baseColorPower_->ConstExponent = 2.2f;
-			
-			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(baseColorPower_->Base);
+
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(*baseColorPower_->GetInput(0));
 			material_->BaseColor.Expression = baseColorPower_;
 		}
 
 		if (targetInd == effekseerNode_->GetInputPinIndex("Emissive"))
 		{
-			emissiveColorPower_ = NewObject<UMaterialExpressionPower>(material_);
+			FStringAssetReference assetPath("/Effekseer/MaterialFunctions/EfkToLinear3.EfkToLinear3");
+			UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
+			emissiveColorPower_->SetMaterialFunction(func);
 			material_->Expressions.Add(emissiveColorPower_);
-			emissiveColorPower_->ConstExponent = 2.2f;
 
-			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(emissiveColorPower_->Base);
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(*emissiveColorPower_->GetInput(0));
 			material_->EmissiveColor.Expression = emissiveColorPower_;
 		}
 
@@ -342,6 +348,7 @@ private:
 	UMaterialExpressionTextureSample* expression_ = nullptr;
 	UMaterialExpressionMaterialFunctionCall* expressionToLinear_ = nullptr;
 	UMaterialExpressionConstant* expressionConstant_ = nullptr;
+	EffekseerMaterial::TextureValueType valueType_;
 
 public:
 	ConvertedNodeTextureSample(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
@@ -358,7 +365,6 @@ public:
 			UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
 			expressionToLinear_->SetMaterialFunction(func);
 		}
-
 
 		// Sampler
 		{
@@ -381,6 +387,8 @@ public:
 		}
 
 		auto originalTexturePath = effekseerNode_->GetProperty("Texture")->Str;
+		auto info = effekseerMaterial->material->FindTexture(originalTexturePath.c_str());
+		valueType_ = info->Type;
 
 		if (originalTexturePath != "")
 		{
@@ -447,14 +455,28 @@ public:
 			expressionToLinear_->GetInput(6)->OutputIndex = 0;
 		}
 
-		expressionConstant_->R = 1.0f;
+		if (valueType_ == EffekseerMaterial::TextureValueType::Color)
+		{
+			expressionConstant_->R = 1.0f / 2.2f;
+		}
+		else
+		{
+			expressionConstant_->R = 1.0f;
+		}
 	}
 
 	void MakeSRGB()
 	{
 		if (expressionConstant_ != nullptr)
 		{
-			expressionConstant_->R = 2.2f;
+			if (valueType_ == EffekseerMaterial::TextureValueType::Color)
+			{
+				expressionConstant_->R = 2.2f;
+			}
+			else
+			{
+				expressionConstant_->R = 1.0f;
+			}
 		}
 	}
 

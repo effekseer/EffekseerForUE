@@ -179,6 +179,7 @@ struct EffekseerEffectMaterialKey
 	bool			IsDepthTestDisabled = false;
 	bool			IsLighting = false;
 	bool			IsDistorted = false;
+	UEffekseerMaterial* Material = nullptr;
 
 	bool operator == (const EffekseerEffectMaterialKey& rhs) const
 	{
@@ -312,6 +313,12 @@ struct EffekseerEffectMaterialKey
 			return IsDistorted < rhs.IsDistorted;
 		}
 
+		if (Material != rhs.Material)
+		{
+			return Material < rhs.Material;
+		}
+
+
 		return false;
 	}
 };
@@ -384,7 +391,7 @@ public:
 	FEdgeParameters	EdgeParams;
 
 	UPROPERTY()
-	EEffekseerAlphaBlendType	AlphaBlend = EEffekseerAlphaBlendType::Opacity;;
+	EEffekseerAlphaBlendType	AlphaBlend = EEffekseerAlphaBlendType::Opacity;
 
 	UPROPERTY()
 	bool			IsDepthTestDisabled;
@@ -394,6 +401,9 @@ public:
 
 	UPROPERTY()
 	bool			IsDistorted = false;
+
+	UPROPERTY()
+	UEffekseerMaterial* Material = nullptr;
 
 	EffekseerEffectMaterialKey Key;
 };

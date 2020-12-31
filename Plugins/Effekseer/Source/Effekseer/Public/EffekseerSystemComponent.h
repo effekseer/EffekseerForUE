@@ -6,6 +6,7 @@
 #include "Materials/MaterialInstanceConstant.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Runtime/Launch/Resources/Version.h"
+#include "EffekseerColorSpaceType.h"
 
 #include "EffekseerEffect.h"
 #include "EffekseerHandle.h"
@@ -95,11 +96,7 @@ public:
 
 	virtual UMaterialInterface* GetMaterial(int32 ElementIndex) const override;
 
-#if ENGINE_MINOR_VERSION == 14
-	virtual void GetUsedMaterials(TArray<UMaterialInterface*>& OutMaterials) const override;
-#else
 	virtual void GetUsedMaterials(TArray<UMaterialInterface*>& OutMaterials, bool bGetDebugMaterials = false) const override;
-#endif
 
 	virtual int32 GetNumMaterials() const override;
 	virtual FBoxSphereBounds CalcBounds(const FTransform& LocalToWorld) const override;
@@ -112,6 +109,9 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Property)
 	int MaxSprite = 10000;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Property)
+	EEffekseerColorSpaceType ColorSpace = EEffekseerColorSpaceType::Gamma;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Material)
 	UMaterialInstanceConstant* OpaqueMaterial = nullptr;

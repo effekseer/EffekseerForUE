@@ -17,7 +17,7 @@ namespace EffekseerRendererUE4
 
 		virtual bool Equal(const RenderingUserData* rhs) const
 		{
-			auto r = reinterpret_cast<const EffekseerRenderingUserData*>(rhs);
+			auto r = static_cast<const EffekseerRenderingUserData*>(rhs);
 
 			return Key == r->Key;
 		}

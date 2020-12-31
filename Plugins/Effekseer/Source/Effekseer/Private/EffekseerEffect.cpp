@@ -599,6 +599,7 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 			UTexture2D* blendTexture = nullptr;
 			UTexture2D* blendAlphaTexture = nullptr;
 			UTexture2D* blendUVDistortionTexture = nullptr;
+			UEffekseerMaterial* material = nullptr;
 
 			if (param.Distortion)
 			{
@@ -667,6 +668,11 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 				}
 			}
 
+			if (0 <= param.MaterialIndex && param.MaterialIndex < this->Materials.Num())
+			{
+				material = this->Materials[param.MaterialIndex];
+			}
+
 			UEffekseerEffectMaterialParameterHolder* mat = NewObject<UEffekseerEffectMaterialParameterHolder>();
 			mat->Texture = texture;
 
@@ -717,6 +723,7 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 			mat->AlphaBlend = (EEffekseerAlphaBlendType)param.AlphaBlend;
 			mat->IsLighting = param.MaterialType == ::Effekseer::RendererMaterialType::Lighting;
 			mat->IsDistorted = param.Distortion;
+			mat->Material = material;
 
 			EffekseerEffectMaterialKey mkey;
 			auto m = mat;
@@ -744,6 +751,8 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 			mkey.IsDepthTestDisabled = m->IsDepthTestDisabled;
 			mkey.IsLighting = m->IsLighting;
 			mkey.IsDistorted = m->IsDistorted;
+			mkey.Material = m->Material;
+			
 			mat->Key = mkey;
 
 			this->EffekseerMaterials.Add(mat);
@@ -787,11 +796,14 @@ void UEffekseerEffect::SetTextureAddressMode(::Effekseer::EffectNode* node)
 		
 		auto u_texture = ((UTexture2D*)backend->UserData);
 
-		// ※クランプはマテリアルでUVを計算して行うので、テクスチャはインポート時に強制的にWrapに変更する
-		u_texture->AddressX = TextureAddress::TA_Wrap;
-		u_texture->AddressY = TextureAddress::TA_Wrap;
+		// textures are forced to change to Wrap on import. because clamping is done by calculating UVs in materials.
+		if (u_texture != nullptr)
+		{
+			u_texture->AddressX = TextureAddress::TA_Wrap;
+			u_texture->AddressY = TextureAddress::TA_Wrap;
 
-		u_texture->RefreshSamplerStates();
+			u_texture->RefreshSamplerStates();
+		}
 	};
 
 	// 再帰

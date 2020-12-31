@@ -88,6 +88,7 @@ namespace EffekseerRendererUE4
 		::Effekseer::Backend::TextureRef backgroundTexture_;
 
 		EffekseerRenderer::StandardRenderer<RendererImplemented, Shader>*	m_standardRenderer = nullptr;
+		EEffekseerColorSpaceType colorSpace_{};
 	public:
 		
 		static Effekseer::RefPtr<RendererImplemented> Create();
@@ -98,10 +99,7 @@ namespace EffekseerRendererUE4
 		void OnLostDevice() override {}
 		void OnResetDevice() override {}
 
-		/**
-		@brief	初期化
-		*/
-		bool Initialize(int32_t squareMaxCount);
+		bool Initialize(int32_t squareMaxCount, EEffekseerColorSpaceType colorSpace);
 
 		/**
 		@brief	ステートを復帰するかどうかのフラグを設定する。

@@ -51,13 +51,13 @@ private:
 	TArray<int32_t> removedHandles;
 
 public:
-	FEffekseerSystemSceneProxy(const UEffekseerSystemComponent* InComponent, int32_t maxSprite)
+	FEffekseerSystemSceneProxy(const UEffekseerSystemComponent* InComponent, int32_t maxSprite, EEffekseerColorSpaceType colorSpace)
 		: FPrimitiveSceneProxy(InComponent)
 		, maxSprite_(maxSprite)
 	{
 		effekseerManager = ::Effekseer::Manager::Create(maxSprite_);
 		effekseerRenderer = ::EffekseerRendererUE4::RendererImplemented::Create();
-		effekseerRenderer->Initialize(maxSprite_);
+		effekseerRenderer->Initialize(maxSprite_, colorSpace);
 
 		effekseerManager->SetSpriteRenderer(effekseerRenderer->CreateSpriteRenderer());
 		effekseerManager->SetRibbonRenderer(effekseerRenderer->CreateRibbonRenderer());
@@ -448,7 +448,7 @@ void UEffekseerSystemComponent::TickComponent(float DeltaTime, ELevelTick TickTy
 
 FPrimitiveSceneProxy* UEffekseerSystemComponent::CreateSceneProxy()
 {
-	auto sp = new FEffekseerSystemSceneProxy(this, MaxSprite);
+	auto sp = new FEffekseerSystemSceneProxy(this, MaxSprite, ColorSpace);
 	sceneProxy = sp;
 	return sp;
 }
@@ -605,67 +605,88 @@ FEffekseerHandle UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVect
 	{
 		if (Materials.Contains(m)) continue;
 
-		auto blendInd = (int32_t)m->AlphaBlend;
-		if (m->IsLighting) blendInd = 5;
-		if (blendInd == 1 && m->IsDistorted) blendInd = 6;
-		if (blendInd == 2 && m->IsDistorted) blendInd = 7;
-
-		if (m->IsDepthTestDisabled) blendInd += 8;
-		auto mat = _mats[blendInd];
-
-		if (mat != nullptr)
+		if (m->Material != nullptr)
 		{
-			UMaterialInstanceDynamic* created = nullptr;
+			m->Material->GenerateColorSpaceMaterial(m->AlphaBlend, ColorSpace);
+		}
+		else
+		{
+			auto blendInd = (int32_t)m->AlphaBlend;
+			if (m->IsLighting) blendInd = 5;
+			if (blendInd == 1 && m->IsDistorted) blendInd = 6;
+			if (blendInd == 2 && m->IsDistorted) blendInd = 7;
 
-			auto found = NMaterials.find(m->Key);
+			if (m->IsDepthTestDisabled) blendInd += 8;
+			auto mat = _mats[blendInd];
 
-			if (found != NMaterials.end())
+			if (mat != nullptr)
 			{
-				created = found->second;
+				UMaterialInstanceDynamic* created = nullptr;
+
+				auto found = NMaterials.find(m->Key);
+
+				if (found != NMaterials.end())
+				{
+					created = found->second;
+				}
+				else
+				{
+					auto dynamicMaterial = UMaterialInstanceDynamic::Create(mat, this);
+					dynamicMaterial->SetTextureParameterValue(TEXT("ColorTexture"), m->Texture);
+
+					dynamicMaterial->SetTextureParameterValue(TEXT("AlphaTexture"), m->AlphaTexture);
+					dynamicMaterial->SetTextureParameterValue(TEXT("UVDistortionTexture"), m->UVDistortionTexture);
+					dynamicMaterial->SetTextureParameterValue(TEXT("BlendTexture"), m->BlendTexture);
+					dynamicMaterial->SetTextureParameterValue(TEXT("BlendAlphaTexture"), m->BlendAlphaTexture);
+					dynamicMaterial->SetTextureParameterValue(TEXT("BlendUVDistortionTexture"), m->BlendUVDistortionTexture);
+
+					dynamicMaterial->SetScalarParameterValue(TEXT("TextureTilingType"), m->TextureAddressType);
+					dynamicMaterial->SetScalarParameterValue(TEXT("AlphaTextureTilingType"), m->AlphaTextureAddressType);
+					dynamicMaterial->SetScalarParameterValue(TEXT("UVDistortionTextureTilingType"), m->UVDistortionTextureAddressType);
+					dynamicMaterial->SetScalarParameterValue(TEXT("BlendTextureTilingType"), m->BlendTextureAddress);
+					dynamicMaterial->SetScalarParameterValue(TEXT("BlendAlphaTextureTilingType"), m->BlendAlphaTextureAddress);
+					dynamicMaterial->SetScalarParameterValue(TEXT("BlendUVDistortionTextureTilingType"), m->BlendUVDistortionTextureAddress);
+
+					dynamicMaterial->SetVectorParameterValue(TEXT("FlipbookParameters"), FLinearColor(float(m->FlipbookParams.Enable), m->FlipbookParams.LoopType, m->FlipbookParams.DivideX, m->FlipbookParams.DivideY));
+
+					dynamicMaterial->SetScalarParameterValue(TEXT("UVDistortionIntensity"), m->UVDistortionIntensity);
+
+					dynamicMaterial->SetScalarParameterValue(TEXT("TextureBlendType"), m->TextureBlendType);
+
+					dynamicMaterial->SetScalarParameterValue(TEXT("BlendUVDistortionIntensity"), m->BlendUVDistortionIntensity);
+
+					dynamicMaterial->SetScalarParameterValue(TEXT("EnableFalloff"), static_cast<float>(m->EnableFalloff));
+					dynamicMaterial->SetScalarParameterValue(TEXT("FalloffBlendType"), static_cast<float>(m->FalloffParam.ColorBlendType));
+					dynamicMaterial->SetVectorParameterValue(TEXT("BeginColor"), m->FalloffParam.BeginColor);
+					dynamicMaterial->SetVectorParameterValue(TEXT("EndColor"), m->FalloffParam.EndColor);
+					dynamicMaterial->SetScalarParameterValue(TEXT("FalloffPow"), static_cast<float>(m->FalloffParam.Pow));
+
+					dynamicMaterial->SetScalarParameterValue(TEXT("EmissiveScaling"), m->EmissiveScaling);
+
+					dynamicMaterial->SetVectorParameterValue(TEXT("EdgeColor"), m->EdgeParams.Color);
+					dynamicMaterial->SetScalarParameterValue(TEXT("EdgeThreshold"), m->EdgeParams.Threshold);
+					dynamicMaterial->SetScalarParameterValue(TEXT("EdgeColorScaling"), static_cast<float>(m->EdgeParams.ColorScaling));
+
+					if (ColorSpace == EEffekseerColorSpaceType::Gamma)
+					{
+						dynamicMaterial->SetScalarParameterValue(TEXT("GammaScale"), 2.2f);
+						dynamicMaterial->SetScalarParameterValue(TEXT("InvGammaScale"), 1.0f / 2.2f);
+						dynamicMaterial->SetScalarParameterValue(TEXT("GammaScaleEnabled"), 1.0f);
+					}
+					else
+					{
+						dynamicMaterial->SetScalarParameterValue(TEXT("GammaScale"), 1.0f);
+						dynamicMaterial->SetScalarParameterValue(TEXT("InvGammaScale"), 1.0f);
+						dynamicMaterial->SetScalarParameterValue(TEXT("GammaScaleEnabled"), 0.0f);
+					}
+
+					NMaterials[m->Key] = dynamicMaterial;
+
+					created = dynamicMaterial;
+				}
+
+				Materials.Add(m, created);
 			}
-			else
-			{
-				auto dynamicMaterial = UMaterialInstanceDynamic::Create(mat, this);
-				dynamicMaterial->SetTextureParameterValue(TEXT("ColorTexture"), m->Texture);
-
-				dynamicMaterial->SetTextureParameterValue(TEXT("AlphaTexture"), m->AlphaTexture);
-				dynamicMaterial->SetTextureParameterValue(TEXT("UVDistortionTexture"), m->UVDistortionTexture);
-				dynamicMaterial->SetTextureParameterValue(TEXT("BlendTexture"), m->BlendTexture);
-				dynamicMaterial->SetTextureParameterValue(TEXT("BlendAlphaTexture"), m->BlendAlphaTexture);
-				dynamicMaterial->SetTextureParameterValue(TEXT("BlendUVDistortionTexture"), m->BlendUVDistortionTexture);
-
-				dynamicMaterial->SetScalarParameterValue(TEXT("TextureTilingType"), m->TextureAddressType);
-				dynamicMaterial->SetScalarParameterValue(TEXT("AlphaTextureTilingType"), m->AlphaTextureAddressType);
-				dynamicMaterial->SetScalarParameterValue(TEXT("UVDistortionTextureTilingType"), m->UVDistortionTextureAddressType);
-				dynamicMaterial->SetScalarParameterValue(TEXT("BlendTextureTilingType"), m->BlendTextureAddress);
-				dynamicMaterial->SetScalarParameterValue(TEXT("BlendAlphaTextureTilingType"), m->BlendAlphaTextureAddress);
-				dynamicMaterial->SetScalarParameterValue(TEXT("BlendUVDistortionTextureTilingType"), m->BlendUVDistortionTextureAddress);
-
-				dynamicMaterial->SetVectorParameterValue(TEXT("FlipbookParameters"), FLinearColor(float(m->FlipbookParams.Enable), m->FlipbookParams.LoopType, m->FlipbookParams.DivideX, m->FlipbookParams.DivideY));
-
-				dynamicMaterial->SetScalarParameterValue(TEXT("UVDistortionIntensity"), m->UVDistortionIntensity);
-
-				dynamicMaterial->SetScalarParameterValue(TEXT("TextureBlendType"), m->TextureBlendType);
-
-				dynamicMaterial->SetScalarParameterValue(TEXT("BlendUVDistortionIntensity"), m->BlendUVDistortionIntensity);
-
-				dynamicMaterial->SetScalarParameterValue(TEXT("EnableFalloff"), static_cast<float>(m->EnableFalloff));
-				dynamicMaterial->SetScalarParameterValue(TEXT("FalloffBlendType"), static_cast<float>(m->FalloffParam.ColorBlendType));
-				dynamicMaterial->SetVectorParameterValue(TEXT("BeginColor"), m->FalloffParam.BeginColor);
-				dynamicMaterial->SetVectorParameterValue(TEXT("EndColor"), m->FalloffParam.EndColor);
-				dynamicMaterial->SetScalarParameterValue(TEXT("FalloffPow"), static_cast<float>(m->FalloffParam.Pow));
-
-				dynamicMaterial->SetScalarParameterValue(TEXT("EmissiveScaling"), m->EmissiveScaling);
-
-				dynamicMaterial->SetVectorParameterValue(TEXT("EdgeColor"), m->EdgeParams.Color);
-				dynamicMaterial->SetScalarParameterValue(TEXT("EdgeThreshold"), m->EdgeParams.Threshold);
-				dynamicMaterial->SetScalarParameterValue(TEXT("EdgeColorScaling"), static_cast<float>(m->EdgeParams.ColorScaling));
-				NMaterials[m->Key] = dynamicMaterial;
-
-				created = dynamicMaterial;
-			}
-
-			Materials.Add(m, created);
 		}
 	}
 

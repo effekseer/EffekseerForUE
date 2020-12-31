@@ -4,9 +4,11 @@
 #include "CoreMinimal.h"
 #include "UObject/Object.h"
 #include "Materials/Material.h"
+#include "Materials/MaterialInstanceDynamic.h"
 #include "EffekseerAlphaBlendType.h"
 #include "EditorFramework/AssetImportData.h"
 #include "Runtime/Launch/Resources/Version.h"
+#include "EffekseerColorSpaceType.h"
 #include "EffekseerMaterial.generated.h"
 
 namespace Effekseer
@@ -64,6 +66,9 @@ private:
 #endif
 
 	void ReleaseMaterial();
+
+	UMaterial* materialPrevious_ = nullptr;
+
 public:
 
 	UPROPERTY(EditInstanceOnly)
@@ -90,6 +95,8 @@ public:
 	UPROPERTY(Transient)
 	TMap<FString, int> TextureNameToIndex;
 
+	UPROPERTY(Transient)
+	TMap<EEffekseerAlphaBlendType, UMaterialInstanceDynamic*> ColorSpaceMaterials;
 
 #if WITH_EDITORONLY_DATA
 	UPROPERTY(Category = ImportSettings, VisibleAnywhere)
@@ -111,7 +118,9 @@ public:
 
 	void ReassignSearchingMaps();
 
-	UMaterialInterface* FindMatrial(EEffekseerAlphaBlendType alphaBlend) const;
+	UMaterialInterface* FindMatrial(EEffekseerAlphaBlendType alphaBlend);
+
+	bool GenerateColorSpaceMaterial(EEffekseerAlphaBlendType alphaBlend, EEffekseerColorSpaceType colorSpaceType);
 
 	Effekseer::MaterialFile* GetNativePtr() { return internal_; }
 
