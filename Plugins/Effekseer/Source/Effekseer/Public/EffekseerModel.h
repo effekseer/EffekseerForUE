@@ -5,6 +5,7 @@
 #include "UObject/Object.h"
 #include "Engine/StaticMesh.h"
 #include "EditorFramework/AssetImportData.h"
+
 #include "EffekseerModel.generated.h"
 
 struct FEffekseerModelMesh
@@ -63,7 +64,7 @@ public:
 
 	TArray<int> GetAnimationFaceOffsets();
 
-	Effekseer::Model* GetNativePtr() { return modelPtr; }
+	Effekseer::Model* GetNativePtr() const { return modelPtr; }
 
 	virtual void Serialize(FArchive& Ar) override;
 };

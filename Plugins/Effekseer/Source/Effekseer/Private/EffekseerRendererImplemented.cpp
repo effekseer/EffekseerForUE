@@ -16,6 +16,7 @@
 #include <EffekseerRenderer.RibbonRendererBase.h>
 #include <EffekseerRenderer.RingRendererBase.h>
 #include "EffekseerInternalTexture.h"
+#include "EffekseerProcedualModel.h"
 
 #define GET_MAT_PARAM_NAME
 
@@ -497,7 +498,16 @@ namespace EffekseerRendererUE4
 		auto& param = parameter;
 		auto& renderer = m_renderer;
 
-		auto model = (EffekseerInternalModel*)parameter.EffectPointer->GetModel(parameter.ModelIndex).Get();
+		EffekseerInternalModel* model = nullptr;
+		if(param.IsProcedualMode)
+		{
+			model = (EffekseerInternalModel*)parameter.EffectPointer->GetProcedualModel(parameter.ModelIndex).Get();	
+		}
+		else
+		{
+			model = (EffekseerInternalModel*)parameter.EffectPointer->GetModel(parameter.ModelIndex).Get();	
+		}
+
 		if (model == nullptr) return;
 
 		if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::File)
@@ -1169,20 +1179,34 @@ namespace EffekseerRendererUE4
 		// StaticMesh
 		if (model == nullptr) return;
 		auto mdl = (EffekseerInternalModel*)model;
+
+		if (mdl->UserData != nullptr)
+		{
+			if (mdl->UserData->Mesh == nullptr)
+			{
+				return;
+			}
+
+			if (mdl->UserData->Mesh->RenderData->LODResources.Num() == 0)
+			{
+				return;
+			}
+		}
+		else if (mdl->ProcedualData != nullptr)
+		{
+			if (!mdl->ProcedualData->GenerateRenderDataIfRequired(m_meshElementCollector->GetFeatureLevel()))
+			{
+				return;
+			}
+		}
+
 		auto efkmdl = ((UEffekseerModel*)mdl->UserData);
-		UStaticMesh* sm = efkmdl->Mesh;
-		if (sm == nullptr) return;
-
-		auto& renderData = sm->RenderData;
-
+	
 		// Material
 		auto reunderingUserData = static_cast<EffekseerRenderingUserData*>(GetImpl()->CurrentRenderingUserData.Get());
 		auto mat = FindMaterial(reunderingUserData);
 
 		if (mat == nullptr) return;
-
-		if (renderData->LODResources.Num() == 0) return;
-		const auto& lodResource = renderData->LODResources[0];
 
 		for (int32_t objectIndex = 0; objectIndex < matrixes.size(); objectIndex++)
 		{
@@ -1215,27 +1239,25 @@ namespace EffekseerRendererUE4
 
 			FLinearColor color = FLinearColor(colorOrigin.R / 255.0f, colorOrigin.G / 255.0f, colorOrigin.B / 255.0f, colorOrigin.A / 255.0f);
 			int frameTime = times[objectIndex] % mdl->GetFrameCount();
-
-			for (int32 sectionIndex = 0; sectionIndex < lodResource.Sections.Num(); sectionIndex++)
+			
+			if (mdl->UserData != nullptr)
 			{
-				auto& section = lodResource.Sections[sectionIndex];
-				if (section.NumTriangles <= 0) continue;
+				const auto& lodResource = mdl->UserData->Mesh->RenderData->LODResources[0];
 
-				// Is it no problem?
-				if (efkmdl->AnimationFaceOffsets.Num() > 0)
+				if (mdl->UserData->AnimationFaceOffsets.Num() > 0)
 				{
-					if (sectionIndex != frameTime) continue;
-		}
+					if (lodResource.Sections.Num() <= frameTime)
+					{
+						continue;
+					}
+				}
+				else
+				{
+					frameTime = 0;
+				}
+			}
 
-				FMeshBatch& meshElement = m_meshElementCollector->AllocateMesh();
-				auto& element = meshElement.Elements[0];
-
-
-				FDynamicPrimitiveUniformBuffer& dynamicPrimitiveUniformBuffer = m_meshElementCollector->AllocateOneFrameResource<FDynamicPrimitiveUniformBuffer>();
-				dynamicPrimitiveUniformBuffer.Set(matLocalToWorld, matLocalToWorld, FBoxSphereBounds(EForceInit::ForceInit), FBoxSphereBounds(EForceInit::ForceInit), false, false, false, false);
-
-				element.PrimitiveUniformBufferResource = &dynamicPrimitiveUniformBuffer.UniformBuffer;
-
+			{
 				auto proxy = mat->GetRenderProxy();
 
 				if (m_currentShader != nullptr && m_currentShader->GetType() == Effekseer::RendererMaterialType::File)
@@ -1270,12 +1292,12 @@ namespace EffekseerRendererUE4
 
 					proxy = newProxy;
 					m_meshElementCollector->RegisterOneFrameMaterialProxy(proxy);
-					}
+				}
 				else
 				{
 					proxy = new FModelMaterialRenderProxy(
-						proxy, 
-						uv, 
+						proxy,
+						uv,
 						alphaUV,
 						uvDistortionUV,
 						blendUV,
@@ -1283,43 +1305,63 @@ namespace EffekseerRendererUE4
 						blendUVDistortionUV,
 						flipbookIndexAndNextRate,
 						alphaThreshold,
-						color, 
-						m_distortionIntensity, 
+						color,
+						m_distortionIntensity,
 						m_renderState->GetActiveState().CullingType);
 					m_meshElementCollector->RegisterOneFrameMaterialProxy(proxy);
 				}
 
-				meshElement.MaterialRenderProxy = proxy;
-				meshElement.VertexFactory = &renderData->LODVertexFactories[0].VertexFactory;
-				meshElement.Type = PT_TriangleList;
 
-				if (efkmdl->AnimationFaceOffsets.Num() > 0)
+				if (mdl->UserData != nullptr)
 				{
-					//element.IndexBuffer = &(lodResource.IndexBuffer);
-					//element.FirstIndex = efkmdl->AnimationFaceOffsets[0] + section.FirstIndex;
-					//element.NumPrimitives = efkmdl->AnimationFaceCounts[0];
-					element.IndexBuffer = &(lodResource.IndexBuffer);
-					element.FirstIndex = section.FirstIndex;
-					element.NumPrimitives = section.NumTriangles;
+					const auto& lodResource = mdl->UserData->Mesh->RenderData->LODResources[0];
+					auto& section = lodResource.Sections[frameTime];
+
+					FMeshBatch& meshElement = m_meshElementCollector->AllocateMesh();
+					auto& element = meshElement.Elements[0];
+
+					FDynamicPrimitiveUniformBuffer& dynamicPrimitiveUniformBuffer = m_meshElementCollector->AllocateOneFrameResource<FDynamicPrimitiveUniformBuffer>();
+					dynamicPrimitiveUniformBuffer.Set(matLocalToWorld, matLocalToWorld, FBoxSphereBounds(EForceInit::ForceInit), FBoxSphereBounds(EForceInit::ForceInit), false, false, false, false);
+
+					element.PrimitiveUniformBufferResource = &dynamicPrimitiveUniformBuffer.UniformBuffer;
+
+					meshElement.MaterialRenderProxy = proxy;
+					meshElement.VertexFactory = &mdl->UserData->Mesh->RenderData->LODVertexFactories[0].VertexFactory;
+					meshElement.Type = PT_TriangleList;
+
+					if (efkmdl->AnimationFaceOffsets.Num() > 0)
+					{
+						element.IndexBuffer = &(lodResource.IndexBuffer);
+						element.FirstIndex = section.FirstIndex;
+						element.NumPrimitives = section.NumTriangles;
+					}
+					else
+					{
+						element.IndexBuffer = &(lodResource.IndexBuffer);
+						element.FirstIndex = section.FirstIndex;
+						element.NumPrimitives = section.NumTriangles;
+					}
+
+					element.MinVertexIndex = section.MinVertexIndex;
+					element.MaxVertexIndex = section.MaxVertexIndex;
+					meshElement.LODIndex = 0;
+
+					element.MaxScreenSize = 0.0f;
+					element.MinScreenSize = -1.0f;
+
+					m_meshElementCollector->AddMesh(m_viewIndex, meshElement);
 				}
-				else
+				else if (mdl->ProcedualData != nullptr)
 				{
-					element.IndexBuffer = &(lodResource.IndexBuffer);
-					element.FirstIndex = section.FirstIndex;
-					element.NumPrimitives = section.NumTriangles;
+					if (!mdl->ProcedualData->GenerateRenderDataIfRequired(m_meshElementCollector->GetFeatureLevel()))
+					{
+						return;
+					}
+
+					mdl->ProcedualData->Render(m_viewIndex, *m_meshElementCollector, matLocalToWorld, proxy);
 				}
-
-
-				element.MinVertexIndex = section.MinVertexIndex;
-				element.MaxVertexIndex = section.MaxVertexIndex;
-				meshElement.LODIndex = 0;
-
-				element.MaxScreenSize = 0.0f;
-				element.MinScreenSize = -1.0f;
-
-				m_meshElementCollector->AddMesh(m_viewIndex, meshElement);
-				}
-				}
+			}
+		}
 	}
 
 	UMaterialInterface* RendererImplemented::FindMaterial(EffekseerRenderingUserData* userData)

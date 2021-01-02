@@ -408,6 +408,8 @@ public:
 	EffekseerEffectMaterialKey Key;
 };
 
+class UEFfekseerProcedualModel;
+
 UCLASS()
 class EFFEKSEER_API UEffekseerEffect : public UObject
 {
@@ -458,6 +460,9 @@ public:
 
 	UPROPERTY(Transient)
 	TArray<UEffekseerEffectMaterialParameterHolder*>	EffekseerMaterials;
+	
+	UPROPERTY(Transient)
+	TArray<UEFfekseerProcedualModel*> ProcedualModels;
 	
 	/*
 	UPROPERTY(VisibleAnywhere, Transient)

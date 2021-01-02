@@ -11,6 +11,10 @@
 #include "EffekseerRendererShader.h"
 #include "EffekseerCustomVersion.h"
 #include "EffekseerInternalTexture.h"
+#include "EffekseerProcedualModel.h"
+#include "EffekseerInternalModel.h"
+
+#include <Effekseer/Effekseer/Model/ProcedualModelGenerator.h>
 
 template <size_t size_>
 struct tStr
@@ -517,6 +521,58 @@ void CurveLoader::Unload(Effekseer::CurveRef data)
 {
 }
 
+class ProcedualModelGenerator : public Effekseer::ProcedualModelGenerator
+{
+	UEffekseerEffect* object_ = nullptr;
+	int32_t loadingIndex_ = 0;
+
+public:
+	ProcedualModelGenerator()
+	{
+
+	}
+
+	~ProcedualModelGenerator() override
+	{
+
+	}
+
+	virtual Effekseer::ModelRef Generate(const Effekseer::ProcedualModelParameter* parameter)
+	{
+		auto original = Effekseer::ProcedualModelGenerator::Generate(parameter);
+
+		UEFfekseerProcedualModel* pmodel = NewObject<UEFfekseerProcedualModel>();
+		object_->ProcedualModels.Add(pmodel);
+
+		Effekseer::CustomVector<Effekseer::Model::Vertex> vertecies_;
+		Effekseer::CustomVector<Effekseer::Model::Face> faces_;
+
+		vertecies_.resize(original->GetVertexCount());
+		memcpy(vertecies_.data(), original->GetVertexes(), sizeof(Effekseer::Model::Vertex) * vertecies_.size());
+
+		faces_.resize(original->GetFaceCount());
+		memcpy(faces_.data(), original->GetFaces(), sizeof(Effekseer::Model::Face) * faces_.size());
+
+		auto model = Effekseer::MakeRefPtr<EffekseerInternalModel>(vertecies_, faces_);
+		model->ProcedualData = pmodel;
+
+		pmodel->Init(model);
+			
+		return model;
+	}
+
+	virtual void Ungenerate(Effekseer::ModelRef model)
+	{
+
+	}
+
+	void SetUObject(UEffekseerEffect* uobject)
+	{
+		object_ = uobject;
+		loadingIndex_ = 0;
+	}
+};
+
 static ::Effekseer::RefPtr<::Effekseer::Setting> CreateSetting()
 {
 	auto setting = ::Effekseer::Setting::Create();
@@ -524,6 +580,8 @@ static ::Effekseer::RefPtr<::Effekseer::Setting> CreateSetting()
 	setting->SetModelLoader(Effekseer::MakeRefPtr<ModelLoader>());
 	setting->SetMaterialLoader(Effekseer::MakeRefPtr<MaterialLoader>());
 	setting->SetCurveLoader(Effekseer::MakeRefPtr<CurveLoader>());
+	setting->SetProcedualMeshGenerator(Effekseer::MakeRefPtr<ProcedualModelGenerator>());
+
 	return setting;
 }
 
@@ -544,6 +602,9 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 		this->Curves.Reset();
 	}
 
+	// Procedual models always reset
+	this->ProcedualModels.Reset();
+
 	auto textureLoader = setting->GetTextureLoader().DownCast<TextureLoader>();
 	textureLoader->SetUObject(this, isResourceReset);
 
@@ -555,6 +616,9 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 
 	auto curveLoader = setting->GetCurveLoader().DownCast<CurveLoader>();
 	curveLoader->SetUObject(this, isResourceReset);
+
+	auto procedualModelGenerator = setting->GetProcedualMeshGenerator().DownCast<ProcedualModelGenerator>();
+	procedualModelGenerator->SetUObject(this);
 
 	auto rootPath = uPath.c_str();
 	EFK_CHAR parentPath[300];
