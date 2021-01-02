@@ -21,9 +21,9 @@ public:
 			auto v = model.GetVertexes()[i];
 
 			vertices[i] = FDynamicMeshVertex(
-				FVector(v.Position.X, v.Position.Y, v.Position.Z), 
-				FVector(v.Tangent.X, v.Tangent.Y, v.Tangent.Z),
-				FVector(v.Normal.X, v.Normal.Y, v.Normal.Z),
+				FVector(v.Position.X, v.Position.Z, v.Position.Y), 
+				FVector(v.Tangent.X, v.Tangent.Z, v.Tangent.Y),
+				FVector(v.Normal.X, v.Normal.Z, v.Normal.Y),
 				FVector2D(v.UV.X, v.UV.Y),
 				FColor(v.VColor.R, v.VColor.B, v.VColor.B, v.VColor.A));
 		}
@@ -45,13 +45,13 @@ public:
 		BeginInitResource(&VertexFactory);
 	}
 
-	~FProcedualModelMeshRenderData()
+	void ReleaseResouces()
 	{
-		VertexBuffers.PositionVertexBuffer.ReleaseResource();
-		VertexBuffers.StaticMeshVertexBuffer.ReleaseResource();
-		VertexBuffers.ColorVertexBuffer.ReleaseResource();
-		IndexBuffer.ReleaseResource();
-		VertexFactory.ReleaseResource();
+		BeginReleaseResource(&VertexBuffers.PositionVertexBuffer);
+		BeginReleaseResource(&VertexBuffers.StaticMeshVertexBuffer);
+		BeginReleaseResource(&VertexBuffers.ColorVertexBuffer);
+		BeginReleaseResource(&IndexBuffer);
+		BeginReleaseResource(&VertexFactory);
 	}
 };
 
@@ -62,6 +62,15 @@ UEFfekseerProcedualModel::UEFfekseerProcedualModel()
 UEFfekseerProcedualModel::~UEFfekseerProcedualModel()
 {
 	ES_SAFE_DELETE(renderData_);
+}
+
+void UEFfekseerProcedualModel::BeginDestroy()
+{
+	if (renderData_ != nullptr)
+	{
+		renderData_->ReleaseResouces();
+	}
+	Super::BeginDestroy();
 }
 
 void UEFfekseerProcedualModel::Init(Effekseer::ModelRef modelPtr)

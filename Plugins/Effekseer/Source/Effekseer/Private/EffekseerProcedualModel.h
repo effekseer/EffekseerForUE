@@ -27,6 +27,8 @@ public:
 
 	~UEFfekseerProcedualModel() override;
 	
+	void BeginDestroy() override;
+
 	void Init(Effekseer::ModelRef modelPtr);
 
 	bool GenerateRenderDataIfRequired(ERHIFeatureLevel::Type inFeatureLevel);

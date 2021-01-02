@@ -524,7 +524,6 @@ void CurveLoader::Unload(Effekseer::CurveRef data)
 class ProcedualModelGenerator : public Effekseer::ProcedualModelGenerator
 {
 	UEffekseerEffect* object_ = nullptr;
-	bool requiredToCreateResource_ = false;
 	int32_t loadingIndex_ = 0;
 
 public:
@@ -540,65 +539,26 @@ public:
 
 	virtual Effekseer::ModelRef Generate(const Effekseer::ProcedualModelParameter* parameter)
 	{
-		if (requiredToCreateResource_)
-		{
-			auto original = Effekseer::ProcedualModelGenerator::Generate(parameter);
+		auto original = Effekseer::ProcedualModelGenerator::Generate(parameter);
 
+		UEFfekseerProcedualModel* pmodel = NewObject<UEFfekseerProcedualModel>();
+		object_->ProcedualModels.Add(pmodel);
 
-			UEFfekseerProcedualModel* pmodel = NewObject<UEFfekseerProcedualModel>();
-			object_->ProcedualModels.Add(pmodel);
+		Effekseer::CustomVector<Effekseer::Model::Vertex> vertecies_;
+		Effekseer::CustomVector<Effekseer::Model::Face> faces_;
 
-			Effekseer::CustomVector<Effekseer::Model::Vertex> vertecies_;
-			Effekseer::CustomVector<Effekseer::Model::Face> faces_;
+		vertecies_.resize(original->GetVertexCount());
+		memcpy(vertecies_.data(), original->GetVertexes(), sizeof(Effekseer::Model::Vertex) * vertecies_.size());
 
-			vertecies_.resize(original->GetVertexCount());
-			memcpy(vertecies_.data(), original->GetVertexes(), sizeof(Effekseer::Model::Vertex) * vertecies_.size());
+		faces_.resize(original->GetFaceCount());
+		memcpy(faces_.data(), original->GetFaces(), sizeof(Effekseer::Model::Face) * faces_.size());
 
-			faces_.resize(original->GetFaceCount());
-			memcpy(faces_.data(), original->GetFaces(), sizeof(Effekseer::Model::Face) * faces_.size());
+		auto model = Effekseer::MakeRefPtr<EffekseerInternalModel>(vertecies_, faces_);
+		model->ProcedualData = pmodel;
 
-			auto model = Effekseer::MakeRefPtr<EffekseerInternalModel>(vertecies_, faces_);
-			model->ProcedualData = pmodel;
-
-			pmodel->Init(model);
-
-			return model;
-		}
-		else
-		{
-			if (object_->ProcedualModels.Num() <= loadingIndex_)
-			{
-				// Todo Refactor
-				auto original = Effekseer::ProcedualModelGenerator::Generate(parameter);
-
-				UEFfekseerProcedualModel* pmodel = NewObject<UEFfekseerProcedualModel>();
-				object_->ProcedualModels.Add(pmodel);
-
-				Effekseer::CustomVector<Effekseer::Model::Vertex> vertecies_;
-				Effekseer::CustomVector<Effekseer::Model::Face> faces_;
-
-				vertecies_.resize(original->GetVertexCount());
-				memcpy(vertecies_.data(), original->GetVertexes(), sizeof(Effekseer::Model::Vertex) * vertecies_.size());
-
-				faces_.resize(original->GetFaceCount());
-				memcpy(faces_.data(), original->GetFaces(), sizeof(Effekseer::Model::Face) * faces_.size());
-
-				auto model = Effekseer::MakeRefPtr<EffekseerInternalModel>(vertecies_, faces_);
-				model->ProcedualData = pmodel;
-
-				pmodel->Init(model);
-			}
-
-			auto o = object_->ProcedualModels[loadingIndex_];
-			loadingIndex_++;
-
-			if (o != nullptr)
-			{
-				return o->GetNativePtr();
-			}
-		}
-
-		return nullptr;
+		pmodel->Init(model);
+			
+		return model;
 	}
 
 	virtual void Ungenerate(Effekseer::ModelRef model)
@@ -606,15 +566,10 @@ public:
 
 	}
 
-	void SetUObject(UEffekseerEffect* uobject, bool requiredToCreateResource)
+	void SetUObject(UEffekseerEffect* uobject)
 	{
 		object_ = uobject;
-
-		requiredToCreateResource_ = requiredToCreateResource;
-		if (!requiredToCreateResource_)
-		{
-			loadingIndex_ = 0;
-		}
+		loadingIndex_ = 0;
 	}
 };
 
@@ -647,6 +602,9 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 		this->Curves.Reset();
 	}
 
+	// Procedual models always reset
+	this->ProcedualModels.Reset();
+
 	auto textureLoader = setting->GetTextureLoader().DownCast<TextureLoader>();
 	textureLoader->SetUObject(this, isResourceReset);
 
@@ -660,7 +618,7 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 	curveLoader->SetUObject(this, isResourceReset);
 
 	auto procedualModelGenerator = setting->GetProcedualMeshGenerator().DownCast<ProcedualModelGenerator>();
-	procedualModelGenerator->SetUObject(this, isResourceReset);
+	procedualModelGenerator->SetUObject(this);
 
 	auto rootPath = uPath.c_str();
 	EFK_CHAR parentPath[300];
