@@ -668,20 +668,6 @@ FEffekseerHandle UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVect
 					dynamicMaterial->SetScalarParameterValue(TEXT("EdgeColorScaling"), static_cast<float>(m->EdgeParams.ColorScaling));
 
 					dynamicMaterial->SetVectorParameterValue(TEXT("SoftParticleParams"), FLinearColor(float(m->SoftParticleParam.DepthFadeFar), m->SoftParticleParam.DepthFadeNear, m->SoftParticleParam.DepthFadeNearOffset, 0.0f));
-					
-					if(!m->IsLighting)
-					{
-						FStaticParameterSet StaticParameters = dynamicMaterial->GetStaticParameters();
-						for (auto& SwitchParameter : StaticParameters.StaticSwitchParameters)
-						{
-							if (SwitchParameter.ParameterInfo.Name == "IsDepthEnabled")
-							{
-								SwitchParameter.Value = true;
-								break;
-							}
-						}
-						dynamicMaterial->UpdateStaticPermutation(StaticParameters);
-					}
 
 					if (ColorSpace == EEffekseerColorSpaceType::Gamma)
 					{
