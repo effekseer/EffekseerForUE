@@ -153,6 +153,44 @@ struct FFalloffParameter
 	}
 };
 
+USTRUCT()
+struct FSoftParticleParameter
+{
+	GENERATED_USTRUCT_BODY()
+
+	float DepthFadeFar = 0.0f;
+	float DepthFadeNear = 0.0f;
+	float DepthFadeNearOffset = 0.0f;
+
+	bool operator==(const FSoftParticleParameter& rhs) const
+	{
+		if (DepthFadeFar != rhs.DepthFadeFar)
+			return false;
+		if (DepthFadeNear != rhs.DepthFadeNear)
+			return false;
+		if (DepthFadeNearOffset != rhs.DepthFadeNearOffset)
+			return false;
+
+		return true;
+	}
+
+	bool operator!=(const FSoftParticleParameter& rhs) const
+	{
+		return !(*this == rhs);
+	}
+
+	bool operator<(const FSoftParticleParameter& rhs) const
+	{
+		if (DepthFadeFar != rhs.DepthFadeFar)
+			return DepthFadeFar < rhs.DepthFadeFar;
+		if (DepthFadeNear != rhs.DepthFadeNear)
+			return DepthFadeNear < rhs.DepthFadeNear;
+		if (DepthFadeNearOffset != rhs.DepthFadeNearOffset)
+			return DepthFadeNearOffset < rhs.DepthFadeNearOffset;
+		return false;
+	}
+};
+
 struct EffekseerEffectMaterialKey
 {
 	UTexture2D* Texture = nullptr;
@@ -175,6 +213,8 @@ struct EffekseerEffectMaterialKey
 	FFalloffParameter FalloffParam;
 	float			EmissiveScaling = 1;
 	FEdgeParameters	EdgeParams;
+	FSoftParticleParameter SoftParticleParam;
+
 	EEffekseerAlphaBlendType	AlphaBlend = EEffekseerAlphaBlendType::Opacity;
 	bool			IsDepthTestDisabled = false;
 	bool			IsLighting = false;
@@ -293,6 +333,11 @@ struct EffekseerEffectMaterialKey
 			return EdgeParams < rhs.EdgeParams;
 		}
 
+		if (SoftParticleParam != rhs.SoftParticleParam)
+		{
+			return SoftParticleParam < rhs.SoftParticleParam;
+		}
+
 		if (AlphaBlend != rhs.AlphaBlend)
 		{
 			return AlphaBlend < rhs.AlphaBlend;
@@ -391,6 +436,9 @@ public:
 	FEdgeParameters	EdgeParams;
 
 	UPROPERTY()
+	FSoftParticleParameter SoftParticleParam;
+
+	UPROPERTY()
 	EEffekseerAlphaBlendType	AlphaBlend = EEffekseerAlphaBlendType::Opacity;
 
 	UPROPERTY()
@@ -409,11 +457,14 @@ public:
 };
 
 class UEFfekseerProcedualModel;
+class ProcedualModelGenerator;
 
 UCLASS()
 class EFFEKSEER_API UEffekseerEffect : public UObject
 {
 	GENERATED_BODY()
+
+	friend class ProcedualModelGenerator;
 
 private:
 	void*			effectPtr = nullptr;
@@ -428,6 +479,9 @@ private:
 	void ReleaseEffect();
 
 	void SetTextureAddressMode(::Effekseer::EffectNode* node);
+
+	UPROPERTY(Transient)
+	TArray<UEFfekseerProcedualModel*> ProcedualModels;
 
 public:
 	void Load(const uint8_t* data, int32_t size, const TCHAR* path);
@@ -460,10 +514,7 @@ public:
 
 	UPROPERTY(Transient)
 	TArray<UEffekseerEffectMaterialParameterHolder*>	EffekseerMaterials;
-	
-	UPROPERTY(Transient)
-	TArray<UEFfekseerProcedualModel*> ProcedualModels;
-	
+		
 	/*
 	UPROPERTY(VisibleAnywhere, Transient)
 	TArray<UTexture2D*>	ColorTextures;

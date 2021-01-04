@@ -787,6 +787,10 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 			mat->AlphaBlend = (EEffekseerAlphaBlendType)param.AlphaBlend;
 			mat->IsLighting = param.MaterialType == ::Effekseer::RendererMaterialType::Lighting;
 			mat->IsDistorted = param.Distortion;
+
+			mat->SoftParticleParam.DepthFadeFar = param.SoftParticleDistanceFar * node->GetEffect()->GetMaginification();
+			mat->SoftParticleParam.DepthFadeNear = param.SoftParticleDistanceNear * node->GetEffect()->GetMaginification();
+			mat->SoftParticleParam.DepthFadeNearOffset = param.SoftParticleDistanceNearOffset * node->GetEffect()->GetMaginification();
 			mat->Material = material;
 
 			EffekseerEffectMaterialKey mkey;
@@ -816,6 +820,7 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 			mkey.IsLighting = m->IsLighting;
 			mkey.IsDistorted = m->IsDistorted;
 			mkey.Material = m->Material;
+			mkey.SoftParticleParam = m->SoftParticleParam;
 			
 			mat->Key = mkey;
 
