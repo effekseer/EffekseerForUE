@@ -147,7 +147,7 @@ efkefcファイルとテクスチャをコンテンツに追加します。
 <img src="img/assignResource.png">
 </div>
 
-マテリアルにテクスチャが割り当てられていない場合、EffekseerMaterialアセットを右クリックした後、GenerateMaterialElementsを実行します。
+マテリアルにテクスチャが割り当てられていない場合、EffekseerMaterialアセットを右クリックした後、再インポートを実行します。
 
 
 エフェクトが小さいことが多いので、EffekseerEffectアセットをダブルクリックしてスケールを設定します。

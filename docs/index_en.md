@@ -149,7 +149,7 @@ If the effect does not have a texture or material assigned to it, right click on
 <img src="img/assignResource.png">
 </div>
 
-If no texture is assigned to the material, right-click on the EffekseerMaterial asset and click GenerateMaterialElements.
+If no texture is assigned to the material, right-click on the EffekseerMaterial asset and Reimport it.
 
 You assigns textures to the EffekseerEffect asset.
 Right-click the EffekseerEffect asset, and then run AssignResources.
