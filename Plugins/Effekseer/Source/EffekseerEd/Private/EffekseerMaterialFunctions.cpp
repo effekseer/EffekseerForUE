@@ -71,14 +71,6 @@ public:
 			material->SetShadingModel(EMaterialShadingModel::MSM_Unlit);
 		}
 
-		{
-
-		}
-
-		baseColorPower_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
-		material->Expressions.Add(baseColorPower_);
-		emissiveColorPower_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
-		material->Expressions.Add(emissiveColorPower_);
 		opacityFunction_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
 		material->Expressions.Add(opacityFunction_);
 		opacityCullingFunction_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
@@ -110,6 +102,8 @@ public:
 	{
 		if (targetInd == effekseerNode_->GetInputPinIndex("BaseColor"))
 		{
+			baseColorPower_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material_);
+			material_->Expressions.Add(baseColorPower_);
 			FStringAssetReference assetPath("/Effekseer/MaterialFunctions/EfkToLinear3.EfkToLinear3");
 			UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
 			baseColorPower_->SetMaterialFunction(func);
@@ -121,6 +115,8 @@ public:
 
 		if (targetInd == effekseerNode_->GetInputPinIndex("Emissive"))
 		{
+			emissiveColorPower_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material_);
+			material_->Expressions.Add(emissiveColorPower_);
 			FStringAssetReference assetPath("/Effekseer/MaterialFunctions/EfkToLinear3.EfkToLinear3");
 			UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
 			emissiveColorPower_->SetMaterialFunction(func);
