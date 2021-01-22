@@ -38,8 +38,8 @@ EffekseerSystem draws effects. Therefore, one component is absolutely necessary 
 
 EffekseerEmitterComponent creates and manipulates effects. It is necessary for each effect.
 
-Besides these, theare are ```EffekseerEffect``` asset corresponding to Effekseer's efk file and
-```EffekseerModel``` asset corresponding to the Effekseer's efkmdl file.
+Besides these, theare are ```EffekseerEffect``` asset corresponding to Effekseer's efkefc file,
+```EffekseerModel``` asset corresponding to the Effekseer's efkmdl file and ```EffekseerMaterial``` asset corresponding to the Effekseer's efkmat file
 
 There are also ```BP_EffekseerSystem``` and ```BP_EffekseerEmitter``` blueprints that makes it easier to use components.
 
@@ -131,11 +131,25 @@ BP_EffekseerEmitter be located at the position where you want to display an effe
 
 ### 1.5. Adding assets
 
-You add the efk files and textures output from Effekseer to the content.
+You add the efkefc files and textures output from Effekseer to the content.
 
 <div align="center">
 <img src="img/addAssets.png">
 </div>
+
+#### About the order of import
+
+The order of importing is important.
+We recommend that you import textures, materials, and effects in this order.
+If you do not import them in this order, resources will not be assigned and the display may look strange.
+
+If the effect does not have a texture or material assigned to it, right click on the Effect asset and click AssignResources.
+
+<div align="center">.
+<img src="img/assignResource.png">
+</div>
+
+If no texture is assigned to the material, right-click on the EffekseerMaterial asset and click GenerateMaterialElements.
 
 You assigns textures to the EffekseerEffect asset.
 Right-click the EffekseerEffect asset, and then run AssignResources.

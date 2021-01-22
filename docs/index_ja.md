@@ -37,8 +37,8 @@ EffekseerSystemはエフェクトの描画を行います。そのため、レ�
 
 EffekseerEmitterComponentはエフェクトの生成や操作を行います。エフェクト1つ1つに必要です。
 
-これらの他に、Effekseerのefkファイルに対応するアセットの```EffekseerEffect```と
-Effekseerのefkmdlファイルに対応するアセットの```EffekseerModel```があります。
+これらの他に、Effekseerのefkefcファイルに対応するアセットの```EffekseerEffect```と
+Effekseerのefkmdlファイルに対応するアセットの```EffekseerModel```、efkmatファイルに対応するアセットの```EffekseerMaterial```、があります。
 
 また、コンポーネントを使用しやすくした、```BP_EffekseerSystem``` と ```BP_EffekseerEmitter``` のブループリントもあります。
 
@@ -129,18 +129,26 @@ BP_EffekseerEmitterはエフェクトを表示したい位置に配置します�
 
 ### 1.5. アセットの追加
 
-Effekseerから出力されたefkファイルとテクスチャをコンテンツに追加します。
+efkefcファイルとテクスチャをコンテンツに追加します。
 
 <div align="center">
 <img src="img/addAssets.png">
 </div>
 
-EffekseerEffectアセットにテクスチャを割り当てます。
-EffekseerEffectアセットを右クリックした後、AssignResourcesを実行します。
+#### インポートの順番について
+
+インポートの順番は重要です。
+テクスチャ、マテリアル、エフェクト、の順番にインポートすることを推奨しています。
+この順番でインポートしない場合、リソースが割り当てられず表示がおかしくなることがあります。
+
+エフェクトにテクスチャやがマテリアルが割り当てられていない場合、EffekseerEffectアセットを右クリックした後、AssignResourcesを実行します。
 
 <div align="center">
 <img src="img/assignResource.png">
 </div>
+
+マテリアルにテクスチャが割り当てられていない場合、EffekseerMaterialアセットを右クリックした後、GenerateMaterialElementsを実行します。
+
 
 エフェクトが小さいことが多いので、EffekseerEffectアセットをダブルクリックしてスケールを設定します。
 大きい数字を入力してエフェクトを見やすくしましょう。

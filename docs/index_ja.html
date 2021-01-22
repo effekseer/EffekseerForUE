@@ -12,6 +12,7 @@
     div.column{display: inline-block; vertical-align: top; width: 50%;}
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
     ul.task-list{list-style: none;}
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
   </style>
   <link rel="stylesheet" href="base.css" />
   <!--[if lt IE 9]>
@@ -52,7 +53,7 @@
 <p>それは、<code>EffekseerSystemComponent</code> と <code>EffekseerEmitterComponent</code> です。</p>
 <p>EffekseerSystemはエフェクトの描画を行います。そのため、レベル内に必ず1つ必要です。</p>
 <p>EffekseerEmitterComponentはエフェクトの生成や操作を行います。エフェクト1つ1つに必要です。</p>
-<p>これらの他に、Effekseerのefkファイルに対応するアセットの<code>EffekseerEffect</code>と Effekseerのefkmdlファイルに対応するアセットの<code>EffekseerModel</code>があります。</p>
+<p>これらの他に、Effekseerのefkefcファイルに対応するアセットの<code>EffekseerEffect</code>と Effekseerのefkmdlファイルに対応するアセットの<code>EffekseerModel</code>、efkmatファイルに対応するアセットの<code>EffekseerMaterial</code>、があります。</p>
 <p>また、コンポーネントを使用しやすくした、<code>BP_EffekseerSystem</code> と <code>BP_EffekseerEmitter</code> のブループリントもあります。</p>
 </section>
 <section class="level2">
@@ -120,14 +121,18 @@
 </section>
 <section class="level3">
 <h3>1.5. アセットの追加</h3>
-<p>Effekseerから出力されたefkファイルとテクスチャをコンテンツに追加します。</p>
+<p>efkefcファイルとテクスチャをコンテンツに追加します。</p>
 <div data-align="center">
 <p><img src="img/addAssets.png"></p>
 </div>
-<p>EffekseerEffectアセットにテクスチャを割り当てます。 EffekseerEffectアセットを右クリックした後、AssignResourcesを実行します。</p>
+<section class="level4">
+<h4>インポートの順番について</h4>
+<p>インポートの順番は重要です。 テクスチャ、マテリアル、エフェクト、の順番にインポートすることを推奨しています。 この順番でインポートしない場合、リソースが割り当てられず表示がおかしくなることがあります。</p>
+<p>エフェクトにテクスチャやがマテリアルが割り当てられていない場合、EffekseerEffectアセットを右クリックした後、AssignResourcesを実行します。</p>
 <div data-align="center">
 <p><img src="img/assignResource.png"></p>
 </div>
+<p>マテリアルにテクスチャが割り当てられていない場合、EffekseerMaterialアセットを右クリックした後、GenerateMaterialElementsを実行します。</p>
 <p>エフェクトが小さいことが多いので、EffekseerEffectアセットをダブルクリックしてスケールを設定します。 大きい数字を入力してエフェクトを見やすくしましょう。</p>
 <div data-align="center">
 <p><img src="img/changeScale.png"></p>
@@ -144,6 +149,7 @@
 <div data-align="center">
 <p><img src="img/play.png"></p>
 </div>
+</section>
 </section>
 <section class="level3">
 <h3>2.1. Effekseerのコンポーネント</h3>

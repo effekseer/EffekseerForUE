@@ -12,6 +12,7 @@
     div.column{display: inline-block; vertical-align: top; width: 50%;}
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
     ul.task-list{list-style: none;}
+    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
   </style>
   <link rel="stylesheet" href="base.css" />
   <!--[if lt IE 9]>
@@ -52,7 +53,7 @@
 <p>It is <code>EffekseerSystemComponent</code> and <code>EffekseerEmitterComponent</code>.</p>
 <p>EffekseerSystem draws effects. Therefore, one component is absolutely necessary within the level.</p>
 <p>EffekseerEmitterComponent creates and manipulates effects. It is necessary for each effect.</p>
-<p>Besides these, theare are <code>EffekseerEffect</code> asset corresponding to Effekseer’s efk file and <code>EffekseerModel</code> asset corresponding to the Effekseer’s efkmdl file.</p>
+<p>Besides these, theare are <code>EffekseerEffect</code> asset corresponding to Effekseer’s efkefc file, <code>EffekseerModel</code> asset corresponding to the Effekseer’s efkmdl file and <code>EffekseerMaterial</code> asset corresponding to the Effekseer’s efkmat file</p>
 <p>There are also <code>BP_EffekseerSystem</code> and <code>BP_EffekseerEmitter</code> blueprints that makes it easier to use components.</p>
 </section>
 <section class="level2">
@@ -120,10 +121,18 @@
 </section>
 <section class="level3">
 <h3>1.5. Adding assets</h3>
-<p>You add the efk files and textures output from Effekseer to the content.</p>
+<p>You add the efkefc files and textures output from Effekseer to the content.</p>
 <div data-align="center">
 <p><img src="img/addAssets.png"></p>
 </div>
+<section class="level4">
+<h4>About the order of import</h4>
+<p>The order of importing is important. We recommend that you import textures, materials, and effects in this order. If you do not import them in this order, resources will not be assigned and the display may look strange.</p>
+<p>If the effect does not have a texture or material assigned to it, right click on the Effect asset and click AssignResources.</p>
+<div data-align="center">
+<p>. <img src="img/assignResource.png"></p>
+</div>
+<p>If no texture is assigned to the material, right-click on the EffekseerMaterial asset and click GenerateMaterialElements.</p>
 <p>You assigns textures to the EffekseerEffect asset. Right-click the EffekseerEffect asset, and then run AssignResources.</p>
 <div data-align="center">
 <p><img src="img/assignResource.png"></p>
@@ -144,6 +153,7 @@
 <div data-align="center">
 <p><img src="img/play.png"></p>
 </div>
+</section>
 </section>
 <section class="level3">
 <h3>2.1. Components of Effekseer</h3>
