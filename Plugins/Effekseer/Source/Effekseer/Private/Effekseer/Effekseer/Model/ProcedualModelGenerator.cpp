@@ -609,22 +609,30 @@ struct RotatedWireMeshGenerator
 		{
 			vertexPoses = {
 				SIMD::Vec3f(+0.5f, 0.0f, 0.0f),
+				SIMD::Vec3f(+0.0f, 0.0f, 0.0f),
 				SIMD::Vec3f(-0.5f, 0.0f, 0.0f),
 				SIMD::Vec3f(0.0f, 0.0f, -0.5f),
+				SIMD::Vec3f(0.0f, 0.0f, +0.0f),
 				SIMD::Vec3f(0.0f, 0.0f, +0.5f),
 			};
 
 			edgeIDs = {
 				0,
 				1,
+				1,
 				2,
 				3,
+				4,
+				4,
+				5,
 			};
 
 			edgeUVs = {
 				0.0f,
+				0.5f,
 				1.0f,
 				0.0f,
+				0.5f,
 				1.0f,
 			};
 		}
@@ -632,16 +640,20 @@ struct RotatedWireMeshGenerator
 		{
 			vertexPoses = {
 				SIMD::Vec3f(+0.5f, 0.0f, 0.0f),
+				SIMD::Vec3f(+0.0f, 0.0f, 0.0f),
 				SIMD::Vec3f(-0.5f, 0.0f, 0.0f),
 			};
 
 			edgeIDs = {
 				0,
 				1,
+				1,
+				2,
 			};
 
 			edgeUVs = {
 				0.0f,
+				0.5f,
 				1.0f,
 			};
 		}
@@ -659,22 +671,23 @@ struct RotatedWireMeshGenerator
 				0.0f,
 			};
 		}
-
-		float depthSpeed = 1.0f / static_cast<float>(Vertices);
-		float rotateSpeed = Rotate * EFK_PI * 2.0f / static_cast<float>(Vertices);
-
+		
 		ProcedualMesh ret;
 
 		for (int32_t l = 0; l < Count; l++)
 		{
+			float currentDepth = RibbonNoises[1] / 2.0f * randObj.GetRand();
+			float endDepth = 1.0f - RibbonNoises[1] / 2.0f * randObj.GetRand();
 			float currentAngle = (static_cast<float>(l) / static_cast<float>(Count) + RibbonNoises[0] * (randObj.GetRand() - 0.5f)) * EFK_PI * 2.0f;
-			float currentDepth = RibbonNoises[1] * randObj.GetRand();
 
 			CustomAlignedVector<SIMD::Vec3f> vs;
 			CustomAlignedVector<SIMD::Vec3f> binormals;
 			CustomAlignedVector<SIMD::Vec3f> normals;
 
-			while (currentDepth < 1.0f - RibbonNoises[1] * randObj.GetRand())
+			float depthSpeed = (endDepth - currentDepth) / static_cast<float>(Vertices);
+			float rotateSpeed = Rotate * (endDepth - currentDepth) * EFK_PI * 2.0f / static_cast<float>(Vertices);
+
+			while (currentDepth < endDepth)
 			{
 				auto pos = GetPosition(currentAngle, currentDepth);
 
@@ -689,6 +702,11 @@ struct RotatedWireMeshGenerator
 				binormals.emplace_back((pos_diff - pos).Normalize());
 				currentDepth += depthSpeed;
 				currentAngle += rotateSpeed;
+			}
+
+			if (vs.size() < 2)
+			{
+				return {};
 			}
 
 			ProcedualMesh ribbon;
@@ -714,7 +732,7 @@ struct RotatedWireMeshGenerator
 				for (size_t i = 0; i < vertexPoses.size(); i++)
 				{
 					ribbon.Vertexes[v * vertexPoses.size() + i].Position = vs[v] + (rtangent * vertexPoses[i].GetX() + binormals[v] * vertexPoses[i].GetY() + rnormal * vertexPoses[i].GetZ()) * scale;
-					ribbon.Vertexes[v * vertexPoses.size() + i].UV = SIMD::Vec2f(edgeUVs[i], v / static_cast<float>(vs.size() - 1));
+					ribbon.Vertexes[v * vertexPoses.size() + i].UV = SIMD::Vec2f(edgeUVs[i], 1.0f - v / static_cast<float>(vs.size() - 1));
 				}
 			}
 
@@ -724,13 +742,13 @@ struct RotatedWireMeshGenerator
 			{
 				for (size_t i = 0; i < edgeIDs.size() / 2; i++)
 				{
-					ProcedualMeshFace face0;
-					ProcedualMeshFace face1;
+					ProcedualMeshFace face0{};
+					ProcedualMeshFace face1{};
 
-					int32_t v00 = (edgeIDs[i * 2 + 0]) + (v + 0) * static_cast<int32_t>(edgeIDs.size());
-					int32_t v10 = (edgeIDs[i * 2 + 1]) + (v + 0) * static_cast<int32_t>(edgeIDs.size());
-					int32_t v01 = (edgeIDs[i * 2 + 0]) + (v + 1) * static_cast<int32_t>(edgeIDs.size());
-					int32_t v11 = (edgeIDs[i * 2 + 1]) + (v + 1) * static_cast<int32_t>(edgeIDs.size());
+					int32_t v00 = (edgeIDs[i * 2 + 0]) + (v + 0) * static_cast<int32_t>(vertexPoses.size());
+					int32_t v10 = (edgeIDs[i * 2 + 1]) + (v + 0) * static_cast<int32_t>(vertexPoses.size());
+					int32_t v01 = (edgeIDs[i * 2 + 0]) + (v + 1) * static_cast<int32_t>(vertexPoses.size());
+					int32_t v11 = (edgeIDs[i * 2 + 1]) + (v + 1) * static_cast<int32_t>(vertexPoses.size());
 
 					face0.Indexes[0] = v00;
 					face0.Indexes[1] = v11;
