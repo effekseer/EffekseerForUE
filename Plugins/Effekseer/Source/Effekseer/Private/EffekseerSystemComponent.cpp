@@ -50,6 +50,22 @@ private:
 	std::mutex criticalSection;
 	TArray<int32_t> removedHandles;
 
+	void CalculateCameraDirectionAndPosition(const Effekseer::Matrix44& matrix, Effekseer::Vector3D& direction, Effekseer::Vector3D& position) const
+	{
+		const auto& mat = matrix;
+
+		direction = -::Effekseer::Vector3D(matrix.Values[0][2], matrix.Values[1][2], matrix.Values[2][2]);
+
+		{
+			auto localPos = ::Effekseer::Vector3D(-mat.Values[3][0], -mat.Values[3][1], -mat.Values[3][2]);
+			auto f = ::Effekseer::Vector3D(mat.Values[0][2], mat.Values[1][2], mat.Values[2][2]);
+			auto r = ::Effekseer::Vector3D(mat.Values[0][0], mat.Values[1][0], mat.Values[2][0]);
+			auto u = ::Effekseer::Vector3D(mat.Values[0][1], mat.Values[1][1], mat.Values[2][1]);
+
+			position = r * localPos.X + u * localPos.Y + f * localPos.Z;
+		}
+	}
+
 public:
 	FEffekseerSystemSceneProxy(const UEffekseerSystemComponent* InComponent, int32_t maxSprite, EEffekseerColorSpaceType colorSpace)
 		: FPrimitiveSceneProxy(InComponent)
@@ -126,7 +142,17 @@ public:
 
 				effekseerRenderer->SetCameraMatrix(evmat);
 				effekseerRenderer->BeginRendering();
-				effekseerManager->Draw();
+
+				Effekseer::Vector3D direction;
+				Effekseer::Vector3D position;
+				CalculateCameraDirectionAndPosition(evmat, direction, position);
+
+				Effekseer::Manager::DrawParameter drawParam;
+				drawParam.CameraFrontDirection = direction;
+				drawParam.CameraPosition = position;
+				drawParam.IsSortingEffectsEnabled = true;
+
+				effekseerManager->Draw(drawParam);
 				effekseerRenderer->EndRendering();
 			}
 		}
