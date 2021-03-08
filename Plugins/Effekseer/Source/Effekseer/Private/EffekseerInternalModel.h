@@ -6,7 +6,7 @@
 
 class UEffekseerModel;
 
-class UEFfekseerProcedualModel;
+class UEFfekseerProceduralModel;
 
 class EffekseerInternalModel
 	: public ::Effekseer::Model
@@ -14,7 +14,7 @@ class EffekseerInternalModel
 public:
 	UEffekseerModel* UserData = nullptr;
 
-	UEFfekseerProcedualModel* ProcedualData = nullptr;
+	UEFfekseerProceduralModel* ProceduralData = nullptr;
 
 	EffekseerInternalModel(void* data, int32_t size)
 		: ::Effekseer::Model(data, size)

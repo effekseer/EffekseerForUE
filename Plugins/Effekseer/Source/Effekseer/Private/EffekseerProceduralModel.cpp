@@ -1,15 +1,15 @@
-#include "EffekseerProcedualModel.h"
+#include "EffekseerProceduralModel.h"
 #include "StaticMeshResources.h"
 
-class FProcedualModelMeshRenderData
+class FProceduralModelMeshRenderData
 {
 public:
 	FStaticMeshVertexBuffers VertexBuffers;
 	FDynamicMeshIndexBuffer32 IndexBuffer;
 	FLocalVertexFactory VertexFactory;
 
-	FProcedualModelMeshRenderData(Effekseer::Model& model, ERHIFeatureLevel::Type InFeatureLevel)
-		: VertexFactory(InFeatureLevel, "FProcedualModelMeshProxy")
+	FProceduralModelMeshRenderData(Effekseer::Model& model, ERHIFeatureLevel::Type InFeatureLevel)
+		: VertexFactory(InFeatureLevel, "FProceduralModelMeshProxy")
 
 	{
 		TArray<uint32> indexBuffer;
@@ -55,16 +55,16 @@ public:
 	}
 };
 
-UEFfekseerProcedualModel::UEFfekseerProcedualModel()
+UEFfekseerProceduralModel::UEFfekseerProceduralModel()
 {
 }
 
-UEFfekseerProcedualModel::~UEFfekseerProcedualModel()
+UEFfekseerProceduralModel::~UEFfekseerProceduralModel()
 {
 	ES_SAFE_DELETE(renderData_);
 }
 
-void UEFfekseerProcedualModel::BeginDestroy()
+void UEFfekseerProceduralModel::BeginDestroy()
 {
 	if (renderData_ != nullptr)
 	{
@@ -73,12 +73,12 @@ void UEFfekseerProcedualModel::BeginDestroy()
 	Super::BeginDestroy();
 }
 
-void UEFfekseerProcedualModel::Init(Effekseer::ModelRef modelPtr)
+void UEFfekseerProceduralModel::Init(Effekseer::ModelRef modelPtr)
 {
 	modelPtr_ = modelPtr;
 }
 
-bool UEFfekseerProcedualModel::GenerateRenderDataIfRequired(ERHIFeatureLevel::Type inFeatureLevel)
+bool UEFfekseerProceduralModel::GenerateRenderDataIfRequired(ERHIFeatureLevel::Type inFeatureLevel)
 {
 	if (renderData_)
 	{
@@ -90,12 +90,12 @@ bool UEFfekseerProcedualModel::GenerateRenderDataIfRequired(ERHIFeatureLevel::Ty
 		return false;
 	}
 
-	renderData_ = new FProcedualModelMeshRenderData(*modelPtr_.Get(), inFeatureLevel);
+	renderData_ = new FProceduralModelMeshRenderData(*modelPtr_.Get(), inFeatureLevel);
 
 	return true;
 }
 
-void UEFfekseerProcedualModel::Render(int32_t viewIndex, FMeshElementCollector& collector, const FMatrix& localToWorld, FMaterialRenderProxy* materialRenderProxy)
+void UEFfekseerProceduralModel::Render(int32_t viewIndex, FMeshElementCollector& collector, const FMatrix& localToWorld, FMaterialRenderProxy* materialRenderProxy)
 {
 	if (!renderData_)
 	{

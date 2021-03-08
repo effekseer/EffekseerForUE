@@ -20,7 +20,11 @@
 namespace Effekseer
 {
 
-//----------------------------------------------------------------------------------
+static bool IsInfiniteValue(int value)
+{
+	return std::numeric_limits<int32_t>::max() / 1000 < value;
+}
+	//----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
 Instance::Instance(ManagerImplemented* pManager, EffectNodeImplemented* pEffectNode, InstanceContainer* pContainer, InstanceGroup* pGroup)
@@ -745,9 +749,9 @@ void Instance::FirstUpdate()
 		{
 			model = m_pEffectNode->GetEffect()->GetModel(m_pEffectNode->GenerationLocation.model.index);
 		}
-		else if (m_pEffectNode->GenerationLocation.model.Reference == ModelReferenceType::Procedual)
+		else if (m_pEffectNode->GenerationLocation.model.Reference == ModelReferenceType::Procedural)
 		{
-			model = m_pEffectNode->GetEffect()->GetProcedualModel(m_pEffectNode->GenerationLocation.model.index);
+			model = m_pEffectNode->GetEffect()->GetProceduralModel(m_pEffectNode->GenerationLocation.model.index);
 		}
 
 		{
@@ -867,7 +871,11 @@ void Instance::FirstUpdate()
 		{
 			auto& uvTimeOffset = uvTimeOffsets[i];
 			uvTimeOffset = (int32_t)UV.Animation.StartFrame.getValue(rand);
-			uvTimeOffset *= UV.Animation.FrameLength;
+
+			if (!IsInfiniteValue(UV.Animation.FrameLength))
+			{
+				uvTimeOffset *= UV.Animation.FrameLength;
+			}
 		}
 		else if (UVType == ParameterRendererCommon::UV_SCROLL)
 		{
@@ -1399,8 +1407,7 @@ void Instance::CalculateMatrix(float deltaFrame)
 		}
 		else if (m_pEffectNode->RotationType == ParameterRotationType_AxisEasing)
 		{
-			rotation_values.axis.rotation = m_pEffectNode->RotationAxisEasing.easing.getValue(
-				rotation_values.axis.easing.start, rotation_values.axis.easing.end, m_LivingTime / m_LivedTime);
+			rotation_values.axis.rotation = m_pEffectNode->RotationAxisEasing.easing.GetValue(rotation_values.axis.easing, m_LivingTime / m_LivedTime);
 		}
 		else if (m_pEffectNode->RotationType == ParameterRotationType_FCurve)
 		{
@@ -1442,8 +1449,7 @@ void Instance::CalculateMatrix(float deltaFrame)
 		}
 		else if (m_pEffectNode->ScalingType == ParameterScalingType_SingleEasing)
 		{
-			float s = m_pEffectNode->ScalingSingleEasing.getValue(
-				scaling_values.single_easing.start, scaling_values.single_easing.end, m_LivingTime / m_LivedTime);
+			float s = m_pEffectNode->ScalingSingleEasing.GetValue(scaling_values.single_easing, m_LivingTime / m_LivedTime);
 			localScaling = {s, s, s};
 		}
 		else if (m_pEffectNode->ScalingType == ParameterScalingType_FCurve)
@@ -1698,17 +1704,20 @@ RectF Instance::GetUV(const int32_t index) const
 	{
 		auto uvTimeOffset = uvTimeOffsets[index];
 
-		// TODO : refactor
+		float time{};
+		int frameLength = UV.Animation.FrameLength;
 
-		// Avoid overflow
-		if(uvTimeOffset > std::numeric_limits<int32_t>::max() / 1000)
+		if (IsInfiniteValue(frameLength))
 		{
-			uvTimeOffset = std::numeric_limits<int32_t>::max() / 1000;
+			time = uvTimeOffset;
+			frameLength = 1;
+		}
+		else
+		{
+			time = m_LivingTime + uvTimeOffset;
 		}
 
-		auto time = m_LivingTime + uvTimeOffset;
-
-		int32_t frameNum = (int32_t)(time / UV.Animation.FrameLength);
+		int32_t frameNum = (int32_t)(time / frameLength);
 		int32_t frameCount = UV.Animation.FrameCountX * UV.Animation.FrameCountY;
 
 		if (UV.Animation.LoopType == UV.Animation.LOOPTYPE_ONCE)

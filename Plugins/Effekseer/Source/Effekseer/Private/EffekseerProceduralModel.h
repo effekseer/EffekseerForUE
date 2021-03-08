@@ -6,26 +6,26 @@
 
 #include <Effekseer.h>
 
-#include "EffekseerProcedualModel.generated.h"
+#include "EffekseerProceduralModel.generated.h"
 
-class FProcedualModelMeshRenderData;
+class FProceduralModelMeshRenderData;
 class FMeshElementCollector;
 class materialRenderProxy;
 
 UCLASS()
-class UEFfekseerProcedualModel
+class UEFfekseerProceduralModel
 	: public UObject
 {
 private:
 	Effekseer::ModelRef modelPtr_;
-	FProcedualModelMeshRenderData* renderData_ = nullptr;
+	FProceduralModelMeshRenderData* renderData_ = nullptr;
 
 public:
 	GENERATED_BODY()
 
-	UEFfekseerProcedualModel();
+	UEFfekseerProceduralModel();
 
-	~UEFfekseerProcedualModel() override;
+	~UEFfekseerProceduralModel() override;
 	
 	void BeginDestroy() override;
 

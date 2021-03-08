@@ -16,7 +16,7 @@
 #include <EffekseerRenderer.RibbonRendererBase.h>
 #include <EffekseerRenderer.RingRendererBase.h>
 #include "EffekseerInternalTexture.h"
-#include "EffekseerProcedualModel.h"
+#include "EffekseerProceduralModel.h"
 
 #define GET_MAT_PARAM_NAME
 
@@ -499,9 +499,9 @@ namespace EffekseerRendererUE4
 		auto& renderer = m_renderer;
 
 		EffekseerInternalModel* model = nullptr;
-		if(param.IsProcedualMode)
+		if(param.IsProceduralMode)
 		{
-			model = (EffekseerInternalModel*)parameter.EffectPointer->GetProcedualModel(parameter.ModelIndex).Get();	
+			model = (EffekseerInternalModel*)parameter.EffectPointer->GetProceduralModel(parameter.ModelIndex).Get();	
 		}
 		else
 		{
@@ -1192,9 +1192,9 @@ namespace EffekseerRendererUE4
 				return;
 			}
 		}
-		else if (mdl->ProcedualData != nullptr)
+		else if (mdl->ProceduralData != nullptr)
 		{
-			if (!mdl->ProcedualData->GenerateRenderDataIfRequired(m_meshElementCollector->GetFeatureLevel()))
+			if (!mdl->ProceduralData->GenerateRenderDataIfRequired(m_meshElementCollector->GetFeatureLevel()))
 			{
 				return;
 			}
@@ -1351,14 +1351,14 @@ namespace EffekseerRendererUE4
 
 					m_meshElementCollector->AddMesh(m_viewIndex, meshElement);
 				}
-				else if (mdl->ProcedualData != nullptr)
+				else if (mdl->ProceduralData != nullptr)
 				{
-					if (!mdl->ProcedualData->GenerateRenderDataIfRequired(m_meshElementCollector->GetFeatureLevel()))
+					if (!mdl->ProceduralData->GenerateRenderDataIfRequired(m_meshElementCollector->GetFeatureLevel()))
 					{
 						return;
 					}
 
-					mdl->ProcedualData->Render(m_viewIndex, *m_meshElementCollector, matLocalToWorld, proxy);
+					mdl->ProceduralData->Render(m_viewIndex, *m_meshElementCollector, matLocalToWorld, proxy);
 				}
 			}
 		}

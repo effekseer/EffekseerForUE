@@ -456,15 +456,15 @@ public:
 	EffekseerEffectMaterialKey Key;
 };
 
-class UEFfekseerProcedualModel;
-class ProcedualModelGenerator;
+class UEFfekseerProceduralModel;
+class ProceduralModelGenerator;
 
 UCLASS()
 class EFFEKSEER_API UEffekseerEffect : public UObject
 {
 	GENERATED_BODY()
 
-	friend class ProcedualModelGenerator;
+	friend class ProceduralModelGenerator;
 
 private:
 	void*			effectPtr = nullptr;
@@ -481,7 +481,7 @@ private:
 	void SetTextureAddressMode(::Effekseer::EffectNode* node);
 
 	UPROPERTY(Transient)
-	TArray<UEFfekseerProcedualModel*> ProcedualModels;
+	TArray<UEFfekseerProceduralModel*> ProceduralModels;
 
 public:
 	void Load(const uint8_t* data, int32_t size, const TCHAR* path);
