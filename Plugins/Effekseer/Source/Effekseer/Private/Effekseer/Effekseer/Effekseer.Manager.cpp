@@ -1394,6 +1394,8 @@ void ManagerImplemented::Update(const UpdateParameter& parameter)
 			m_WorkerThreads[0].WaitForComplete();
 		}
 	}
+
+	ExecuteSounds();
 }
 
 void ManagerImplemented::DoUpdate(const UpdateParameter& parameter)
@@ -1581,6 +1583,8 @@ void ManagerImplemented::UpdateHandle(Handle handle, float deltaFrame)
 			UpdateHandleInternal(drawSet);
 		}
 	}
+
+	ExecuteSounds();
 }
 
 void ManagerImplemented::UpdateHandleToMoveToFrame(Handle handle, float frame)
@@ -2336,6 +2340,57 @@ void ManagerImplemented::LockRendering()
 void ManagerImplemented::UnlockRendering()
 {
 	m_renderingMutex.unlock();
+}
+
+void ManagerImplemented::RequestToPlaySound(Instance* instance, const EffectNodeImplemented* node)
+{
+	if (node->Sound.WaveId >= 0)
+	{
+		InstanceGlobal* instanceGlobal = instance->GetInstanceGlobal();
+		IRandObject& rand = instance->GetRandObject();
+			
+		SoundPlayer::InstanceParameter parameter;
+		parameter.Data = node->GetEffect()->GetWave(node->Sound.WaveId);
+		parameter.Volume = node->Sound.Volume.getValue(rand);
+		parameter.Pitch = node->Sound.Pitch.getValue(rand);
+		parameter.Pan = node->Sound.Pan.getValue(rand);
+
+		parameter.Mode3D = (node->Sound.PanType == ParameterSoundPanType_3D);
+		parameter.Position = ToStruct(instance->GetGlobalMatrix43().GetTranslation());
+		parameter.Distance = node->Sound.Distance;
+		parameter.UserData = instanceGlobal->GetUserData();
+
+		std::lock_guard<std::mutex> lock(m_soundMutex);
+		m_requestedSounds.emplace(static_cast<SoundTag>(instanceGlobal), parameter);
+	}
+}
+
+void ManagerImplemented::ExecuteSounds()
+{
+	if (m_requestedSounds.empty())
+	{
+		return;
+	}
+
+	std::lock_guard<std::mutex> lock(m_soundMutex);
+
+	auto player = GetSoundPlayer();
+	if (player != nullptr)
+	{
+		while (!m_requestedSounds.empty())
+		{
+			auto sound = m_requestedSounds.back();
+			player->Play(sound.first, sound.second);
+			m_requestedSounds.pop();
+		}
+	}
+	else
+	{
+		while (!m_requestedSounds.empty())
+		{
+			m_requestedSounds.pop();
+		}
+	}
 }
 
 } // namespace Effekseer

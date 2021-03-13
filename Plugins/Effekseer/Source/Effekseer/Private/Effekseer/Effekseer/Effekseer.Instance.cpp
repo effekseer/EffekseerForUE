@@ -12,6 +12,7 @@
 #include "Effekseer.InstanceGroup.h"
 #include "Effekseer.Manager.h"
 #include "Effekseer.ManagerImplemented.h"
+#include "Effekseer.Setting.h"
 #include "Model/Model.h"
 
 //----------------------------------------------------------------------------------
@@ -24,7 +25,7 @@ static bool IsInfiniteValue(int value)
 {
 	return std::numeric_limits<int32_t>::max() / 1000 < value;
 }
-	//----------------------------------------------------------------------------------
+//----------------------------------------------------------------------------------
 //
 //----------------------------------------------------------------------------------
 Instance::Instance(ManagerImplemented* pManager, EffectNodeImplemented* pEffectNode, InstanceContainer* pContainer, InstanceGroup* pGroup)
@@ -976,7 +977,7 @@ void Instance::FirstUpdate()
 	}
 
 	prevGlobalPosition_ = SIMD::Vec3f::Transform(prevPosition_, m_ParentMatrix);
-	m_pEffectNode->InitializeRenderedInstance(*this, m_pManager);
+	m_pEffectNode->InitializeRenderedInstance(*this, *ownGroup_, m_pManager);
 }
 
 //----------------------------------------------------------------------------------
@@ -1005,8 +1006,7 @@ void Instance::Update(float deltaFrame, bool shown)
 
 			if (living_time <= (float)soundValues.delay && (float)soundValues.delay < living_time_p)
 			{
-				auto instanceGlobal = m_pContainer->GetRootInstance();
-				m_pEffectNode->PlaySound_(*this, instanceGlobal, instanceGlobal->GetUserData(), m_pManager);
+				m_pManager->RequestToPlaySound(this, m_pEffectNode);
 			}
 		}
 	}
@@ -1259,7 +1259,7 @@ void Instance::CalculateMatrix(float deltaFrame)
 	/* 更新処理 */
 	if (m_pEffectNode->GetType() != EFFECT_NODE_TYPE_ROOT)
 	{
-		SIMD::Vec3f localPosition;
+		SIMD::Vec3f localPosition{};
 		SIMD::Vec3f localAngle;
 		SIMD::Vec3f localScaling;
 
@@ -1485,11 +1485,11 @@ void Instance::CalculateMatrix(float deltaFrame)
 		{
 			currentLocalPosition += forceField_.ModifyLocation;
 			forceField_.ExternalVelocity = localVelocity;
-			forceField_.Update(m_pEffectNode->LocalForceField, currentLocalPosition, m_pEffectNode->GetEffect()->GetMaginification(), deltaFrame);		
+			forceField_.Update(m_pEffectNode->LocalForceField, currentLocalPosition, m_pEffectNode->GetEffect()->GetMaginification(), deltaFrame, m_pEffectNode->GetEffect()->GetSetting()->GetCoordinateSystem());
 		}
 
 		/* 描画部分の更新 */
-		m_pEffectNode->UpdateRenderedInstance(*this, m_pManager);
+		m_pEffectNode->UpdateRenderedInstance(*this, *ownGroup_, m_pManager);
 
 		// 回転行列の作成
 		SIMD::Mat43f MatRot;
@@ -1538,7 +1538,7 @@ void Instance::CalculateMatrix(float deltaFrame)
 		if (m_pEffectNode->LocalForceField.IsGlobalEnabled)
 		{
 			InstanceGlobal* instanceGlobal = m_pContainer->GetRootInstance();
-			forceField_.UpdateGlobal(m_pEffectNode->LocalForceField, prevGlobalPosition_, m_pEffectNode->GetEffect()->GetMaginification(), instanceGlobal->GetTargetLocation(), deltaFrame);
+			forceField_.UpdateGlobal(m_pEffectNode->LocalForceField, prevGlobalPosition_, m_pEffectNode->GetEffect()->GetMaginification(), instanceGlobal->GetTargetLocation(), deltaFrame, m_pEffectNode->GetEffect()->GetSetting()->GetCoordinateSystem());
 			SIMD::Mat43f MatTraGlobal = SIMD::Mat43f::Translation(forceField_.GlobalModifyLocation);
 			m_GlobalMatrix43 *= MatTraGlobal;
 		}

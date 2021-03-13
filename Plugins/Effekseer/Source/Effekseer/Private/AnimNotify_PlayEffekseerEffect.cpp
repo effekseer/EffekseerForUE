@@ -58,7 +58,7 @@ static void SpawnEmitterAttached(UEffekseerEffect* effekseerEffect, class UScene
 		auto parentToWorld = attachToComponent->GetSocketTransform(attachPointName);
 		auto relative = componentToWorld.GetRelativeTransform(parentToWorld);
 
-#if ENGINE_MINOR_VERSION >= 25
+#if ENGINE_MINOR_VERSION >= 24
 		eec->SetRelativeLocation(location);
 		eec->SetRelativeRotation(relative.GetRotation().Rotator());
 		eec->SetRelativeScale3D(FVector(1.0f));
@@ -77,7 +77,7 @@ static void SpawnEmitterAttached(UEffekseerEffect* effekseerEffect, class UScene
 		{
 			auto parentToWorld = attachToComponent->GetSocketTransform(attachPointName);
 
-#if ENGINE_MINOR_VERSION >= 25
+#if ENGINE_MINOR_VERSION >= 24
 			eec->SetRelativeScale3D(parentToWorld.GetSafeScaleReciprocal(parentToWorld.GetScale3D()));
 #else
 			eec->RelativeScale3D = parentToWorld.GetSafeScaleReciprocal(parentToWorld.GetScale3D());
@@ -85,7 +85,7 @@ static void SpawnEmitterAttached(UEffekseerEffect* effekseerEffect, class UScene
 		}
 		else
 		{
-#if ENGINE_MINOR_VERSION >= 25
+#if ENGINE_MINOR_VERSION >= 24
 			eec->SetRelativeScale3D(FVector(1.0f));
 #else
 			eec->RelativeScale3D = FVector(1.0f);

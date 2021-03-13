@@ -1562,22 +1562,17 @@ public:
 	/**
 	@brief	描画部分初期化
 	*/
-	virtual void InitializeRenderedInstance(Instance& instance, Manager* manager);
+	virtual void InitializeRenderedInstance(Instance& instance, InstanceGroup& instanceGroup, Manager* manager);
 
 	/**
 	@brief	描画部分更新
 	*/
-	virtual void UpdateRenderedInstance(Instance& instance, Manager* manager);
+	virtual void UpdateRenderedInstance(Instance& instance, InstanceGroup& instanceGroup, Manager* manager);
 
 	/**
 	@brief	描画部分更新
 	*/
 	virtual float GetFadeAlpha(const Instance& instance);
-
-	/**
-	@brief	サウンド再生
-	*/
-	virtual void PlaySound_(Instance& instance, SoundTag tag, void* userData, Manager* manager);
 
 	EffectInstanceTerm CalculateInstanceTerm(EffectInstanceTerm& parentTerm) const override;
 

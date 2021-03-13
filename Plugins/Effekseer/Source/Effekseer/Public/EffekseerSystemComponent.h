@@ -113,6 +113,9 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Property)
 	EEffekseerColorSpaceType ColorSpace = EEffekseerColorSpaceType::Gamma;
 
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Property)
+	int ThreadCount = 2;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = Material)
 	UMaterialInstanceConstant* OpaqueMaterial = nullptr;
 

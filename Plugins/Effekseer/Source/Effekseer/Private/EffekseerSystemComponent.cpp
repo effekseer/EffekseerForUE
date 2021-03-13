@@ -67,11 +67,17 @@ private:
 	}
 
 public:
-	FEffekseerSystemSceneProxy(const UEffekseerSystemComponent* InComponent, int32_t maxSprite, EEffekseerColorSpaceType colorSpace)
+	FEffekseerSystemSceneProxy(const UEffekseerSystemComponent* InComponent, int32_t maxSprite, int32_t threadCount, EEffekseerColorSpaceType colorSpace)
 		: FPrimitiveSceneProxy(InComponent)
 		, maxSprite_(maxSprite)
 	{
 		effekseerManager = ::Effekseer::Manager::Create(maxSprite_);
+#ifndef __EMSCRIPTEN__
+		if (threadCount >= 2)
+		{
+			effekseerManager->LaunchWorkerThreads(threadCount);
+		}
+#endif
 		effekseerRenderer = ::EffekseerRendererUE4::RendererImplemented::Create();
 		effekseerRenderer->Initialize(maxSprite_, colorSpace);
 
@@ -474,7 +480,7 @@ void UEffekseerSystemComponent::TickComponent(float DeltaTime, ELevelTick TickTy
 
 FPrimitiveSceneProxy* UEffekseerSystemComponent::CreateSceneProxy()
 {
-	auto sp = new FEffekseerSystemSceneProxy(this, MaxSprite, ColorSpace);
+	auto sp = new FEffekseerSystemSceneProxy(this, MaxSprite, ThreadCount, ColorSpace);
 	sceneProxy = sp;
 	return sp;
 }
