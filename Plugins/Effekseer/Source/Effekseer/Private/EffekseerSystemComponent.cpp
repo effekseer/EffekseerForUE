@@ -665,7 +665,7 @@ FEffekseerHandle UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVect
 				{
 					auto dynamicMaterial = UMaterialInstanceDynamic::Create(mat, this);
 					dynamicMaterial->SetTextureParameterValue(TEXT("ColorTexture"), m->Texture);
-
+					
 					dynamicMaterial->SetTextureParameterValue(TEXT("AlphaTexture"), m->AlphaTexture);
 					dynamicMaterial->SetTextureParameterValue(TEXT("UVDistortionTexture"), m->UVDistortionTexture);
 					dynamicMaterial->SetTextureParameterValue(TEXT("BlendTexture"), m->BlendTexture);

@@ -28,6 +28,14 @@ std::shared_ptr<NativeEffekseerMaterialContext> NativeEffekseerMaterialContext::
 	std::shared_ptr<EffekseerMaterial::TextExporter> textExporter = std::make_shared<EffekseerMaterial::TextExporter>();
 	ret->result = textExporter->Export(ret->material, ret->outputNode, "$SUFFIX");
 
+	for(const auto& node : ret->material->GetNodes())
+	{
+		if(node->Parameter->Type == EffekseerMaterial::NodeType::EffectScale || node->Parameter->Type == EffekseerMaterial::NodeType::DepthFade)
+		{
+			ret->isEffectScaleRequired = true;
+		}
+	}
+
 	std::unordered_set<std::string> used;
 
 	// parse uniform names

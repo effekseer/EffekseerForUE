@@ -98,6 +98,9 @@ public:
 	UPROPERTY(Transient)
 	TMap<EEffekseerAlphaBlendType, UMaterialInstanceDynamic*> ColorSpaceMaterials;
 
+	UPROPERTY()
+	bool IsEffectScaleRequired = false;
+
 #if WITH_EDITORONLY_DATA
 	UPROPERTY(Category = ImportSettings, VisibleAnywhere)
 	UAssetImportData* AssetImportData = nullptr;

@@ -826,8 +826,9 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 
 			this->EffekseerMaterials.Add(mat);
 
-			auto renderingData = Effekseer::MakeRefPtr <EffekseerRendererUE4::EffekseerRenderingUserData > ();
+			auto renderingData = Effekseer::MakeRefPtr<EffekseerRendererUE4::EffekseerRenderingUserData>();
 			renderingData->Key = mkey;
+			renderingData->Magnification = node->GetEffect()->GetMaginification();
 			node->SetRenderingUserData(renderingData);
 		}
 

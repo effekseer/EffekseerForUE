@@ -16,6 +16,7 @@ struct NativeEffekseerMaterialContext
 	EffekseerMaterial::TextExporterResult result;
 	std::map<uint64_t, std::string> uniformNames;
 	std::map<uint64_t, std::string> textureNames;
+	bool isEffectScaleRequired = false;
 
 	static std::shared_ptr<NativeEffekseerMaterialContext> Load(const uint8* data, int size, const char* basePath);
 };

@@ -115,6 +115,7 @@ UObject* UEffekseerMaterialFactory::FactoryCreateBinary(
 		}
 
 		assetEfkMat->Material = originalMaterial;
+		assetEfkMat->IsEffectScaleRequired = native->isEffectScaleRequired;
 		assetEfkMat->StoreData(Buffer, BufferEnd - Buffer);
 		assetEfkMat->LoadMaterial(Buffer, BufferEnd - Buffer, nullptr);
 		assetEfkMat->ReassignSearchingMaps();

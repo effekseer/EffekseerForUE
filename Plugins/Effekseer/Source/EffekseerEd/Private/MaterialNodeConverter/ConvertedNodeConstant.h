@@ -133,3 +133,27 @@ public:
 
 	UMaterialExpression* GetExpression() const override { return expression_; }
 };
+
+class ConvertedNodeEffectScale : public ConvertedNode
+{
+private:
+	std::shared_ptr<EffekseerMaterial::Node> effekseerNode_;
+	UMaterialExpressionMaterialFunctionCall* expression_ = nullptr;
+
+public:
+	ConvertedNodeEffectScale(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
+		: effekseerNode_(effekseerNode)
+	{
+		expression_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
+		material->Expressions.Add(expression_);
+
+		FStringAssetReference assetPath("/Effekseer/MaterialFunctions/EfkEffectScale.EfkEffectScale");
+		UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
+		expression_->SetMaterialFunction(func);
+	}
+
+	UMaterialExpression* GetExpression() const override
+	{
+		return expression_;
+	}
+};
