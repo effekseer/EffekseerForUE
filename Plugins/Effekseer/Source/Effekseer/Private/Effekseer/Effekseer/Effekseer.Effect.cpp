@@ -1313,7 +1313,7 @@ bool EffectImplemented::Reload(ManagerRef* managers,
 		manager->EndReloadEffect(EffectRef::FromPinned(this), true);
 	}
 
-	return false;
+	return true;
 }
 
 //----------------------------------------------------------------------------------
@@ -1367,7 +1367,7 @@ bool EffectImplemented::Reload(
 
 	eLoader->Unload(data, size);
 
-	return false;
+	return true;
 }
 
 //----------------------------------------------------------------------------------

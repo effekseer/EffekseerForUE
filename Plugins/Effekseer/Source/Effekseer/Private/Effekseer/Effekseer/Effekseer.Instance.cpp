@@ -419,10 +419,16 @@ void Instance::FirstUpdate()
 	else if (m_pEffectNode->TranslationType == ParameterTranslationType_FCurve)
 	{
 		assert(m_pEffectNode->TranslationFCurve != nullptr);
+		const auto coordinateSystem = m_pEffectNode->GetEffect()->GetSetting()->GetCoordinateSystem();
 
 		translation_values.fcruve.offset = m_pEffectNode->TranslationFCurve->GetOffsets(rand);
 
 		prevPosition_ = translation_values.fcruve.offset + m_pEffectNode->TranslationFCurve->GetValues(m_LivingTime, m_LivedTime);
+
+		if (coordinateSystem == CoordinateSystem::LH)
+		{
+			prevPosition_.SetZ(-prevPosition_.GetZ());
+		}
 	}
 	else if (m_pEffectNode->TranslationType == ParameterTranslationType_NurbsCurve)
 	{
@@ -1245,6 +1251,7 @@ void Instance::CalculateMatrix(float deltaFrame)
 
 	// if( m_sequenceNumber == ((ManagerImplemented*)m_pManager)->GetSequenceNumber() ) return;
 	m_sequenceNumber = ((ManagerImplemented*)m_pManager)->GetSequenceNumber();
+	const auto coordinateSystem = m_pEffectNode->GetEffect()->GetSetting()->GetCoordinateSystem();
 
 	assert(m_pEffectNode != nullptr);
 	assert(m_pContainer != nullptr);
@@ -1290,6 +1297,12 @@ void Instance::CalculateMatrix(float deltaFrame)
 			assert(m_pEffectNode->TranslationFCurve != nullptr);
 			auto fcurve = m_pEffectNode->TranslationFCurve->GetValues(m_LivingTime, m_LivedTime);
 			localPosition = fcurve + translation_values.fcruve.offset;
+
+			if (coordinateSystem == CoordinateSystem::LH)
+			{
+				localPosition.SetZ(-localPosition.GetZ());
+			}
+
 		}
 		else if (m_pEffectNode->TranslationType == ParameterTranslationType_NurbsCurve)
 		{
@@ -1860,6 +1873,11 @@ std::array<float, 4> Instance::GetCustomData(int32_t index) const
 									(values[1] + instanceCustomData->fcurveColor.offset[1]) / 255.0f,
 									(values[2] + instanceCustomData->fcurveColor.offset[2]) / 255.0f,
 									(values[3] + instanceCustomData->fcurveColor.offset[3]) / 255.0f};
+	}
+	else if (parameterCustomData->Type == ParameterCustomDataType::DynamicInput)
+	{
+		auto instanceGlobal = this->m_pContainer->GetRootInstance();
+		return instanceGlobal->GetDynamicInputParameters();
 	}
 	else
 	{
