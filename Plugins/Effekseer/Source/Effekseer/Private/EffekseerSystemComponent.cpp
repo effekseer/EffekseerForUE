@@ -566,6 +566,11 @@ FEffekseerHandle UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVect
 	if (effect == nullptr) return FEffekseerHandle();
 	if (effect->GetNativePtr() == nullptr) return FEffekseerHandle();
 
+	if (isNetworkRunning_)
+	{
+		effect->GenerateRenderingDataIfRequired();
+	}
+
 	// Convert to a position relative from the system.
 
 #if ENGINE_MINOR_VERSION >= 24
@@ -853,6 +858,7 @@ void UEffekseerSystemComponent::StartNetwork()
 	cmd.Type = EffekseerUpdateData_CommandType::StartNetwork;
 	cmd.ID = NetworkPort;
 	currentUpdateData->Commands.Add(cmd);
+	isNetworkRunning_ = true;
 }
 
 void UEffekseerSystemComponent::StopNetwork()
@@ -860,4 +866,5 @@ void UEffekseerSystemComponent::StopNetwork()
 	EffekseerUpdateData_Command cmd;
 	cmd.Type = EffekseerUpdateData_CommandType::StopNetwork;
 	currentUpdateData->Commands.Add(cmd);
+	isNetworkRunning_ = false;
 }

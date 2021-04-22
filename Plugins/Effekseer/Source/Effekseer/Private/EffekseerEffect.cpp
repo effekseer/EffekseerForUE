@@ -648,10 +648,18 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 		effect->SetName(getFilenameWithoutExt(uStr<260>(path).c_str()).c_str());
 	}
 
-	std::function<void(::Effekseer::EffectNode*,bool)> renode;
+	GenerateRenderingData();
+}
 
-	renode = [this, &renode](::Effekseer::EffectNode* node, bool isRoot) -> void
-	{
+void UEffekseerEffect::GenerateRenderingData()
+{
+	this->EffekseerMaterials.SetNum(0);
+
+	auto effect = ::Effekseer::RefPtr<::Effekseer::Effect>::FromPinned(effectPtr);
+
+	std::function<void(::Effekseer::EffectNode*, bool)> renode;
+
+	renode = [this, &renode](::Effekseer::EffectNode* node, bool isRoot) -> void {
 		if (!isRoot)
 		{
 			auto param = node->GetBasicRenderParameter();
@@ -747,7 +755,7 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 
 			mat->UVDistortionTexture = uvDistortionTexture;
 			mat->UVDistortionTextureAddressType = static_cast<int32>(param.UVDistortionTexWrapType);
-			
+
 			mat->BlendTexture = blendTexture;
 			mat->BlendTextureAddress = static_cast<int32>(param.BlendTexWrapType);
 
@@ -821,7 +829,7 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 			mkey.IsDistorted = m->IsDistorted;
 			mkey.Material = m->Material;
 			mkey.SoftParticleParam = m->SoftParticleParam;
-			
+
 			mat->Key = mkey;
 
 			this->EffekseerMaterials.Add(mat);
@@ -838,7 +846,7 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 			renode(n, false);
 		}
 	};
-	
+
 	if (effect != nullptr)
 	{
 		renode(effect->GetRoot(), true);
@@ -905,6 +913,41 @@ void UEffekseerEffect::BeginDestroy()
 {
 	ReleaseEffect();
 	Super::BeginDestroy();
+}
+
+void UEffekseerEffect::GenerateRenderingDataIfRequired()
+{
+	auto effect = ::Effekseer::RefPtr<::Effekseer::Effect>::FromPinned(effectPtr);
+	if (effect != nullptr)
+	{
+		std::function<bool(::Effekseer::EffectNode*, bool)> required;
+
+		required = [this, &required](::Effekseer::EffectNode* node, bool isRoot) -> bool {
+			if (!isRoot)
+			{
+				if (node->GetRenderingUserData() == nullptr)
+				{
+					return true;
+				}
+			}
+
+			for (size_t i = 0; i < node->GetChildrenCount(); i++)
+			{
+				auto n = node->GetChild(i);
+				if (required(n, false))
+				{
+					return true;
+				}
+			}
+
+			return false;
+		};
+
+		if (required(effect->GetRoot(), true))
+		{
+			GenerateRenderingData();
+		}
+	}
 }
 
 void UEffekseerEffect::ReloadIfRequired()

@@ -483,6 +483,8 @@ private:
 	UPROPERTY(Transient)
 	TArray<UEFfekseerProceduralModel*> ProceduralModels;
 
+	void GenerateRenderingData();
+
 public:
 	void Load(const uint8_t* data, int32_t size, const TCHAR* path);
 
@@ -531,6 +533,7 @@ public:
 	class UAssetImportData* AssetImportData;
 #endif
 
+	void GenerateRenderingDataIfRequired();
 	void ReloadIfRequired();
 	void AssignResources();
 

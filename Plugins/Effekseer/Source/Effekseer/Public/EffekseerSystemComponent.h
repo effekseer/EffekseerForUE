@@ -87,6 +87,7 @@ private:
 	EffekseerUpdateData*	currentUpdateData = nullptr;
 	int32_t					nextInternalHandle = 0;
 	TMap<int32_t, int32_t>	internalHandle2EfkHandle;
+	bool isNetworkRunning_ = false;
 
 public:
 	UEffekseerSystemComponent();
