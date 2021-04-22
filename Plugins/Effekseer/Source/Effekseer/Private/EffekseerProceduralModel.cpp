@@ -25,14 +25,14 @@ public:
 				FVector(v.Tangent.X, v.Tangent.Z, v.Tangent.Y),
 				FVector(v.Normal.X, v.Normal.Z, v.Normal.Y),
 				FVector2D(v.UV.X, v.UV.Y),
-				FColor(v.VColor.R, v.VColor.B, v.VColor.B, v.VColor.A));
+				FColor(v.VColor.R, v.VColor.G, v.VColor.B, v.VColor.A));
 		}
 
 		for (int i = 0; i < model.GetFaceCount(); i++)
 		{
-			indexBuffer.Add(model.GetFaces()[i].Indexes[0]);
-			indexBuffer.Add(model.GetFaces()[i].Indexes[1]);
 			indexBuffer.Add(model.GetFaces()[i].Indexes[2]);
+			indexBuffer.Add(model.GetFaces()[i].Indexes[1]);
+			indexBuffer.Add(model.GetFaces()[i].Indexes[0]);
 		}
 
 		VertexBuffers.InitFromDynamicVertex(&VertexFactory, vertices, 4);
