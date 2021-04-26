@@ -537,7 +537,7 @@ public:
 
 	}
 
-	virtual Effekseer::ModelRef Generate(const Effekseer::ProceduralModelParameter* parameter)
+	Effekseer::ModelRef Generate(const Effekseer::ProceduralModelParameter& parameter) override
 	{
 		auto original = Effekseer::ProceduralModelGenerator::Generate(parameter);
 
@@ -561,7 +561,7 @@ public:
 		return model;
 	}
 
-	virtual void Ungenerate(Effekseer::ModelRef model)
+	void Ungenerate(Effekseer::ModelRef model) override
 	{
 
 	}
