@@ -72,10 +72,22 @@ namespace EffekseerRendererUE4
 
 		virtual const FMaterial* GetParentMaterial(ERHIFeatureLevel::Type InFeatureLevel) const { return nullptr; }
 
+#if ENGINE_MINOR_VERSION >= 27
+		const FMaterial* GetMaterialNoFallback(ERHIFeatureLevel::Type InFeatureLevel) const override
+		{
+			return Parent->GetMaterialNoFallback(InFeatureLevel);
+		}
+
+		const FMaterialRenderProxy* GetFallback(ERHIFeatureLevel::Type InFeatureLevel) const override
+		{
+			return this;
+		}
+#else
 		const FMaterial& GetMaterialWithFallback(ERHIFeatureLevel::Type InFeatureLevel, const FMaterialRenderProxy*& OutFallbackMaterialRenderProxy) const override
 		{
 			return *(GetParentMaterial(InFeatureLevel));
 		}
+#endif
 	};
 
 	class FFileMaterialRenderProxy : public FCompatibleMaterialRenderProxy
@@ -120,7 +132,11 @@ namespace EffekseerRendererUE4
 
 	const FMaterial* FFileMaterialRenderProxy::GetParentMaterial(ERHIFeatureLevel::Type InFeatureLevel) const
 	{
+#if ENGINE_MINOR_VERSION >= 27
+		return Parent->GetMaterialNoFallback(InFeatureLevel);
+#else
 		return Parent->GetMaterial(InFeatureLevel);
+#endif
 	}
 
 	bool FFileMaterialRenderProxy::GetParentVectorValue(const MaterialParameterInfo& ParameterInfo, FLinearColor* OutValue, const FMaterialRenderContext& Context) const
@@ -254,7 +270,11 @@ namespace EffekseerRendererUE4
 
 	const FMaterial* FDistortionMaterialRenderProxy::GetParentMaterial(ERHIFeatureLevel::Type InFeatureLevel) const
 	{
+#if ENGINE_MINOR_VERSION >= 27
+		return Parent->GetMaterialNoFallback(InFeatureLevel);
+#else
 		return Parent->GetMaterial(InFeatureLevel);
+#endif
 	}
 
 	bool FDistortionMaterialRenderProxy::GetParentVectorValue(const MaterialParameterInfo& ParameterInfo, FLinearColor* OutValue, const FMaterialRenderContext& Context) const
@@ -334,7 +354,11 @@ namespace EffekseerRendererUE4
 
 	const FMaterial* FModelMaterialRenderProxy::GetParentMaterial(ERHIFeatureLevel::Type InFeatureLevel) const
 	{
+#if ENGINE_MINOR_VERSION >= 27
+		return Parent->GetMaterialNoFallback(InFeatureLevel);
+#else
 		return Parent->GetMaterial(InFeatureLevel);
+#endif
 	}
 
 	bool FModelMaterialRenderProxy::GetParentVectorValue(const MaterialParameterInfo& ParameterInfo, FLinearColor* OutValue, const FMaterialRenderContext& Context) const
