@@ -17,7 +17,6 @@ namespace EffekseerRendererUE4
 	{
 	private:
 		uint32_t				m_vertexRingStart;
-		uint32_t				m_vertexRingOffset;
 		bool					m_ringBufferLock;
 	public:
 		VertexBuffer(int size, bool isDynamic);

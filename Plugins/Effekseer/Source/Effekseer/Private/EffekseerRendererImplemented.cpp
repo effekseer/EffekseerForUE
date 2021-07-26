@@ -748,7 +748,6 @@ namespace EffekseerRendererUE4
 	::Effekseer::RingRendererRef RendererImplemented::CreateRingRenderer()
 	{
 		auto ret = Effekseer::MakeRefPtr <::EffekseerRenderer::RingRendererBase<RendererImplemented, false>>(this);
-		ret->SetFasterSngleRingModeEnabled(false);
 		return ret;
 	}
 
