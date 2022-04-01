@@ -11,7 +11,7 @@ on:
 jobs:
   build:
 
-    runs-on: vs2017-win2016
+    runs-on: windows-2019
     
     steps:
     - uses: actions/checkout@v2
@@ -22,7 +22,7 @@ jobs:
         python CreatePackage.py
     - uses: actions/upload-artifact@v1
       with:
-        name: EffekseerForUE4_162c
+        name: EffekseerForUE4_162d
         path: EffekseerForUE4
   
 
