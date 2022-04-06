@@ -684,7 +684,7 @@ FEffekseerHandle UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVect
 					dynamicMaterial->SetScalarParameterValue(TEXT("BlendAlphaTextureTilingType"), m->BlendAlphaTextureAddress);
 					dynamicMaterial->SetScalarParameterValue(TEXT("BlendUVDistortionTextureTilingType"), m->BlendUVDistortionTextureAddress);
 
-					dynamicMaterial->SetVectorParameterValue(TEXT("FlipbookParameters"), FLinearColor(float(m->FlipbookParams.Enable), m->FlipbookParams.LoopType, m->FlipbookParams.DivideX, m->FlipbookParams.DivideY));
+					dynamicMaterial->SetVectorParameterValue(TEXT("FlipbookParameters"), FLinearColor(m->FlipbookParams.Enable ? 1.0f : 0.0f, m->FlipbookParams.LoopType, m->FlipbookParams.DivideX, m->FlipbookParams.DivideY));
 
 					dynamicMaterial->SetScalarParameterValue(TEXT("UVDistortionIntensity"), m->UVDistortionIntensity);
 
