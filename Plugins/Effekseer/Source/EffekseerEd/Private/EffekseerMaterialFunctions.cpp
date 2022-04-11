@@ -33,7 +33,7 @@
 #include "MaterialNodeConverter/ConvertedNodeParameter.h"
 #include "MaterialNodeConverter/ConvertedNodeMath.h"
 #include "MaterialNodeConverter/ConvertedNodeModel.h"
-
+#include "MaterialNodeConverter/ConvertedNodeInternal.h"
 
 class ConvertedNodeFactory
 {
@@ -862,6 +862,9 @@ UMaterial* CreateUE4MaterialFromEffekseerMaterial(const std::shared_ptr<NativeEf
 	nodeFactories["PolarCoords"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodePolarCoords>>();
 
 	nodeFactories["DepthFade"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeDepthFade>>();
+
+	nodeFactories["CastFloat2ToFloat4"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeCastFloat2ToFloat4>>();
+	nodeFactories["CastFloat3ToFloat4"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeCastFloat3ToFloat4>>();
 
 	std::map<uint64_t, std::shared_ptr<ConvertedNode>> convertedNodes;
 

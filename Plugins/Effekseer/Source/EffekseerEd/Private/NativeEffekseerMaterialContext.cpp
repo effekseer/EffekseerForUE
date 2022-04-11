@@ -1,8 +1,9 @@
 #include "NativeEffekseerMaterialContext.h"
+#include "MaterialNode/InternalNode.h"
 
 std::shared_ptr<NativeEffekseerMaterialContext> NativeEffekseerMaterialContext::Load(const uint8* data, int size, const char* basePath)
 {
-	auto ret = std::make_shared< NativeEffekseerMaterialContext>();
+	auto ret = std::make_shared<NativeEffekseerMaterialContext>();
 
 	std::vector<uint8_t> dataVec;
 	dataVec.resize(size);
@@ -14,6 +15,40 @@ std::shared_ptr<NativeEffekseerMaterialContext> NativeEffekseerMaterialContext::
 
 	// TODO : specify path
 	ret->material->Load(dataVec, ret->library, basePath);
+
+	// Add internal nodes
+	for (auto node : ret->material->GetNodes())
+	{
+		for (size_t i = 0; i < node->Parameter->OutputPins.size(); i++)
+		{
+			std::unordered_set<std::shared_ptr<EffekseerMaterial::Pin>> cache;
+			auto outputType = ret->material->GetDesiredPinType(node->OutputPins[i], cache);
+
+			auto inputPins = ret->material->GetConnectedPins(node->OutputPins[i]);
+
+			for (size_t j = 0; j < inputPins.size(); j++)
+			{
+				cache.clear();
+				auto inputType = ret->material->GetDesiredPinType(inputPins[j], cache);
+
+				if (outputType == EffekseerMaterial::ValueType::Float2 && (inputType == EffekseerMaterial::ValueType::Float3 || inputType == EffekseerMaterial::ValueType::Float4))
+				{
+					auto newNode = ret->material->CreateNode(std::make_shared<EffekseerMaterial::NodeCastFloat2ToFloat4>(), true);
+					newNode->Pos = node->Pos;
+					ret->material->ConnectPin(node->OutputPins[i], newNode->InputPins[0]);
+					ret->material->ConnectPin(newNode->OutputPins[i], inputPins[j]);
+
+				}
+				else if (outputType == EffekseerMaterial::ValueType::Float3 && (inputType == EffekseerMaterial::ValueType::Float4))
+				{
+					auto newNode = ret->material->CreateNode(std::make_shared<EffekseerMaterial::NodeCastFloat3ToFloat4>(), true);
+					newNode->Pos = node->Pos;
+					ret->material->ConnectPin(node->OutputPins[i], newNode->InputPins[0]);
+					ret->material->ConnectPin(newNode->OutputPins[i], inputPins[j]);
+				}
+			}
+		}
+	}
 
 	for (auto node : ret->material->GetNodes())
 	{
