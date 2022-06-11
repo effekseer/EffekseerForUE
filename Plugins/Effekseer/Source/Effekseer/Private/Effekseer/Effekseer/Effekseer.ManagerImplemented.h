@@ -2,7 +2,6 @@
 #ifndef __EFFEKSEER_MANAGER_IMPLEMENTED_H__
 #define __EFFEKSEER_MANAGER_IMPLEMENTED_H__
 
-#include "Culling/Culling3D.h"
 #include "Effekseer.Base.h"
 #include "Effekseer.InstanceChunk.h"
 #include "Effekseer.IntrusiveList.h"
@@ -10,6 +9,7 @@
 #include "Effekseer.Matrix43.h"
 #include "Effekseer.Matrix44.h"
 #include "Effekseer.WorkerThread.h"
+#include "Geometry/GeometryUtility.h"
 #include "Utils/Effekseer.CustomAllocator.h"
 
 namespace Effekseer
@@ -29,7 +29,6 @@ private:
 		EffectRef ParameterPointer;
 		InstanceContainer* InstanceContainerPointer;
 		InstanceGlobal* GlobalPointer;
-		Culling3D::Object* CullingObjectPointer;
 		int RandomSeed = 0;
 		bool IsPaused;
 		bool IsShown;
@@ -43,10 +42,9 @@ private:
 		EffectInstanceRemovingCallback RemovingCallback;
 
 		Matrix43 Rotation;
-		Vector3D Scaling = { 1.f, 1.f, 1.f };
+		Vector3D Scaling = {1.f, 1.f, 1.f};
 
 		SIMD::Mat43f BaseMatrix;
-		SIMD::Mat43f GlobalMatrix;
 
 		float Speed;
 
@@ -70,11 +68,13 @@ private:
 		//! a bit mask for group
 		int64_t GroupMask = 0;
 
+		Vector3D CullingPosition{};
+		float CullingRadius{};
+
 		DrawSet(const EffectRef& effect, InstanceContainer* pContainer, InstanceGlobal* pGlobal)
 			: ParameterPointer(effect)
 			, InstanceContainerPointer(pContainer)
 			, GlobalPointer(pGlobal)
-			, CullingObjectPointer(nullptr)
 			, IsPaused(false)
 			, IsShown(true)
 			, IsAutoDrawing(true)
@@ -94,7 +94,6 @@ private:
 			: ParameterPointer(nullptr)
 			, InstanceContainerPointer(nullptr)
 			, GlobalPointer(nullptr)
-			, CullingObjectPointer(nullptr)
 			, IsPaused(false)
 			, IsShown(true)
 			, IsRemoving(false)
@@ -107,27 +106,15 @@ private:
 			Rotation.Indentity();
 		}
 
-		SIMD::Mat43f* GetEnabledGlobalMatrix();
+		SIMD::Mat43f GetGlobalMatrix() const;
 
-		void CopyMatrixFromInstanceToRoot();
+		void SetGlobalMatrix(const SIMD::Mat43f& mat);
+
+		void UpdateLevelOfDetails(const Vector3D& viewerPosition, float lodDistanceBias);
+
+	private:
+		SIMD::Mat43f GlobalMatrix;
 	};
-
-	struct CullingParameter
-	{
-		float SizeX;
-		float SizeY;
-		float SizeZ;
-		int32_t LayerCount;
-
-		CullingParameter()
-		{
-			SizeX = 0.0f;
-			SizeY = 0.0f;
-			SizeZ = 0.0f;
-			LayerCount = 0;
-		}
-
-	} cullingCurrent, cullingNext;
 
 private:
 	CustomVector<WorkerThread> m_WorkerThreads;
@@ -185,12 +172,6 @@ private:
 
 	uint32_t m_sequenceNumber;
 
-	Culling3D::World* m_cullingWorld;
-
-	std::vector<DrawSet*> m_culledObjects;
-	std::set<Handle> m_culledObjectSets;
-	bool m_culled;
-
 	SpriteRendererRef m_spriteRenderer;
 
 	RibbonRendererRef m_ribbonRenderer;
@@ -210,6 +191,9 @@ private:
 	RandFunc m_randFunc;
 
 	int m_randMax;
+
+	Vector3D m_ViewerPosition;
+	float m_LodDistanceBias = 0.0F;
 
 	std::queue<std::pair<SoundTag, SoundPlayer::InstanceParameter>> m_requestedSounds;
 	std::mutex m_soundMutex;
@@ -232,6 +216,8 @@ private:
 	void ExecuteSounds();
 
 	void StoreSortingDrawSets(const Manager::DrawParameter& drawParameter);
+
+	static bool CanDraw(const DrawSet& drawSet, const Manager::DrawParameter& drawParameter, const std::array<Plane, 6>& planes);
 
 public:
 	ManagerImplemented(int instance_max, bool autoFlip);
@@ -339,6 +325,12 @@ public:
 
 	int32_t GetTotalInstanceCount() const override;
 
+	int GetCurrentLOD(Handle handle) override;
+
+	float GetLODDistanceBias() const override;
+
+	void SetLODDistanceBias(float distanceBias) override;
+
 	Matrix43 GetMatrix(Handle handle) override;
 
 	void SetMatrix(Handle handle, const Matrix43& mat) override;
@@ -363,6 +355,8 @@ public:
 
 	void SetDynamicInput(Handle handle, int32_t index, float value) override;
 
+	void SendTrigger(Handle handle, int32_t index) override;
+
 	Matrix43 GetBaseMatrix(Handle handle) override;
 
 	void SetBaseMatrix(Handle handle, const Matrix43& mat) override;
@@ -378,6 +372,10 @@ public:
 	void SetPaused(Handle handle, bool paused) override;
 
 	void SetPausedToAllEffects(bool paused) override;
+
+	void SetSpawnDisabled(Handle handle, bool spawnDisabled) override;
+
+	bool GetSpawnDisabled(Handle handle) override;
 
 	int GetLayer(Handle handle) override;
 
@@ -409,13 +407,15 @@ public:
 
 	void DoUpdate(const UpdateParameter& parameter);
 
-	void BeginUpdate() override;
+	void BeginUpdate(const Vector3D& ViewerPosition = Vector3D(0.0, 0.0, 0.0)) override;
 
 	void EndUpdate() override;
 
 	void UpdateHandle(Handle handle, float deltaFrame = 1.0f) override;
 
 	void UpdateHandleToMoveToFrame(Handle handle, float frame) override;
+
+	void SetRandomSeed(Handle handle, int32_t seed) override;
 
 private:
 	void UpdateInstancesByInstanceGlobal(const DrawSet& drawSet);
@@ -445,6 +445,8 @@ public:
 
 	void DrawHandleFront(Handle handle, const Manager::DrawParameter& drawParameter) override;
 
+	bool GetIsCulled(Handle handle, const Manager::DrawParameter& drawParameter) override;
+
 	Handle Play(const EffectRef& effect, float x, float y, float z) override;
 
 	Handle Play(const EffectRef& effect, const Vector3D& position, int32_t startFrame) override;
@@ -460,12 +462,6 @@ public:
 	void BeginReloadEffect(const EffectRef& effect, bool doLockThread);
 
 	void EndReloadEffect(const EffectRef& effect, bool doLockThread);
-
-	void CreateCullingWorld(float xsize, float ysize, float zsize, int32_t layerCount) override;
-
-	void CalcCulling(const Matrix44& cameraProjMat, bool isOpenGL) override;
-
-	void RessignCulling() override;
 
 	virtual int GetRef() override
 	{
@@ -485,6 +481,11 @@ public:
 	void UnlockRendering() override;
 
 	void RequestToPlaySound(Instance* instance, const EffectNodeImplemented* node);
+
+	const Vector3D& GetViewerPosition() const
+	{
+		return m_ViewerPosition;
+	}
 
 	ManagerImplemented* GetImplemented() override
 	{

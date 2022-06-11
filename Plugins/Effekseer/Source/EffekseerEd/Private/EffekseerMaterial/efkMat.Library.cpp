@@ -57,6 +57,7 @@ Library::Library()
 
 	// Constant
 	Contents.push_back(std::make_shared<LibraryContent<NodeTime>>());
+	Contents.push_back(std::make_shared<LibraryContent<NodeLocalTime>>());
 	Contents.push_back(std::make_shared<LibraryContent<NodeEffectScale>>());
 	Contents.push_back(std::make_shared<LibraryContent<NodeCameraPositionWS>>());
 	Contents.push_back(std::make_shared<LibraryContent<NodeConstant1>>());
@@ -70,6 +71,15 @@ Library::Library()
 	Contents.push_back(std::make_shared<LibraryContent<NodeParameter3>>());
 	Contents.push_back(std::make_shared<LibraryContent<NodeParameter4>>());
 
+	// Gradient
+	Contents.push_back(std::make_shared<LibraryContent<NodeSampleGradient>>());
+	Contents.push_back(std::make_shared<LibraryContent<NodeGradientParameter>>());
+	Contents.push_back(std::make_shared<LibraryContent<NodeGradient>>());
+
+	Contents.push_back(std::make_shared<LibraryContent<NodeSimpleNoise>>());
+
+	Contents.push_back(std::make_shared<LibraryContent<NodeLight>>());
+
 	// Comment
 	Contents.push_back(std::make_shared<LibraryContent<NodeComment>>());
 
@@ -82,7 +92,9 @@ Library::Library()
 	MakeGroups();
 }
 
-Library::~Library() {}
+Library::~Library()
+{
+}
 
 void Library::MakeGroups()
 {

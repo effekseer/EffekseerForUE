@@ -5,7 +5,10 @@
 namespace EffekseerMaterial
 {
 
-ValueType InferOutputTypeIn1Out1(const std::vector<ValueType>& inputTypes) { return inputTypes[0]; }
+ValueType InferOutputTypeIn1Out1(const std::vector<ValueType>& inputTypes)
+{
+	return inputTypes[0];
+}
 
 ValueType InferOutputTypeIn2Out1Param2(const std::vector<ValueType>& inputTypes)
 {
@@ -216,7 +219,10 @@ bool ExtractTextureParameter(std::shared_ptr<Material> material, std::shared_ptr
 	return false;
 }
 
-ValueType NodeParameter::GetOutputTypeIn1Out1(const std::vector<ValueType>& inputTypes) const { return inputTypes[0]; }
+ValueType NodeParameter::GetOutputTypeIn1Out1(const std::vector<ValueType>& inputTypes) const
+{
+	return inputTypes[0];
+}
 
 ValueType NodeParameter::GetOutputTypeIn2Out1Param2(const std::vector<ValueType>& inputTypes) const
 {
@@ -456,6 +462,44 @@ NodeConstant4::NodeConstant4()
 	BehaviorComponents = {std::make_shared<NodeParameterBehaviorConstantName>(4)};
 }
 
+NodeTextureObject::NodeTextureObject()
+{
+	Type = NodeType::TextureObject;
+	TypeName = "TextureObject";
+	Group = std::vector<std::string>{"Texture"};
+
+	auto output = std::make_shared<PinParameter>();
+	output->Name = "Output";
+	output->Type = ValueType::Texture;
+	OutputPins.push_back(output);
+
+	auto param = std::make_shared<NodePropertyParameter>();
+	param->Name = "Texture";
+	param->Type = ValueType::Texture;
+	Properties.push_back(param);
+
+	auto func1 = std::make_shared<NodeFunctionParameter>();
+	func1->Name = "ConvertParam";
+	func1->Func = [](std::shared_ptr<Material> material, std::shared_ptr<Node> node) -> bool {
+		auto param = std::make_shared<NodeTextureObjectParameter>();
+		auto new_node = material->CreateNode(param, false);
+		auto links = material->GetConnectedPins(node->OutputPins[0]);
+
+		for (auto link : links)
+		{
+			material->ConnectPin(new_node->OutputPins[0], link);
+		}
+
+		new_node->MakePosDirtied();
+		new_node->Pos = node->Pos;
+		new_node->Properties[new_node->Parameter->GetPropertyIndex("Texture")]->Str = node->Properties[0]->Str;
+		material->RemoveNode(node);
+		return true;
+	};
+
+	Funcs.push_back(func1);
+}
+
 ValueType NodeComponentMask::GetOutputType(std::shared_ptr<Material> material,
 										   std::shared_ptr<Node> node,
 										   const std::vector<ValueType>& inputTypes) const
@@ -546,16 +590,17 @@ WarningType NodeAppendVector::GetWarning(std::shared_ptr<Material> material, std
 	return WarningType::None;
 }
 
-WarningType NodePixelNormalWS::GetWarning(std::shared_ptr<Material> material, std::shared_ptr<Node> node) const {
+WarningType NodePixelNormalWS::GetWarning(std::shared_ptr<Material> material, std::shared_ptr<Node> node) const
+{
 
 	auto pins = material->GetRelatedPins(node->OutputPins[0]);
-	
+
 	for (auto& pin : pins)
 	{
 		auto node = pin->Parent.lock();
 		if (node != nullptr && node->Parameter->Type == NodeType::Output && pin->Parameter->Name == "Normal")
 		{
-			return WarningType::PixelNodeAndNormal;		
+			return WarningType::PixelNodeAndNormal;
 		}
 	}
 

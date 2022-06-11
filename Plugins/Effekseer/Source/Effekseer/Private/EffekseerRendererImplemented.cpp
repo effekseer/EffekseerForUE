@@ -761,16 +761,6 @@ namespace EffekseerRendererUE4
 		return Effekseer::MakeRefPtr<::EffekseerRenderer::TrackRendererBase<RendererImplemented, false>>(this);
 	}
 
-	::Effekseer::TextureLoaderRef RendererImplemented::CreateTextureLoader(::Effekseer::FileInterface* fileInterface)
-	{
-		return nullptr;
-	}
-
-	::Effekseer::ModelLoaderRef RendererImplemented::CreateModelLoader(::Effekseer::FileInterface* fileInterface)
-	{
-		return nullptr;
-	}
-
 	void RendererImplemented::ResetRenderState()
 	{
 	}

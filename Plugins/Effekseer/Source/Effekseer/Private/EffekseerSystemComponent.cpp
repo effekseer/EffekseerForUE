@@ -28,7 +28,7 @@ private:
 	::Effekseer::RefPtr<::EffekseerRendererUE4::RendererImplemented>	effekseerRenderer = nullptr;
 	
 #ifdef _WIN32
-	::Effekseer::Server*	server = nullptr;
+	::Effekseer::ServerRef server_ = nullptr;
 	std::map<std::u16string, ::Effekseer::RefPtr<::Effekseer::Effect>> registeredEffects;
 #endif
 
@@ -94,10 +94,9 @@ public:
 	virtual ~FEffekseerSystemSceneProxy()
 	{
 #ifdef _WIN32
-		if (server != nullptr)
+		if (server_ != nullptr)
 		{
-			ES_SAFE_DELETE(server);
-			server = nullptr;
+			server_.Reset();
 		}
 #endif
 
@@ -225,12 +224,12 @@ public:
 				internalHandle2EfkHandle.Add(cmd.ID, eid);
 
 #ifdef _WIN32
-				if (server != nullptr)
+				if (server_ != nullptr)
 				{
 					if (registeredEffects.count(effect->GetName()) == 0)
 					{
 						registeredEffects[effect->GetName()] = effect;
-						server->Register(effect->GetName(), effect);
+						server_->Register(effect->GetName(), effect);
 					}
 				}
 #endif
@@ -316,15 +315,15 @@ public:
 			if (cmd.Type == EffekseerUpdateData_CommandType::StartNetwork)
 			{
 #ifdef _WIN32
-				if (server == nullptr)
+				if (server_ == nullptr)
 				{
-					server = Effekseer::Server::Create();
-					if (server->Start(cmd.ID))
+					server_ = Effekseer::Server::Create();
+					if (server_->Start(cmd.ID))
 					{
 					}
 					else
 					{
-						ES_SAFE_DELETE(server);
+						server_.Reset();
 					}
 				}
 #endif
@@ -333,10 +332,10 @@ public:
 			if (cmd.Type == EffekseerUpdateData_CommandType::StopNetwork)
 			{
 #ifdef _WIN32
-				if (server != nullptr)
+				if (server_ != nullptr)
 				{
-					server->Stop();
-					ES_SAFE_DELETE(server);
+					server_->Stop();
+					server_.Reset();
 					registeredEffects.clear();
 				}
 #endif
@@ -351,9 +350,9 @@ public:
 
 		{
 #ifdef _WIN32
-			if (server != nullptr)
+			if (server_ != nullptr)
 			{
-				server->Update(&effekseerManager, 1, Effekseer::ReloadingThreadType::Render);
+				server_->Update(&effekseerManager, 1, Effekseer::ReloadingThreadType::Render);
 			}
 #endif
 
