@@ -870,6 +870,8 @@ UMaterial* CreateUE4MaterialFromEffekseerMaterial(const std::shared_ptr<NativeEf
 
 	nodeFactories["SimpleNoise"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeSimpleNoise>>();
 
+	nodeFactories["SampleGradient"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeSampleGradient>>();
+
 	std::map<uint64_t, std::shared_ptr<ConvertedNode>> convertedNodes;
 
 	for (auto node : context->material->GetNodes())
