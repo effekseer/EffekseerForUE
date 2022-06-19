@@ -34,6 +34,8 @@
 #include "MaterialNodeConverter/ConvertedNodeMath.h"
 #include "MaterialNodeConverter/ConvertedNodeModel.h"
 #include "MaterialNodeConverter/ConvertedNodeInternal.h"
+#include "MaterialNodeConverter/ConvertedNodeNoise.h"
+#include "MaterialNodeConverter/ConvertedNodeGradient.h"
 
 class ConvertedNodeFactory
 {
@@ -865,6 +867,8 @@ UMaterial* CreateUE4MaterialFromEffekseerMaterial(const std::shared_ptr<NativeEf
 
 	nodeFactories["CastFloat2ToFloat4"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeCastFloat2ToFloat4>>();
 	nodeFactories["CastFloat3ToFloat4"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeCastFloat3ToFloat4>>();
+
+	nodeFactories["SimpleNoise"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeSimpleNoise>>();
 
 	std::map<uint64_t, std::shared_ptr<ConvertedNode>> convertedNodes;
 
