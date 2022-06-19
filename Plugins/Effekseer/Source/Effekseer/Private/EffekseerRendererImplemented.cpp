@@ -909,7 +909,7 @@ namespace EffekseerRendererUE4
 
 			auto proxy = mat->GetRenderProxy();
 
-			if (m_currentShader->GetEffekseerMaterial()->UniformNameToIndex.Num() > 0 ||
+			if (m_currentShader->GetEffekseerMaterial()->UniformHashedNameToIndex.Num() > 0 ||
 				m_currentShader->GetEffekseerMaterial()->TextureNameToIndex.Num() > 0 ||
 				nativeMaterial->GetCustomData1Count() > 0 ||
 				nativeMaterial->GetCustomData2Count() > 0 ||
@@ -917,7 +917,9 @@ namespace EffekseerRendererUE4
 			{
 				auto uniformOffset = m_currentShader->GetParameterGenerator()->PixelUserUniformOffset;
 				auto buffer = static_cast<uint8_t*>(m_currentShader->GetPixelConstantBuffer()) + uniformOffset;
-				auto newProxy = new FFileMaterialRenderProxy(proxy, m_currentShader->GetEffekseerMaterial(), reinterpret_cast<float*>(buffer), m_currentShader->GetEffekseerMaterial()->Uniforms.Num(), false, m_renderState->GetActiveState().CullingType, reunderingUserData->Magnification);
+
+				const auto uniformCount = m_currentShader->GetEffekseerMaterial()->Uniforms.Num() + m_currentShader->GetEffekseerMaterial()->Gradients.Num() * 13;
+				auto newProxy = new FFileMaterialRenderProxy(proxy, m_currentShader->GetEffekseerMaterial(), reinterpret_cast<float*>(buffer), uniformCount, false, m_renderState->GetActiveState().CullingType, reunderingUserData->Magnification);
 
 				newProxy->Textures = textures_;
 
@@ -1286,6 +1288,7 @@ namespace EffekseerRendererUE4
 				if (m_currentShader != nullptr && m_currentShader->GetType() == Effekseer::RendererMaterialType::File)
 				{
 					const auto nativeMaterial = m_currentShader->GetEffekseerMaterial()->GetNativePtr();
+					const auto uniformCount = m_currentShader->GetEffekseerMaterial()->Uniforms.Num() + m_currentShader->GetEffekseerMaterial()->Gradients.Num() * 13;
 
 					auto uniformOffset = m_currentShader->GetParameterGenerator()->PixelUserUniformOffset;
 					auto buffer = static_cast<uint8_t*>(m_currentShader->GetPixelConstantBuffer()) + uniformOffset;
@@ -1293,7 +1296,7 @@ namespace EffekseerRendererUE4
 						proxy,
 						m_currentShader->GetEffekseerMaterial(),
 						reinterpret_cast<float*>(buffer),
-						m_currentShader->GetEffekseerMaterial()->Uniforms.Num(),
+						uniformCount,
 						true,
 						m_renderState->GetActiveState().CullingType,
 						reunderingUserData->Magnification);

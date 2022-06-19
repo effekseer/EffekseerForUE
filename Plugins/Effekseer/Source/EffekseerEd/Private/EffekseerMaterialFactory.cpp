@@ -106,6 +106,14 @@ UObject* UEffekseerMaterialFactory::FactoryCreateBinary(
 			assetEfkMat->Uniforms.Add(prop);
 		}
 
+		assetEfkMat->Gradients.Empty();
+		for (auto u : native->result.Gradients)
+		{
+			FEffekseerGradientProperty prop;
+			prop.Name = FString(native->gradientNames[u->GUID].c_str());
+			assetEfkMat->Gradients.Add(prop);
+		}
+
 		assetEfkMat->Textures.Empty();
 		for (auto u : native->result.Textures)
 		{

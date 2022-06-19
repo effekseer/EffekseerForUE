@@ -1,5 +1,6 @@
 #include "ConvertedNodeGradient.h"
 
+#include "Materials/MaterialExpressionAppendVector.h"
 #include "Materials/MaterialExpressionConstant4Vector.h"
 #include "Materials/MaterialExpressionVectorParameter.h"
 
@@ -48,6 +49,7 @@ ConvertedNodeSampleGradient::ConvertedNodeSampleGradient(UMaterial* material, st
 	: effekseerNode_(effekseerNode)
 {
 	parameters_.fill(nullptr);
+	appends_.fill(nullptr);
 
 	expression_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
 	material->Expressions.Add(expression_);
@@ -102,7 +104,28 @@ ConvertedNodeSampleGradient::ConvertedNodeSampleGradient(UMaterial* material, st
 		}
 		else if (node->Parameter->Type == EffekseerMaterial::NodeType::GradientParameter)
 		{
-			// TODO : not implemented
+			const auto uniformName = node->Properties[0]->Str;
+
+			for (size_t i = 0; i < 13; i++)
+			{
+				auto append = NewObject<UMaterialExpressionAppendVector>(material);
+				material->Expressions.Add(append);
+				appends_[i] = append;
+
+				auto paramExpression = NewObject<UMaterialExpressionVectorParameter>(material);
+				paramExpression->ParameterName = FName((uniformName + "_" + std::to_string(i)).c_str());
+				paramExpression->DefaultValue.R = 0.0f;
+				paramExpression->DefaultValue.G = 0.0f;
+				paramExpression->DefaultValue.B = 0.0f;
+				paramExpression->DefaultValue.A = 0.0f;
+				material->Expressions.Add(paramExpression);
+				parameters_[i] = paramExpression;
+
+				append->A.Connect(0, paramExpression);
+				append->B.Connect(4, paramExpression);
+
+				expression_->GetInput(i)->Connect(0, append);
+			}
 		}
 	}
 }
@@ -118,12 +141,23 @@ UMaterialExpression* ConvertedNodeSampleGradient::GetExpressions(int32_t ind) co
 	{
 		return expression_;
 	}
-
-	return parameters_[ind - 1];
+	else if (ind <= 13)
+	{
+		return parameters_[ind - 1];
+	}
+	else
+	{
+		return appends_[ind - 1 - 13];
+	}
 }
 
 int32_t ConvertedNodeSampleGradient::GetExpressionCount() const
 {
+	if (appends_[0] != nullptr)
+	{
+		return 14 + 13;
+	}
+
 	return 14;
 }
 

@@ -13,6 +13,7 @@ private:
 	std::shared_ptr<EffekseerMaterial::Node> effekseerNode_;
 	UMaterialExpressionMaterialFunctionCall* expression_ = nullptr;
 	std::array<UMaterialExpression*, 13> parameters_;
+	std::array<UMaterialExpression*, 13> appends_;
 
 public:
 	ConvertedNodeSampleGradient(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode);

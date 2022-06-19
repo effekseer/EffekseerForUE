@@ -87,6 +87,20 @@ std::shared_ptr<NativeEffekseerMaterialContext> NativeEffekseerMaterialContext::
 		}
 	}
 
+	// parse gradient names
+	for (auto g : ret->result.Gradients)
+	{
+		if (g->Name == "" || used.count(g->Name) > 0)
+		{
+			ret->gradientNames[g->GUID] = g->UniformName;
+		}
+		else
+		{
+			ret->gradientNames[g->GUID] = g->Name;
+			used.insert(g->UniformName);
+		}
+	}
+
 	// parse texture names
 	for (auto t : ret->result.Textures)
 	{
