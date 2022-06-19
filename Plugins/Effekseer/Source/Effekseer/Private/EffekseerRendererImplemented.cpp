@@ -909,6 +909,8 @@ namespace EffekseerRendererUE4
 
 			auto proxy = mat->GetRenderProxy();
 
+			const auto nativeEffect = m_currentShader->GetEffekseerMaterial()->GetNativePtr();
+
 			if (m_currentShader->GetEffekseerMaterial()->UniformHashedNameToIndex.Num() > 0 ||
 				m_currentShader->GetEffekseerMaterial()->TextureNameToIndex.Num() > 0 ||
 				nativeMaterial->GetCustomData1Count() > 0 ||
