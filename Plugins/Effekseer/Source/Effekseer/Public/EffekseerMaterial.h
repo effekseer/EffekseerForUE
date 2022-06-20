@@ -39,6 +39,15 @@ struct FEffekseerUniformProperty
 	int Count;
 };
 
+USTRUCT(BlueprintType)
+struct FEffekseerGradientProperty
+{
+	GENERATED_USTRUCT_BODY();
+
+	UPROPERTY(VisibleAnywhere)
+	FString Name;
+};
+
 USTRUCT()
 struct EFFEKSEER_API FEffekseerMaterialElement
 {
@@ -79,6 +88,9 @@ public:
 
 	UPROPERTY(VisibleAnywhere)
 	TArray<FEffekseerUniformProperty> Uniforms;
+
+	UPROPERTY(VisibleAnywhere)
+	TArray<FEffekseerGradientProperty> Gradients;
 
 #if ENGINE_MINOR_VERSION >= 25
 	TMap<FHashedName, int> UniformHashedNameToIndex;

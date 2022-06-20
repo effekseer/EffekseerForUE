@@ -2,8 +2,10 @@
 
 #include "CoreMinimal.h"
 #include <Effekseer.h>
+#include <unordered_set>
 #include <vector>
 #include <EffekseerRenderer.CommonUtils.h>
+#include <Effekseer/Material/Effekseer.MaterialFile.h>
 
 class UEffekseerMaterial;
 
@@ -20,6 +22,7 @@ namespace EffekseerRendererUE4
 		bool isAdvancedMaterial_ = false;
 
 	public:
+		std::unordered_set<Effekseer::MaterialFile::RequiredPredefinedMethodType> RequiredPredefinedMethodTypes;
 
 		/**
 			@brief	Constructor for material

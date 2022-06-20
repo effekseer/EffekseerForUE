@@ -47,10 +47,11 @@ public:
 	{
 		for (int32_t i = 0; i < GetExpressionCount(); i++)
 		{
-			if (GetExpressions(i) != nullptr)
+			auto expression = GetExpressions(i);
+			if (expression != nullptr)
 			{
-				GetExpressions(i)->MaterialExpressionEditorX = x;
-				GetExpressions(i)->MaterialExpressionEditorY = y;
+				expression->MaterialExpressionEditorX = x;
+				expression->MaterialExpressionEditorY = y;
 			}
 		}
 	}

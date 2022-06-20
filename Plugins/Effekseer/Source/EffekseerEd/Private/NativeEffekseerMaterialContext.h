@@ -15,6 +15,7 @@ struct NativeEffekseerMaterialContext
 	std::shared_ptr<EffekseerMaterial::Node> outputNode;
 	EffekseerMaterial::TextExporterResult result;
 	std::map<uint64_t, std::string> uniformNames;
+	std::map<uint64_t, std::string> gradientNames;
 	std::map<uint64_t, std::string> textureNames;
 	bool isEffectScaleRequired = false;
 

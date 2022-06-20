@@ -5,6 +5,7 @@
 #include "EffekseerEffect.h"
 #include "Materials/MaterialExpressionScalarParameter.h"
 #include "Materials/MaterialExpressionVectorParameter.h"
+#include "Materials/MaterialExpressionAppendVector.h"
 #include "../NativeEffekseerMaterialContext.h"
 
 
@@ -108,22 +109,46 @@ class ConvertedNodeParameter4 : public ConvertedNode
 {
 private:
 	std::shared_ptr<EffekseerMaterial::Node> effekseerNode_;
-	UMaterialExpressionVectorParameter* expression_ = nullptr;
+	UMaterialExpressionAppendVector* expression_ = nullptr;
+	UMaterialExpressionVectorParameter* function_ = nullptr;
 
 public:
 	ConvertedNodeParameter4(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
 		: effekseerNode_(effekseerNode)
 	{
-		expression_ = NewObject<UMaterialExpressionVectorParameter>(material);
+		expression_ = NewObject<UMaterialExpressionAppendVector>(material);
 		material->Expressions.Add(expression_);
-		expression_->ParameterName = FName(effekseerMaterial->uniformNames[effekseerNode_->GUID].c_str());
-		expression_->DefaultValue.R = effekseerNode_->GetProperty("Value")->Floats[0];
-		expression_->DefaultValue.G = effekseerNode_->GetProperty("Value")->Floats[1];
-		expression_->DefaultValue.B = effekseerNode_->GetProperty("Value")->Floats[2];
-		expression_->DefaultValue.A = effekseerNode_->GetProperty("Value")->Floats[3];
+
+		function_ = NewObject<UMaterialExpressionVectorParameter>(material);
+		material->Expressions.Add(expression_);
+		function_->ParameterName = FName(effekseerMaterial->uniformNames[effekseerNode_->GUID].c_str());
+		function_->DefaultValue.R = effekseerNode_->GetProperty("Value")->Floats[0];
+		function_->DefaultValue.G = effekseerNode_->GetProperty("Value")->Floats[1];
+		function_->DefaultValue.B = effekseerNode_->GetProperty("Value")->Floats[2];
+		function_->DefaultValue.A = effekseerNode_->GetProperty("Value")->Floats[3];
+
+		expression_->A.Connect(0, function_);
+		expression_->B.Connect(4, function_);
 	}
 
-	UMaterialExpression* GetExpression() const override { return expression_; }
+	UMaterialExpression* GetExpression() const override
+	{
+		return expression_;
+	}
+
+	UMaterialExpression* GetExpressions(int32_t ind) const override
+	{
+		if (ind == 0)
+			return expression_;
+		if (ind == 1)
+			return function_;
+		return nullptr;
+	}
+
+	int32_t GetExpressionCount() const
+	{
+		return 2;
+	}
 };
 
 class ConvertedNodeCustomData1 : public ConvertedNode

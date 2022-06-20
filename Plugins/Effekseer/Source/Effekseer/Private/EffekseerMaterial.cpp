@@ -21,7 +21,8 @@ void UEffekseerMaterial::ReupdateElements()
 
 	for (auto& element : MaterialElements)
 	{
-		if (element.Material == nullptr) continue;
+		if (element.Material == nullptr)
+			continue;
 
 		context.AddMaterialInterface(element.Material);
 	}
@@ -114,7 +115,7 @@ bool UEffekseerMaterial::GenerateColorSpaceMaterial(EEffekseerAlphaBlendType alp
 			return true;
 		}
 	}
-	
+
 	return false;
 }
 
@@ -142,12 +143,20 @@ void UEffekseerMaterial::ReassignSearchingMaps()
 		UniformHashedNameToIndex.Add(Uniforms[i].Name, i);
 	}
 
+	for (int32_t i = 0; i < Gradients.Num(); i++)
+	{
+		for (int32_t j = 0; j < 13; j++)
+		{
+			UniformHashedNameToIndex.Add(Gradients[i].Name + "_" + std::to_string(j).c_str(), Uniforms.Num() + i * 13 + j);
+		}
+	}
+
 	TextureHashedNameToIndex.Reset();
 
 	for (int32_t i = 0; i < Textures.Num(); i++)
 	{
 		TextureHashedNameToIndex.Add(Textures[i].Name, i);
-}
+	}
 #endif
 }
 

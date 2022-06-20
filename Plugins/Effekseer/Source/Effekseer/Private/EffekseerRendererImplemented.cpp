@@ -103,9 +103,12 @@ namespace EffekseerRendererUE4
 		FLinearColor ModelColor;
 		FLinearColor CustomData1;
 		FLinearColor CustomData2;
-		std::array<void*, Effekseer::TextureSlotMax> Textures;
+		FLinearColor LightDirection;
+		FLinearColor LightColor;
+		FLinearColor LightAmbientColor;
+		float LocalTime;
 
-		
+		std::array<void*, Effekseer::TextureSlotMax> Textures;
 
 		FFileMaterialRenderProxy(const FMaterialRenderProxy* InParent, const UEffekseerMaterial* effekseerMaterial, float* uniformBufferPtr, int32_t uniformCount, bool isModel, Effekseer::CullingType cullingType, float effectScale)
 			: FCompatibleMaterialRenderProxy(InParent)
@@ -182,6 +185,24 @@ namespace EffekseerRendererUE4
 			}
 		}
 
+		if (ParameterInfo.Name == FName(TEXT("LightDirection")))
+		{
+			*OutValue = LightDirection;
+			return true;
+		}
+
+		if (ParameterInfo.Name == FName(TEXT("LightColor")))
+		{
+			*OutValue = LightColor;
+			return true;
+		}
+
+		if (ParameterInfo.Name == FName(TEXT("LightAmbientColor")))
+		{
+			*OutValue = LightAmbientColor;
+			return true;
+		}
+
 #if ENGINE_MINOR_VERSION >= 26
 		const auto found = effekseerMaterial_->UniformHashedNameToIndex.Find(ParameterInfo.Name.ToString());
 #elif ENGINE_MINOR_VERSION >= 25
@@ -216,6 +237,11 @@ namespace EffekseerRendererUE4
 			return true;
 		}
 
+		if (ParameterInfo.Name == FName(TEXT("LocalTime")))
+		{
+			*OutValue = LocalTime;
+			return true;
+		}
 
 #if ENGINE_MINOR_VERSION >= 26
 		const auto found = effekseerMaterial_->UniformHashedNameToIndex.Find(ParameterInfo.Name.ToString());
@@ -909,15 +935,29 @@ namespace EffekseerRendererUE4
 
 			auto proxy = mat->GetRenderProxy();
 
-			if (m_currentShader->GetEffekseerMaterial()->UniformNameToIndex.Num() > 0 ||
+			const auto hasLight = m_currentShader->RequiredPredefinedMethodTypes.count(Effekseer::MaterialFile::RequiredPredefinedMethodType::Light) != 0;
+			const auto hasLocalTime = m_currentShader->RequiredPredefinedMethodTypes.count(Effekseer::MaterialFile::RequiredPredefinedMethodType::LocalTime) != 0;
+
+			if (m_currentShader->GetEffekseerMaterial()->UniformHashedNameToIndex.Num() > 0 ||
 				m_currentShader->GetEffekseerMaterial()->TextureNameToIndex.Num() > 0 ||
 				nativeMaterial->GetCustomData1Count() > 0 ||
 				nativeMaterial->GetCustomData2Count() > 0 ||
-				m_currentShader->GetEffekseerMaterial()->IsEffectScaleRequired)
+				m_currentShader->GetEffekseerMaterial()->IsEffectScaleRequired ||
+				hasLight ||
+				hasLocalTime)
 			{
 				auto uniformOffset = m_currentShader->GetParameterGenerator()->PixelUserUniformOffset;
 				auto buffer = static_cast<uint8_t*>(m_currentShader->GetPixelConstantBuffer()) + uniformOffset;
-				auto newProxy = new FFileMaterialRenderProxy(proxy, m_currentShader->GetEffekseerMaterial(), reinterpret_cast<float*>(buffer), m_currentShader->GetEffekseerMaterial()->Uniforms.Num(), false, m_renderState->GetActiveState().CullingType, reunderingUserData->Magnification);
+
+				const auto uniformCount = m_currentShader->GetEffekseerMaterial()->Uniforms.Num() + m_currentShader->GetEffekseerMaterial()->Gradients.Num() * 13;
+				auto newProxy = new FFileMaterialRenderProxy(proxy, m_currentShader->GetEffekseerMaterial(), reinterpret_cast<float*>(buffer), uniformCount, false, m_renderState->GetActiveState().CullingType, reunderingUserData->Magnification);
+
+				auto predefined = reinterpret_cast<float*>(static_cast<uint8_t*>(m_currentShader->GetPixelConstantBuffer()) + m_currentShader->GetParameterGenerator()->PixelPredefinedOffset);
+
+				newProxy->LightDirection = FLinearColor::White;
+				newProxy->LightColor = FLinearColor::White;
+				newProxy->LightAmbientColor = FLinearColor::White;
+				newProxy->LocalTime = predefined[3];
 
 				newProxy->Textures = textures_;
 
@@ -1286,6 +1326,7 @@ namespace EffekseerRendererUE4
 				if (m_currentShader != nullptr && m_currentShader->GetType() == Effekseer::RendererMaterialType::File)
 				{
 					const auto nativeMaterial = m_currentShader->GetEffekseerMaterial()->GetNativePtr();
+					const auto uniformCount = m_currentShader->GetEffekseerMaterial()->Uniforms.Num() + m_currentShader->GetEffekseerMaterial()->Gradients.Num() * 13;
 
 					auto uniformOffset = m_currentShader->GetParameterGenerator()->PixelUserUniformOffset;
 					auto buffer = static_cast<uint8_t*>(m_currentShader->GetPixelConstantBuffer()) + uniformOffset;
@@ -1293,10 +1334,17 @@ namespace EffekseerRendererUE4
 						proxy,
 						m_currentShader->GetEffekseerMaterial(),
 						reinterpret_cast<float*>(buffer),
-						m_currentShader->GetEffekseerMaterial()->Uniforms.Num(),
+						uniformCount,
 						true,
 						m_renderState->GetActiveState().CullingType,
 						reunderingUserData->Magnification);
+
+					auto predefined = reinterpret_cast<float*>(static_cast<uint8_t*>(m_currentShader->GetPixelConstantBuffer()) + m_currentShader->GetParameterGenerator()->PixelPredefinedOffset);
+
+					newProxy->LightDirection = FLinearColor::White;
+					newProxy->LightColor = FLinearColor::White;
+					newProxy->LightAmbientColor = FLinearColor::White;
+					newProxy->LocalTime = predefined[3];
 
 					newProxy->ModelUV = uv;
 					newProxy->ModelColor = color;
