@@ -12,6 +12,11 @@ namespace EffekseerRendererUE4
 	{
 		vertexConstantBuffer.resize(parameterGenerator_.VertexShaderUniformBufferSize);
 		pixelConstantBuffer.resize(parameterGenerator_.PixelShaderUniformBufferSize);
+
+		for (const auto method : effekseerMaterial_->GetNativePtr()->RequiredMethods)
+		{
+			RequiredPredefinedMethodTypes.insert(method);
+		}
 	}
 
 	Shader::Shader(Effekseer::RendererMaterialType type, bool isAdvancedMaterial)

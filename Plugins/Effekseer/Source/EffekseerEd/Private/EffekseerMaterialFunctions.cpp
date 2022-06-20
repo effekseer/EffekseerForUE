@@ -745,6 +745,77 @@ public:
 	UMaterialExpression* GetExpression() const override { return expression_; }
 };
 
+class ConvertedNodeLight : public ConvertedNode
+{
+private:
+	std::shared_ptr<EffekseerMaterial::Node> effekseerNode_;
+	UMaterialExpressionMaterialFunctionCall* expression_ = nullptr;
+
+public:
+	ConvertedNodeLight(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
+		: effekseerNode_(effekseerNode)
+	{
+		expression_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
+		material->Expressions.Add(expression_);
+
+		FStringAssetReference assetPath("/Effekseer/MaterialFunctions/EfkLight.EfkLight");
+		UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
+		expression_->SetMaterialFunction(func);
+	}
+
+	UMaterialExpression* GetExpression() const override
+	{
+		return expression_;
+	}
+
+	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) override
+	{
+		if (targetInd == effekseerNode_->GetInputPinIndex("Direction"))
+		{
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(*expression_->GetInput(0));
+		}
+
+		if (targetInd == effekseerNode_->GetInputPinIndex("Color"))
+		{
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(*expression_->GetInput(1));
+		}
+
+		if (targetInd == effekseerNode_->GetInputPinIndex("AmbientColor"))
+		{
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(*expression_->GetInput(2));
+		}
+	}
+};
+
+class ConvertedNodeLocalTime : public ConvertedNode
+{
+private:
+	std::shared_ptr<EffekseerMaterial::Node> effekseerNode_;
+	UMaterialExpressionMaterialFunctionCall* expression_ = nullptr;
+
+public:
+	ConvertedNodeLocalTime(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
+		: effekseerNode_(effekseerNode)
+	{
+		expression_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
+		material->Expressions.Add(expression_);
+
+		FStringAssetReference assetPath("/Effekseer/MaterialFunctions/EfkLocalTime.EfkLocalTime");
+		UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
+		expression_->SetMaterialFunction(func);
+	}
+
+	UMaterialExpression* GetExpression() const override
+	{
+		return expression_;
+	}
+
+	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) override
+	{
+		outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(*expression_->GetInput(0));
+	}
+};
+
 template<class T>
 class ConvertedNodeFactoryNormalNode : public ConvertedNodeFactory
 {
@@ -871,6 +942,10 @@ UMaterial* CreateUE4MaterialFromEffekseerMaterial(const std::shared_ptr<NativeEf
 	nodeFactories["SimpleNoise"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeSimpleNoise>>();
 
 	nodeFactories["SampleGradient"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeSampleGradient>>();
+
+	nodeFactories["Light"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeLight>>();
+
+	nodeFactories["LocalTime"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeLocalTime>>();
 
 	std::map<uint64_t, std::shared_ptr<ConvertedNode>> convertedNodes;
 
