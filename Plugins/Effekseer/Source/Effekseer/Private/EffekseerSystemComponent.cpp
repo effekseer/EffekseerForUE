@@ -358,6 +358,16 @@ public:
 
 			if (effekseerManager != nullptr)
 			{
+				const auto evmat = effekseerRenderer->GetCameraMatrix();
+
+				Effekseer::Vector3D direction;
+				Effekseer::Vector3D position;
+				CalculateCameraDirectionAndPosition(evmat, direction, position);
+
+				Effekseer::Manager::LayerParameter layerParams;
+				layerParams.ViewerPosition = position;
+				effekseerManager->SetLayerParameter(0, layerParams);
+
 				effekseerManager->Update(frame);
 			}
 		}
