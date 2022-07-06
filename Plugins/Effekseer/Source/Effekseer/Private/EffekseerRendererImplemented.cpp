@@ -1250,7 +1250,7 @@ namespace EffekseerRendererUE4
 				return;
 			}
 
-			if (mdl->UserData->Mesh->RenderData->LODResources.Num() == 0)
+			if (mdl->UserData->Mesh->GetRenderData()->LODResources.Num() == 0)
 			{
 				return;
 			}
@@ -1305,7 +1305,7 @@ namespace EffekseerRendererUE4
 			
 			if (mdl->UserData != nullptr)
 			{
-				const auto& lodResource = mdl->UserData->Mesh->RenderData->LODResources[0];
+				const auto& lodResource = mdl->UserData->Mesh->GetRenderData()->LODResources[0];
 
 				if (mdl->UserData->AnimationFaceOffsets.Num() > 0)
 				{
@@ -1386,7 +1386,7 @@ namespace EffekseerRendererUE4
 
 				if (mdl->UserData != nullptr)
 				{
-					const auto& lodResource = mdl->UserData->Mesh->RenderData->LODResources[0];
+					const auto& lodResource = mdl->UserData->Mesh->GetRenderData()->LODResources[0];
 					auto& section = lodResource.Sections[frameTime];
 
 					FMeshBatch& meshElement = m_meshElementCollector->AllocateMesh();
@@ -1398,7 +1398,7 @@ namespace EffekseerRendererUE4
 					element.PrimitiveUniformBufferResource = &dynamicPrimitiveUniformBuffer.UniformBuffer;
 
 					meshElement.MaterialRenderProxy = proxy;
-					meshElement.VertexFactory = &mdl->UserData->Mesh->RenderData->LODVertexFactories[0].VertexFactory;
+					meshElement.VertexFactory = &mdl->UserData->Mesh->GetRenderData()->LODVertexFactories[0].VertexFactory;
 					meshElement.Type = PT_TriangleList;
 
 					if (efkmdl->AnimationFaceOffsets.Num() > 0)

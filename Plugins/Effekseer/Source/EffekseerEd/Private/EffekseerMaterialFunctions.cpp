@@ -851,7 +851,7 @@ UMaterial* CreateUE4MaterialFromEffekseerMaterial(const std::shared_ptr<NativeEf
 		blendMode = EBlendMode::BLEND_Modulate;
 	}
 
-	auto package = CreatePackage(NULL, *(packageRoot + filename));
+	auto package = CreatePackage(*(packageRoot + filename));
 
 	auto MaterialFactory = NewObject<UMaterialFactoryNew>();
 	UMaterial* originalMaterial = (UMaterial*)MaterialFactory->FactoryCreateNew(UMaterial::StaticClass(), package, FName(*(filename)), RF_Standalone | RF_Public, NULL, GWarn);
@@ -1033,7 +1033,7 @@ UMaterialInstance* CreateUE4MaterialInstanceFromUE4Material(UMaterial* parent, c
 	UMaterialInstanceConstantFactoryNew* factory = NewObject<UMaterialInstanceConstantFactoryNew>();
 	factory->InitialParent = parent;
 
-	UPackage* package = CreatePackage(NULL, *(packageRoot + filename));
+	UPackage* package = CreatePackage(*(packageRoot + filename));
 	auto material = Cast<UMaterialInstanceConstant>(factory->FactoryCreateNew(UMaterialInstanceConstant::StaticClass(), package, FName(*filename), RF_Standalone | RF_Public, nullptr, nullptr));
 
 	auto MaterialEditorInstance = NewObject<UMaterialEditorInstanceConstant>(GetTransientPackage(), NAME_None, RF_Transactional);

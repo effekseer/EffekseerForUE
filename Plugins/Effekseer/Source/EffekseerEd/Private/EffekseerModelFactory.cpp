@@ -71,8 +71,7 @@ UObject* UEffekseerModelFactory::FactoryCreateBinary(
 
 	if (assetSM)
 	{
-		//assetSM->Materials_DEPRECATED.Add(nullptr);
-		assetSM->StaticMaterials.Add(FStaticMaterial(nullptr, NAME_None));
+		assetSM->GetStaticMaterials().Add(FStaticMaterial(nullptr, NAME_None));
 
 		FRawMesh rawMesh;
 		
