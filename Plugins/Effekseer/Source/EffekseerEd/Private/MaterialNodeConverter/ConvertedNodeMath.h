@@ -178,11 +178,8 @@ public:
 	ConvertedNodeArctangent2(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
 		: effekseerNode_(effekseerNode)
 	{
-#if ENGINE_MINOR_VERSION >= 19 // TODO Check correct version
 		expression_ = NewObject<UMaterialExpressionArctangent2>(material);
-#else
-		UE_LOG(LogTemp, Warning, TEXT("atan2 is unsupported"));
-#endif
+
 		material->Expressions.Add(expression_);
 
 		if (effekseerMaterial->material->GetConnectedPins(effekseerNode->InputPins[effekseerNode_->GetInputPinIndex("Y")]).size() == 0)
@@ -328,12 +325,9 @@ public:
 	}
 };
 
-#if ENGINE_MINOR_VERSION >= 19 // TODO Check correct version
 using ConvertedNodeCeil = ConvertedNodeOneInput<UMaterialExpressionCeil>;
 using ConvertedNodeFloor = ConvertedNodeOneInput<UMaterialExpressionFloor>;
 using ConvertedNodeFrac = ConvertedNodeOneInput<UMaterialExpressionFrac>;
-#endif
-
 using ConvertedNodeMax = ConvertedNodeConstABInputProp<UMaterialExpressionMax>;
 using ConvertedNodeMin = ConvertedNodeConstABInputProp<UMaterialExpressionMin>;
 

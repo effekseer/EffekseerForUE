@@ -857,10 +857,9 @@ UMaterial* CreateUE4MaterialFromEffekseerMaterial(const std::shared_ptr<NativeEf
 	UMaterial* originalMaterial = (UMaterial*)MaterialFactory->FactoryCreateNew(UMaterial::StaticClass(), package, FName(*(filename)), RF_Standalone | RF_Public, NULL, GWarn);
 	FAssetRegistryModule::AssetCreated(originalMaterial);
 
-#if ENGINE_MINOR_VERSION >= 23 // TODO Check correct version
 	originalMaterial->AssetImportData = NewObject<UAssetImportData>(originalMaterial, UAssetImportData::StaticClass());
 	originalMaterial->AssetImportData->Update(filename);
-#endif
+
 	package->FullyLoad();
 	package->SetDirtyFlag(true);
 
@@ -891,11 +890,10 @@ UMaterial* CreateUE4MaterialFromEffekseerMaterial(const std::shared_ptr<NativeEf
 	nodeFactories["Fmod"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeFmod>>();
 	nodeFactories["Step"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeStep>>();
 
-#if ENGINE_MINOR_VERSION >= 19 // TODO Check correct version
 	nodeFactories["Ceil"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeCeil>>();
 	nodeFactories["Floor"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeFloor>>();
 	nodeFactories["Frac"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeFrac>>();
-#endif
+
 	nodeFactories["Min"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeMin>>();
 	nodeFactories["Max"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeMax>>();
 	nodeFactories["Power"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodePower>>();
@@ -1039,9 +1037,7 @@ UMaterialInstance* CreateUE4MaterialInstanceFromUE4Material(UMaterial* parent, c
 	auto MaterialEditorInstance = NewObject<UMaterialEditorInstanceConstant>(GetTransientPackage(), NAME_None, RF_Transactional);
 	MaterialEditorInstance->SetSourceInstance(material);
 
-#if ENGINE_MINOR_VERSION >= 23 // TODO Check correct version
 	MaterialEditorInstance->SetSourceFunction(nullptr);
-#endif
 	MaterialEditorInstance->BasePropertyOverrides.BlendMode = blendMode;
 	MaterialEditorInstance->BasePropertyOverrides.bOverride_BlendMode = true;
 	MaterialEditorInstance->PostEditChange();

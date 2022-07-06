@@ -39,12 +39,7 @@ UObject* UEffekseerCurveFactory::FactoryCreateBinary(
 {
 	TArray<UObject*> retAssets;
 
-	// Start impoprting
-#if ENGINE_MINOR_VERSION >= 24
 	GEditor->GetEditorSubsystem<UImportSubsystem>()->BroadcastAssetPreImport(this, InClass, InParent, InName, Type);
-#else
-	FEditorDelegates::OnAssetPreImport.Broadcast(this, InClass, InParent, InName, Type);
-#endif
 
 	UEffekseerCurve* assetEfkCurve = NewObject<UEffekseerCurve>(InParent, InClass, FName(InName), Flags);
 
@@ -55,11 +50,7 @@ UObject* UEffekseerCurveFactory::FactoryCreateBinary(
 
 		if (!assetEfkCurve->AssetImportData)
 		{
-#if ENGINE_MINOR_VERSION <= 17
-			assetEfkCurve->AssetImportData = ConstructObject<UAssetImportData>(UAssetImportData::StaticClass(), assetEfkCurve);
-#else
 			assetEfkCurve->AssetImportData = NewObject<UAssetImportData>(assetEfkCurve, UAssetImportData::StaticClass());
-#endif
 		}
 
 		assetEfkCurve->AssetImportData->Update(CurrentFilename);
@@ -73,11 +64,7 @@ UObject* UEffekseerCurveFactory::FactoryCreateBinary(
 	{
 		if (Object)
 		{
-#if ENGINE_MINOR_VERSION >= 24
 			GEditor->GetEditorSubsystem<UImportSubsystem>()->BroadcastAssetPostImport(this, Object);
-#else
-			FEditorDelegates::OnAssetPostImport.Broadcast(this, Object);
-#endif
 			
 			Object->MarkPackageDirty();
 			Object->PostEditChange();

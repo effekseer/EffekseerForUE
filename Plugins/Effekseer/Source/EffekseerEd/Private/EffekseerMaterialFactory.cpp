@@ -57,11 +57,7 @@ UObject* UEffekseerMaterialFactory::FactoryCreateBinary(
 	TArray<UObject*> retAssets;
 
 	// Start impoprting
-#if ENGINE_MINOR_VERSION >= 24
 	GEditor->GetEditorSubsystem<UImportSubsystem>()->BroadcastAssetPreImport(this, InClass, InParent, InName, Type);
-#else
-	FEditorDelegates::OnAssetPreImport.Broadcast(this, InClass, InParent, InName, Type);
-#endif
 
 	UEffekseerMaterial* assetEfkMat = Cast<UEffekseerMaterial>(FindObject<UEffekseerMaterial>(InParent, *InName.ToString()));
 
@@ -143,11 +139,7 @@ UObject* UEffekseerMaterialFactory::FactoryCreateBinary(
 	{
 		if (Object)
 		{
-#if ENGINE_MINOR_VERSION >= 24
 			GEditor->GetEditorSubsystem<UImportSubsystem>()->BroadcastAssetPostImport(this, Object);
-#else
-			FEditorDelegates::OnAssetPostImport.Broadcast(this, Object);
-#endif
 			Object->MarkPackageDirty();
 			Object->PreEditChange(nullptr);
 			Object->PostEditChange();

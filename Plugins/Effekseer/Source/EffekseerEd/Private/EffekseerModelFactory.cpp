@@ -40,11 +40,7 @@ UObject* UEffekseerModelFactory::FactoryCreateBinary(
 	TArray<UObject*> retAssets;
 
 	// Start impoprting
-#if ENGINE_MINOR_VERSION >= 24
 	GEditor->GetEditorSubsystem<UImportSubsystem>()->BroadcastAssetPreImport(this, InClass, InParent, InName, Type);
-#else
-	FEditorDelegates::OnAssetPreImport.Broadcast(this, InClass, InParent, InName, Type);
-#endif
 
 	UEffekseerModel* assetEfkMdl = NewObject<UEffekseerModel>(InParent, InClass, FName(InName), Flags);
 
@@ -55,11 +51,7 @@ UObject* UEffekseerModelFactory::FactoryCreateBinary(
 
 		if (!assetEfkMdl->AssetImportData)
 		{
-#if ENGINE_MINOR_VERSION <= 17
-			assetEfkMdl->AssetImportData = ConstructObject<UAssetImportData>(UAssetImportData::StaticClass(), assetEfkMdl);
-#else
 			assetEfkMdl->AssetImportData = NewObject<UAssetImportData>(assetEfkMdl, UAssetImportData::StaticClass());
-#endif
 		}
 
 		assetEfkMdl->AssetImportData->Update(CurrentFilename);
@@ -103,11 +95,9 @@ UObject* UEffekseerModelFactory::FactoryCreateBinary(
 			rawMesh.FaceMaterialIndices.Add(faceInd);
 			rawMesh.FaceSmoothingMasks.Add(faceInd);
 		}
-#if ENGINE_MINOR_VERSION >= 24
+
 		FStaticMeshSourceModel* lodModel = new (assetSM->GetSourceModels()) FStaticMeshSourceModel();
-#else
-		FStaticMeshSourceModel* lodModel = new (assetSM->SourceModels) FStaticMeshSourceModel();
-#endif
+
 		lodModel->BuildSettings.bUseMikkTSpace = false;
 		lodModel->BuildSettings.bRecomputeNormals = false;
 		lodModel->BuildSettings.bRecomputeTangents = false;
@@ -118,11 +108,7 @@ UObject* UEffekseerModelFactory::FactoryCreateBinary(
 		lodModel->BuildSettings.bUseFullPrecisionUVs = false;
 		lodModel->BuildSettings.bGenerateLightmapUVs = false;
 
-#if ENGINE_MINOR_VERSION >= 24
 		lodModel->ScreenSize = 0.1f / FMath::Pow(2.0f, assetSM->GetSourceModels().Num() - 1);
-#else
-		lodModel->ScreenSize = 0.1f / FMath::Pow(2.0f, assetSM->SourceModels.Num() - 1);
-#endif
 
 		lodModel->RawMeshBulkData->SaveRawMesh(rawMesh);
 
@@ -131,11 +117,7 @@ UObject* UEffekseerModelFactory::FactoryCreateBinary(
 
 		if (!assetSM->AssetImportData)
 		{
-#if ENGINE_MINOR_VERSION <= 17
-			assetSM->AssetImportData = ConstructObject<UAssetImportData>(UAssetImportData::StaticClass(), assetSM);
-#else
 			assetSM->AssetImportData = NewObject<UAssetImportData>(assetSM, UAssetImportData::StaticClass());
-#endif
 		}
 
 		assetSM->AssetImportData->Update(CurrentFilename);
@@ -153,11 +135,8 @@ UObject* UEffekseerModelFactory::FactoryCreateBinary(
 	{
 		if (Object)
 		{
-#if ENGINE_MINOR_VERSION >= 24
 			GEditor->GetEditorSubsystem<UImportSubsystem>()->BroadcastAssetPostImport(this, Object);
-#else
-			FEditorDelegates::OnAssetPostImport.Broadcast(this, Object);
-#endif
+
 			Object->MarkPackageDirty();
 			Object->PostEditChange();
 		}

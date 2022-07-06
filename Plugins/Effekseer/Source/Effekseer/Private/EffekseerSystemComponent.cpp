@@ -105,13 +105,11 @@ public:
 
 	}
 
-#if ENGINE_MINOR_VERSION >= 19
 	virtual SIZE_T GetTypeHash() const
 	{
 		static size_t UniquePointer;
 		return reinterpret_cast<size_t>(&UniquePointer);
 	}
-#endif
 
 	virtual void GetDynamicMeshElements(const TArray<const FSceneView*>& Views, const FSceneViewFamily& ViewFamily, uint32 VisibilityMap, FMeshElementCollector& Collector) const override
 	{
@@ -165,7 +163,6 @@ public:
 
 	virtual FPrimitiveViewRelevance GetViewRelevance(const FSceneView* View) const override
 	{
-#if ENGINE_MINOR_VERSION >= 25
 		bool bVisible = true;
 		FPrimitiveViewRelevance Result;
 		Result.bDrawRelevance = IsShown(View);
@@ -178,21 +175,6 @@ public:
 		Result.bDistortion = true;
 
 		return Result;
-
-#else
-		bool bVisible = true;
-		FPrimitiveViewRelevance Result;
-		Result.bDrawRelevance = IsShown(View);
-		Result.bDynamicRelevance = true;
-		Result.bShadowRelevance = IsShadowCast(View);
-		Result.bOpaqueRelevance = false;
-		Result.bMaskedRelevance = false;
-		Result.bSeparateTranslucencyRelevance = true;
-		Result.bNormalTranslucencyRelevance = true;
-		Result.bDistortionRelevance = true;
-
-		return Result;
-#endif
 	}
 	virtual uint32 GetMemoryFootprint() const { return sizeof(*this) + GetAllocatedSize(); }
 	uint32 GetAllocatedSize() const { return FPrimitiveSceneProxy::GetAllocatedSize(); }
@@ -524,11 +506,7 @@ UMaterialInterface* UEffekseerSystemComponent::GetMaterial(int32 ElementIndex) c
 	return nullptr;
 }
 
-#if ENGINE_MINOR_VERSION == 14
-void UEffekseerSystemComponent::GetUsedMaterials(TArray<UMaterialInterface*>& OutMaterials) const
-#else
 void UEffekseerSystemComponent::GetUsedMaterials(TArray<UMaterialInterface*>& OutMaterials, bool bGetDebugMaterials) const
-#endif
 {
 	if (OpaqueMaterial) OutMaterials.Add(OpaqueMaterial);
 	if (TranslucentMaterial) OutMaterials.Add(TranslucentMaterial);
@@ -581,12 +559,7 @@ FEffekseerHandle UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVect
 	}
 
 	// Convert to a position relative from the system.
-
-#if ENGINE_MINOR_VERSION >= 24
 	position -= this->GetRelativeLocation();
-#else
-	position -= this->RelativeLocation;
-#endif
 
 	// it generates a material dynamically.
 	UMaterialInstanceConstant* _mats[16];

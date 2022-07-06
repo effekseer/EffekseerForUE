@@ -22,11 +22,7 @@
 
 namespace EffekseerRendererUE4
 {
-#if ENGINE_MINOR_VERSION >= 25
 	using MaterialParameterInfo = FHashedMaterialParameterInfo;
-#else
-	using MaterialParameterInfo = FMaterialParameterInfo;
-#endif
 
 	class FCompatibleMaterialRenderProxy : public FMaterialRenderProxy
 	{
@@ -58,21 +54,13 @@ namespace EffekseerRendererUE4
 			return GetParentTextureValue(ParameterInfo, OutValue, Context);
 		}
 
-#if ENGINE_MINOR_VERSION >= 25
 		bool GetTextureValue(const FHashedMaterialParameterInfo& ParameterInfo, const URuntimeVirtualTexture** OutValue, const FMaterialRenderContext& Context) const override
 		{
 			return Parent->GetTextureValue(ParameterInfo, OutValue, Context);
 		}
-#elif ENGINE_MINOR_VERSION >= 24
-		bool GetTextureValue(const FMaterialParameterInfo& ParameterInfo, const URuntimeVirtualTexture** OutValue, const FMaterialRenderContext& Context) const override
-		{
-			return Parent->GetTextureValue(ParameterInfo, OutValue, Context);
-		}
-#endif
 
 		virtual const FMaterial* GetParentMaterial(ERHIFeatureLevel::Type InFeatureLevel) const { return nullptr; }
 
-#if ENGINE_MINOR_VERSION >= 27
 		const FMaterial* GetMaterialNoFallback(ERHIFeatureLevel::Type InFeatureLevel) const override
 		{
 			return Parent->GetMaterialNoFallback(InFeatureLevel);
@@ -82,12 +70,6 @@ namespace EffekseerRendererUE4
 		{
 			return this;
 		}
-#else
-		const FMaterial& GetMaterialWithFallback(ERHIFeatureLevel::Type InFeatureLevel, const FMaterialRenderProxy*& OutFallbackMaterialRenderProxy) const override
-		{
-			return *(GetParentMaterial(InFeatureLevel));
-		}
-#endif
 	};
 
 	class FFileMaterialRenderProxy : public FCompatibleMaterialRenderProxy
@@ -135,11 +117,7 @@ namespace EffekseerRendererUE4
 
 	const FMaterial* FFileMaterialRenderProxy::GetParentMaterial(ERHIFeatureLevel::Type InFeatureLevel) const
 	{
-#if ENGINE_MINOR_VERSION >= 27
 		return Parent->GetMaterialNoFallback(InFeatureLevel);
-#else
-		return Parent->GetMaterial(InFeatureLevel);
-#endif
 	}
 
 	bool FFileMaterialRenderProxy::GetParentVectorValue(const MaterialParameterInfo& ParameterInfo, FLinearColor* OutValue, const FMaterialRenderContext& Context) const
@@ -203,13 +181,7 @@ namespace EffekseerRendererUE4
 			return true;
 		}
 
-#if ENGINE_MINOR_VERSION >= 26
 		const auto found = effekseerMaterial_->UniformHashedNameToIndex.Find(ParameterInfo.Name.ToString());
-#elif ENGINE_MINOR_VERSION >= 25
-		const auto found = effekseerMaterial_->UniformHashedNameToIndex.Find(ParameterInfo.Name);
-#else
-		const auto found = effekseerMaterial_->UniformNameToIndex.Find(ParameterInfo.Name.ToString());
-#endif
 
 		if (found != nullptr)
 		{
@@ -243,13 +215,8 @@ namespace EffekseerRendererUE4
 			return true;
 		}
 
-#if ENGINE_MINOR_VERSION >= 26
 		const auto found = effekseerMaterial_->UniformHashedNameToIndex.Find(ParameterInfo.Name.ToString());
-#elif ENGINE_MINOR_VERSION >= 25
-		const auto found = effekseerMaterial_->UniformHashedNameToIndex.Find(ParameterInfo.Name);
-#else
-		const auto found = effekseerMaterial_->UniformNameToIndex.Find(ParameterInfo.Name.ToString());
-#endif
+
 		if (found != nullptr)
 		{
 			*OutValue = uniformBuffer_[(*found) * 4 + 0];
@@ -261,13 +228,8 @@ namespace EffekseerRendererUE4
 
 	bool FFileMaterialRenderProxy::GetParentTextureValue(const MaterialParameterInfo& ParameterInfo, const UTexture** OutValue, const FMaterialRenderContext& Context) const
 	{
-#if ENGINE_MINOR_VERSION >= 26
 		const auto found = effekseerMaterial_->TextureHashedNameToIndex.Find(ParameterInfo.Name.ToString());
-#elif ENGINE_MINOR_VERSION >= 25
-		const auto found = effekseerMaterial_->TextureHashedNameToIndex.Find(ParameterInfo.Name);
-#else
-		const auto found = effekseerMaterial_->TextureNameToIndex.Find(ParameterInfo.Name.ToString());
-#endif
+
 		if (found != nullptr)
 		{
 			*OutValue = (UTexture*)Textures[*found];
@@ -296,11 +258,7 @@ namespace EffekseerRendererUE4
 
 	const FMaterial* FDistortionMaterialRenderProxy::GetParentMaterial(ERHIFeatureLevel::Type InFeatureLevel) const
 	{
-#if ENGINE_MINOR_VERSION >= 27
 		return Parent->GetMaterialNoFallback(InFeatureLevel);
-#else
-		return Parent->GetMaterial(InFeatureLevel);
-#endif
 	}
 
 	bool FDistortionMaterialRenderProxy::GetParentVectorValue(const MaterialParameterInfo& ParameterInfo, FLinearColor* OutValue, const FMaterialRenderContext& Context) const
@@ -380,11 +338,7 @@ namespace EffekseerRendererUE4
 
 	const FMaterial* FModelMaterialRenderProxy::GetParentMaterial(ERHIFeatureLevel::Type InFeatureLevel) const
 	{
-#if ENGINE_MINOR_VERSION >= 27
 		return Parent->GetMaterialNoFallback(InFeatureLevel);
-#else
-		return Parent->GetMaterial(InFeatureLevel);
-#endif
 	}
 
 	bool FModelMaterialRenderProxy::GetParentVectorValue(const MaterialParameterInfo& ParameterInfo, FLinearColor* OutValue, const FMaterialRenderContext& Context) const
