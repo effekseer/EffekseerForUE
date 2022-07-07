@@ -1,6 +1,6 @@
 #include "EffekseerRendererVertexBuffer.h"
 
-namespace EffekseerRendererUE4
+namespace EffekseerRendererUE
 {
 	VertexBuffer::VertexBuffer(int size, bool isDynamic)
 		: EffekseerRenderer::VertexBufferBase(size, isDynamic)

@@ -9,7 +9,7 @@
 
 class UEffekseerMaterial;
 
-namespace EffekseerRendererUE4
+namespace EffekseerRendererUE
 {
 	class Shader
 	{

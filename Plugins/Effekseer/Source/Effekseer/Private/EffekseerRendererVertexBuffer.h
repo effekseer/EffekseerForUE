@@ -5,7 +5,7 @@
 
 #include <vector>
 
-namespace EffekseerRendererUE4
+namespace EffekseerRendererUE
 {
 	/**
 		@brief	頂点バッファ

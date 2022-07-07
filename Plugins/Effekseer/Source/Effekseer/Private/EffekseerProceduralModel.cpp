@@ -1,4 +1,5 @@
 #include "EffekseerProceduralModel.h"
+#include "EffekseerUECompatibility.h"
 #include "StaticMeshResources.h"
 
 class FProceduralModelMeshRenderData
@@ -21,10 +22,10 @@ public:
 			auto v = model.GetVertexes()[i];
 
 			vertices[i] = FDynamicMeshVertex(
-				FVector(v.Position.X, v.Position.Z, v.Position.Y), 
-				FVector(v.Tangent.X, v.Tangent.Z, v.Tangent.Y),
-				FVector(v.Normal.X, v.Normal.Z, v.Normal.Y),
-				FVector2D(v.UV.X, v.UV.Y),
+				EffekseerUE::UEFVector3f(v.Position.X, v.Position.Z, v.Position.Y),
+				EffekseerUE::UEFVector3f(v.Tangent.X, v.Tangent.Z, v.Tangent.Y),
+				EffekseerUE::UEFVector3f(v.Normal.X, v.Normal.Z, v.Normal.Y),
+				EffekseerUE::UEFVector2f(v.UV.X, v.UV.Y),
 				FColor(v.VColor.R, v.VColor.G, v.VColor.B, v.VColor.A));
 		}
 

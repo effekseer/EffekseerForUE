@@ -3,7 +3,7 @@
 #include "EffekseerRendererCommon/EffekseerRenderer.ModelRendererBase.h"
 #include "EffekseerRendererCommon/EffekseerRenderer.StandardRenderer.h"
 
-namespace EffekseerRendererUE4
+namespace EffekseerRendererUE
 {
 	Shader::Shader(UEffekseerMaterial* material, bool isModel, bool isRefraction)
 		: effekseerMaterial_(material)

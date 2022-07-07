@@ -358,13 +358,13 @@ public:
 		if (material != nullptr)
 		{
 			auto data = new ::Effekseer::Material();
-			data->UserPtr = new EffekseerRendererUE4::Shader(material, false, false);
-			data->ModelUserPtr = new EffekseerRendererUE4::Shader(material, true, false);
+			data->UserPtr = new EffekseerRendererUE::Shader(material, false, false);
+			data->ModelUserPtr = new EffekseerRendererUE::Shader(material, true, false);
 
 			if (material->GetNativePtr()->GetHasRefraction())
 			{
-				data->RefractionUserPtr = new EffekseerRendererUE4::Shader(material, false, true);
-				data->RefractionModelUserPtr = new EffekseerRendererUE4::Shader(material, true, true);
+				data->RefractionUserPtr = new EffekseerRendererUE::Shader(material, false, true);
+				data->RefractionModelUserPtr = new EffekseerRendererUE::Shader(material, true, true);
 			}
 
 			data->IsSimpleVertex = material->GetNativePtr()->GetIsSimpleVertex();
@@ -399,14 +399,14 @@ public:
 		if (o != nullptr)
 		{
 			auto data = new ::Effekseer::Material();
-			data->UserPtr = new EffekseerRendererUE4::Shader(o, false, false);
-			data->ModelUserPtr = new EffekseerRendererUE4::Shader(o, true, false);
+			data->UserPtr = new EffekseerRendererUE::Shader(o, false, false);
+			data->ModelUserPtr = new EffekseerRendererUE::Shader(o, true, false);
 
 			auto material = o;
 			if (material->GetNativePtr()->GetHasRefraction())
 			{
-				data->RefractionUserPtr = new EffekseerRendererUE4::Shader(o, false, true);
-				data->RefractionModelUserPtr = new EffekseerRendererUE4::Shader(o, true, true);
+				data->RefractionUserPtr = new EffekseerRendererUE::Shader(o, false, true);
+				data->RefractionModelUserPtr = new EffekseerRendererUE::Shader(o, true, true);
 			}
 
 			data->IsSimpleVertex = material->GetNativePtr()->GetIsSimpleVertex();
@@ -432,10 +432,10 @@ public:
 void MaterialLoader::Unload(::Effekseer::MaterialRef data)
 {
 	if (data == nullptr) return;
-	auto p1 = (EffekseerRendererUE4::Shader*)data->UserPtr;
-	auto p2 = (EffekseerRendererUE4::Shader*)data->ModelUserPtr;
-	auto p3 = (EffekseerRendererUE4::Shader*)data->RefractionUserPtr;
-	auto p4 = (EffekseerRendererUE4::Shader*)data->RefractionModelUserPtr;
+	auto p1 = (EffekseerRendererUE::Shader*)data->UserPtr;
+	auto p2 = (EffekseerRendererUE::Shader*)data->ModelUserPtr;
+	auto p3 = (EffekseerRendererUE::Shader*)data->RefractionUserPtr;
+	auto p4 = (EffekseerRendererUE::Shader*)data->RefractionModelUserPtr;
 	ES_SAFE_DELETE(p1);
 	ES_SAFE_DELETE(p2);
 	ES_SAFE_DELETE(p3);
@@ -834,7 +834,7 @@ void UEffekseerEffect::GenerateRenderingData()
 
 			this->EffekseerMaterials.Add(mat);
 
-			auto renderingData = Effekseer::MakeRefPtr<EffekseerRendererUE4::EffekseerRenderingUserData>();
+			auto renderingData = Effekseer::MakeRefPtr<EffekseerRendererUE::EffekseerRenderingUserData>();
 			renderingData->Key = mkey;
 			renderingData->Magnification = node->GetEffect()->GetMaginification();
 			node->SetRenderingUserData(renderingData);

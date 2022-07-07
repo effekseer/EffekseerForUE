@@ -12,7 +12,7 @@
 #include <EffekseerRenderer.StandardRenderer.h>
 #include "EffekseerRenderingUserData.h"
 
-namespace EffekseerRendererUE4
+namespace EffekseerRendererUE
 {
 	class RendererImplemented;
 	class RenderState;

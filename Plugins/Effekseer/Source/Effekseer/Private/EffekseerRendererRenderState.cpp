@@ -1,7 +1,7 @@
 
 #include "EffekseerRendererRenderState.h"
 
-namespace EffekseerRendererUE4
+namespace EffekseerRendererUE
 {
 	RenderState::RenderState()
 	{

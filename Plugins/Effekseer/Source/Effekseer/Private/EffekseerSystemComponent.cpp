@@ -25,7 +25,7 @@ class FEffekseerSystemSceneProxy : public FPrimitiveSceneProxy
 private:
 	int32_t	maxSprite_ = 10000;
 	::Effekseer::ManagerRef	effekseerManager = nullptr;
-	::Effekseer::RefPtr<::EffekseerRendererUE4::RendererImplemented>	effekseerRenderer = nullptr;
+	::Effekseer::RefPtr<::EffekseerRendererUE::RendererImplemented>	effekseerRenderer = nullptr;
 	
 #ifdef _WIN32
 	::Effekseer::ServerRef server_ = nullptr;
@@ -78,7 +78,7 @@ public:
 			effekseerManager->LaunchWorkerThreads(threadCount);
 		}
 #endif
-		effekseerRenderer = ::EffekseerRendererUE4::RendererImplemented::Create();
+		effekseerRenderer = ::EffekseerRendererUE::RendererImplemented::Create();
 		effekseerRenderer->Initialize(maxSprite_, colorSpace);
 
 		effekseerManager->SetSpriteRenderer(effekseerRenderer->CreateSpriteRenderer());

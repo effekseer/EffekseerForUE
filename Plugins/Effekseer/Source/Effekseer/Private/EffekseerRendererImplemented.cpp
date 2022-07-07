@@ -18,9 +18,13 @@
 #include "EffekseerInternalTexture.h"
 #include "EffekseerProceduralModel.h"
 
+#include "EffekseerUECompatibility.h"
+
+using namespace EffekseerUE;
+
 #define GET_MAT_PARAM_NAME
 
-namespace EffekseerRendererUE4
+namespace EffekseerRendererUE
 {
 	using MaterialParameterInfo = FHashedMaterialParameterInfo;
 
@@ -29,10 +33,16 @@ namespace EffekseerRendererUE4
 	public:
 		const FMaterialRenderProxy* Parent = nullptr;
 
-		FCompatibleMaterialRenderProxy(const FMaterialRenderProxy* parent)
+		FCompatibleMaterialRenderProxy(const FString& inMaterialName, const FMaterialRenderProxy* parent)
+#if ENGINE_MAJOR_VERSION == 4
 			: Parent(parent)
+#elif ENGINE_MAJOR_VERSION == 5
+			: FMaterialRenderProxy(inMaterialName)
+			, Parent(parent)
+#endif
 		{
 		}
+
 		virtual ~FCompatibleMaterialRenderProxy() = default;
 
 		virtual bool GetParentVectorValue(const MaterialParameterInfo& ParameterInfo, FLinearColor* OutValue, const FMaterialRenderContext& Context) const { return false; }
@@ -54,10 +64,40 @@ namespace EffekseerRendererUE4
 			return GetParentTextureValue(ParameterInfo, OutValue, Context);
 		}
 
+#if ENGINE_MAJOR_VERSION == 4
 		bool GetTextureValue(const FHashedMaterialParameterInfo& ParameterInfo, const URuntimeVirtualTexture** OutValue, const FMaterialRenderContext& Context) const override
 		{
 			return Parent->GetTextureValue(ParameterInfo, OutValue, Context);
 		}
+#endif
+
+#if ENGINE_MAJOR_VERSION == 5
+		bool GetParameterValue(EMaterialParameterType Type, const FHashedMaterialParameterInfo& ParameterInfo, FMaterialParameterValue& OutValue, const FMaterialRenderContext& Context) const override
+		{
+			if (Type == EMaterialParameterType::Scalar)
+			{
+				return GetScalarValue(ParameterInfo, &(OutValue.Float[0]), Context);
+			}
+			else if (Type == EMaterialParameterType::Vector)
+			{
+				FLinearColor color;
+				if (GetVectorValue(ParameterInfo, &color, Context))
+				{
+					OutValue.Float[0] = color.R;
+					OutValue.Float[1] = color.G;
+					OutValue.Float[2] = color.B;
+					OutValue.Float[3] = color.A;
+					return true;
+				}
+			}
+			else if (Type == EMaterialParameterType::Texture)
+			{
+				return GetParentTextureValue(ParameterInfo, const_cast<const UTexture**>(&(OutValue.Texture)), Context);
+			}
+
+			return false;
+		}
+#endif
 
 		virtual const FMaterial* GetParentMaterial(ERHIFeatureLevel::Type InFeatureLevel) const { return nullptr; }
 
@@ -93,7 +133,7 @@ namespace EffekseerRendererUE4
 		std::array<void*, Effekseer::TextureSlotMax> Textures;
 
 		FFileMaterialRenderProxy(const FMaterialRenderProxy* InParent, const UEffekseerMaterial* effekseerMaterial, float* uniformBufferPtr, int32_t uniformCount, bool isModel, Effekseer::CullingType cullingType, float effectScale)
-			: FCompatibleMaterialRenderProxy(InParent)
+			: FCompatibleMaterialRenderProxy(FString("FileMaterialRenderProxy"), InParent)
 			, effekseerMaterial_(effekseerMaterial)
 			, isModel_(isModel)
 			, cullingType_(cullingType)
@@ -246,7 +286,7 @@ namespace EffekseerRendererUE4
 
 		/** Initialization constructor. */
 		FDistortionMaterialRenderProxy(const FMaterialRenderProxy* InParent, float distortionIntensity) :
-			FCompatibleMaterialRenderProxy(InParent),
+			FCompatibleMaterialRenderProxy(FString("FDistortionMaterialRenderProxy"), InParent),
 			distortionIntensity(distortionIntensity)
 		{}
 
@@ -314,8 +354,8 @@ namespace EffekseerRendererUE4
 			float alphaThreshold,
 			FLinearColor color, 
 			float distortionIntensity, 
-			Effekseer::CullingType cullingType) :
-			FCompatibleMaterialRenderProxy(InParent),
+			Effekseer::CullingType cullingType) : FCompatibleMaterialRenderProxy(FString("FModelMaterialRenderProxy"), InParent)
+			,
 			uv(uv),
 			alphaUV(alphaUV),
 			uvDistortionUV(uvDistortionUV),
@@ -860,16 +900,16 @@ namespace EffekseerRendererUE4
 				Effekseer::Vector3D binormal;
 				Effekseer::Vector3D::Cross(binormal, normal, tangent);
 
-				meshVert.Position = FVector(v.Pos.X, v.Pos.Z, v.Pos.Y);
+				meshVert.Position = UEFVector3f(v.Pos.X, v.Pos.Z, v.Pos.Y);
 				meshVert.Color = FColor(v.Col.R, v.Col.G, v.Col.B, v.Col.A);
 
-				meshVert.TextureCoordinate[0] = FVector2D(v.UV1[0], v.UV1[1]);
-				meshVert.TextureCoordinate[1] = FVector2D(v.UV2[0], v.UV2[1]);
+				meshVert.TextureCoordinate[0] = UEFVector2f(v.UV1[0], v.UV1[1]);
+				meshVert.TextureCoordinate[1] = UEFVector2f(v.UV2[0], v.UV2[1]);
 
 				meshVert.SetTangents(
-					FVector(binormal.X, binormal.Z, binormal.Y),
-					FVector(tangent.X, tangent.Z, tangent.Y),
-					FVector(normal.X, normal.Z, normal.Y));
+					UEFVector3f(binormal.X, binormal.Z, binormal.Y),
+					UEFVector3f(tangent.X, tangent.Z, tangent.Y),
+					UEFVector3f(normal.X, normal.Z, normal.Y));
 
 				meshBuilder.AddVertex(meshVert);
 			}
@@ -1000,16 +1040,16 @@ namespace EffekseerRendererUE4
 			auto& v = vs[vi];
 
 			FDynamicMeshVertex DynamicVertex;
-			DynamicVertex.Position = FVector(v.Pos.X, v.Pos.Z, v.Pos.Y);
+			DynamicVertex.Position = UEFVector3f(v.Pos.X, v.Pos.Z, v.Pos.Y);
 			DynamicVertex.Color = FColor(v.Col.R, v.Col.G, v.Col.B, v.Col.A);
-			DynamicVertex.SetTangents(FVector(1, 0, 0), FVector(1, 1, 0), FVector(0, 0, 1));
-			DynamicVertex.TextureCoordinate[0] = FVector2D(v.UV[0], v.UV[1]);
-			DynamicVertex.TextureCoordinate[1] =
-			DynamicVertex.TextureCoordinate[2] =
-			DynamicVertex.TextureCoordinate[3] =
-			DynamicVertex.TextureCoordinate[4] =
-			DynamicVertex.TextureCoordinate[5] =
-			DynamicVertex.TextureCoordinate[6] = FVector2D(0.0f);
+			DynamicVertex.SetTangents(UEFVector3f(1, 0, 0), UEFVector3f(1, 1, 0), UEFVector3f(0, 0, 1));
+			DynamicVertex.TextureCoordinate[0] = UEFVector2f(v.UV[0], v.UV[1]);
+			DynamicVertex.TextureCoordinate[1] = UEFVector2f(0.0f);
+			DynamicVertex.TextureCoordinate[2] = UEFVector2f(0.0f);
+			DynamicVertex.TextureCoordinate[3] = UEFVector2f(0.0f);
+			DynamicVertex.TextureCoordinate[4] = UEFVector2f(0.0f);
+			DynamicVertex.TextureCoordinate[5] = UEFVector2f(0.0f);
+			DynamicVertex.TextureCoordinate[6] = UEFVector2f(0.0f);
 
 			meshBuilder.AddVertex(DynamicVertex);
 		}
@@ -1025,16 +1065,16 @@ namespace EffekseerRendererUE4
 			auto& v = vs[vi];
 
 			FDynamicMeshVertex DynamicVertex;
-			DynamicVertex.Position = FVector(v.Pos.X, v.Pos.Z, v.Pos.Y);
+			DynamicVertex.Position = UEFVector3f(v.Pos.X, v.Pos.Z, v.Pos.Y);
 			DynamicVertex.Color = FColor(v.Col.R, v.Col.G, v.Col.B, v.Col.A);
-			DynamicVertex.SetTangents(FVector(1, 0, 0), FVector(1, 1, 0), FVector(0, 0, 1));
-			DynamicVertex.TextureCoordinate[0] = FVector2D(v.UV[0], v.UV[1]);
-			DynamicVertex.TextureCoordinate[1] = FVector2D(v.AlphaUV[0], v.AlphaUV[1]);
-			DynamicVertex.TextureCoordinate[2] = FVector2D(v.UVDistortionUV[0], v.UVDistortionUV[1]);
-			DynamicVertex.TextureCoordinate[3] = FVector2D(v.BlendUV[0], v.BlendUV[1]);
-			DynamicVertex.TextureCoordinate[4] = FVector2D(v.BlendAlphaUV[0], v.BlendAlphaUV[1]);
-			DynamicVertex.TextureCoordinate[5] = FVector2D(v.BlendUVDistortionUV[0], v.BlendUVDistortionUV[1]);
-			DynamicVertex.TextureCoordinate[6] = FVector2D(v.FlipbookIndexAndNextRate, v.AlphaThreshold);
+			DynamicVertex.SetTangents(UEFVector3f(1, 0, 0), UEFVector3f(1, 1, 0), UEFVector3f(0, 0, 1));
+			DynamicVertex.TextureCoordinate[0] = UEFVector2f(v.UV[0], v.UV[1]);
+			DynamicVertex.TextureCoordinate[1] = UEFVector2f(v.AlphaUV[0], v.AlphaUV[1]);
+			DynamicVertex.TextureCoordinate[2] = UEFVector2f(v.UVDistortionUV[0], v.UVDistortionUV[1]);
+			DynamicVertex.TextureCoordinate[3] = UEFVector2f(v.BlendUV[0], v.BlendUV[1]);
+			DynamicVertex.TextureCoordinate[4] = UEFVector2f(v.BlendAlphaUV[0], v.BlendAlphaUV[1]);
+			DynamicVertex.TextureCoordinate[5] = UEFVector2f(v.BlendUVDistortionUV[0], v.BlendUVDistortionUV[1]);
+			DynamicVertex.TextureCoordinate[6] = UEFVector2f(v.FlipbookIndexAndNextRate, v.AlphaThreshold);
 
 			meshBuilder.AddVertex(DynamicVertex);
 		}
@@ -1055,19 +1095,19 @@ namespace EffekseerRendererUE4
 			Effekseer::Vector3D::Cross(binormal, normal, tangent);
 
 			FDynamicMeshVertex DynamicVertex;
-			DynamicVertex.Position = FVector(v.Pos.X, v.Pos.Z, v.Pos.Y);
+			DynamicVertex.Position = UEFVector3f(v.Pos.X, v.Pos.Z, v.Pos.Y);
 			DynamicVertex.Color = FColor(v.Col.R, v.Col.G, v.Col.B, v.Col.A);
 			DynamicVertex.SetTangents(
-				FVector(binormal.X, binormal.Z, binormal.Y),
-				FVector(tangent.X, tangent.Z, tangent.Y),
-				FVector(normal.X, normal.Z, normal.Y));
-			DynamicVertex.TextureCoordinate[0] = FVector2D(v.UV[0], v.UV[1]);
-			DynamicVertex.TextureCoordinate[1] =
-			DynamicVertex.TextureCoordinate[2] =
-			DynamicVertex.TextureCoordinate[3] =
-			DynamicVertex.TextureCoordinate[4] =
-			DynamicVertex.TextureCoordinate[5] =
-			DynamicVertex.TextureCoordinate[6] = FVector2D(0.0f);
+				UEFVector3f(binormal.X, binormal.Z, binormal.Y),
+				UEFVector3f(tangent.X, tangent.Z, tangent.Y),
+				UEFVector3f(normal.X, normal.Z, normal.Y));
+			DynamicVertex.TextureCoordinate[0] = UEFVector2f(v.UV[0], v.UV[1]);
+			DynamicVertex.TextureCoordinate[1] = UEFVector2f(0.0f);
+			DynamicVertex.TextureCoordinate[2] = UEFVector2f(0.0f);
+			DynamicVertex.TextureCoordinate[3] = UEFVector2f(0.0f);
+			DynamicVertex.TextureCoordinate[4] = UEFVector2f(0.0f);
+			DynamicVertex.TextureCoordinate[5] = UEFVector2f(0.0f);
+			DynamicVertex.TextureCoordinate[6] = UEFVector2f(0.0f);
 
 			meshBuilder.AddVertex(DynamicVertex);
 		}
@@ -1088,19 +1128,19 @@ namespace EffekseerRendererUE4
 			Effekseer::Vector3D::Cross(binormal, normal, tangent);
 
 			FDynamicMeshVertex DynamicVertex;
-			DynamicVertex.Position = FVector(v.Pos.X, v.Pos.Z, v.Pos.Y);
+			DynamicVertex.Position = UEFVector3f(v.Pos.X, v.Pos.Z, v.Pos.Y);
 			DynamicVertex.Color = FColor(v.Col.R, v.Col.G, v.Col.B, v.Col.A);
 			DynamicVertex.SetTangents(
-				FVector(binormal.X, binormal.Z, binormal.Y),
-				FVector(tangent.X, tangent.Z, tangent.Y),
-				FVector(normal.X, normal.Z, normal.Y));
-			DynamicVertex.TextureCoordinate[0] = FVector2D(v.UV[0], v.UV[1]);
-			DynamicVertex.TextureCoordinate[1] = FVector2D(v.AlphaUV[0], v.AlphaUV[1]);
-			DynamicVertex.TextureCoordinate[2] = FVector2D(v.UVDistortionUV[0], v.UVDistortionUV[1]);
-			DynamicVertex.TextureCoordinate[3] = FVector2D(v.BlendUV[0], v.BlendUV[1]);
-			DynamicVertex.TextureCoordinate[4] = FVector2D(v.BlendAlphaUV[0], v.BlendAlphaUV[1]);
-			DynamicVertex.TextureCoordinate[5] = FVector2D(v.BlendUVDistortionUV[0], v.BlendUVDistortionUV[1]);
-			DynamicVertex.TextureCoordinate[6] = FVector2D(v.FlipbookIndexAndNextRate, v.AlphaThreshold);
+				UEFVector3f(binormal.X, binormal.Z, binormal.Y),
+				UEFVector3f(tangent.X, tangent.Z, tangent.Y),
+				UEFVector3f(normal.X, normal.Z, normal.Y));
+			DynamicVertex.TextureCoordinate[0] = UEFVector2f(v.UV[0], v.UV[1]);
+			DynamicVertex.TextureCoordinate[1] = UEFVector2f(v.AlphaUV[0], v.AlphaUV[1]);
+			DynamicVertex.TextureCoordinate[2] = UEFVector2f(v.UVDistortionUV[0], v.UVDistortionUV[1]);
+			DynamicVertex.TextureCoordinate[3] = UEFVector2f(v.BlendUV[0], v.BlendUV[1]);
+			DynamicVertex.TextureCoordinate[4] = UEFVector2f(v.BlendAlphaUV[0], v.BlendAlphaUV[1]);
+			DynamicVertex.TextureCoordinate[5] = UEFVector2f(v.BlendUVDistortionUV[0], v.BlendUVDistortionUV[1]);
+			DynamicVertex.TextureCoordinate[6] = UEFVector2f(v.FlipbookIndexAndNextRate, v.AlphaThreshold);
 
 			meshBuilder.AddVertex(DynamicVertex);
 		}
@@ -1122,21 +1162,21 @@ namespace EffekseerRendererUE4
 			Effekseer::Vector3D binormal;
 			Effekseer::Vector3D::Cross(binormal, normal, tangent);
 
-			meshVert.Position = FVector(v.Pos.X, v.Pos.Z, v.Pos.Y);
+			meshVert.Position = UEFVector3f(v.Pos.X, v.Pos.Z, v.Pos.Y);
 			meshVert.Color = FColor(v.Col.R, v.Col.G, v.Col.B, v.Col.A);
 
-			meshVert.TextureCoordinate[0] = FVector2D(v.UV1[0], v.UV1[1]);
-			meshVert.TextureCoordinate[1] = FVector2D(v.UV2[0], v.UV2[1]);
-			meshVert.TextureCoordinate[2] =
-			meshVert.TextureCoordinate[3] =
-			meshVert.TextureCoordinate[4] =
-			meshVert.TextureCoordinate[5] =
-			meshVert.TextureCoordinate[6] = FVector2D(0.0f);
+			meshVert.TextureCoordinate[0] = UEFVector2f(v.UV1[0], v.UV1[1]);
+			meshVert.TextureCoordinate[1] = UEFVector2f(v.UV2[0], v.UV2[1]);
+			meshVert.TextureCoordinate[2] = UEFVector2f(0.0f);
+			meshVert.TextureCoordinate[3] = UEFVector2f(0.0f);
+			meshVert.TextureCoordinate[4] = UEFVector2f(0.0f);
+			meshVert.TextureCoordinate[5] = UEFVector2f(0.0f);
+			meshVert.TextureCoordinate[6] = UEFVector2f(0.0f);
 
 			meshVert.SetTangents(
-				FVector(binormal.X, binormal.Z, binormal.Y),
-				FVector(tangent.X, tangent.Z, tangent.Y),
-				FVector(normal.X, normal.Z, normal.Y));
+				UEFVector3f(binormal.X, binormal.Z, binormal.Y),
+				UEFVector3f(tangent.X, tangent.Z, tangent.Y),
+				UEFVector3f(normal.X, normal.Z, normal.Y));
 
 			meshBuilder.AddVertex(meshVert);
 		}
@@ -1158,21 +1198,21 @@ namespace EffekseerRendererUE4
 			Effekseer::Vector3D binormal;
 			Effekseer::Vector3D::Cross(binormal, normal, tangent);
 
-			meshVert.Position = FVector(v.Pos.X, v.Pos.Z, v.Pos.Y);
+			meshVert.Position = UEFVector3f(v.Pos.X, v.Pos.Z, v.Pos.Y);
 			meshVert.Color = FColor(v.Col.R, v.Col.G, v.Col.B, v.Col.A);
 
-			meshVert.TextureCoordinate[0] = FVector2D(v.UV1[0], v.UV1[1]);
-			meshVert.TextureCoordinate[1] = FVector2D(v.AlphaUV[0], v.AlphaUV[1]);
-			meshVert.TextureCoordinate[2] = FVector2D(v.UVDistortionUV[0], v.UVDistortionUV[1]);
-			meshVert.TextureCoordinate[3] = FVector2D(v.BlendUV[0], v.BlendUV[1]);
-			meshVert.TextureCoordinate[4] = FVector2D(v.BlendAlphaUV[0], v.BlendAlphaUV[1]);
-			meshVert.TextureCoordinate[5] = FVector2D(v.BlendUVDistortionUV[0], v.BlendUVDistortionUV[1]);
-			meshVert.TextureCoordinate[6] = FVector2D(v.FlipbookIndexAndNextRate, v.AlphaThreshold);
+			meshVert.TextureCoordinate[0] = UEFVector2f(v.UV1[0], v.UV1[1]);
+			meshVert.TextureCoordinate[1] = UEFVector2f(v.AlphaUV[0], v.AlphaUV[1]);
+			meshVert.TextureCoordinate[2] = UEFVector2f(v.UVDistortionUV[0], v.UVDistortionUV[1]);
+			meshVert.TextureCoordinate[3] = UEFVector2f(v.BlendUV[0], v.BlendUV[1]);
+			meshVert.TextureCoordinate[4] = UEFVector2f(v.BlendAlphaUV[0], v.BlendAlphaUV[1]);
+			meshVert.TextureCoordinate[5] = UEFVector2f(v.BlendUVDistortionUV[0], v.BlendUVDistortionUV[1]);
+			meshVert.TextureCoordinate[6] = UEFVector2f(v.FlipbookIndexAndNextRate, v.AlphaThreshold);
 
 			meshVert.SetTangents(
-				FVector(binormal.X, binormal.Z, binormal.Y),
-				FVector(tangent.X, tangent.Z, tangent.Y),
-				FVector(normal.X, normal.Z, normal.Y));
+				UEFVector3f(binormal.X, binormal.Z, binormal.Y),
+				UEFVector3f(tangent.X, tangent.Z, tangent.Y),
+				UEFVector3f(normal.X, normal.Z, normal.Y));
 
 			meshBuilder.AddVertex(meshVert);
 		}

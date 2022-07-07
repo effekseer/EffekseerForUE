@@ -3,7 +3,7 @@
 #include "CoreMinimal.h"
 #include <EffekseerRenderer.IndexBufferBase.h>
 
-namespace EffekseerRendererUE4
+namespace EffekseerRendererUE
 {
 	class IndexBuffer
 		: public EffekseerRenderer::IndexBufferBase

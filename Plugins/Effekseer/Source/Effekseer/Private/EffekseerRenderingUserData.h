@@ -4,7 +4,7 @@
 #include <Effekseer.h>
 #include "EffekseerEffect.h"
 
-namespace EffekseerRendererUE4
+namespace EffekseerRendererUE
 {
 
 	class EffekseerRenderingUserData : public Effekseer::RenderingUserData

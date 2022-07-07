@@ -3,7 +3,7 @@
 #include "CoreMinimal.h"
 #include <EffekseerRenderer.RenderStateBase.h>
 
-namespace EffekseerRendererUE4
+namespace EffekseerRendererUE
 {
 	class RenderState
 		: public EffekseerRenderer::RenderStateBase

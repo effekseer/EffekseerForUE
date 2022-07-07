@@ -2,6 +2,8 @@
 #include "EffekseerModelFactory.h"
 #include "EffekseerModel.h"
 
+#include "EffekseerUECompatibility.h"
+
 #include "Editor.h"
 #include "HAL/FileManager.h"
 #include "RawMesh.h"
@@ -81,8 +83,8 @@ UObject* UEffekseerModelFactory::FactoryCreateBinary(
 			rawMesh.WedgeTangentX.Add(mesh.Binormal[ind]);
 			rawMesh.WedgeTangentY.Add(mesh.Tangent[ind]);
 			rawMesh.WedgeTangentZ.Add(mesh.Normal[ind]);
-			rawMesh.WedgeTexCoords[0].Add(FVector2D(mesh.UV[ind]));
-			rawMesh.WedgeTexCoords[1].Add(FVector2D(mesh.UV[ind]));
+			rawMesh.WedgeTexCoords[0].Add(EffekseerUE::UEFVector2f(mesh.UV[ind]));
+			rawMesh.WedgeTexCoords[1].Add(EffekseerUE::UEFVector2f(mesh.UV[ind]));
 			rawMesh.WedgeColors.Add(mesh.Colors[ind]);
 		}
 
@@ -96,17 +98,24 @@ UObject* UEffekseerModelFactory::FactoryCreateBinary(
 			rawMesh.FaceSmoothingMasks.Add(faceInd);
 		}
 
+#if ENGINE_MAJOR_VERSION == 5
+		FStaticMeshSourceModel* lodModel = const_cast<FStaticMeshSourceModel*>(&(assetSM->GetSourceModels()[0]));
+#else
 		FStaticMeshSourceModel* lodModel = new (assetSM->GetSourceModels()) FStaticMeshSourceModel();
+#endif
 
 		lodModel->BuildSettings.bUseMikkTSpace = false;
 		lodModel->BuildSettings.bRecomputeNormals = false;
 		lodModel->BuildSettings.bRecomputeTangents = false;
 		lodModel->BuildSettings.bRemoveDegenerates = false;
-		lodModel->BuildSettings.bBuildAdjacencyBuffer = false;
 		lodModel->BuildSettings.bBuildReversedIndexBuffer = false;
 		lodModel->BuildSettings.bUseHighPrecisionTangentBasis = false;
 		lodModel->BuildSettings.bUseFullPrecisionUVs = false;
 		lodModel->BuildSettings.bGenerateLightmapUVs = false;
+
+#if ENGINE_MAJOR_VERSION == 4
+		lodModel->BuildSettings.bBuildAdjacencyBuffer = false;
+#endif
 
 		lodModel->ScreenSize = 0.1f / FMath::Pow(2.0f, assetSM->GetSourceModels().Num() - 1);
 
