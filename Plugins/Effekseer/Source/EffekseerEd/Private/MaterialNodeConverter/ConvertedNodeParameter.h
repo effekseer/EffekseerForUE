@@ -1,13 +1,12 @@
 
 #pragma once
 
+#include "../NativeEffekseerMaterialContext.h"
 #include "ConvertedNode.h"
 #include "EffekseerEffect.h"
+#include "Materials/MaterialExpressionAppendVector.h"
 #include "Materials/MaterialExpressionScalarParameter.h"
 #include "Materials/MaterialExpressionVectorParameter.h"
-#include "Materials/MaterialExpressionAppendVector.h"
-#include "../NativeEffekseerMaterialContext.h"
-
 
 class ConvertedNodeParameter1 : public ConvertedNode
 {
@@ -25,7 +24,10 @@ public:
 		expression_->DefaultValue = effekseerNode_->GetProperty("Value")->Floats[0];
 	}
 
-	UMaterialExpression* GetExpression() const override { return expression_; }
+	UMaterialExpression* GetExpression() const override
+	{
+		return expression_;
+	}
 };
 
 class ConvertedNodeParameter2 : public ConvertedNode
@@ -55,15 +57,24 @@ public:
 		expression_->A = 0;
 	}
 
-	UMaterialExpression* GetExpression() const override { return expression_; }
+	UMaterialExpression* GetExpression() const override
+	{
+		return expression_;
+	}
 
-	UMaterialExpression* GetExpressions(int32_t ind) const override {
-		if (ind == 0) return expression_;
-		if (ind == 1) return function_;
+	UMaterialExpression* GetExpressions(int32_t ind) const override
+	{
+		if (ind == 0)
+			return expression_;
+		if (ind == 1)
+			return function_;
 		return nullptr;
 	}
 
-	int32_t GetExpressionCount() const { return 2; }
+	int32_t GetExpressionCount() const
+	{
+		return 2;
+	}
 };
 
 class ConvertedNodeParameter3 : public ConvertedNode
@@ -94,15 +105,24 @@ public:
 		expression_->A = 0;
 	}
 
-	UMaterialExpression* GetExpression() const override { return expression_; }
+	UMaterialExpression* GetExpression() const override
+	{
+		return expression_;
+	}
 
-	UMaterialExpression* GetExpressions(int32_t ind) const override {
-		if (ind == 0) return expression_;
-		if (ind == 1) return function_;
+	UMaterialExpression* GetExpressions(int32_t ind) const override
+	{
+		if (ind == 0)
+			return expression_;
+		if (ind == 1)
+			return function_;
 		return nullptr;
 	}
 
-	int32_t GetExpressionCount() const { return 2; }
+	int32_t GetExpressionCount() const
+	{
+		return 2;
+	}
 };
 
 class ConvertedNodeParameter4 : public ConvertedNode
@@ -177,15 +197,24 @@ public:
 		expression_->A = effekseerNode->GetProperty("A")->Floats[0] > 0 ? 1 : 0;
 	}
 
-	UMaterialExpression* GetExpression() const override { return expression_; }
+	UMaterialExpression* GetExpression() const override
+	{
+		return expression_;
+	}
 
-	UMaterialExpression* GetExpressions(int32_t ind) const override {
-		if (ind == 0) return expression_;
-		if (ind == 1) return function_;
+	UMaterialExpression* GetExpressions(int32_t ind) const override
+	{
+		if (ind == 0)
+			return expression_;
+		if (ind == 1)
+			return function_;
 		return nullptr;
 	}
 
-	int32_t GetExpressionCount() const { return 2; }
+	int32_t GetExpressionCount() const
+	{
+		return 2;
+	}
 };
 
 class ConvertedNodeCustomData2 : public ConvertedNode
@@ -214,13 +243,22 @@ public:
 		expression_->A = effekseerNode->GetProperty("A")->Floats[0] > 0 ? 1 : 0;
 	}
 
-	UMaterialExpression* GetExpression() const override { return expression_; }
+	UMaterialExpression* GetExpression() const override
+	{
+		return expression_;
+	}
 
-	UMaterialExpression* GetExpressions(int32_t ind) const override {
-		if (ind == 0) return expression_;
-		if (ind == 1) return function_;
+	UMaterialExpression* GetExpressions(int32_t ind) const override
+	{
+		if (ind == 0)
+			return expression_;
+		if (ind == 1)
+			return function_;
 		return nullptr;
 	}
 
-	int32_t GetExpressionCount() const { return 2; }
+	int32_t GetExpressionCount() const
+	{
+		return 2;
+	}
 };

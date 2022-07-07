@@ -1,8 +1,8 @@
 
 #include "EffekseerEffectFactory.h"
+
 #include "EffekseerEffect.h"
 #include "HAL/FileManager.h"
-
 #include "Runtime/Launch/Resources/Version.h"
 
 UEffekseerEffectFactory::UEffekseerEffectFactory(const FObjectInitializer& ObjectInitializer)
@@ -49,7 +49,7 @@ UObject* UEffekseerEffectFactory::FactoryCreateBinary(
 
 		asset->AssetImportData->Update(CurrentFilename);
 	}
-	
+
 	return asset;
 }
 
@@ -92,13 +92,13 @@ EReimportResult::Type UEffekseerEffectFactory::Reimport(UObject* Obj)
 	EReimportResult::Type Result = EReimportResult::Failed;
 
 	if (UFactory::StaticImportObject(
-		asset->GetClass(), 
-		asset->GetOuter(),
-		*asset->GetName(), 
-		RF_Public | RF_Standalone, 
-		*Filename, 
-		NULL, 
-		this))
+			asset->GetClass(),
+			asset->GetOuter(),
+			*asset->GetName(),
+			RF_Public | RF_Standalone,
+			*Filename,
+			NULL,
+			this))
 	{
 		if (asset->GetOuter())
 		{

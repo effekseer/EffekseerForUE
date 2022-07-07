@@ -1,11 +1,10 @@
 
 #include "EffekseerCurveFactory.h"
-#include "EffekseerCurve.h"
 
 #include "Editor.h"
+#include "EffekseerCurve.h"
 #include "HAL/FileManager.h"
 #include "RawMesh.h"
-
 #include "Runtime/Launch/Resources/Version.h"
 
 UEffekseerCurveFactory::UEffekseerCurveFactory(const FObjectInitializer& ObjectInitializer)
@@ -65,7 +64,7 @@ UObject* UEffekseerCurveFactory::FactoryCreateBinary(
 		if (Object)
 		{
 			GEditor->GetEditorSubsystem<UImportSubsystem>()->BroadcastAssetPostImport(this, Object);
-			
+
 			Object->MarkPackageDirty();
 			Object->PostEditChange();
 		}
@@ -112,13 +111,13 @@ EReimportResult::Type UEffekseerCurveFactory::Reimport(UObject* Obj)
 	EReimportResult::Type Result = EReimportResult::Failed;
 
 	if (UFactory::StaticImportObject(
-		asset->GetClass(), 
-		asset->GetOuter(),
-		*asset->GetName(), 
-		RF_Public | RF_Standalone, 
-		*Filename, 
-		NULL, 
-		this))
+			asset->GetClass(),
+			asset->GetOuter(),
+			*asset->GetName(),
+			RF_Public | RF_Standalone,
+			*Filename,
+			NULL,
+			this))
 	{
 		if (asset->GetOuter())
 		{

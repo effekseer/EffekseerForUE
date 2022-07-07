@@ -2,11 +2,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
-
-#include "EffekseerMaterial/efkMat.Models.h"
 #include "EffekseerMaterial/efkMat.Library.h"
+#include "EffekseerMaterial/efkMat.Models.h"
 #include "EffekseerMaterial/efkMat.TextExporter.h"
-
 
 struct NativeEffekseerMaterialContext
 {

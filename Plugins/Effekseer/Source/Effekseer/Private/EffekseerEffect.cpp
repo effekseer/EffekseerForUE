@@ -1,25 +1,26 @@
 #include "EffekseerEffect.h"
-#include "EffekseerMaterial.h"
 
-#include <string>
-#include <functional>
-#include <vector>
+#include "EffekseerCustomVersion.h"
+#include "EffekseerInternalModel.h"
+#include "EffekseerInternalTexture.h"
+#include "EffekseerMaterial.h"
+#include "EffekseerProceduralModel.h"
+#include "EffekseerRendererShader.h"
+#include "EffekseerRenderingUserData.h"
 #include <Effekseer.h>
 #include <Effekseer/Effekseer/Material/Effekseer.MaterialFile.h>
-#include "EffekseerRenderingUserData.h"
-
-#include "EffekseerRendererShader.h"
-#include "EffekseerCustomVersion.h"
-#include "EffekseerInternalTexture.h"
-#include "EffekseerProceduralModel.h"
-#include "EffekseerInternalModel.h"
-
 #include <Effekseer/Effekseer/Model/ProceduralModelGenerator.h>
+#include <functional>
+#include <string>
+#include <vector>
 
 template <size_t size_>
 struct tStr
 {
-	enum { size = size_ };
+	enum
+	{
+		size = size_
+	};
 	TCHAR data[size];
 	tStr(const char16_t* u16str)
 	{
@@ -27,7 +28,8 @@ struct tStr
 		for (int i = 0; i < size - 1; i++)
 		{
 			data[i] = (TCHAR)u16str[i];
-			if (data[i] == 0) break;
+			if (data[i] == 0)
+				break;
 		}
 	}
 	const TCHAR* c_str() const
@@ -39,7 +41,10 @@ struct tStr
 template <size_t size_>
 struct uStr
 {
-	enum { size = size_ };
+	enum
+	{
+		size = size_
+	};
 	char16_t data[size];
 	uStr(const TCHAR* u16str)
 	{
@@ -47,7 +52,8 @@ struct uStr
 		for (int i = 0; i < size - 1; i++)
 		{
 			data[i] = (char16_t)u16str[i];
-			if (data[i] == 0) break;
+			if (data[i] == 0)
+				break;
 		}
 	}
 	const char16_t* c_str() const
@@ -122,10 +128,10 @@ class TextureLoader
 	: public ::Effekseer::TextureLoader
 {
 private:
-	UEffekseerEffect*			m_uobject;
-	bool						m_requiredToCreateResource = false;
-	int32_t						m_loadingColorIndex = 0;
-	int32_t						m_loadingDistortionIndex = 0;
+	UEffekseerEffect* m_uobject;
+	bool m_requiredToCreateResource = false;
+	int32_t m_loadingColorIndex = 0;
+	int32_t m_loadingDistortionIndex = 0;
 
 public:
 	TextureLoader(::Effekseer::FileInterface* fileInterface = NULL);
@@ -153,20 +159,19 @@ TextureLoader::TextureLoader(::Effekseer::FileInterface* fileInterface)
 
 TextureLoader::~TextureLoader()
 {
-
 }
 
 Effekseer::TextureRef TextureLoader::Load(const EFK_CHAR* path, ::Effekseer::TextureType textureType)
 {
 	if (textureType != ::Effekseer::TextureType::Color &&
-		textureType != ::Effekseer::TextureType::Distortion) return nullptr;
+		textureType != ::Effekseer::TextureType::Distortion)
+		return nullptr;
 
 	auto path_we = GetFileNameWithoutExtension(path);
 	auto path_ = tStr<512>(path_we.c_str());
 
-
 	if (textureType == ::Effekseer::TextureType::Color)
-	{	
+	{
 		if (m_requiredToCreateResource)
 		{
 			auto texture = Cast<UTexture2D>(StaticLoadObject(UTexture2D::StaticClass(), NULL, path_.c_str()));
@@ -185,7 +190,8 @@ Effekseer::TextureRef TextureLoader::Load(const EFK_CHAR* path, ::Effekseer::Tex
 		}
 		else
 		{
-			if (m_uobject->ColorTextures.Num() <= m_loadingColorIndex) return nullptr;
+			if (m_uobject->ColorTextures.Num() <= m_loadingColorIndex)
+				return nullptr;
 
 			auto o = m_uobject->ColorTextures[m_loadingColorIndex];
 			m_loadingColorIndex++;
@@ -218,7 +224,8 @@ Effekseer::TextureRef TextureLoader::Load(const EFK_CHAR* path, ::Effekseer::Tex
 		}
 		else
 		{
-			if (m_uobject->DistortionTextures.Num() <= m_loadingDistortionIndex) return nullptr;
+			if (m_uobject->DistortionTextures.Num() <= m_loadingDistortionIndex)
+				return nullptr;
 
 			auto o = m_uobject->DistortionTextures[m_loadingDistortionIndex];
 			m_loadingDistortionIndex++;
@@ -242,9 +249,9 @@ class ModelLoader
 	: public ::Effekseer::ModelLoader
 {
 private:
-	UEffekseerEffect*			m_uobject;
-	bool						m_requiredToCreateResource = false;
-	int32_t						m_loadingIndex = 0;
+	UEffekseerEffect* m_uobject;
+	bool m_requiredToCreateResource = false;
+	int32_t m_loadingIndex = 0;
 
 public:
 	ModelLoader(::Effekseer::FileInterface* fileInterface = NULL);
@@ -271,7 +278,6 @@ ModelLoader::ModelLoader(::Effekseer::FileInterface* fileInterface)
 
 ModelLoader::~ModelLoader()
 {
-
 }
 
 ::Effekseer::ModelRef ModelLoader::Load(const EFK_CHAR* path)
@@ -298,11 +304,12 @@ ModelLoader::~ModelLoader()
 	}
 	else
 	{
-		if (m_uobject->Models.Num() <= m_loadingIndex) return nullptr;
+		if (m_uobject->Models.Num() <= m_loadingIndex)
+			return nullptr;
 
 		auto o = m_uobject->Models[m_loadingIndex];
 		m_loadingIndex++;
-		
+
 		if (o != nullptr)
 		{
 			auto ret = o->GetNativePtr();
@@ -391,7 +398,8 @@ public:
 	}
 	else
 	{
-		if (uobject_->Materials.Num() <= loadingIndex_) return nullptr;
+		if (uobject_->Materials.Num() <= loadingIndex_)
+			return nullptr;
 
 		auto o = uobject_->Materials[loadingIndex_];
 		loadingIndex_++;
@@ -431,7 +439,8 @@ public:
 
 void MaterialLoader::Unload(::Effekseer::MaterialRef data)
 {
-	if (data == nullptr) return;
+	if (data == nullptr)
+		return;
 	auto p1 = (EffekseerRendererUE::Shader*)data->UserPtr;
 	auto p2 = (EffekseerRendererUE::Shader*)data->ModelUserPtr;
 	auto p3 = (EffekseerRendererUE::Shader*)data->RefractionUserPtr;
@@ -442,7 +451,7 @@ void MaterialLoader::Unload(::Effekseer::MaterialRef data)
 	ES_SAFE_DELETE(p4);
 }
 
-class CurveLoader 
+class CurveLoader
 	: public Effekseer::CurveLoader
 {
 private:
@@ -501,7 +510,8 @@ Effekseer::CurveRef CurveLoader::Load(const EFK_CHAR* path)
 	}
 	else
 	{
-		if (m_uobject->Curves.Num() <= m_loadingIndex) return nullptr;
+		if (m_uobject->Curves.Num() <= m_loadingIndex)
+			return nullptr;
 
 		auto o = m_uobject->Curves[m_loadingIndex];
 		m_loadingIndex++;
@@ -529,12 +539,10 @@ class ProceduralModelGenerator : public Effekseer::ProceduralModelGenerator
 public:
 	ProceduralModelGenerator()
 	{
-
 	}
 
 	~ProceduralModelGenerator() override
 	{
-
 	}
 
 	Effekseer::ModelRef Generate(const Effekseer::ProceduralModelParameter& parameter) override
@@ -557,13 +565,12 @@ public:
 		model->ProceduralData = pmodel;
 
 		pmodel->Init(model);
-			
+
 		return model;
 	}
 
 	void Ungenerate(Effekseer::ModelRef model) override
 	{
-
 	}
 
 	void SetUObject(UEffekseerEffect* uobject)
@@ -592,7 +599,7 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 	Name = tStr<260>(GetFileNameWithoutExtension(uPath.c_str()).c_str()).c_str();
 
 	auto setting = CreateSetting();
-	 
+
 	if (isResourceReset)
 	{
 		this->ColorTextures.Reset();
@@ -628,7 +635,7 @@ void UEffekseerEffect::LoadEffect(const uint8_t* data, int32_t size, const TCHAR
 		GetParentDir(parentPath, uPath.c_str());
 		rootPath = parentPath;
 	}
-	
+
 	loadedScale = Scale;
 
 	auto effect = ::Effekseer::Effect::Create(setting, (void*)data, size, Scale, rootPath);
@@ -659,7 +666,8 @@ void UEffekseerEffect::GenerateRenderingData()
 
 	std::function<void(::Effekseer::EffectNode*, bool)> renode;
 
-	renode = [this, &renode](::Effekseer::EffectNode* node, bool isRoot) -> void {
+	renode = [this, &renode](::Effekseer::EffectNode* node, bool isRoot) -> void
+	{
 		if (!isRoot)
 		{
 			auto param = node->GetBasicRenderParameter();
@@ -871,7 +879,7 @@ void UEffekseerEffect::SetTextureAddressMode(::Effekseer::EffectNode* node)
 		}
 
 		auto backend = static_cast<EffekseerInternalTexture*>(texture->GetBackend().Get());
-		
+
 		auto u_texture = ((UTexture2D*)backend->UserData);
 
 		// textures are forced to change to Wrap on import. because clamping is done by calculating UVs in materials.
@@ -922,7 +930,8 @@ void UEffekseerEffect::GenerateRenderingDataIfRequired()
 	{
 		std::function<bool(::Effekseer::EffectNode*, bool)> required;
 
-		required = [this, &required](::Effekseer::EffectNode* node, bool isRoot) -> bool {
+		required = [this, &required](::Effekseer::EffectNode* node, bool isRoot) -> bool
+		{
 			if (!isRoot)
 			{
 				if (node->GetRenderingUserData() == nullptr)

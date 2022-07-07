@@ -2,14 +2,15 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UObject/Object.h"
-#include "Engine/StaticMesh.h"
 #include "EditorFramework/AssetImportData.h"
+#include "Engine/StaticMesh.h"
+#include "UObject/Object.h"
+
 #include "EffekseerCurve.generated.h"
 
 namespace Effekseer
 {
-	class Curve;
+class Curve;
 };
 
 struct FEffekseerCurve
@@ -38,11 +39,11 @@ private:
 
 	void LoadModel(const uint8_t* data, int32_t size, const TCHAR* path);
 	void ReleaseModel();
+
 public:
 	void BeginDestroy() override;
 
 	void Load(const uint8_t* data, int32_t size, const TCHAR* path);
-
 
 #if WITH_EDITORONLY_DATA
 	UPROPERTY(Category = ImportSettings, VisibleAnywhere)
@@ -53,7 +54,10 @@ public:
 
 	FEffekseerCurve GetCurve();
 
-	Effekseer::Curve* GetNativePtr() const { return curvePtr; }
+	Effekseer::Curve* GetNativePtr() const
+	{
+		return curvePtr;
+	}
 
 	virtual void Serialize(FArchive& Ar) override;
 };

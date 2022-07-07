@@ -1,14 +1,14 @@
 
 #pragma once
 
+#include "../NativeEffekseerMaterialContext.h"
 #include "ConvertedNode.h"
 #include "EffekseerEffect.h"
+#include "Materials/MaterialExpressionCameraPositionWS.h"
 #include "Materials/MaterialExpressionConstant.h"
 #include "Materials/MaterialExpressionConstant2Vector.h"
 #include "Materials/MaterialExpressionConstant3Vector.h"
 #include "Materials/MaterialExpressionConstant4Vector.h"
-#include "Materials/MaterialExpressionCameraPositionWS.h"
-#include "../NativeEffekseerMaterialContext.h"
 
 class ConvertedNodeConstant1 : public ConvertedNode
 {
@@ -26,7 +26,10 @@ public:
 		expression_->R = effekseerNode_->GetProperty("Value")->Floats[0];
 	}
 
-	UMaterialExpression* GetExpression() const override { return expression_; }
+	UMaterialExpression* GetExpression() const override
+	{
+		return expression_;
+	}
 };
 
 class ConvertedNodeConstant2 : public ConvertedNode
@@ -46,7 +49,10 @@ public:
 		expression_->G = effekseerNode_->GetProperty("Value")->Floats[1];
 	}
 
-	UMaterialExpression* GetExpression() const override { return expression_; }
+	UMaterialExpression* GetExpression() const override
+	{
+		return expression_;
+	}
 };
 
 class ConvertedNodeConstant3 : public ConvertedNode
@@ -67,7 +73,10 @@ public:
 		expression_->Constant.B = effekseerNode_->GetProperty("Value")->Floats[2];
 	}
 
-	UMaterialExpression* GetExpression() const override { return expression_; }
+	UMaterialExpression* GetExpression() const override
+	{
+		return expression_;
+	}
 };
 
 class ConvertedNodeConstant4 : public ConvertedNode
@@ -89,7 +98,10 @@ public:
 		expression_->Constant.A = effekseerNode_->GetProperty("Value")->Floats[3];
 	}
 
-	UMaterialExpression* GetExpression() const override { return expression_; }
+	UMaterialExpression* GetExpression() const override
+	{
+		return expression_;
+	}
 };
 
 class ConvertedNodeTime : public ConvertedNode
@@ -110,7 +122,10 @@ public:
 		expression_->SetMaterialFunction(func);
 	}
 
-	UMaterialExpression* GetExpression() const override { return expression_; }
+	UMaterialExpression* GetExpression() const override
+	{
+		return expression_;
+	}
 };
 
 class ConvertedNodeCameraPositionWS : public ConvertedNode
@@ -131,7 +146,10 @@ public:
 		expression_->SetMaterialFunction(func);
 	}
 
-	UMaterialExpression* GetExpression() const override { return expression_; }
+	UMaterialExpression* GetExpression() const override
+	{
+		return expression_;
+	}
 };
 
 class ConvertedNodeEffectScale : public ConvertedNode

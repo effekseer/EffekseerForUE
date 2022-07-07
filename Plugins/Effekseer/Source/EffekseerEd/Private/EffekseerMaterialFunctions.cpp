@@ -1,41 +1,36 @@
 #include "EffekseerMaterialFunctions.h"
 
-#include "Materials/MaterialExpressionAppendVector.h"
-#include "Materials/MaterialExpressionTextureCoordinate.h"
-#include "Materials/MaterialExpressionTextureSample.h"
-#include "Materials/MaterialExpressionTextureObject.h"
-#include "Materials/MaterialExpressionTextureObjectParameter.h"
-#include "Materials/MaterialExpressionTextureCoordinate.h"
-#include "Materials/MaterialExpressionMaterialFunctionCall.h"
-#include "Materials/MaterialExpressionComponentMask.h"
-#include "Materials/MaterialExpressionTime.h"
-#include "Materials/MaterialExpressionRotator.h"
-#include "Materials/MaterialExpressionFresnel.h"
-#include "Materials/MaterialExpressionConstant2Vector.h"
-#include "EffekseerMaterial/efkMat.Models.h"
-#include "EffekseerMaterial/efkMat.Library.h"
-#include "EffekseerMaterial/efkMat.TextExporter.h"
-
-#include "NativeEffekseerMaterialContext.h"
-
-#include "Factories/MaterialFactoryNew.h"
 #include "AssetRegistryModule.h"
-
-#include "IAssetTools.h"
-#include "Factories/MaterialInstanceConstantFactoryNew.h"
 #include "AssetToolsModule.h"
+#include "EffekseerMaterial/efkMat.Library.h"
+#include "EffekseerMaterial/efkMat.Models.h"
+#include "EffekseerMaterial/efkMat.TextExporter.h"
+#include "Factories/MaterialFactoryNew.h"
+#include "Factories/MaterialInstanceConstantFactoryNew.h"
+#include "IAssetTools.h"
 #include "MaterialEditor/MaterialEditorInstanceConstant.h"
-#include "Materials/MaterialInstanceConstant.h"
-
-#include "Runtime/Launch/Resources/Version.h"
 #include "MaterialNodeConverter/ConvertedNode.h"
 #include "MaterialNodeConverter/ConvertedNodeConstant.h"
-#include "MaterialNodeConverter/ConvertedNodeParameter.h"
+#include "MaterialNodeConverter/ConvertedNodeGradient.h"
+#include "MaterialNodeConverter/ConvertedNodeInternal.h"
 #include "MaterialNodeConverter/ConvertedNodeMath.h"
 #include "MaterialNodeConverter/ConvertedNodeModel.h"
-#include "MaterialNodeConverter/ConvertedNodeInternal.h"
 #include "MaterialNodeConverter/ConvertedNodeNoise.h"
-#include "MaterialNodeConverter/ConvertedNodeGradient.h"
+#include "MaterialNodeConverter/ConvertedNodeParameter.h"
+#include "Materials/MaterialExpressionAppendVector.h"
+#include "Materials/MaterialExpressionComponentMask.h"
+#include "Materials/MaterialExpressionConstant2Vector.h"
+#include "Materials/MaterialExpressionFresnel.h"
+#include "Materials/MaterialExpressionMaterialFunctionCall.h"
+#include "Materials/MaterialExpressionRotator.h"
+#include "Materials/MaterialExpressionTextureCoordinate.h"
+#include "Materials/MaterialExpressionTextureObject.h"
+#include "Materials/MaterialExpressionTextureObjectParameter.h"
+#include "Materials/MaterialExpressionTextureSample.h"
+#include "Materials/MaterialExpressionTime.h"
+#include "Materials/MaterialInstanceConstant.h"
+#include "NativeEffekseerMaterialContext.h"
+#include "Runtime/Launch/Resources/Version.h"
 
 class ConvertedNodeFactory
 {
@@ -43,7 +38,10 @@ private:
 public:
 	ConvertedNodeFactory() = default;
 	virtual ~ConvertedNodeFactory() = default;
-	virtual std::shared_ptr<ConvertedNode> Create(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode) { return nullptr; }
+	virtual std::shared_ptr<ConvertedNode> Create(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
+	{
+		return nullptr;
+	}
 };
 
 class ConvertedNodeOutput : public ConvertedNode
@@ -79,7 +77,6 @@ public:
 		material->Expressions.Add(opacityCullingFunction_);
 		opacityMaskCullingFunction_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
 		material->Expressions.Add(opacityMaskCullingFunction_);
-
 
 		{
 			FStringAssetReference assetPath("/Effekseer/MaterialFunctions/EfkCullingMask.EfkCullingMask");
@@ -203,7 +200,10 @@ public:
 		expression_->BaseReflectFraction = effekseerNode_->GetProperty("BaseReflectFraction")->Floats[0];
 	}
 
-	UMaterialExpression* GetExpression() const override { return expression_; }
+	UMaterialExpression* GetExpression() const override
+	{
+		return expression_;
+	}
 
 	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) override
 	{
@@ -237,7 +237,10 @@ public:
 		expression_->SetMaterialFunction(func);
 	}
 
-	UMaterialExpression* GetExpression() const override { return expression_; }
+	UMaterialExpression* GetExpression() const override
+	{
+		return expression_;
+	}
 
 	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) override
 	{
@@ -267,7 +270,7 @@ private:
 	UMaterialExpressionConstant2Vector* expression1_ = nullptr;
 	UMaterialExpressionConstant2Vector* expression2_ = nullptr;
 	UMaterialExpressionConstant* expression3_ = nullptr;
-	
+
 public:
 	ConvertedNodePolarCoords(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
 		: effekseerNode_(effekseerNode)
@@ -306,17 +309,28 @@ public:
 		}
 	}
 
-	UMaterialExpression* GetExpression() const override { return expression_; }
+	UMaterialExpression* GetExpression() const override
+	{
+		return expression_;
+	}
 
-	UMaterialExpression* GetExpressions(int32_t ind) const override {
-		if (ind == 0) return expression_;
-		if (ind == 1) return expression1_;
-		if (ind == 2) return expression2_;
-		if (ind == 3) return expression3_;
+	UMaterialExpression* GetExpressions(int32_t ind) const override
+	{
+		if (ind == 0)
+			return expression_;
+		if (ind == 1)
+			return expression1_;
+		if (ind == 2)
+			return expression2_;
+		if (ind == 3)
+			return expression3_;
 		return nullptr;
 	}
 
-	int32_t GetExpressionCount() const { return 4; }
+	int32_t GetExpressionCount() const
+	{
+		return 4;
+	}
 
 	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) override
 	{
@@ -336,7 +350,6 @@ public:
 		}
 	}
 };
-
 
 class ConvertedNodeDepthFade : public ConvertedNode
 {
@@ -363,7 +376,6 @@ public:
 			expression1_->R = effekseerNode->Properties[0]->Floats[0];
 			expression_->GetInput(0)->Connect(0, expression1_);
 		}
-
 	}
 
 	UMaterialExpression* GetExpression() const override
@@ -394,7 +406,6 @@ public:
 	}
 };
 
-
 class ConvertedNodeTextureSample : public ConvertedNode
 {
 private:
@@ -407,7 +418,8 @@ private:
 
 public:
 	ConvertedNodeTextureSample(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
-		: material_(material), effekseerNode_(effekseerNode)
+		: material_(material)
+		, effekseerNode_(effekseerNode)
 	{
 		expression_ = NewObject<UMaterialExpressionTextureSample>(material);
 		material->Expressions.Add(expression_);
@@ -435,7 +447,7 @@ public:
 			}
 		}
 
-		for(int i = 0; i < 5; i++)
+		for (int i = 0; i < 5; i++)
 		{
 			expressionToLinear_->GetInput(i)->Expression = expression_;
 			expressionToLinear_->GetInput(i)->OutputIndex = i;
@@ -535,7 +547,10 @@ public:
 		}
 	}
 
-	UMaterialExpression* GetExpression() const override { return expressionToLinear_; }
+	UMaterialExpression* GetExpression() const override
+	{
+		return expressionToLinear_;
+	}
 
 	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) override
 	{
@@ -584,12 +599,19 @@ public:
 		return ConvertedNodeOutputConnector(expressionToLinear_, index);
 	}
 
-	int32_t GetExpressionCount() const { return expressionConstant_ != nullptr ? 3: 2; }
+	int32_t GetExpressionCount() const
+	{
+		return expressionConstant_ != nullptr ? 3 : 2;
+	}
 
-	UMaterialExpression* GetExpressions(int32_t ind) const override {
-		if (ind == 0) return expressionToLinear_;
-		if (ind == 1) return expression_;
-		if (ind == 2) return expressionConstant_;
+	UMaterialExpression* GetExpressions(int32_t ind) const override
+	{
+		if (ind == 0)
+			return expressionToLinear_;
+		if (ind == 1)
+			return expression_;
+		if (ind == 2)
+			return expressionConstant_;
 
 		return nullptr;
 	}
@@ -666,7 +688,10 @@ public:
 		}
 	}
 
-	UMaterialExpression* GetExpression() const override { return expression_; }
+	UMaterialExpression* GetExpression() const override
+	{
+		return expression_;
+	}
 };
 
 class ConvertedNodeTextureObjectParameter : public ConvertedNode
@@ -716,8 +741,8 @@ public:
 				}
 			}
 		}
-		
-		if(expression_->Texture == nullptr)
+
+		if (expression_->Texture == nullptr)
 		{
 			FStringAssetReference assetPath("/Engine/EngineResources/DefaultTexture.DefaultTexture");
 			UTexture* texture = Cast<UTexture>(assetPath.TryLoad());
@@ -742,7 +767,10 @@ public:
 		}
 	}
 
-	UMaterialExpression* GetExpression() const override { return expression_; }
+	UMaterialExpression* GetExpression() const override
+	{
+		return expression_;
+	}
 };
 
 class ConvertedNodeLight : public ConvertedNode
@@ -816,7 +844,7 @@ public:
 	}
 };
 
-template<class T>
+template <class T>
 class ConvertedNodeFactoryNormalNode : public ConvertedNodeFactory
 {
 private:
@@ -865,7 +893,7 @@ UMaterial* CreateUE4MaterialFromEffekseerMaterial(const std::shared_ptr<NativeEf
 
 	originalMaterial->PreEditChange(nullptr);
 
-	std::map <std::string, std::shared_ptr<ConvertedNodeFactory>> nodeFactories;
+	std::map<std::string, std::shared_ptr<ConvertedNodeFactory>> nodeFactories;
 
 	nodeFactories["Constant1"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeConstant1>>();
 	nodeFactories["Constant2"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeConstant2>>();
@@ -907,8 +935,8 @@ UMaterial* CreateUE4MaterialFromEffekseerMaterial(const std::shared_ptr<NativeEf
 	nodeFactories["ComponentMask"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeComponentMask>>();
 	nodeFactories["AppendVector"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeAppendVector>>();
 
-	nodeFactories["TextureCoordinate"] = std::make_shared< ConvertedNodeFactoryNormalNode<ConvertedNodeTextureCoordinate>>();
-	nodeFactories["Panner"] = std::make_shared< ConvertedNodeFactoryNormalNode<ConvertedNodePanner>>();
+	nodeFactories["TextureCoordinate"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeTextureCoordinate>>();
+	nodeFactories["Panner"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodePanner>>();
 
 	nodeFactories["TextureObject"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeTextureObject>>();
 	nodeFactories["TextureObjectParameter"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeTextureObjectParameter>>();
@@ -923,8 +951,8 @@ UMaterial* CreateUE4MaterialFromEffekseerMaterial(const std::shared_ptr<NativeEf
 	nodeFactories["VertexColor"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeVertexColor>>();
 	nodeFactories["ObjectScale"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeObjectScale>>();
 
-	nodeFactories["CustomData1"] = std::make_shared< ConvertedNodeFactoryNormalNode<ConvertedNodeCustomData1>>();
-	nodeFactories["CustomData2"] = std::make_shared< ConvertedNodeFactoryNormalNode<ConvertedNodeCustomData2>>();
+	nodeFactories["CustomData1"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeCustomData1>>();
+	nodeFactories["CustomData2"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeCustomData2>>();
 
 	nodeFactories["Output"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeOutput>>();
 
@@ -972,8 +1000,10 @@ UMaterial* CreateUE4MaterialFromEffekseerMaterial(const std::shared_ptr<NativeEf
 			UE_LOG(LogTemp, Warning, TEXT("Invalid link"));
 		}
 
-		if (convertedNodes.count(outputNode->GUID) == 0) continue;
-		if (convertedNodes.count(inputNode->GUID) == 0) continue;
+		if (convertedNodes.count(outputNode->GUID) == 0)
+			continue;
+		if (convertedNodes.count(inputNode->GUID) == 0)
+			continue;
 
 		convertedNodes[inputNode->GUID]->Connect(link->InputPin->PinIndex, convertedNodes[outputNode->GUID], link->OutputPin->PinIndex);
 	}
@@ -1046,14 +1076,12 @@ UMaterialInstance* CreateUE4MaterialInstanceFromUE4Material(UMaterial* parent, c
 	return material;
 }
 
-
 TArray<UObject*> AssignElementMaterials(UEffekseerMaterial* material, bool isInstance)
 {
 	TArray<UObject*> retAssets;
 
 	// generate instances for blends
 	TMap<FString, int> generated;
-
 
 	for (int32_t i = 0; i < material->MaterialElements.Num(); i++)
 	{

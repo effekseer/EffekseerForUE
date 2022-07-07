@@ -15,7 +15,6 @@ class UEffekseerCurveFactory : public UFactory, public FReimportHandler
 {
 	GENERATED_UCLASS_BODY()
 
-
 	virtual bool DoesSupportClass(UClass* Class) override;
 	virtual UClass* ResolveSupportedClass() override;
 
@@ -33,5 +32,4 @@ class UEffekseerCurveFactory : public UFactory, public FReimportHandler
 	virtual bool CanReimport(UObject* Obj, TArray<FString>& OutFilenames) override;
 	virtual void SetReimportPaths(UObject* Obj, const TArray<FString>& NewReimportPaths) override;
 	virtual EReimportResult::Type Reimport(UObject* Obj) override;
-
 };

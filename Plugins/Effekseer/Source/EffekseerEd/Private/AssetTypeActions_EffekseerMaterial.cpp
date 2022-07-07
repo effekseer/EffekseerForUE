@@ -1,4 +1,5 @@
 #include "AssetTypeActions_EffekseerMaterial.h"
+
 #include "EffekseerMaterial.h"
 #include "EffekseerMaterialFunctions.h"
 #define LOCTEXT_NAMESPACE "AssetTypeActions"
@@ -37,10 +38,7 @@ void FAssetTypeActions_EffekseerMaterial::GetActions(
 		FUIAction(
 			FExecuteAction::CreateSP(
 				this, &FAssetTypeActions_EffekseerMaterial::ExecuteGenerateMaterialElements, MyAssetImports),
-			FCanExecuteAction()
-		)
-	);
-
+			FCanExecuteAction()));
 }
 
 void FAssetTypeActions_EffekseerMaterial::ExecuteGenerateMaterialElements(TArray<TWeakObjectPtr<class UEffekseerMaterial>> Objects)

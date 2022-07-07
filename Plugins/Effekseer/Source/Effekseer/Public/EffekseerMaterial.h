@@ -2,13 +2,14 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UObject/Object.h"
+#include "EditorFramework/AssetImportData.h"
+#include "EffekseerAlphaBlendType.h"
+#include "EffekseerColorSpaceType.h"
 #include "Materials/Material.h"
 #include "Materials/MaterialInstanceDynamic.h"
-#include "EffekseerAlphaBlendType.h"
-#include "EditorFramework/AssetImportData.h"
 #include "Runtime/Launch/Resources/Version.h"
-#include "EffekseerColorSpaceType.h"
+#include "UObject/Object.h"
+
 #include "EffekseerMaterial.generated.h"
 
 namespace Effekseer
@@ -62,7 +63,7 @@ public:
 };
 
 UCLASS()
-class EFFEKSEER_API UEffekseerMaterial 
+class EFFEKSEER_API UEffekseerMaterial
 	: public UObject
 {
 	GENERATED_BODY()
@@ -79,7 +80,6 @@ private:
 	UMaterial* materialPrevious_ = nullptr;
 
 public:
-
 	UPROPERTY(EditInstanceOnly)
 	UMaterial* Material = nullptr;
 
@@ -135,11 +135,12 @@ public:
 
 	bool GenerateColorSpaceMaterial(EEffekseerAlphaBlendType alphaBlend, EEffekseerColorSpaceType colorSpaceType);
 
-	Effekseer::MaterialFile* GetNativePtr() { return internal_; }
+	Effekseer::MaterialFile* GetNativePtr()
+	{
+		return internal_;
+	}
 
 	virtual void BeginDestroy() override;
 
 	virtual void Serialize(FArchive& Ar) override;
-
-
 };

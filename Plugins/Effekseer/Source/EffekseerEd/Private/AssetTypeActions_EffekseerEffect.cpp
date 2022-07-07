@@ -35,9 +35,7 @@ void FAssetTypeActions_EffekseerEffect::GetActions(
 		FUIAction(
 			FExecuteAction::CreateSP(
 				this, &FAssetTypeActions_EffekseerEffect::ExecuteAssignResources, MyAssetImports),
-			FCanExecuteAction()
-		)
-	);
+			FCanExecuteAction()));
 }
 void FAssetTypeActions_EffekseerEffect::ExecuteAssignResources(TArray<TWeakObjectPtr<class UEffekseerEffect>> Objects)
 {

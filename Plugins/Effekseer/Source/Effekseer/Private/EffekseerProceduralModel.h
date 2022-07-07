@@ -3,7 +3,6 @@
 
 #include "CoreMinimal.h"
 #include "UObject/Object.h"
-
 #include <Effekseer.h>
 
 #include "EffekseerProceduralModel.generated.h"
@@ -26,7 +25,7 @@ public:
 	UEFfekseerProceduralModel();
 
 	~UEFfekseerProceduralModel() override;
-	
+
 	void BeginDestroy() override;
 
 	void Init(Effekseer::ModelRef modelPtr);

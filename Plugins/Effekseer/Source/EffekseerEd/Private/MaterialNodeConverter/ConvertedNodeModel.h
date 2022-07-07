@@ -1,15 +1,14 @@
 
 #pragma once
 
+#include "../NativeEffekseerMaterialContext.h"
 #include "ConvertedNode.h"
 #include "EffekseerEffect.h"
 #include "Materials/MaterialExpressionPanner.h"
-#include "Materials/MaterialExpressionVertexNormalWS.h"
 #include "Materials/MaterialExpressionPixelNormalWS.h"
 #include "Materials/MaterialExpressionVertexColor.h"
+#include "Materials/MaterialExpressionVertexNormalWS.h"
 #include "Materials/MaterialExpressionWorldPosition.h"
-
-#include "../NativeEffekseerMaterialContext.h"
 
 class ConvertedNodeWorldPosition : public ConvertedNode
 {
@@ -25,7 +24,10 @@ public:
 		material->Expressions.Add(expression_);
 	}
 
-	UMaterialExpression* GetExpression() const override { return expression_; }
+	UMaterialExpression* GetExpression() const override
+	{
+		return expression_;
+	}
 };
 
 class ConvertedNodeTextureCoordinate : public ConvertedNode
@@ -57,7 +59,10 @@ public:
 		}
 	}
 
-	UMaterialExpression* GetExpression() const override { return expression_; }
+	UMaterialExpression* GetExpression() const override
+	{
+		return expression_;
+	}
 };
 
 class ConvertedNodePanner : public ConvertedNode
@@ -80,7 +85,10 @@ public:
 		expression_->ConstCoordinate = index;
 	}
 
-	UMaterialExpression* GetExpression() const override { return expression_; }
+	UMaterialExpression* GetExpression() const override
+	{
+		return expression_;
+	}
 
 	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) override
 	{
@@ -120,14 +128,22 @@ public:
 		function_->SetMaterialFunction(func);
 	}
 
-	UMaterialExpression* GetExpression() const override { return function_; }
+	UMaterialExpression* GetExpression() const override
+	{
+		return function_;
+	}
 
-	UMaterialExpression* GetExpressions(int32_t ind) const override {
-		if (ind == 0) return function_;
+	UMaterialExpression* GetExpressions(int32_t ind) const override
+	{
+		if (ind == 0)
+			return function_;
 		return nullptr;
 	}
 
-	int32_t GetExpressionCount() const { return 1; }
+	int32_t GetExpressionCount() const
+	{
+		return 1;
+	}
 
 	ConvertedNodeOutputConnector GetNodeOutputConnector(int32_t index) const override
 	{
@@ -153,5 +169,8 @@ public:
 		expression_->SetMaterialFunction(func);
 	}
 
-	UMaterialExpression* GetExpression() const override { return expression_; }
+	UMaterialExpression* GetExpression() const override
+	{
+		return expression_;
+	}
 };

@@ -1,16 +1,14 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "Components/PrimitiveComponent.h"
+#include "CoreMinimal.h"
+#include "EffekseerColorSpaceType.h"
+#include "EffekseerEffect.h"
+#include "EffekseerHandle.h"
 #include "Materials/MaterialInstanceConstant.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Runtime/Launch/Resources/Version.h"
-#include "EffekseerColorSpaceType.h"
-
-#include "EffekseerEffect.h"
-#include "EffekseerHandle.h"
-
 #include <map>
 
 #include "EffekseerSystemComponent.generated.h"
@@ -32,35 +30,35 @@ enum class EffekseerUpdateData_CommandType
 	StopNetwork,
 };
 
-
 class EffekseerUpdateData_Command
 {
 public:
 	//! ID or port
-	int32_t	ID = -1;
-	void*	Effect = nullptr;
-	FVector	Position;
-	FQuat	Rotation;
-	FVector	Scale;
-	FColor	AllColor;
+	int32_t ID = -1;
+	void* Effect = nullptr;
+	FVector Position;
+	FQuat Rotation;
+	FVector Scale;
+	FColor AllColor;
 
 	union
 	{
 		float Speed;
 
-		struct {
+		struct
+		{
 			float Value;
 			int Index;
 		} DynamicInput;
 	};
 
-	EffekseerUpdateData_CommandType	Type;
+	EffekseerUpdateData_CommandType Type;
 };
 
 class EffekseerUpdateData
 {
 public:
-	TArray<EffekseerUpdateData_Command>	Commands;
+	TArray<EffekseerUpdateData_Command> Commands;
 	TMap<UEffekseerEffectMaterialParameterHolder*, UMaterialInstanceDynamic*> Materials;
 	std::map<EffekseerEffectMaterialKey, UMaterialInstanceDynamic*> NMaterials;
 
@@ -71,7 +69,7 @@ public:
 	TMap<UTexture2D*, UMaterialInstanceDynamic*> ModulateDynamicMaterials;
 	TMap<UTexture2D*, UMaterialInstanceDynamic*> LightingDynamicMaterials;
 
-	float	DeltaTime = 0;
+	float DeltaTime = 0;
 
 	EffekseerUpdateData();
 	virtual ~EffekseerUpdateData();
@@ -83,10 +81,10 @@ class EFFEKSEER_API UEffekseerSystemComponent : public UPrimitiveComponent
 	GENERATED_BODY()
 
 private:
-	FPrimitiveSceneProxy*	sceneProxy = nullptr;
-	EffekseerUpdateData*	currentUpdateData = nullptr;
-	int32_t					nextInternalHandle = 0;
-	TMap<int32_t, int32_t>	internalHandle2EfkHandle;
+	FPrimitiveSceneProxy* sceneProxy = nullptr;
+	EffekseerUpdateData* currentUpdateData = nullptr;
+	int32_t nextInternalHandle = 0;
+	TMap<int32_t, int32_t> internalHandle2EfkHandle;
 	bool isNetworkRunning_ = false;
 
 public:

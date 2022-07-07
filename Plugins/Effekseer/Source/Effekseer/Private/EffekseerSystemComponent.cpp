@@ -1,10 +1,8 @@
 #include "EffekseerSystemComponent.h"
 
 #include "DynamicMeshBuilder.h"
-
-#include <Effekseer.h>
 #include "EffekseerRendererImplemented.h"
-
+#include <Effekseer.h>
 #include <mutex>
 
 EffekseerUpdateData::EffekseerUpdateData()
@@ -15,7 +13,8 @@ EffekseerUpdateData::~EffekseerUpdateData()
 {
 	for (auto c : Commands)
 	{
-		if (c.Effect == nullptr) continue;
+		if (c.Effect == nullptr)
+			continue;
 		::Effekseer::RefPtr<::Effekseer::Effect>::Unpin(c.Effect);
 	}
 }
@@ -23,10 +22,10 @@ EffekseerUpdateData::~EffekseerUpdateData()
 class FEffekseerSystemSceneProxy : public FPrimitiveSceneProxy
 {
 private:
-	int32_t	maxSprite_ = 10000;
-	::Effekseer::ManagerRef	effekseerManager = nullptr;
-	::Effekseer::RefPtr<::EffekseerRendererUE::RendererImplemented>	effekseerRenderer = nullptr;
-	
+	int32_t maxSprite_ = 10000;
+	::Effekseer::ManagerRef effekseerManager = nullptr;
+	::Effekseer::RefPtr<::EffekseerRendererUE::RendererImplemented> effekseerRenderer = nullptr;
+
 #ifdef _WIN32
 	::Effekseer::ServerRef server_ = nullptr;
 	std::map<std::u16string, ::Effekseer::RefPtr<::Effekseer::Effect>> registeredEffects;
@@ -42,9 +41,9 @@ private:
 	TMap<UEffekseerEffectMaterialParameterHolder*, UMaterialInstanceDynamic*> Materials;
 	std::map<EffekseerEffectMaterialKey, UMaterialInstanceDynamic*> NMaterials;
 
-	float	Time = 0;
+	float Time = 0;
 
-	TMap<int, int>	internalHandle2EfkHandle;
+	TMap<int, int> internalHandle2EfkHandle;
 
 	// is it safe?
 	std::mutex criticalSection;
@@ -102,7 +101,6 @@ public:
 
 		effekseerManager.Reset();
 		effekseerRenderer.Reset();
-
 	}
 
 	virtual SIZE_T GetTypeHash() const
@@ -115,7 +113,8 @@ public:
 	{
 		for (int32 ViewIndex = 0; ViewIndex < Views.Num(); ViewIndex++)
 		{
-			if (!(VisibilityMap & (1 << ViewIndex))) continue;
+			if (!(VisibilityMap & (1 << ViewIndex)))
+				continue;
 
 			effekseerRenderer->SetLocalToWorld(GetLocalToWorld());
 			effekseerRenderer->SetMaterials(&OpaqueDynamicMaterials, 0);
@@ -176,8 +175,14 @@ public:
 
 		return Result;
 	}
-	virtual uint32 GetMemoryFootprint() const { return sizeof(*this) + GetAllocatedSize(); }
-	uint32 GetAllocatedSize() const { return FPrimitiveSceneProxy::GetAllocatedSize(); }
+	virtual uint32 GetMemoryFootprint() const
+	{
+		return sizeof(*this) + GetAllocatedSize();
+	}
+	uint32 GetAllocatedSize() const
+	{
+		return FPrimitiveSceneProxy::GetAllocatedSize();
+	}
 
 	void UpdateData_RenderThread(EffekseerUpdateData* updateData)
 	{
@@ -192,7 +197,7 @@ public:
 		NMaterials = updateData->NMaterials;
 
 		// TODO become fast
-		
+
 		// Execute commands.
 		for (auto i = 0; i < updateData->Commands.Num(); i++)
 		{
@@ -353,7 +358,7 @@ public:
 				effekseerManager->Update(frame);
 			}
 		}
-		
+
 		// Check existence.
 		{
 			criticalSection.lock();
@@ -383,11 +388,9 @@ public:
 	void UpdateData(EffekseerUpdateData* updateData)
 	{
 		ENQUEUE_RENDER_COMMAND(
-			EffekseerUpdateDataCommand)([this, updateData](FRHICommandListImmediate& RHICmdList)
-			{
-				this->UpdateData_RenderThread(updateData);
-			}
-		);
+			EffekseerUpdateDataCommand)
+		([this, updateData](FRHICommandListImmediate& RHICmdList)
+		 { this->UpdateData_RenderThread(updateData); });
 	}
 
 	TArray<int32_t> PopRemovedHandles()
@@ -402,7 +405,7 @@ public:
 
 UEffekseerSystemComponent::UEffekseerSystemComponent()
 {
-	//bWantsBeginPlay = true;
+	// bWantsBeginPlay = true;
 	bTickInEditor = true;
 	PrimaryComponentTick.bCanEverTick = true;
 	PrimaryComponentTick.TickGroup = ETickingGroup::TG_PostUpdateWork;
@@ -478,15 +481,23 @@ FPrimitiveSceneProxy* UEffekseerSystemComponent::CreateSceneProxy()
 
 UMaterialInterface* UEffekseerSystemComponent::GetMaterial(int32 ElementIndex) const
 {
-	if (ElementIndex == 0) 	return OpaqueMaterial;
-	if (ElementIndex == 1) 	return TranslucentMaterial;
-	if (ElementIndex == 2) 	return AdditiveMaterial;
-	if (ElementIndex == 3) 	return SubtractiveMaterial;
-	if (ElementIndex == 4) 	return ModulateMaterial;
-	if (ElementIndex == 5) 	return LightingMaterial;
+	if (ElementIndex == 0)
+		return OpaqueMaterial;
+	if (ElementIndex == 1)
+		return TranslucentMaterial;
+	if (ElementIndex == 2)
+		return AdditiveMaterial;
+	if (ElementIndex == 3)
+		return SubtractiveMaterial;
+	if (ElementIndex == 4)
+		return ModulateMaterial;
+	if (ElementIndex == 5)
+		return LightingMaterial;
 
-	if (ElementIndex == 6) 	return DistortionTranslucentMaterial;
-	if (ElementIndex == 7) 	return DistortionAdditiveMaterial;
+	if (ElementIndex == 6)
+		return DistortionTranslucentMaterial;
+	if (ElementIndex == 7)
+		return DistortionAdditiveMaterial;
 
 	int32_t offset = 8;
 
@@ -494,7 +505,8 @@ UMaterialInterface* UEffekseerSystemComponent::GetMaterial(int32 ElementIndex) c
 	{
 		for (auto& m : NMaterials)
 		{
-			if (ElementIndex == offset) return m.second;
+			if (ElementIndex == offset)
+				return m.second;
 			offset++;
 		}
 	}
@@ -508,14 +520,22 @@ UMaterialInterface* UEffekseerSystemComponent::GetMaterial(int32 ElementIndex) c
 
 void UEffekseerSystemComponent::GetUsedMaterials(TArray<UMaterialInterface*>& OutMaterials, bool bGetDebugMaterials) const
 {
-	if (OpaqueMaterial) OutMaterials.Add(OpaqueMaterial);
-	if (TranslucentMaterial) OutMaterials.Add(TranslucentMaterial);
-	if (AdditiveMaterial) OutMaterials.Add(AdditiveMaterial);
-	if (SubtractiveMaterial) OutMaterials.Add(SubtractiveMaterial);
-	if (ModulateMaterial) OutMaterials.Add(ModulateMaterial);
-	if (LightingMaterial) OutMaterials.Add(LightingMaterial);
-	if (DistortionTranslucentMaterial) OutMaterials.Add(DistortionTranslucentMaterial);
-	if (DistortionAdditiveMaterial) OutMaterials.Add(DistortionAdditiveMaterial);
+	if (OpaqueMaterial)
+		OutMaterials.Add(OpaqueMaterial);
+	if (TranslucentMaterial)
+		OutMaterials.Add(TranslucentMaterial);
+	if (AdditiveMaterial)
+		OutMaterials.Add(AdditiveMaterial);
+	if (SubtractiveMaterial)
+		OutMaterials.Add(SubtractiveMaterial);
+	if (ModulateMaterial)
+		OutMaterials.Add(ModulateMaterial);
+	if (LightingMaterial)
+		OutMaterials.Add(LightingMaterial);
+	if (DistortionTranslucentMaterial)
+		OutMaterials.Add(DistortionTranslucentMaterial);
+	if (DistortionAdditiveMaterial)
+		OutMaterials.Add(DistortionAdditiveMaterial);
 
 	for (auto& m : NMaterials)
 	{
@@ -523,22 +543,29 @@ void UEffekseerSystemComponent::GetUsedMaterials(TArray<UMaterialInterface*>& Ou
 	}
 }
 
-int32 UEffekseerSystemComponent::GetNumMaterials()const
+int32 UEffekseerSystemComponent::GetNumMaterials() const
 {
 	auto ret = 0;
-	if (OpaqueMaterial) ret++;
-	if (TranslucentMaterial) ret++;
-	if (AdditiveMaterial) ret++;
-	if (SubtractiveMaterial) ret++;
-	if (ModulateMaterial) ret++;
-	if (LightingMaterial) ret++;
-	if (DistortionTranslucentMaterial) ret++;
-	if (DistortionAdditiveMaterial) ret++;
+	if (OpaqueMaterial)
+		ret++;
+	if (TranslucentMaterial)
+		ret++;
+	if (AdditiveMaterial)
+		ret++;
+	if (SubtractiveMaterial)
+		ret++;
+	if (ModulateMaterial)
+		ret++;
+	if (LightingMaterial)
+		ret++;
+	if (DistortionTranslucentMaterial)
+		ret++;
+	if (DistortionAdditiveMaterial)
+		ret++;
 
 	ret += NMaterials.size();
 	return ret;
 }
-
 
 FBoxSphereBounds UEffekseerSystemComponent::CalcBounds(const FTransform& LocalToWorld) const
 {
@@ -550,8 +577,10 @@ FBoxSphereBounds UEffekseerSystemComponent::CalcBounds(const FTransform& LocalTo
 
 FEffekseerHandle UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVector position)
 {
-	if (effect == nullptr) return FEffekseerHandle();
-	if (effect->GetNativePtr() == nullptr) return FEffekseerHandle();
+	if (effect == nullptr)
+		return FEffekseerHandle();
+	if (effect->GetNativePtr() == nullptr)
+		return FEffekseerHandle();
 
 	if (isNetworkRunning_)
 	{
@@ -592,7 +621,7 @@ FEffekseerHandle UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVect
 	_matss[6] = &DistortionTranslucentDynamicMaterials;
 	_matss[7] = &DistortionAdditiveDynamicMaterials;
 
-	for(int i = 0; i < 8; i++)
+	for (int i = 0; i < 8; i++)
 	{
 		auto& mat = _mats[i];
 		auto& mats = *_matss[i];
@@ -622,7 +651,8 @@ FEffekseerHandle UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVect
 
 	for (auto m : effect->EffekseerMaterials)
 	{
-		if (Materials.Contains(m)) continue;
+		if (Materials.Contains(m))
+			continue;
 
 		if (m->Material != nullptr)
 		{
@@ -631,11 +661,15 @@ FEffekseerHandle UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVect
 		else
 		{
 			auto blendInd = (int32_t)m->AlphaBlend;
-			if (m->IsLighting) blendInd = 5;
-			if (blendInd == 1 && m->IsDistorted) blendInd = 6;
-			if (blendInd == 2 && m->IsDistorted) blendInd = 7;
+			if (m->IsLighting)
+				blendInd = 5;
+			if (blendInd == 1 && m->IsDistorted)
+				blendInd = 6;
+			if (blendInd == 2 && m->IsDistorted)
+				blendInd = 7;
 
-			if (m->IsDepthTestDisabled) blendInd += 8;
+			if (m->IsDepthTestDisabled)
+				blendInd += 8;
 			auto mat = _mats[blendInd];
 
 			if (mat != nullptr)
@@ -652,7 +686,7 @@ FEffekseerHandle UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVect
 				{
 					auto dynamicMaterial = UMaterialInstanceDynamic::Create(mat, this);
 					dynamicMaterial->SetTextureParameterValue(TEXT("ColorTexture"), m->Texture);
-					
+
 					dynamicMaterial->SetTextureParameterValue(TEXT("AlphaTexture"), m->AlphaTexture);
 					dynamicMaterial->SetTextureParameterValue(TEXT("UVDistortionTexture"), m->UVDistortionTexture);
 					dynamicMaterial->SetTextureParameterValue(TEXT("BlendTexture"), m->BlendTexture);
@@ -715,9 +749,9 @@ FEffekseerHandle UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVect
 
 	auto efk = ::Effekseer::RefPtr<::Effekseer::Effect>::FromPinned(effect->GetNativePtr());
 	auto p = efk.Pin();
-	
+
 	auto handle = nextInternalHandle;
-	
+
 	internalHandle2EfkHandle.Add(handle, -1);
 
 	EffekseerUpdateData_Command cmd;
@@ -725,7 +759,7 @@ FEffekseerHandle UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVect
 	cmd.Effect = p;
 	cmd.ID = handle;
 	cmd.Position = position;
-	
+
 	currentUpdateData->Commands.Add(cmd);
 
 	nextInternalHandle++;
@@ -740,7 +774,8 @@ FEffekseerHandle UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVect
 
 void UEffekseerSystemComponent::SetEffectPosition(FEffekseerHandle handle, FVector position)
 {
-	if (handle.Effect == nullptr) return;
+	if (handle.Effect == nullptr)
+		return;
 
 	EffekseerUpdateData_Command cmd;
 	cmd.Type = EffekseerUpdateData_CommandType::SetP;
@@ -752,7 +787,8 @@ void UEffekseerSystemComponent::SetEffectPosition(FEffekseerHandle handle, FVect
 
 void UEffekseerSystemComponent::SetEffectRotation(FEffekseerHandle handle, FQuat rotation)
 {
-	if (handle.Effect == nullptr) return;
+	if (handle.Effect == nullptr)
+		return;
 
 	EffekseerUpdateData_Command cmd;
 	cmd.Type = EffekseerUpdateData_CommandType::SetR;
@@ -764,7 +800,8 @@ void UEffekseerSystemComponent::SetEffectRotation(FEffekseerHandle handle, FQuat
 
 void UEffekseerSystemComponent::SetEffectScaling(FEffekseerHandle handle, FVector scaling)
 {
-	if (handle.Effect == nullptr) return;
+	if (handle.Effect == nullptr)
+		return;
 
 	EffekseerUpdateData_Command cmd;
 	cmd.Type = EffekseerUpdateData_CommandType::SetS;
@@ -776,13 +813,15 @@ void UEffekseerSystemComponent::SetEffectScaling(FEffekseerHandle handle, FVecto
 
 bool UEffekseerSystemComponent::Exists(FEffekseerHandle handle) const
 {
-	if (handle.Effect == nullptr) return false;
+	if (handle.Effect == nullptr)
+		return false;
 	return internalHandle2EfkHandle.Contains(handle.ID);
 }
 
 void UEffekseerSystemComponent::Stop(FEffekseerHandle handle)
 {
-	if (handle.Effect == nullptr) return;
+	if (handle.Effect == nullptr)
+		return;
 
 	EffekseerUpdateData_Command cmd;
 	cmd.Type = EffekseerUpdateData_CommandType::Stop;
@@ -792,7 +831,8 @@ void UEffekseerSystemComponent::Stop(FEffekseerHandle handle)
 
 void UEffekseerSystemComponent::StopRoot(FEffekseerHandle handle)
 {
-	if (handle.Effect == nullptr) return;
+	if (handle.Effect == nullptr)
+		return;
 
 	EffekseerUpdateData_Command cmd;
 	cmd.Type = EffekseerUpdateData_CommandType::StopRoot;
@@ -802,7 +842,8 @@ void UEffekseerSystemComponent::StopRoot(FEffekseerHandle handle)
 
 void UEffekseerSystemComponent::SetEffectSpeed(FEffekseerHandle handle, float speed)
 {
-	if (handle.Effect == nullptr) return;
+	if (handle.Effect == nullptr)
+		return;
 
 	EffekseerUpdateData_Command cmd;
 	cmd.Type = EffekseerUpdateData_CommandType::SetSpeed;
@@ -813,7 +854,8 @@ void UEffekseerSystemComponent::SetEffectSpeed(FEffekseerHandle handle, float sp
 
 void UEffekseerSystemComponent::SetEffectAllColor(FEffekseerHandle handle, FColor color)
 {
-	if (handle.Effect == nullptr) return;
+	if (handle.Effect == nullptr)
+		return;
 
 	EffekseerUpdateData_Command cmd;
 	cmd.Type = EffekseerUpdateData_CommandType::SetAllColor;
@@ -824,7 +866,8 @@ void UEffekseerSystemComponent::SetEffectAllColor(FEffekseerHandle handle, FColo
 
 void UEffekseerSystemComponent::SetEffectDynamicInput(FEffekseerHandle handle, int index, float value)
 {
-	if (handle.Effect == nullptr) return;
+	if (handle.Effect == nullptr)
+		return;
 
 	EffekseerUpdateData_Command cmd;
 	cmd.Type = EffekseerUpdateData_CommandType::SetDynamicInput;

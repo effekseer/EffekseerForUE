@@ -1,6 +1,6 @@
 #include "EffekseerEmitterComponent.h"
-#include "EffekseerSystemComponent.h"
 
+#include "EffekseerSystemComponent.h"
 
 void UEffekseerEmitterComponent::ApplyParameters(bool forced)
 {
@@ -58,7 +58,6 @@ UEffekseerEmitterComponent::UEffekseerEmitterComponent(const FObjectInitializer&
 
 UEffekseerEmitterComponent::~UEffekseerEmitterComponent()
 {
-
 }
 
 #if WITH_EDITOR
@@ -74,7 +73,6 @@ void UEffekseerEmitterComponent::PostEditChangeProperty(struct FPropertyChangedE
 	}
 }
 #endif
-
 
 void UEffekseerEmitterComponent::BeginPlay()
 {
@@ -260,12 +258,13 @@ FEffekseerHandle UEffekseerEmitterComponent::Play()
 	}
 LoopExit:;
 
-	if (system_ == nullptr) return FEffekseerHandle();
+	if (system_ == nullptr)
+		return FEffekseerHandle();
 
 	auto transform = GetComponentToWorld();
-	
-	auto loc = transform .GetTranslation();
-	
+
+	auto loc = transform.GetTranslation();
+
 	return system_->Play(Effect, loc);
 }
 

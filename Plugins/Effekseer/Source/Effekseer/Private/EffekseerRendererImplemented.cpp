@@ -1,24 +1,23 @@
 #include "EffekseerRendererImplemented.h"
-#include "EffekseerRendererRenderState.h"
-#include "EffekseerRendererVertexBuffer.h"
-#include "EffekseerRendererIndexBuffer.h"
-#include "EffekseerRendererShader.h"
 
-#include "Runtime/Launch/Resources/Version.h"
 #include "DynamicMeshBuilder.h"
 #include "EffekseerInternalModel.h"
-#include "Runtime/Engine/Public/StaticMeshResources.h"
-#include "Math/Color.h"
-#include "MaterialShared.h"
-#include "Materials/MaterialInstanceDynamic.h"
-#include <EffekseerRenderer.TrackRendererBase.h>
-#include <EffekseerRenderer.SpriteRendererBase.h>
-#include <EffekseerRenderer.RibbonRendererBase.h>
-#include <EffekseerRenderer.RingRendererBase.h>
 #include "EffekseerInternalTexture.h"
 #include "EffekseerProceduralModel.h"
-
+#include "EffekseerRendererIndexBuffer.h"
+#include "EffekseerRendererRenderState.h"
+#include "EffekseerRendererShader.h"
+#include "EffekseerRendererVertexBuffer.h"
 #include "EffekseerUECompatibility.h"
+#include "MaterialShared.h"
+#include "Materials/MaterialInstanceDynamic.h"
+#include "Math/Color.h"
+#include "Runtime/Engine/Public/StaticMeshResources.h"
+#include "Runtime/Launch/Resources/Version.h"
+#include <EffekseerRenderer.RibbonRendererBase.h>
+#include <EffekseerRenderer.RingRendererBase.h>
+#include <EffekseerRenderer.SpriteRendererBase.h>
+#include <EffekseerRenderer.TrackRendererBase.h>
 
 using namespace EffekseerUE;
 
@@ -26,414 +25,177 @@ using namespace EffekseerUE;
 
 namespace EffekseerRendererUE
 {
-	using MaterialParameterInfo = FHashedMaterialParameterInfo;
+using MaterialParameterInfo = FHashedMaterialParameterInfo;
 
-	class FCompatibleMaterialRenderProxy : public FMaterialRenderProxy
-	{
-	public:
-		const FMaterialRenderProxy* Parent = nullptr;
+class FCompatibleMaterialRenderProxy : public FMaterialRenderProxy
+{
+public:
+	const FMaterialRenderProxy* Parent = nullptr;
 
-		FCompatibleMaterialRenderProxy(const FString& inMaterialName, const FMaterialRenderProxy* parent)
+	FCompatibleMaterialRenderProxy(const FString& inMaterialName, const FMaterialRenderProxy* parent)
 #if ENGINE_MAJOR_VERSION == 4
-			: Parent(parent)
+		: Parent(parent)
 #elif ENGINE_MAJOR_VERSION == 5
-			: FMaterialRenderProxy(inMaterialName)
-			, Parent(parent)
+		: FMaterialRenderProxy(inMaterialName)
+		, Parent(parent)
 #endif
-		{
-		}
+	{
+	}
 
-		virtual ~FCompatibleMaterialRenderProxy() = default;
+	virtual ~FCompatibleMaterialRenderProxy() = default;
 
-		virtual bool GetParentVectorValue(const MaterialParameterInfo& ParameterInfo, FLinearColor* OutValue, const FMaterialRenderContext& Context) const { return false; }
-		virtual bool GetParentScalarValue(const MaterialParameterInfo& ParameterInfo, float* OutValue, const FMaterialRenderContext& Context) const { return false; }
-		virtual bool GetParentTextureValue(const MaterialParameterInfo& ParameterInfo, const UTexture** OutValue, const FMaterialRenderContext& Context) const { return false; }
+	virtual bool GetParentVectorValue(const MaterialParameterInfo& ParameterInfo, FLinearColor* OutValue, const FMaterialRenderContext& Context) const
+	{
+		return false;
+	}
+	virtual bool GetParentScalarValue(const MaterialParameterInfo& ParameterInfo, float* OutValue, const FMaterialRenderContext& Context) const
+	{
+		return false;
+	}
+	virtual bool GetParentTextureValue(const MaterialParameterInfo& ParameterInfo, const UTexture** OutValue, const FMaterialRenderContext& Context) const
+	{
+		return false;
+	}
 
-		bool GetVectorValue(const MaterialParameterInfo& ParameterInfo, FLinearColor* OutValue, const FMaterialRenderContext& Context) const
-		{
-			return  GetParentVectorValue(ParameterInfo, OutValue, Context);
-		}
+	bool GetVectorValue(const MaterialParameterInfo& ParameterInfo, FLinearColor* OutValue, const FMaterialRenderContext& Context) const
+	{
+		return GetParentVectorValue(ParameterInfo, OutValue, Context);
+	}
 
-		bool GetScalarValue(const MaterialParameterInfo& ParameterInfo, float* OutValue, const FMaterialRenderContext& Context) const
-		{
-			return GetParentScalarValue(ParameterInfo, OutValue, Context);
-		}
+	bool GetScalarValue(const MaterialParameterInfo& ParameterInfo, float* OutValue, const FMaterialRenderContext& Context) const
+	{
+		return GetParentScalarValue(ParameterInfo, OutValue, Context);
+	}
 
-		bool GetTextureValue(const MaterialParameterInfo& ParameterInfo, const UTexture** OutValue, const FMaterialRenderContext& Context) const
-		{
-			return GetParentTextureValue(ParameterInfo, OutValue, Context);
-		}
+	bool GetTextureValue(const MaterialParameterInfo& ParameterInfo, const UTexture** OutValue, const FMaterialRenderContext& Context) const
+	{
+		return GetParentTextureValue(ParameterInfo, OutValue, Context);
+	}
 
 #if ENGINE_MAJOR_VERSION == 4
-		bool GetTextureValue(const FHashedMaterialParameterInfo& ParameterInfo, const URuntimeVirtualTexture** OutValue, const FMaterialRenderContext& Context) const override
-		{
-			return Parent->GetTextureValue(ParameterInfo, OutValue, Context);
-		}
+	bool GetTextureValue(const FHashedMaterialParameterInfo& ParameterInfo, const URuntimeVirtualTexture** OutValue, const FMaterialRenderContext& Context) const override
+	{
+		return Parent->GetTextureValue(ParameterInfo, OutValue, Context);
+	}
 #endif
 
 #if ENGINE_MAJOR_VERSION == 5
-		bool GetParameterValue(EMaterialParameterType Type, const FHashedMaterialParameterInfo& ParameterInfo, FMaterialParameterValue& OutValue, const FMaterialRenderContext& Context) const override
+	bool GetParameterValue(EMaterialParameterType Type, const FHashedMaterialParameterInfo& ParameterInfo, FMaterialParameterValue& OutValue, const FMaterialRenderContext& Context) const override
+	{
+		if (Type == EMaterialParameterType::Scalar)
 		{
-			if (Type == EMaterialParameterType::Scalar)
-			{
-				return GetScalarValue(ParameterInfo, &(OutValue.Float[0]), Context);
-			}
-			else if (Type == EMaterialParameterType::Vector)
-			{
-				FLinearColor color;
-				if (GetVectorValue(ParameterInfo, &color, Context))
-				{
-					OutValue.Float[0] = color.R;
-					OutValue.Float[1] = color.G;
-					OutValue.Float[2] = color.B;
-					OutValue.Float[3] = color.A;
-					return true;
-				}
-			}
-			else if (Type == EMaterialParameterType::Texture)
-			{
-				return GetParentTextureValue(ParameterInfo, const_cast<const UTexture**>(&(OutValue.Texture)), Context);
-			}
-
-			return false;
+			return GetScalarValue(ParameterInfo, &(OutValue.Float[0]), Context);
 		}
+		else if (Type == EMaterialParameterType::Vector)
+		{
+			FLinearColor color;
+			if (GetVectorValue(ParameterInfo, &color, Context))
+			{
+				OutValue.Float[0] = color.R;
+				OutValue.Float[1] = color.G;
+				OutValue.Float[2] = color.B;
+				OutValue.Float[3] = color.A;
+				return true;
+			}
+		}
+		else if (Type == EMaterialParameterType::Texture)
+		{
+			return GetParentTextureValue(ParameterInfo, const_cast<const UTexture**>(&(OutValue.Texture)), Context);
+		}
+
+		return false;
+	}
 #endif
 
-		virtual const FMaterial* GetParentMaterial(ERHIFeatureLevel::Type InFeatureLevel) const { return nullptr; }
-
-		const FMaterial* GetMaterialNoFallback(ERHIFeatureLevel::Type InFeatureLevel) const override
-		{
-			return Parent->GetMaterialNoFallback(InFeatureLevel);
-		}
-
-		const FMaterialRenderProxy* GetFallback(ERHIFeatureLevel::Type InFeatureLevel) const override
-		{
-			return this;
-		}
-	};
-
-	class FFileMaterialRenderProxy : public FCompatibleMaterialRenderProxy
+	virtual const FMaterial* GetParentMaterial(ERHIFeatureLevel::Type InFeatureLevel) const
 	{
-		TArray<float> uniformBuffer_;
-		const UEffekseerMaterial* const effekseerMaterial_;
-		bool isModel_ = false;
-		Effekseer::CullingType cullingType_;
-		float effectScale_ = 1.0f;
-	public:
+		return nullptr;
+	}
 
-		FLinearColor ModelUV;
-		FLinearColor ModelColor;
-		FLinearColor CustomData1;
-		FLinearColor CustomData2;
-		FLinearColor LightDirection;
-		FLinearColor LightColor;
-		FLinearColor LightAmbientColor;
-		float LocalTime;
-
-		std::array<void*, Effekseer::TextureSlotMax> Textures;
-
-		FFileMaterialRenderProxy(const FMaterialRenderProxy* InParent, const UEffekseerMaterial* effekseerMaterial, float* uniformBufferPtr, int32_t uniformCount, bool isModel, Effekseer::CullingType cullingType, float effectScale)
-			: FCompatibleMaterialRenderProxy(FString("FileMaterialRenderProxy"), InParent)
-			, effekseerMaterial_(effekseerMaterial)
-			, isModel_(isModel)
-			, cullingType_(cullingType)
-			, effectScale_(effectScale)
-		{
-			Textures.fill(nullptr);
-
-			uniformBuffer_.Reserve(uniformCount * 4);
-
-			for (int32_t i = 0; i < uniformCount * 4; i++)
-			{
-				uniformBuffer_.Add(uniformBufferPtr[i]);
-			}
-		}
-
-		const FMaterial* GetParentMaterial(ERHIFeatureLevel::Type InFeatureLevel) const override;
-		bool GetParentVectorValue(const MaterialParameterInfo& ParameterInfo, FLinearColor* OutValue, const FMaterialRenderContext& Context) const override;
-		bool GetParentScalarValue(const MaterialParameterInfo& ParameterInfo, float* OutValue, const FMaterialRenderContext& Context) const override;
-		bool GetParentTextureValue(const MaterialParameterInfo& ParameterInfo, const UTexture** OutValue, const FMaterialRenderContext& Context) const override;
-	};
-
-	const FMaterial* FFileMaterialRenderProxy::GetParentMaterial(ERHIFeatureLevel::Type InFeatureLevel) const
+	const FMaterial* GetMaterialNoFallback(ERHIFeatureLevel::Type InFeatureLevel) const override
 	{
 		return Parent->GetMaterialNoFallback(InFeatureLevel);
 	}
 
-	bool FFileMaterialRenderProxy::GetParentVectorValue(const MaterialParameterInfo& ParameterInfo, FLinearColor* OutValue, const FMaterialRenderContext& Context) const
+	const FMaterialRenderProxy* GetFallback(ERHIFeatureLevel::Type InFeatureLevel) const override
 	{
-		if (isModel_)
+		return this;
+	}
+};
+
+class FFileMaterialRenderProxy : public FCompatibleMaterialRenderProxy
+{
+	TArray<float> uniformBuffer_;
+	const UEffekseerMaterial* const effekseerMaterial_;
+	bool isModel_ = false;
+	Effekseer::CullingType cullingType_;
+	float effectScale_ = 1.0f;
+
+public:
+	FLinearColor ModelUV;
+	FLinearColor ModelColor;
+	FLinearColor CustomData1;
+	FLinearColor CustomData2;
+	FLinearColor LightDirection;
+	FLinearColor LightColor;
+	FLinearColor LightAmbientColor;
+	float LocalTime;
+
+	std::array<void*, Effekseer::TextureSlotMax> Textures;
+
+	FFileMaterialRenderProxy(const FMaterialRenderProxy* InParent, const UEffekseerMaterial* effekseerMaterial, float* uniformBufferPtr, int32_t uniformCount, bool isModel, Effekseer::CullingType cullingType, float effectScale)
+		: FCompatibleMaterialRenderProxy(FString("FileMaterialRenderProxy"), InParent)
+		, effekseerMaterial_(effekseerMaterial)
+		, isModel_(isModel)
+		, cullingType_(cullingType)
+		, effectScale_(effectScale)
+	{
+		Textures.fill(nullptr);
+
+		uniformBuffer_.Reserve(uniformCount * 4);
+
+		for (int32_t i = 0; i < uniformCount * 4; i++)
 		{
-			if (ParameterInfo.Name == FName(TEXT("UserUV")))
-			{
-				*OutValue = ModelUV;
-				return true;
-			}
-
-			if (ParameterInfo.Name == FName(TEXT("UserColor")))
-			{
-				*OutValue = ModelColor;
-				return true;
-			}
-
-			if (ParameterInfo.Name == FName(TEXT("CustomData1")))
-			{
-				*OutValue = CustomData1;
-				return true;
-			}
-
-			if (ParameterInfo.Name == FName(TEXT("CustomData2")))
-			{
-				*OutValue = CustomData2;
-				return true;
-			}
-
-			if (ParameterInfo.Name == FName(TEXT("Culling")))
-			{
-				if (cullingType_ == Effekseer::CullingType::Front)
-					*OutValue = FLinearColor(1, 0, 0, 0);
-
-				if (cullingType_ == Effekseer::CullingType::Back)
-					*OutValue = FLinearColor(0, 1, 0, 0);
-
-				if (cullingType_ == Effekseer::CullingType::Double)
-					*OutValue = FLinearColor(1, 1, 0, 0);
-
-				return true;
-			}
+			uniformBuffer_.Add(uniformBufferPtr[i]);
 		}
-
-		if (ParameterInfo.Name == FName(TEXT("LightDirection")))
-		{
-			*OutValue = LightDirection;
-			return true;
-		}
-
-		if (ParameterInfo.Name == FName(TEXT("LightColor")))
-		{
-			*OutValue = LightColor;
-			return true;
-		}
-
-		if (ParameterInfo.Name == FName(TEXT("LightAmbientColor")))
-		{
-			*OutValue = LightAmbientColor;
-			return true;
-		}
-
-		const auto found = effekseerMaterial_->UniformHashedNameToIndex.Find(ParameterInfo.Name.ToString());
-
-		if (found != nullptr)
-		{
-			OutValue->R = uniformBuffer_[(*found) * 4 + 0];
-			OutValue->G = uniformBuffer_[(*found) * 4 + 1];
-			OutValue->B = uniformBuffer_[(*found) * 4 + 2];
-			OutValue->A = uniformBuffer_[(*found) * 4 + 3];
-			return true;
-		}
-
-		return Parent->GetVectorValue(ParameterInfo GET_MAT_PARAM_NAME, OutValue, Context);
 	}
 
-	bool FFileMaterialRenderProxy::GetParentScalarValue(const MaterialParameterInfo& ParameterInfo, float* OutValue, const FMaterialRenderContext& Context) const
-	{
-		if (ParameterInfo.Name == FName(TEXT("Model")))
-		{
-			*OutValue = isModel_ ? 1.0f : 0.0f;
-			return true;
-		}
+	const FMaterial* GetParentMaterial(ERHIFeatureLevel::Type InFeatureLevel) const override;
+	bool GetParentVectorValue(const MaterialParameterInfo& ParameterInfo, FLinearColor* OutValue, const FMaterialRenderContext& Context) const override;
+	bool GetParentScalarValue(const MaterialParameterInfo& ParameterInfo, float* OutValue, const FMaterialRenderContext& Context) const override;
+	bool GetParentTextureValue(const MaterialParameterInfo& ParameterInfo, const UTexture** OutValue, const FMaterialRenderContext& Context) const override;
+};
 
-		if (ParameterInfo.Name == FName(TEXT("EffectScale")))
-		{
-			*OutValue = effectScale_;
-			return true;
-		}
+const FMaterial* FFileMaterialRenderProxy::GetParentMaterial(ERHIFeatureLevel::Type InFeatureLevel) const
+{
+	return Parent->GetMaterialNoFallback(InFeatureLevel);
+}
 
-		if (ParameterInfo.Name == FName(TEXT("LocalTime")))
-		{
-			*OutValue = LocalTime;
-			return true;
-		}
-
-		const auto found = effekseerMaterial_->UniformHashedNameToIndex.Find(ParameterInfo.Name.ToString());
-
-		if (found != nullptr)
-		{
-			*OutValue = uniformBuffer_[(*found) * 4 + 0];
-			return true;
-		}
-
-		return Parent->GetScalarValue(ParameterInfo GET_MAT_PARAM_NAME, OutValue, Context);
-	}
-
-	bool FFileMaterialRenderProxy::GetParentTextureValue(const MaterialParameterInfo& ParameterInfo, const UTexture** OutValue, const FMaterialRenderContext& Context) const
-	{
-		const auto found = effekseerMaterial_->TextureHashedNameToIndex.Find(ParameterInfo.Name.ToString());
-
-		if (found != nullptr)
-		{
-			*OutValue = (UTexture*)Textures[*found];
-			return true;
-		}
-
-		return Parent->GetTextureValue(ParameterInfo GET_MAT_PARAM_NAME, OutValue, Context);
-	}
-
-	class FDistortionMaterialRenderProxy : public FCompatibleMaterialRenderProxy
-	{
-	public:
-		float distortionIntensity;
-
-		/** Initialization constructor. */
-		FDistortionMaterialRenderProxy(const FMaterialRenderProxy* InParent, float distortionIntensity) :
-			FCompatibleMaterialRenderProxy(FString("FDistortionMaterialRenderProxy"), InParent),
-			distortionIntensity(distortionIntensity)
-		{}
-
-		const FMaterial* GetParentMaterial(ERHIFeatureLevel::Type InFeatureLevel) const override;
-		bool GetParentVectorValue(const MaterialParameterInfo& ParameterInfo, FLinearColor* OutValue, const FMaterialRenderContext& Context) const override;
-		bool GetParentScalarValue(const MaterialParameterInfo& ParameterInfo, float* OutValue, const FMaterialRenderContext& Context) const override;
-		bool GetParentTextureValue(const MaterialParameterInfo& ParameterInfo, const UTexture** OutValue, const FMaterialRenderContext& Context) const override;
-	};
-
-	const FMaterial* FDistortionMaterialRenderProxy::GetParentMaterial(ERHIFeatureLevel::Type InFeatureLevel) const
-	{
-		return Parent->GetMaterialNoFallback(InFeatureLevel);
-	}
-
-	bool FDistortionMaterialRenderProxy::GetParentVectorValue(const MaterialParameterInfo& ParameterInfo, FLinearColor* OutValue, const FMaterialRenderContext& Context) const
-	{
-		return Parent->GetVectorValue(ParameterInfo GET_MAT_PARAM_NAME, OutValue, Context);
-	}
-
-	bool FDistortionMaterialRenderProxy::GetParentScalarValue(const MaterialParameterInfo& ParameterInfo, float* OutValue, const FMaterialRenderContext& Context) const
-	{
-		if (ParameterInfo.Name == FName(TEXT("DistortionIntensity")))
-		{
-			*OutValue = distortionIntensity;
-			return true;
-		}
-
-		return Parent->GetScalarValue(ParameterInfo GET_MAT_PARAM_NAME, OutValue, Context);
-	}
-
-	bool FDistortionMaterialRenderProxy::GetParentTextureValue(const MaterialParameterInfo& ParameterInfo, const UTexture** OutValue, const FMaterialRenderContext& Context) const
-	{
-		return Parent->GetTextureValue(ParameterInfo GET_MAT_PARAM_NAME, OutValue, Context);
-	}
-
-
-	class FModelMaterialRenderProxy : public FCompatibleMaterialRenderProxy
-	{
-	public:
-		FLinearColor	uv;
-
-		FLinearColor	alphaUV;
-		FLinearColor	uvDistortionUV;
-		FLinearColor	blendUV;
-		FLinearColor	blendAlphaUV;
-		FLinearColor	blendUVDistortionUV;
-		FLinearColor	flipbookIndexAndNextRate;
-		FLinearColor	alphaThreshold;
-
-		FLinearColor	color;
-		float			distortionIntensity;
-		Effekseer::CullingType cullingType_;
-
-		/** Initialization constructor. */
-
-		FModelMaterialRenderProxy(
-			const FMaterialRenderProxy* InParent,
-			FLinearColor uv,
-			FLinearColor alphaUV,
-			FLinearColor uvDistortionUV,
-			FLinearColor blendUV,
-			FLinearColor blendAlphaUV,
-			FLinearColor blendUVDistortionUV,
-			float flipbookIndexAndNextRate,
-			float alphaThreshold,
-			FLinearColor color, 
-			float distortionIntensity, 
-			Effekseer::CullingType cullingType) : FCompatibleMaterialRenderProxy(FString("FModelMaterialRenderProxy"), InParent)
-			,
-			uv(uv),
-			alphaUV(alphaUV),
-			uvDistortionUV(uvDistortionUV),
-			blendUV(blendUV),
-			blendAlphaUV(blendAlphaUV),
-			blendUVDistortionUV(blendUVDistortionUV),
-			flipbookIndexAndNextRate(FLinearColor(flipbookIndexAndNextRate, 0.0f, 0.0f, 0.0f)),
-			alphaThreshold(FLinearColor(0.0f, alphaThreshold, 0.0f, 0.0f)),
-			color(color),
-			distortionIntensity(distortionIntensity),
-			cullingType_(cullingType)
-		{}
-
-		const FMaterial* GetParentMaterial(ERHIFeatureLevel::Type InFeatureLevel) const override;
-		bool GetParentVectorValue(const MaterialParameterInfo& ParameterInfo, FLinearColor* OutValue, const FMaterialRenderContext& Context) const override;
-		bool GetParentScalarValue(const MaterialParameterInfo& ParameterInfo, float* OutValue, const FMaterialRenderContext& Context) const override;
-		bool GetParentTextureValue(const MaterialParameterInfo& ParameterInfo, const UTexture** OutValue, const FMaterialRenderContext& Context) const override;
-	};
-
-
-	const FMaterial* FModelMaterialRenderProxy::GetParentMaterial(ERHIFeatureLevel::Type InFeatureLevel) const
-	{
-		return Parent->GetMaterialNoFallback(InFeatureLevel);
-	}
-
-	bool FModelMaterialRenderProxy::GetParentVectorValue(const MaterialParameterInfo& ParameterInfo, FLinearColor* OutValue, const FMaterialRenderContext& Context) const
+bool FFileMaterialRenderProxy::GetParentVectorValue(const MaterialParameterInfo& ParameterInfo, FLinearColor* OutValue, const FMaterialRenderContext& Context) const
+{
+	if (isModel_)
 	{
 		if (ParameterInfo.Name == FName(TEXT("UserUV")))
 		{
-			*OutValue = uv;
-			return true;
-		}
-
-		if (ParameterInfo.Name == FName(TEXT("AlphaUV")))
-		{
-			*OutValue = alphaUV;
-			return true;
-		}
-
-		if (ParameterInfo.Name == FName(TEXT("UVDistortionUV")))
-		{
-			*OutValue = uvDistortionUV;
-			return true;
-		}
-
-		if (ParameterInfo.Name == FName(TEXT("BlendUV")))
-		{
-			*OutValue = blendUV;
-			return true;
-		}
-
-		if (ParameterInfo.Name == FName(TEXT("BlendAlphaUV")))
-		{
-			*OutValue = blendAlphaUV;
-			return true;
-		}
-
-		if (ParameterInfo.Name == FName(TEXT("BlendUVDistortionUV")))
-		{
-			*OutValue = blendUVDistortionUV;
-			return true;
-		}
-
-		if (ParameterInfo.Name == FName(TEXT("ModelFlipbookIndexAndNextRate")))
-		{
-			*OutValue = flipbookIndexAndNextRate;
-			return true;
-		}
-
-		if (ParameterInfo.Name == FName(TEXT("ModelAlphaThreshold")))
-		{
-			*OutValue = alphaThreshold;
+			*OutValue = ModelUV;
 			return true;
 		}
 
 		if (ParameterInfo.Name == FName(TEXT("UserColor")))
 		{
-			*OutValue = color;
+			*OutValue = ModelColor;
+			return true;
+		}
+
+		if (ParameterInfo.Name == FName(TEXT("CustomData1")))
+		{
+			*OutValue = CustomData1;
+			return true;
+		}
+
+		if (ParameterInfo.Name == FName(TEXT("CustomData2")))
+		{
+			*OutValue = CustomData2;
 			return true;
 		}
 
@@ -450,562 +212,717 @@ namespace EffekseerRendererUE
 
 			return true;
 		}
-
-		return Parent->GetVectorValue(ParameterInfo GET_MAT_PARAM_NAME, OutValue, Context);
 	}
 
-	bool FModelMaterialRenderProxy::GetParentScalarValue(const MaterialParameterInfo& ParameterInfo, float* OutValue, const FMaterialRenderContext& Context) const
+	if (ParameterInfo.Name == FName(TEXT("LightDirection")))
 	{
-		if (ParameterInfo.Name == FName(TEXT("DistortionIntensity")))
+		*OutValue = LightDirection;
+		return true;
+	}
+
+	if (ParameterInfo.Name == FName(TEXT("LightColor")))
+	{
+		*OutValue = LightColor;
+		return true;
+	}
+
+	if (ParameterInfo.Name == FName(TEXT("LightAmbientColor")))
+	{
+		*OutValue = LightAmbientColor;
+		return true;
+	}
+
+	const auto found = effekseerMaterial_->UniformHashedNameToIndex.Find(ParameterInfo.Name.ToString());
+
+	if (found != nullptr)
+	{
+		OutValue->R = uniformBuffer_[(*found) * 4 + 0];
+		OutValue->G = uniformBuffer_[(*found) * 4 + 1];
+		OutValue->B = uniformBuffer_[(*found) * 4 + 2];
+		OutValue->A = uniformBuffer_[(*found) * 4 + 3];
+		return true;
+	}
+
+	return Parent->GetVectorValue(ParameterInfo GET_MAT_PARAM_NAME, OutValue, Context);
+}
+
+bool FFileMaterialRenderProxy::GetParentScalarValue(const MaterialParameterInfo& ParameterInfo, float* OutValue, const FMaterialRenderContext& Context) const
+{
+	if (ParameterInfo.Name == FName(TEXT("Model")))
+	{
+		*OutValue = isModel_ ? 1.0f : 0.0f;
+		return true;
+	}
+
+	if (ParameterInfo.Name == FName(TEXT("EffectScale")))
+	{
+		*OutValue = effectScale_;
+		return true;
+	}
+
+	if (ParameterInfo.Name == FName(TEXT("LocalTime")))
+	{
+		*OutValue = LocalTime;
+		return true;
+	}
+
+	const auto found = effekseerMaterial_->UniformHashedNameToIndex.Find(ParameterInfo.Name.ToString());
+
+	if (found != nullptr)
+	{
+		*OutValue = uniformBuffer_[(*found) * 4 + 0];
+		return true;
+	}
+
+	return Parent->GetScalarValue(ParameterInfo GET_MAT_PARAM_NAME, OutValue, Context);
+}
+
+bool FFileMaterialRenderProxy::GetParentTextureValue(const MaterialParameterInfo& ParameterInfo, const UTexture** OutValue, const FMaterialRenderContext& Context) const
+{
+	const auto found = effekseerMaterial_->TextureHashedNameToIndex.Find(ParameterInfo.Name.ToString());
+
+	if (found != nullptr)
+	{
+		*OutValue = (UTexture*)Textures[*found];
+		return true;
+	}
+
+	return Parent->GetTextureValue(ParameterInfo GET_MAT_PARAM_NAME, OutValue, Context);
+}
+
+class FDistortionMaterialRenderProxy : public FCompatibleMaterialRenderProxy
+{
+public:
+	float distortionIntensity;
+
+	/** Initialization constructor. */
+	FDistortionMaterialRenderProxy(const FMaterialRenderProxy* InParent, float distortionIntensity)
+		: FCompatibleMaterialRenderProxy(FString("FDistortionMaterialRenderProxy"), InParent)
+		, distortionIntensity(distortionIntensity)
+	{
+	}
+
+	const FMaterial* GetParentMaterial(ERHIFeatureLevel::Type InFeatureLevel) const override;
+	bool GetParentVectorValue(const MaterialParameterInfo& ParameterInfo, FLinearColor* OutValue, const FMaterialRenderContext& Context) const override;
+	bool GetParentScalarValue(const MaterialParameterInfo& ParameterInfo, float* OutValue, const FMaterialRenderContext& Context) const override;
+	bool GetParentTextureValue(const MaterialParameterInfo& ParameterInfo, const UTexture** OutValue, const FMaterialRenderContext& Context) const override;
+};
+
+const FMaterial* FDistortionMaterialRenderProxy::GetParentMaterial(ERHIFeatureLevel::Type InFeatureLevel) const
+{
+	return Parent->GetMaterialNoFallback(InFeatureLevel);
+}
+
+bool FDistortionMaterialRenderProxy::GetParentVectorValue(const MaterialParameterInfo& ParameterInfo, FLinearColor* OutValue, const FMaterialRenderContext& Context) const
+{
+	return Parent->GetVectorValue(ParameterInfo GET_MAT_PARAM_NAME, OutValue, Context);
+}
+
+bool FDistortionMaterialRenderProxy::GetParentScalarValue(const MaterialParameterInfo& ParameterInfo, float* OutValue, const FMaterialRenderContext& Context) const
+{
+	if (ParameterInfo.Name == FName(TEXT("DistortionIntensity")))
+	{
+		*OutValue = distortionIntensity;
+		return true;
+	}
+
+	return Parent->GetScalarValue(ParameterInfo GET_MAT_PARAM_NAME, OutValue, Context);
+}
+
+bool FDistortionMaterialRenderProxy::GetParentTextureValue(const MaterialParameterInfo& ParameterInfo, const UTexture** OutValue, const FMaterialRenderContext& Context) const
+{
+	return Parent->GetTextureValue(ParameterInfo GET_MAT_PARAM_NAME, OutValue, Context);
+}
+
+class FModelMaterialRenderProxy : public FCompatibleMaterialRenderProxy
+{
+public:
+	FLinearColor uv;
+
+	FLinearColor alphaUV;
+	FLinearColor uvDistortionUV;
+	FLinearColor blendUV;
+	FLinearColor blendAlphaUV;
+	FLinearColor blendUVDistortionUV;
+	FLinearColor flipbookIndexAndNextRate;
+	FLinearColor alphaThreshold;
+
+	FLinearColor color;
+	float distortionIntensity;
+	Effekseer::CullingType cullingType_;
+
+	/** Initialization constructor. */
+
+	FModelMaterialRenderProxy(
+		const FMaterialRenderProxy* InParent,
+		FLinearColor uv,
+		FLinearColor alphaUV,
+		FLinearColor uvDistortionUV,
+		FLinearColor blendUV,
+		FLinearColor blendAlphaUV,
+		FLinearColor blendUVDistortionUV,
+		float flipbookIndexAndNextRate,
+		float alphaThreshold,
+		FLinearColor color,
+		float distortionIntensity,
+		Effekseer::CullingType cullingType)
+		: FCompatibleMaterialRenderProxy(FString("FModelMaterialRenderProxy"), InParent)
+		, uv(uv)
+		, alphaUV(alphaUV)
+		, uvDistortionUV(uvDistortionUV)
+		, blendUV(blendUV)
+		, blendAlphaUV(blendAlphaUV)
+		, blendUVDistortionUV(blendUVDistortionUV)
+		, flipbookIndexAndNextRate(FLinearColor(flipbookIndexAndNextRate, 0.0f, 0.0f, 0.0f))
+		, alphaThreshold(FLinearColor(0.0f, alphaThreshold, 0.0f, 0.0f))
+		, color(color)
+		, distortionIntensity(distortionIntensity)
+		, cullingType_(cullingType)
+	{
+	}
+
+	const FMaterial* GetParentMaterial(ERHIFeatureLevel::Type InFeatureLevel) const override;
+	bool GetParentVectorValue(const MaterialParameterInfo& ParameterInfo, FLinearColor* OutValue, const FMaterialRenderContext& Context) const override;
+	bool GetParentScalarValue(const MaterialParameterInfo& ParameterInfo, float* OutValue, const FMaterialRenderContext& Context) const override;
+	bool GetParentTextureValue(const MaterialParameterInfo& ParameterInfo, const UTexture** OutValue, const FMaterialRenderContext& Context) const override;
+};
+
+const FMaterial* FModelMaterialRenderProxy::GetParentMaterial(ERHIFeatureLevel::Type InFeatureLevel) const
+{
+	return Parent->GetMaterialNoFallback(InFeatureLevel);
+}
+
+bool FModelMaterialRenderProxy::GetParentVectorValue(const MaterialParameterInfo& ParameterInfo, FLinearColor* OutValue, const FMaterialRenderContext& Context) const
+{
+	if (ParameterInfo.Name == FName(TEXT("UserUV")))
+	{
+		*OutValue = uv;
+		return true;
+	}
+
+	if (ParameterInfo.Name == FName(TEXT("AlphaUV")))
+	{
+		*OutValue = alphaUV;
+		return true;
+	}
+
+	if (ParameterInfo.Name == FName(TEXT("UVDistortionUV")))
+	{
+		*OutValue = uvDistortionUV;
+		return true;
+	}
+
+	if (ParameterInfo.Name == FName(TEXT("BlendUV")))
+	{
+		*OutValue = blendUV;
+		return true;
+	}
+
+	if (ParameterInfo.Name == FName(TEXT("BlendAlphaUV")))
+	{
+		*OutValue = blendAlphaUV;
+		return true;
+	}
+
+	if (ParameterInfo.Name == FName(TEXT("BlendUVDistortionUV")))
+	{
+		*OutValue = blendUVDistortionUV;
+		return true;
+	}
+
+	if (ParameterInfo.Name == FName(TEXT("ModelFlipbookIndexAndNextRate")))
+	{
+		*OutValue = flipbookIndexAndNextRate;
+		return true;
+	}
+
+	if (ParameterInfo.Name == FName(TEXT("ModelAlphaThreshold")))
+	{
+		*OutValue = alphaThreshold;
+		return true;
+	}
+
+	if (ParameterInfo.Name == FName(TEXT("UserColor")))
+	{
+		*OutValue = color;
+		return true;
+	}
+
+	if (ParameterInfo.Name == FName(TEXT("Culling")))
+	{
+		if (cullingType_ == Effekseer::CullingType::Front)
+			*OutValue = FLinearColor(1, 0, 0, 0);
+
+		if (cullingType_ == Effekseer::CullingType::Back)
+			*OutValue = FLinearColor(0, 1, 0, 0);
+
+		if (cullingType_ == Effekseer::CullingType::Double)
+			*OutValue = FLinearColor(1, 1, 0, 0);
+
+		return true;
+	}
+
+	return Parent->GetVectorValue(ParameterInfo GET_MAT_PARAM_NAME, OutValue, Context);
+}
+
+bool FModelMaterialRenderProxy::GetParentScalarValue(const MaterialParameterInfo& ParameterInfo, float* OutValue, const FMaterialRenderContext& Context) const
+{
+	if (ParameterInfo.Name == FName(TEXT("DistortionIntensity")))
+	{
+		*OutValue = distortionIntensity;
+		return true;
+	}
+
+	return Parent->GetScalarValue(ParameterInfo GET_MAT_PARAM_NAME, OutValue, Context);
+}
+
+bool FModelMaterialRenderProxy::GetParentTextureValue(const MaterialParameterInfo& ParameterInfo, const UTexture** OutValue, const FMaterialRenderContext& Context) const
+{
+	return Parent->GetTextureValue(ParameterInfo GET_MAT_PARAM_NAME, OutValue, Context);
+}
+
+void ExtractTextures(const Effekseer::Effect* effect,
+					 const Effekseer::NodeRendererBasicParameter* param,
+					 std::array<Effekseer::Backend::TextureRef, ::Effekseer::TextureSlotMax>& textures,
+					 int32_t& textureCount)
+{
+	if (param->MaterialType == Effekseer::RendererMaterialType::File)
+	{
+		auto materialParam = param->MaterialRenderDataPtr;
+
+		textureCount = 0;
+
+		if (materialParam->MaterialTextures.size() > 0)
 		{
-			*OutValue = distortionIntensity;
-			return true;
-		}
+			textureCount = Effekseer::Min(materialParam->MaterialTextures.size(), ::Effekseer::UserTextureSlotMax);
 
-		return Parent->GetScalarValue(ParameterInfo GET_MAT_PARAM_NAME, OutValue, Context);
-	}
-
-	bool FModelMaterialRenderProxy::GetParentTextureValue(const MaterialParameterInfo& ParameterInfo, const UTexture** OutValue, const FMaterialRenderContext& Context) const
-	{
-		return Parent->GetTextureValue(ParameterInfo GET_MAT_PARAM_NAME, OutValue, Context);
-	}
-
-
-	void ExtractTextures(const Effekseer::Effect* effect,
-		const Effekseer::NodeRendererBasicParameter* param,
-		std::array<Effekseer::Backend::TextureRef, ::Effekseer::TextureSlotMax>& textures,
-		int32_t& textureCount)
-	{
-		if (param->MaterialType == Effekseer::RendererMaterialType::File)
-		{
-			auto materialParam = param->MaterialRenderDataPtr;
-
-			textureCount = 0;
-
-			if (materialParam->MaterialTextures.size() > 0)
+			for (size_t i = 0; i < textureCount; i++)
 			{
-				textureCount = Effekseer::Min(materialParam->MaterialTextures.size(), ::Effekseer::UserTextureSlotMax);
-
-				for (size_t i = 0; i < textureCount; i++)
+				if (materialParam->MaterialTextures[i].Type == 1)
 				{
-					if (materialParam->MaterialTextures[i].Type == 1)
+					if (materialParam->MaterialTextures[i].Index >= 0 && effect->GetNormalImage(materialParam->MaterialTextures[i].Index) != nullptr)
 					{
-						if (materialParam->MaterialTextures[i].Index >= 0 && effect->GetNormalImage(materialParam->MaterialTextures[i].Index) != nullptr)
-						{
-							textures[i] = effect->GetNormalImage(materialParam->MaterialTextures[i].Index)->GetBackend();
-						}
-						else
-						{
-							textures[i] = nullptr;
-						}
+						textures[i] = effect->GetNormalImage(materialParam->MaterialTextures[i].Index)->GetBackend();
 					}
 					else
 					{
-						if (materialParam->MaterialTextures[i].Index >= 0 && effect->GetColorImage(materialParam->MaterialTextures[i].Index) != nullptr)
-						{
-							textures[i] = effect->GetColorImage(materialParam->MaterialTextures[i].Index)->GetBackend();
-						}
-						else
-						{
-							textures[i] = nullptr;
-						}
+						textures[i] = nullptr;
+					}
+				}
+				else
+				{
+					if (materialParam->MaterialTextures[i].Index >= 0 && effect->GetColorImage(materialParam->MaterialTextures[i].Index) != nullptr)
+					{
+						textures[i] = effect->GetColorImage(materialParam->MaterialTextures[i].Index)->GetBackend();
+					}
+					else
+					{
+						textures[i] = nullptr;
 					}
 				}
 			}
 		}
 	}
+}
 
-	ModelRenderer::ModelRenderer(RendererImplemented* renderer)
-		: m_renderer(renderer)
+ModelRenderer::ModelRenderer(RendererImplemented* renderer)
+	: m_renderer(renderer)
+{
+}
+
+ModelRenderer::~ModelRenderer()
+{
+}
+
+Effekseer::ModelRendererRef ModelRenderer::Create(RendererImplemented* renderer)
+{
+	assert(renderer != NULL);
+
+	return Effekseer::MakeRefPtr<ModelRenderer>(renderer);
+}
+
+void ModelRenderer::BeginRendering(const efkModelNodeParam& parameter, int32_t count, void* userData)
+{
+	BeginRendering_(m_renderer, parameter, count, userData);
+}
+
+void ModelRenderer::Rendering(const efkModelNodeParam& parameter, const efkModelInstanceParam& instanceParameter, void* userData)
+{
+	Rendering_(m_renderer, parameter, instanceParameter, userData);
+}
+
+void ModelRenderer::EndRendering(const efkModelNodeParam& parameter, void* userData)
+{
+	if (m_matrixes.size() == 0)
+		return;
+	if (parameter.ModelIndex < 0)
+		return;
+	auto& param = parameter;
+	auto& renderer = m_renderer;
+
+	EffekseerInternalModel* model = nullptr;
+	if (param.IsProceduralMode)
 	{
-
+		model = (EffekseerInternalModel*)parameter.EffectPointer->GetProceduralModel(parameter.ModelIndex).Get();
+	}
+	else
+	{
+		model = (EffekseerInternalModel*)parameter.EffectPointer->GetModel(parameter.ModelIndex).Get();
 	}
 
+	if (model == nullptr)
+		return;
 
-	ModelRenderer::~ModelRenderer()
+	if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::File)
 	{
-
-	}
-
-	Effekseer::ModelRendererRef ModelRenderer::Create(RendererImplemented* renderer)
-	{
-		assert(renderer != NULL);
-
-		return Effekseer::MakeRefPtr<ModelRenderer>(renderer);
-	}
-
-	void ModelRenderer::BeginRendering(const efkModelNodeParam& parameter, int32_t count, void* userData)
-	{
-		BeginRendering_(m_renderer, parameter, count, userData);
-	}
-
-	void ModelRenderer::Rendering(const efkModelNodeParam& parameter, const efkModelInstanceParam& instanceParameter, void* userData)
-	{
-		Rendering_(m_renderer, parameter, instanceParameter, userData);
-	}
-
-	void ModelRenderer::EndRendering(const efkModelNodeParam& parameter, void* userData)
-	{
-		if (m_matrixes.size() == 0) return;
-		if (parameter.ModelIndex < 0) return;
-		auto& param = parameter;
-		auto& renderer = m_renderer;
-
-		EffekseerInternalModel* model = nullptr;
-		if(param.IsProceduralMode)
-		{
-			model = (EffekseerInternalModel*)parameter.EffectPointer->GetProceduralModel(parameter.ModelIndex).Get();	
-		}
-		else
-		{
-			model = (EffekseerInternalModel*)parameter.EffectPointer->GetModel(parameter.ModelIndex).Get();	
-		}
-
-		if (model == nullptr) return;
-
-		if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::File)
-		{
-			auto material = parameter.EffectPointer->GetMaterial(parameter.BasicParameterPtr->MaterialRenderDataPtr->MaterialIndex);
-			if (material == nullptr)
-				return;
-		}
-
-		::EffekseerRenderer::RenderStateBase::State& state = m_renderer->GetRenderState()->Push();
-		state.DepthTest = parameter.ZTest;
-		state.DepthWrite = parameter.ZWrite;
-		state.AlphaBlend = parameter.BasicParameterPtr->AlphaBlend;
-		state.CullingType = parameter.Culling;
-
-		m_renderer->GetRenderState()->Update(false);
-
-		SortTemporaryValues(m_renderer, parameter);
-
-		EffekseerRenderer::RendererShaderType type = collector_.ShaderType;
-
-		Shader* shader = m_renderer->GetShader(type);
-
-		if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::File &&
-			param.BasicParameterPtr->MaterialRenderDataPtr != nullptr &&
-			param.BasicParameterPtr->MaterialRenderDataPtr->MaterialIndex >= 0 &&
-			param.EffectPointer->GetMaterial(param.BasicParameterPtr->MaterialRenderDataPtr->MaterialIndex) != nullptr)
-		{
-			shader = (Shader*)param.EffectPointer->GetMaterial(param.BasicParameterPtr->MaterialRenderDataPtr->MaterialIndex)->ModelUserPtr;
-		}
-
-		m_renderer->BeginShader(shader);
-
-		if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::File)
-		{
-			auto materialParam = param.BasicParameterPtr->MaterialRenderDataPtr;
-
-			int32_t textureCount = 0;
-			std::array<Effekseer::Backend::TextureRef, ::Effekseer::TextureSlotMax> textures;
-
-			ExtractTextures(parameter.EffectPointer, parameter.BasicParameterPtr, textures, textureCount);
-
-			if (textureCount > 0)
-			{
-				renderer->SetTextures(nullptr, textures.data(), textureCount);
-			}
-
-
-			float* cutomData1Ptr = nullptr;
-			float* cutomData2Ptr = nullptr;
-			int stageInd = 1;
-			auto material = parameter.EffectPointer->GetMaterial(parameter.BasicParameterPtr->MaterialRenderDataPtr->MaterialIndex);
-
-			StoreFileUniform<RendererImplemented, Shader, 1>(
-				m_renderer, shader, material, materialParam, parameter, stageInd, cutomData1Ptr, cutomData2Ptr);
-
-		}
-		else
-		{
-			if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::BackDistortion)
-			{
-				m_renderer->SetDistortionIntensity(parameter.BasicParameterPtr->DistortionIntensity);
-			}
-
-			m_renderer->SetTextures(nullptr, collector_.Textures.data(), collector_.TextureCount);
-		}
-
-		m_renderer->GetImpl()->CurrentRenderingUserData = param.UserData;
-
-		m_renderer->DrawModel(
-			model, 
-			m_matrixes, 
-			m_uv, 
-			m_alphaUV, 
-			m_uvDistortionUV,
-			m_blendUV,
-			m_blendAlphaUV,
-			m_blendUVDistortionUV,
-			m_flipbookIndexAndNextRate, 
-			m_alphaThreshold,
-			m_colors, 
-			m_times, 
-			customData1_, 
-			customData2_);
-
-		m_renderer->EndShader(shader);
-
-		m_renderer->GetRenderState()->Pop();
-	}
-
-	Effekseer::RefPtr<RendererImplemented> RendererImplemented::Create()
-	{
-		return Effekseer::MakeRefPtr<RendererImplemented>();
-	}
-
-	RendererImplemented::RendererImplemented()
-	{
-		for (int i = 0; i < 5; i++)
-		{
-			m_materials[i] = nullptr;
-		}
-
-		textures_.fill(nullptr);
-
-		auto internalBackgroundTexture_ = Effekseer::MakeRefPtr<EffekseerInternalTexture>();
-		internalBackgroundTexture_->UserData = reinterpret_cast<void*>(0x1);
-		backgroundTexture_ = internalBackgroundTexture_;
-	}
-
-	RendererImplemented::~RendererImplemented()
-	{
-		ES_SAFE_DELETE(m_renderState);
-		ES_SAFE_DELETE(m_standardRenderer);
-		ES_SAFE_DELETE(m_vertexBuffer);
-	}
-
-	bool RendererImplemented::Initialize(int32_t squareMaxCount, EEffekseerColorSpaceType colorSpace)
-	{
-		colorSpace_ = colorSpace;
-		m_squareMaxCount = squareMaxCount;
-		m_renderState = new RenderState();
-		m_vertexBuffer = new VertexBuffer(EffekseerRenderer::GetMaximumVertexSizeInAllTypes() * m_squareMaxCount * 4, true);
-		stanShader_ = std::unique_ptr<Shader>(new Shader(Effekseer::RendererMaterialType::Default, false));
-		backDistortedShader_ = std::unique_ptr<Shader>(new Shader(Effekseer::RendererMaterialType::BackDistortion, false));
-		lightingShader_ = std::unique_ptr<Shader>(new Shader(Effekseer::RendererMaterialType::Lighting, false));
-		stanShaderAd_ = std::unique_ptr<Shader>(new Shader(Effekseer::RendererMaterialType::Default, true));
-		backDistortedShaderAd_ = std::unique_ptr<Shader>(new Shader(Effekseer::RendererMaterialType::BackDistortion, true));
-		lightingShaderAd_ = std::unique_ptr<Shader>(new Shader(Effekseer::RendererMaterialType::Lighting, true));
-
-		m_standardRenderer = new EffekseerRenderer::StandardRenderer<RendererImplemented, Shader>(this);
-
-		return true;
-	}
-
-	void RendererImplemented::SetRestorationOfStatesFlag(bool flag)
-	{
-		// TODO
-	}
-
-	bool RendererImplemented::BeginRendering()
-	{
-		impl->CalculateCameraProjectionMatrix();
-
-		// Reset a renderer
-		m_standardRenderer->ResetAndRenderingIfRequired();
-
-		//GLCheckError();
-
-		return true;
-	}
-
-	bool RendererImplemented::EndRendering()
-	{
-		// Reset a renderer
-		m_standardRenderer->ResetAndRenderingIfRequired();
-
-		return true;
-	}
-
-	::Effekseer::Vector3D RendererImplemented::GetLightDirection() const
-	{
-		return m_lightDirection;
-	}
-
-	void RendererImplemented::SetLightDirection(const ::Effekseer::Vector3D& direction)
-	{
-		m_lightDirection = direction;
-	}
-
-	const ::Effekseer::Color& RendererImplemented::GetLightColor() const
-	{
-		return m_lightColor;
-	}
-
-	void RendererImplemented::SetLightColor(const ::Effekseer::Color& color)
-	{
-		m_lightColor = color;
-	}
-
-	const ::Effekseer::Color& RendererImplemented::GetLightAmbientColor() const
-	{
-		return m_lightAmbient;
-	}
-
-	void RendererImplemented::SetLightAmbientColor(const ::Effekseer::Color& color)
-	{
-		m_lightAmbient = color;
-	}
-
-	int32_t RendererImplemented::GetSquareMaxCount() const
-	{
-		return m_squareMaxCount;
-	}
-
-	::Effekseer::SpriteRendererRef RendererImplemented::CreateSpriteRenderer()
-	{
-		return Effekseer::MakeRefPtr < ::EffekseerRenderer::SpriteRendererBase<RendererImplemented, false>>(this);
-	}
-
-	::Effekseer::RibbonRendererRef RendererImplemented::CreateRibbonRenderer()
-	{
-		return Effekseer::MakeRefPtr < ::EffekseerRenderer::RibbonRendererBase<RendererImplemented, false>>(this);
-	}
-
-	::Effekseer::RingRendererRef RendererImplemented::CreateRingRenderer()
-	{
-		auto ret = Effekseer::MakeRefPtr <::EffekseerRenderer::RingRendererBase<RendererImplemented, false>>(this);
-		return ret;
-	}
-
-	::Effekseer::ModelRendererRef RendererImplemented::CreateModelRenderer()
-	{
-		return ModelRenderer::Create(this);
-	}
-
-	::Effekseer::TrackRendererRef RendererImplemented::CreateTrackRenderer()
-	{
-		return Effekseer::MakeRefPtr<::EffekseerRenderer::TrackRendererBase<RendererImplemented, false>>(this);
-	}
-
-	void RendererImplemented::ResetRenderState()
-	{
-	}
-
-	::EffekseerRenderer::DistortingCallback* RendererImplemented::GetDistortingCallback()
-	{
-		return nullptr;
-	}
-
-	void RendererImplemented::SetDistortingCallback(::EffekseerRenderer::DistortingCallback* callback)
-	{
-
-	}
-
-	const ::Effekseer::Backend::TextureRef& RendererImplemented::GetBackground()
-	{
-		return backgroundTexture_;
-	}
-
-	VertexBuffer* RendererImplemented::GetVertexBuffer()
-	{
-		return m_vertexBuffer;
-	}
-
-	IndexBuffer* RendererImplemented::GetIndexBuffer()
-	{
-		return nullptr;
-	}
-
-	EffekseerRenderer::StandardRenderer<RendererImplemented, Shader>* RendererImplemented::GetStandardRenderer()
-	{
-		return m_standardRenderer;
-	}
-
-	::EffekseerRenderer::RenderStateBase* RendererImplemented::GetRenderState()
-	{
-		return m_renderState;
-	}
-
-	void RendererImplemented::SetVertexBuffer(VertexBuffer* vertexBuffer, int32_t size)
-	{
-	}
-
-	void RendererImplemented::SetIndexBuffer(IndexBuffer* indexBuffer)
-	{
-	}
-
-	void RendererImplemented::SetLayout(Shader* shader)
-	{
-	}
-
-	inline Effekseer::Vector3D UnpackVector3DF(const Effekseer::Color& v)
-	{
-		Effekseer::Vector3D ret;
-		ret.X = (v.R / 255.0 * 2.0f - 1.0f);
-		ret.Y = (v.G / 255.0 * 2.0f - 1.0f);
-		ret.Z = (v.B / 255.0 * 2.0f - 1.0f);
-		return ret;
-	}
-
-	void RendererImplemented::DrawSprites(int32_t spriteCount, int32_t vertexOffset)
-	{
-		auto reunderingUserData = static_cast<EffekseerRenderingUserData*>(GetImpl()->CurrentRenderingUserData.Get());
-
-		auto mat = FindMaterial(reunderingUserData);
-		if (mat == nullptr) return;
-
-		if (m_currentShader != nullptr && m_currentShader->GetType() == Effekseer::RendererMaterialType::File)
-		{
-			const auto nativeMaterial = m_currentShader->GetEffekseerMaterial()->GetNativePtr();
-			assert(!nativeMaterial->GetIsSimpleVertex());
-
-			auto* origin = (uint8_t*)m_vertexBuffer->GetResource();
-
-			const int32_t stride = (int32_t)sizeof(EffekseerRenderer::DynamicVertex) + (nativeMaterial->GetCustomData1Count() + nativeMaterial->GetCustomData2Count()) * sizeof(float);
-			EffekseerRenderer::StrideView<EffekseerRenderer::DynamicVertex> vs(origin, stride, vertexOffset + spriteCount * 4);
-			EffekseerRenderer::StrideView<EffekseerRenderer::DynamicVertex> custom1(origin + sizeof(EffekseerRenderer::DynamicVertex), stride, vertexOffset + spriteCount * 4);
-			EffekseerRenderer::StrideView<EffekseerRenderer::DynamicVertex> custom2(origin + sizeof(EffekseerRenderer::DynamicVertex) + sizeof(float) * nativeMaterial->GetCustomData1Count(), stride, vertexOffset + spriteCount * 4);
-
-			int32_t customDataCount = 0;
-			if (nativeMaterial->GetCustomData1Count() > 0) customDataCount = 2;
-			if (nativeMaterial->GetCustomData2Count() > 0) customDataCount = 4;
-
-			FDynamicMeshBuilder meshBuilder(m_meshElementCollector->GetFeatureLevel(), 2 + customDataCount);
-
-			for (int32_t vi = vertexOffset; vi < vertexOffset + spriteCount * 4; vi++)
-			{
-				auto& v = vs[vi];
-
-				FDynamicMeshVertex meshVert;
-
-
-				if (nativeMaterial->GetCustomData1Count() > 0)
-				{
-					std::array<float, 4> customData1;
-					auto c = (float*)(&custom1[vi]);
-					memcpy(customData1.data(), c, sizeof(float) * nativeMaterial->GetCustomData1Count());
-					meshVert.TextureCoordinate[2].X = customData1[0];
-					meshVert.TextureCoordinate[2].Y = customData1[1];
-					meshVert.TextureCoordinate[3].X = customData1[2];
-					meshVert.TextureCoordinate[3].Y = customData1[3];
-				}
-
-				if (nativeMaterial->GetCustomData2Count() > 0)
-				{
-					std::array<float, 4> customData2;
-					auto c = (float*)(&custom2[vi]);
-					memcpy(customData2.data(), c, sizeof(float) * nativeMaterial->GetCustomData2Count());
-					meshVert.TextureCoordinate[4].X = customData2[0];
-					meshVert.TextureCoordinate[4].Y = customData2[1];
-					meshVert.TextureCoordinate[5].X = customData2[2];
-					meshVert.TextureCoordinate[5].Y = customData2[3];
-				}
-
-				auto normal = UnpackVector3DF(v.Normal);
-				auto tangent = UnpackVector3DF(v.Tangent);
-				Effekseer::Vector3D binormal;
-				Effekseer::Vector3D::Cross(binormal, normal, tangent);
-
-				meshVert.Position = UEFVector3f(v.Pos.X, v.Pos.Z, v.Pos.Y);
-				meshVert.Color = FColor(v.Col.R, v.Col.G, v.Col.B, v.Col.A);
-
-				meshVert.TextureCoordinate[0] = UEFVector2f(v.UV1[0], v.UV1[1]);
-				meshVert.TextureCoordinate[1] = UEFVector2f(v.UV2[0], v.UV2[1]);
-
-				meshVert.SetTangents(
-					UEFVector3f(binormal.X, binormal.Z, binormal.Y),
-					UEFVector3f(tangent.X, tangent.Z, tangent.Y),
-					UEFVector3f(normal.X, normal.Z, normal.Y));
-
-				meshBuilder.AddVertex(meshVert);
-			}
-
-			for (int32_t si = 0; si < spriteCount; si++)
-			{
-				meshBuilder.AddTriangle(
-					si * 4 + 0,
-					si * 4 + 1,
-					si * 4 + 2);
-
-				meshBuilder.AddTriangle(
-					si * 4 + 2,
-					si * 4 + 1,
-					si * 4 + 3);
-			}
-
-			auto proxy = mat->GetRenderProxy();
-
-			const auto hasLight = m_currentShader->RequiredPredefinedMethodTypes.count(Effekseer::MaterialFile::RequiredPredefinedMethodType::Light) != 0;
-			const auto hasLocalTime = m_currentShader->RequiredPredefinedMethodTypes.count(Effekseer::MaterialFile::RequiredPredefinedMethodType::LocalTime) != 0;
-
-			if (m_currentShader->GetEffekseerMaterial()->UniformHashedNameToIndex.Num() > 0 ||
-				m_currentShader->GetEffekseerMaterial()->TextureNameToIndex.Num() > 0 ||
-				nativeMaterial->GetCustomData1Count() > 0 ||
-				nativeMaterial->GetCustomData2Count() > 0 ||
-				m_currentShader->GetEffekseerMaterial()->IsEffectScaleRequired ||
-				hasLight ||
-				hasLocalTime)
-			{
-				auto uniformOffset = m_currentShader->GetParameterGenerator()->PixelUserUniformOffset;
-				auto buffer = static_cast<uint8_t*>(m_currentShader->GetPixelConstantBuffer()) + uniformOffset;
-
-				const auto uniformCount = m_currentShader->GetEffekseerMaterial()->Uniforms.Num() + m_currentShader->GetEffekseerMaterial()->Gradients.Num() * 13;
-				auto newProxy = new FFileMaterialRenderProxy(proxy, m_currentShader->GetEffekseerMaterial(), reinterpret_cast<float*>(buffer), uniformCount, false, m_renderState->GetActiveState().CullingType, reunderingUserData->Magnification);
-
-				auto predefined = reinterpret_cast<float*>(static_cast<uint8_t*>(m_currentShader->GetPixelConstantBuffer()) + m_currentShader->GetParameterGenerator()->PixelPredefinedOffset);
-
-				newProxy->LightDirection = FLinearColor::White;
-				newProxy->LightColor = FLinearColor::White;
-				newProxy->LightAmbientColor = FLinearColor::White;
-				newProxy->LocalTime = predefined[3];
-
-				newProxy->Textures = textures_;
-
-				proxy = newProxy;
-				m_meshElementCollector->RegisterOneFrameMaterialProxy(proxy);
-			}
-
-			meshBuilder.GetMesh(m_localToWorld, proxy, SDPG_World, false, false, m_viewIndex, *m_meshElementCollector);
+		auto material = parameter.EffectPointer->GetMaterial(parameter.BasicParameterPtr->MaterialRenderDataPtr->MaterialIndex);
+		if (material == nullptr)
 			return;
-		}
+	}
 
-		Effekseer::RendererMaterialType MaterialType = m_currentShader->GetType();
-		bool IsAdvanced = m_currentShader->IsAdvancedMaterial();
+	::EffekseerRenderer::RenderStateBase::State& state = m_renderer->GetRenderState()->Push();
+	state.DepthTest = parameter.ZTest;
+	state.DepthWrite = parameter.ZWrite;
+	state.AlphaBlend = parameter.BasicParameterPtr->AlphaBlend;
+	state.CullingType = parameter.Culling;
 
-		if (MaterialType == Effekseer::RendererMaterialType::BackDistortion)
+	m_renderer->GetRenderState()->Update(false);
+
+	SortTemporaryValues(m_renderer, parameter);
+
+	EffekseerRenderer::RendererShaderType type = collector_.ShaderType;
+
+	Shader* shader = m_renderer->GetShader(type);
+
+	if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::File &&
+		param.BasicParameterPtr->MaterialRenderDataPtr != nullptr &&
+		param.BasicParameterPtr->MaterialRenderDataPtr->MaterialIndex >= 0 &&
+		param.EffectPointer->GetMaterial(param.BasicParameterPtr->MaterialRenderDataPtr->MaterialIndex) != nullptr)
+	{
+		shader = (Shader*)param.EffectPointer->GetMaterial(param.BasicParameterPtr->MaterialRenderDataPtr->MaterialIndex)->ModelUserPtr;
+	}
+
+	m_renderer->BeginShader(shader);
+
+	if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::File)
+	{
+		auto materialParam = param.BasicParameterPtr->MaterialRenderDataPtr;
+
+		int32_t textureCount = 0;
+		std::array<Effekseer::Backend::TextureRef, ::Effekseer::TextureSlotMax> textures;
+
+		ExtractTextures(parameter.EffectPointer, parameter.BasicParameterPtr, textures, textureCount);
+
+		if (textureCount > 0)
 		{
-			auto pixelBuffer = reinterpret_cast<EffekseerRenderer::PixelConstantBufferDistortion*>(m_currentShader->GetPixelConstantBuffer());
-			auto intensity = pixelBuffer->DistortionIntencity[0];
-			SetDistortionIntensity(intensity);
+			renderer->SetTextures(nullptr, textures.data(), textureCount);
 		}
 
-		FDynamicMeshBuilder meshBuilder(m_meshElementCollector->GetFeatureLevel(), 7);
+		float* cutomData1Ptr = nullptr;
+		float* cutomData2Ptr = nullptr;
+		int stageInd = 1;
+		auto material = parameter.EffectPointer->GetMaterial(parameter.BasicParameterPtr->MaterialRenderDataPtr->MaterialIndex);
 
-		if (IsAdvanced == false)
+		StoreFileUniform<RendererImplemented, Shader, 1>(
+			m_renderer, shader, material, materialParam, parameter, stageInd, cutomData1Ptr, cutomData2Ptr);
+	}
+	else
+	{
+		if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::BackDistortion)
 		{
-			if (MaterialType == Effekseer::RendererMaterialType::Default)
-			{
-				AddVertex<Effekseer::RendererMaterialType::Default, false>(meshBuilder, spriteCount, vertexOffset);
-			}
-			else if (MaterialType == Effekseer::RendererMaterialType::BackDistortion)
-			{
-				AddVertex<Effekseer::RendererMaterialType::BackDistortion, false>(meshBuilder, spriteCount, vertexOffset);
-			}
-			else if (MaterialType == Effekseer::RendererMaterialType::Lighting)
-			{
-				AddVertex<Effekseer::RendererMaterialType::Lighting, false>(meshBuilder, spriteCount, vertexOffset);
-			}
+			m_renderer->SetDistortionIntensity(parameter.BasicParameterPtr->DistortionIntensity);
 		}
-		else
+
+		m_renderer->SetTextures(nullptr, collector_.Textures.data(), collector_.TextureCount);
+	}
+
+	m_renderer->GetImpl()->CurrentRenderingUserData = param.UserData;
+
+	m_renderer->DrawModel(
+		model,
+		m_matrixes,
+		m_uv,
+		m_alphaUV,
+		m_uvDistortionUV,
+		m_blendUV,
+		m_blendAlphaUV,
+		m_blendUVDistortionUV,
+		m_flipbookIndexAndNextRate,
+		m_alphaThreshold,
+		m_colors,
+		m_times,
+		customData1_,
+		customData2_);
+
+	m_renderer->EndShader(shader);
+
+	m_renderer->GetRenderState()->Pop();
+}
+
+Effekseer::RefPtr<RendererImplemented> RendererImplemented::Create()
+{
+	return Effekseer::MakeRefPtr<RendererImplemented>();
+}
+
+RendererImplemented::RendererImplemented()
+{
+	for (int i = 0; i < 5; i++)
+	{
+		m_materials[i] = nullptr;
+	}
+
+	textures_.fill(nullptr);
+
+	auto internalBackgroundTexture_ = Effekseer::MakeRefPtr<EffekseerInternalTexture>();
+	internalBackgroundTexture_->UserData = reinterpret_cast<void*>(0x1);
+	backgroundTexture_ = internalBackgroundTexture_;
+}
+
+RendererImplemented::~RendererImplemented()
+{
+	ES_SAFE_DELETE(m_renderState);
+	ES_SAFE_DELETE(m_standardRenderer);
+	ES_SAFE_DELETE(m_vertexBuffer);
+}
+
+bool RendererImplemented::Initialize(int32_t squareMaxCount, EEffekseerColorSpaceType colorSpace)
+{
+	colorSpace_ = colorSpace;
+	m_squareMaxCount = squareMaxCount;
+	m_renderState = new RenderState();
+	m_vertexBuffer = new VertexBuffer(EffekseerRenderer::GetMaximumVertexSizeInAllTypes() * m_squareMaxCount * 4, true);
+	stanShader_ = std::unique_ptr<Shader>(new Shader(Effekseer::RendererMaterialType::Default, false));
+	backDistortedShader_ = std::unique_ptr<Shader>(new Shader(Effekseer::RendererMaterialType::BackDistortion, false));
+	lightingShader_ = std::unique_ptr<Shader>(new Shader(Effekseer::RendererMaterialType::Lighting, false));
+	stanShaderAd_ = std::unique_ptr<Shader>(new Shader(Effekseer::RendererMaterialType::Default, true));
+	backDistortedShaderAd_ = std::unique_ptr<Shader>(new Shader(Effekseer::RendererMaterialType::BackDistortion, true));
+	lightingShaderAd_ = std::unique_ptr<Shader>(new Shader(Effekseer::RendererMaterialType::Lighting, true));
+
+	m_standardRenderer = new EffekseerRenderer::StandardRenderer<RendererImplemented, Shader>(this);
+
+	return true;
+}
+
+void RendererImplemented::SetRestorationOfStatesFlag(bool flag)
+{
+	// TODO
+}
+
+bool RendererImplemented::BeginRendering()
+{
+	impl->CalculateCameraProjectionMatrix();
+
+	// Reset a renderer
+	m_standardRenderer->ResetAndRenderingIfRequired();
+
+	// GLCheckError();
+
+	return true;
+}
+
+bool RendererImplemented::EndRendering()
+{
+	// Reset a renderer
+	m_standardRenderer->ResetAndRenderingIfRequired();
+
+	return true;
+}
+
+::Effekseer::Vector3D RendererImplemented::GetLightDirection() const
+{
+	return m_lightDirection;
+}
+
+void RendererImplemented::SetLightDirection(const ::Effekseer::Vector3D& direction)
+{
+	m_lightDirection = direction;
+}
+
+const ::Effekseer::Color& RendererImplemented::GetLightColor() const
+{
+	return m_lightColor;
+}
+
+void RendererImplemented::SetLightColor(const ::Effekseer::Color& color)
+{
+	m_lightColor = color;
+}
+
+const ::Effekseer::Color& RendererImplemented::GetLightAmbientColor() const
+{
+	return m_lightAmbient;
+}
+
+void RendererImplemented::SetLightAmbientColor(const ::Effekseer::Color& color)
+{
+	m_lightAmbient = color;
+}
+
+int32_t RendererImplemented::GetSquareMaxCount() const
+{
+	return m_squareMaxCount;
+}
+
+::Effekseer::SpriteRendererRef RendererImplemented::CreateSpriteRenderer()
+{
+	return Effekseer::MakeRefPtr<::EffekseerRenderer::SpriteRendererBase<RendererImplemented, false>>(this);
+}
+
+::Effekseer::RibbonRendererRef RendererImplemented::CreateRibbonRenderer()
+{
+	return Effekseer::MakeRefPtr<::EffekseerRenderer::RibbonRendererBase<RendererImplemented, false>>(this);
+}
+
+::Effekseer::RingRendererRef RendererImplemented::CreateRingRenderer()
+{
+	auto ret = Effekseer::MakeRefPtr<::EffekseerRenderer::RingRendererBase<RendererImplemented, false>>(this);
+	return ret;
+}
+
+::Effekseer::ModelRendererRef RendererImplemented::CreateModelRenderer()
+{
+	return ModelRenderer::Create(this);
+}
+
+::Effekseer::TrackRendererRef RendererImplemented::CreateTrackRenderer()
+{
+	return Effekseer::MakeRefPtr<::EffekseerRenderer::TrackRendererBase<RendererImplemented, false>>(this);
+}
+
+void RendererImplemented::ResetRenderState()
+{
+}
+
+::EffekseerRenderer::DistortingCallback* RendererImplemented::GetDistortingCallback()
+{
+	return nullptr;
+}
+
+void RendererImplemented::SetDistortingCallback(::EffekseerRenderer::DistortingCallback* callback)
+{
+}
+
+const ::Effekseer::Backend::TextureRef& RendererImplemented::GetBackground()
+{
+	return backgroundTexture_;
+}
+
+VertexBuffer* RendererImplemented::GetVertexBuffer()
+{
+	return m_vertexBuffer;
+}
+
+IndexBuffer* RendererImplemented::GetIndexBuffer()
+{
+	return nullptr;
+}
+
+EffekseerRenderer::StandardRenderer<RendererImplemented, Shader>* RendererImplemented::GetStandardRenderer()
+{
+	return m_standardRenderer;
+}
+
+::EffekseerRenderer::RenderStateBase* RendererImplemented::GetRenderState()
+{
+	return m_renderState;
+}
+
+void RendererImplemented::SetVertexBuffer(VertexBuffer* vertexBuffer, int32_t size)
+{
+}
+
+void RendererImplemented::SetIndexBuffer(IndexBuffer* indexBuffer)
+{
+}
+
+void RendererImplemented::SetLayout(Shader* shader)
+{
+}
+
+inline Effekseer::Vector3D UnpackVector3DF(const Effekseer::Color& v)
+{
+	Effekseer::Vector3D ret;
+	ret.X = (v.R / 255.0 * 2.0f - 1.0f);
+	ret.Y = (v.G / 255.0 * 2.0f - 1.0f);
+	ret.Z = (v.B / 255.0 * 2.0f - 1.0f);
+	return ret;
+}
+
+void RendererImplemented::DrawSprites(int32_t spriteCount, int32_t vertexOffset)
+{
+	auto reunderingUserData = static_cast<EffekseerRenderingUserData*>(GetImpl()->CurrentRenderingUserData.Get());
+
+	auto mat = FindMaterial(reunderingUserData);
+	if (mat == nullptr)
+		return;
+
+	if (m_currentShader != nullptr && m_currentShader->GetType() == Effekseer::RendererMaterialType::File)
+	{
+		const auto nativeMaterial = m_currentShader->GetEffekseerMaterial()->GetNativePtr();
+		assert(!nativeMaterial->GetIsSimpleVertex());
+
+		auto* origin = (uint8_t*)m_vertexBuffer->GetResource();
+
+		const int32_t stride = (int32_t)sizeof(EffekseerRenderer::DynamicVertex) + (nativeMaterial->GetCustomData1Count() + nativeMaterial->GetCustomData2Count()) * sizeof(float);
+		EffekseerRenderer::StrideView<EffekseerRenderer::DynamicVertex> vs(origin, stride, vertexOffset + spriteCount * 4);
+		EffekseerRenderer::StrideView<EffekseerRenderer::DynamicVertex> custom1(origin + sizeof(EffekseerRenderer::DynamicVertex), stride, vertexOffset + spriteCount * 4);
+		EffekseerRenderer::StrideView<EffekseerRenderer::DynamicVertex> custom2(origin + sizeof(EffekseerRenderer::DynamicVertex) + sizeof(float) * nativeMaterial->GetCustomData1Count(), stride, vertexOffset + spriteCount * 4);
+
+		int32_t customDataCount = 0;
+		if (nativeMaterial->GetCustomData1Count() > 0)
+			customDataCount = 2;
+		if (nativeMaterial->GetCustomData2Count() > 0)
+			customDataCount = 4;
+
+		FDynamicMeshBuilder meshBuilder(m_meshElementCollector->GetFeatureLevel(), 2 + customDataCount);
+
+		for (int32_t vi = vertexOffset; vi < vertexOffset + spriteCount * 4; vi++)
 		{
-			if (MaterialType == Effekseer::RendererMaterialType::Default)
+			auto& v = vs[vi];
+
+			FDynamicMeshVertex meshVert;
+
+			if (nativeMaterial->GetCustomData1Count() > 0)
 			{
-				AddVertex<Effekseer::RendererMaterialType::Default, true>(meshBuilder, spriteCount, vertexOffset);
+				std::array<float, 4> customData1;
+				auto c = (float*)(&custom1[vi]);
+				memcpy(customData1.data(), c, sizeof(float) * nativeMaterial->GetCustomData1Count());
+				meshVert.TextureCoordinate[2].X = customData1[0];
+				meshVert.TextureCoordinate[2].Y = customData1[1];
+				meshVert.TextureCoordinate[3].X = customData1[2];
+				meshVert.TextureCoordinate[3].Y = customData1[3];
 			}
-			else if (MaterialType == Effekseer::RendererMaterialType::BackDistortion)
+
+			if (nativeMaterial->GetCustomData2Count() > 0)
 			{
-				AddVertex<Effekseer::RendererMaterialType::BackDistortion, true>(meshBuilder, spriteCount, vertexOffset);
+				std::array<float, 4> customData2;
+				auto c = (float*)(&custom2[vi]);
+				memcpy(customData2.data(), c, sizeof(float) * nativeMaterial->GetCustomData2Count());
+				meshVert.TextureCoordinate[4].X = customData2[0];
+				meshVert.TextureCoordinate[4].Y = customData2[1];
+				meshVert.TextureCoordinate[5].X = customData2[2];
+				meshVert.TextureCoordinate[5].Y = customData2[3];
 			}
-			else if (MaterialType == Effekseer::RendererMaterialType::Lighting)
-			{
-				AddVertex<Effekseer::RendererMaterialType::Lighting, true>(meshBuilder, spriteCount, vertexOffset);
-			}
+
+			auto normal = UnpackVector3DF(v.Normal);
+			auto tangent = UnpackVector3DF(v.Tangent);
+			Effekseer::Vector3D binormal;
+			Effekseer::Vector3D::Cross(binormal, normal, tangent);
+
+			meshVert.Position = UEFVector3f(v.Pos.X, v.Pos.Z, v.Pos.Y);
+			meshVert.Color = FColor(v.Col.R, v.Col.G, v.Col.B, v.Col.A);
+
+			meshVert.TextureCoordinate[0] = UEFVector2f(v.UV1[0], v.UV1[1]);
+			meshVert.TextureCoordinate[1] = UEFVector2f(v.UV2[0], v.UV2[1]);
+
+			meshVert.SetTangents(
+				UEFVector3f(binormal.X, binormal.Z, binormal.Y),
+				UEFVector3f(tangent.X, tangent.Z, tangent.Y),
+				UEFVector3f(normal.X, normal.Z, normal.Y));
+
+			meshBuilder.AddVertex(meshVert);
 		}
-		
+
 		for (int32_t si = 0; si < spriteCount; si++)
 		{
 			meshBuilder.AddTriangle(
@@ -1021,540 +938,631 @@ namespace EffekseerRendererUE
 
 		auto proxy = mat->GetRenderProxy();
 
-		if (m_currentShader->GetType() == Effekseer::RendererMaterialType::BackDistortion)
+		const auto hasLight = m_currentShader->RequiredPredefinedMethodTypes.count(Effekseer::MaterialFile::RequiredPredefinedMethodType::Light) != 0;
+		const auto hasLocalTime = m_currentShader->RequiredPredefinedMethodTypes.count(Effekseer::MaterialFile::RequiredPredefinedMethodType::LocalTime) != 0;
+
+		if (m_currentShader->GetEffekseerMaterial()->UniformHashedNameToIndex.Num() > 0 ||
+			m_currentShader->GetEffekseerMaterial()->TextureNameToIndex.Num() > 0 ||
+			nativeMaterial->GetCustomData1Count() > 0 ||
+			nativeMaterial->GetCustomData2Count() > 0 ||
+			m_currentShader->GetEffekseerMaterial()->IsEffectScaleRequired ||
+			hasLight ||
+			hasLocalTime)
 		{
-			proxy = new FDistortionMaterialRenderProxy(proxy, m_distortionIntensity);
+			auto uniformOffset = m_currentShader->GetParameterGenerator()->PixelUserUniformOffset;
+			auto buffer = static_cast<uint8_t*>(m_currentShader->GetPixelConstantBuffer()) + uniformOffset;
+
+			const auto uniformCount = m_currentShader->GetEffekseerMaterial()->Uniforms.Num() + m_currentShader->GetEffekseerMaterial()->Gradients.Num() * 13;
+			auto newProxy = new FFileMaterialRenderProxy(proxy, m_currentShader->GetEffekseerMaterial(), reinterpret_cast<float*>(buffer), uniformCount, false, m_renderState->GetActiveState().CullingType, reunderingUserData->Magnification);
+
+			auto predefined = reinterpret_cast<float*>(static_cast<uint8_t*>(m_currentShader->GetPixelConstantBuffer()) + m_currentShader->GetParameterGenerator()->PixelPredefinedOffset);
+
+			newProxy->LightDirection = FLinearColor::White;
+			newProxy->LightColor = FLinearColor::White;
+			newProxy->LightAmbientColor = FLinearColor::White;
+			newProxy->LocalTime = predefined[3];
+
+			newProxy->Textures = textures_;
+
+			proxy = newProxy;
 			m_meshElementCollector->RegisterOneFrameMaterialProxy(proxy);
 		}
 
 		meshBuilder.GetMesh(m_localToWorld, proxy, SDPG_World, false, false, m_viewIndex, *m_meshElementCollector);
+		return;
 	}
 
-	template<> void RendererImplemented::AddVertex<Effekseer::RendererMaterialType::Default, false>
-		(FDynamicMeshBuilder& meshBuilder, int32_t spriteCount, int32_t vertexOffset)
+	Effekseer::RendererMaterialType MaterialType = m_currentShader->GetType();
+	bool IsAdvanced = m_currentShader->IsAdvancedMaterial();
+
+	if (MaterialType == Effekseer::RendererMaterialType::BackDistortion)
 	{
-		Vertex* vs = (Vertex*)m_vertexBuffer->GetResource();
+		auto pixelBuffer = reinterpret_cast<EffekseerRenderer::PixelConstantBufferDistortion*>(m_currentShader->GetPixelConstantBuffer());
+		auto intensity = pixelBuffer->DistortionIntencity[0];
+		SetDistortionIntensity(intensity);
+	}
 
-		for (int32_t vi = vertexOffset; vi < vertexOffset + spriteCount * 4; vi++)
+	FDynamicMeshBuilder meshBuilder(m_meshElementCollector->GetFeatureLevel(), 7);
+
+	if (IsAdvanced == false)
+	{
+		if (MaterialType == Effekseer::RendererMaterialType::Default)
 		{
-			auto& v = vs[vi];
-
-			FDynamicMeshVertex DynamicVertex;
-			DynamicVertex.Position = UEFVector3f(v.Pos.X, v.Pos.Z, v.Pos.Y);
-			DynamicVertex.Color = FColor(v.Col.R, v.Col.G, v.Col.B, v.Col.A);
-			DynamicVertex.SetTangents(UEFVector3f(1, 0, 0), UEFVector3f(1, 1, 0), UEFVector3f(0, 0, 1));
-			DynamicVertex.TextureCoordinate[0] = UEFVector2f(v.UV[0], v.UV[1]);
-			DynamicVertex.TextureCoordinate[1] = UEFVector2f(0.0f);
-			DynamicVertex.TextureCoordinate[2] = UEFVector2f(0.0f);
-			DynamicVertex.TextureCoordinate[3] = UEFVector2f(0.0f);
-			DynamicVertex.TextureCoordinate[4] = UEFVector2f(0.0f);
-			DynamicVertex.TextureCoordinate[5] = UEFVector2f(0.0f);
-			DynamicVertex.TextureCoordinate[6] = UEFVector2f(0.0f);
-
-			meshBuilder.AddVertex(DynamicVertex);
+			AddVertex<Effekseer::RendererMaterialType::Default, false>(meshBuilder, spriteCount, vertexOffset);
+		}
+		else if (MaterialType == Effekseer::RendererMaterialType::BackDistortion)
+		{
+			AddVertex<Effekseer::RendererMaterialType::BackDistortion, false>(meshBuilder, spriteCount, vertexOffset);
+		}
+		else if (MaterialType == Effekseer::RendererMaterialType::Lighting)
+		{
+			AddVertex<Effekseer::RendererMaterialType::Lighting, false>(meshBuilder, spriteCount, vertexOffset);
+		}
+	}
+	else
+	{
+		if (MaterialType == Effekseer::RendererMaterialType::Default)
+		{
+			AddVertex<Effekseer::RendererMaterialType::Default, true>(meshBuilder, spriteCount, vertexOffset);
+		}
+		else if (MaterialType == Effekseer::RendererMaterialType::BackDistortion)
+		{
+			AddVertex<Effekseer::RendererMaterialType::BackDistortion, true>(meshBuilder, spriteCount, vertexOffset);
+		}
+		else if (MaterialType == Effekseer::RendererMaterialType::Lighting)
+		{
+			AddVertex<Effekseer::RendererMaterialType::Lighting, true>(meshBuilder, spriteCount, vertexOffset);
 		}
 	}
 
-	template<> void RendererImplemented::AddVertex<Effekseer::RendererMaterialType::Default, true>
-		(FDynamicMeshBuilder& meshBuilder, int32_t spriteCount, int32_t vertexOffset)
+	for (int32_t si = 0; si < spriteCount; si++)
 	{
-		AdvancedVertex* vs = (AdvancedVertex*)m_vertexBuffer->GetResource();
+		meshBuilder.AddTriangle(
+			si * 4 + 0,
+			si * 4 + 1,
+			si * 4 + 2);
 
-		for (int32_t vi = vertexOffset; vi < vertexOffset + spriteCount * 4; vi++)
+		meshBuilder.AddTriangle(
+			si * 4 + 2,
+			si * 4 + 1,
+			si * 4 + 3);
+	}
+
+	auto proxy = mat->GetRenderProxy();
+
+	if (m_currentShader->GetType() == Effekseer::RendererMaterialType::BackDistortion)
+	{
+		proxy = new FDistortionMaterialRenderProxy(proxy, m_distortionIntensity);
+		m_meshElementCollector->RegisterOneFrameMaterialProxy(proxy);
+	}
+
+	meshBuilder.GetMesh(m_localToWorld, proxy, SDPG_World, false, false, m_viewIndex, *m_meshElementCollector);
+}
+
+template <>
+void RendererImplemented::AddVertex<Effekseer::RendererMaterialType::Default, false>(FDynamicMeshBuilder& meshBuilder, int32_t spriteCount, int32_t vertexOffset)
+{
+	Vertex* vs = (Vertex*)m_vertexBuffer->GetResource();
+
+	for (int32_t vi = vertexOffset; vi < vertexOffset + spriteCount * 4; vi++)
+	{
+		auto& v = vs[vi];
+
+		FDynamicMeshVertex DynamicVertex;
+		DynamicVertex.Position = UEFVector3f(v.Pos.X, v.Pos.Z, v.Pos.Y);
+		DynamicVertex.Color = FColor(v.Col.R, v.Col.G, v.Col.B, v.Col.A);
+		DynamicVertex.SetTangents(UEFVector3f(1, 0, 0), UEFVector3f(1, 1, 0), UEFVector3f(0, 0, 1));
+		DynamicVertex.TextureCoordinate[0] = UEFVector2f(v.UV[0], v.UV[1]);
+		DynamicVertex.TextureCoordinate[1] = UEFVector2f(0.0f);
+		DynamicVertex.TextureCoordinate[2] = UEFVector2f(0.0f);
+		DynamicVertex.TextureCoordinate[3] = UEFVector2f(0.0f);
+		DynamicVertex.TextureCoordinate[4] = UEFVector2f(0.0f);
+		DynamicVertex.TextureCoordinate[5] = UEFVector2f(0.0f);
+		DynamicVertex.TextureCoordinate[6] = UEFVector2f(0.0f);
+
+		meshBuilder.AddVertex(DynamicVertex);
+	}
+}
+
+template <>
+void RendererImplemented::AddVertex<Effekseer::RendererMaterialType::Default, true>(FDynamicMeshBuilder& meshBuilder, int32_t spriteCount, int32_t vertexOffset)
+{
+	AdvancedVertex* vs = (AdvancedVertex*)m_vertexBuffer->GetResource();
+
+	for (int32_t vi = vertexOffset; vi < vertexOffset + spriteCount * 4; vi++)
+	{
+		auto& v = vs[vi];
+
+		FDynamicMeshVertex DynamicVertex;
+		DynamicVertex.Position = UEFVector3f(v.Pos.X, v.Pos.Z, v.Pos.Y);
+		DynamicVertex.Color = FColor(v.Col.R, v.Col.G, v.Col.B, v.Col.A);
+		DynamicVertex.SetTangents(UEFVector3f(1, 0, 0), UEFVector3f(1, 1, 0), UEFVector3f(0, 0, 1));
+		DynamicVertex.TextureCoordinate[0] = UEFVector2f(v.UV[0], v.UV[1]);
+		DynamicVertex.TextureCoordinate[1] = UEFVector2f(v.AlphaUV[0], v.AlphaUV[1]);
+		DynamicVertex.TextureCoordinate[2] = UEFVector2f(v.UVDistortionUV[0], v.UVDistortionUV[1]);
+		DynamicVertex.TextureCoordinate[3] = UEFVector2f(v.BlendUV[0], v.BlendUV[1]);
+		DynamicVertex.TextureCoordinate[4] = UEFVector2f(v.BlendAlphaUV[0], v.BlendAlphaUV[1]);
+		DynamicVertex.TextureCoordinate[5] = UEFVector2f(v.BlendUVDistortionUV[0], v.BlendUVDistortionUV[1]);
+		DynamicVertex.TextureCoordinate[6] = UEFVector2f(v.FlipbookIndexAndNextRate, v.AlphaThreshold);
+
+		meshBuilder.AddVertex(DynamicVertex);
+	}
+}
+
+template <>
+void RendererImplemented::AddVertex<Effekseer::RendererMaterialType::BackDistortion, false>(FDynamicMeshBuilder& meshBuilder, int32_t spriteCount, int32_t vertexOffset)
+{
+	VertexDistortion* vs = (VertexDistortion*)m_vertexBuffer->GetResource();
+
+	for (int32_t vi = vertexOffset; vi < vertexOffset + spriteCount * 4; vi++)
+	{
+		auto& v = vs[vi];
+
+		auto normal = UnpackVector3DF(v.Normal);
+		auto tangent = UnpackVector3DF(v.Tangent);
+		Effekseer::Vector3D binormal;
+		Effekseer::Vector3D::Cross(binormal, normal, tangent);
+
+		FDynamicMeshVertex DynamicVertex;
+		DynamicVertex.Position = UEFVector3f(v.Pos.X, v.Pos.Z, v.Pos.Y);
+		DynamicVertex.Color = FColor(v.Col.R, v.Col.G, v.Col.B, v.Col.A);
+		DynamicVertex.SetTangents(
+			UEFVector3f(binormal.X, binormal.Z, binormal.Y),
+			UEFVector3f(tangent.X, tangent.Z, tangent.Y),
+			UEFVector3f(normal.X, normal.Z, normal.Y));
+		DynamicVertex.TextureCoordinate[0] = UEFVector2f(v.UV[0], v.UV[1]);
+		DynamicVertex.TextureCoordinate[1] = UEFVector2f(0.0f);
+		DynamicVertex.TextureCoordinate[2] = UEFVector2f(0.0f);
+		DynamicVertex.TextureCoordinate[3] = UEFVector2f(0.0f);
+		DynamicVertex.TextureCoordinate[4] = UEFVector2f(0.0f);
+		DynamicVertex.TextureCoordinate[5] = UEFVector2f(0.0f);
+		DynamicVertex.TextureCoordinate[6] = UEFVector2f(0.0f);
+
+		meshBuilder.AddVertex(DynamicVertex);
+	}
+}
+
+template <>
+void RendererImplemented::AddVertex<Effekseer::RendererMaterialType::BackDistortion, true>(FDynamicMeshBuilder& meshBuilder, int32_t spriteCount, int32_t vertexOffset)
+{
+	AdvancedVertexDistortion* vs = (AdvancedVertexDistortion*)m_vertexBuffer->GetResource();
+
+	for (int32_t vi = vertexOffset; vi < vertexOffset + spriteCount * 4; vi++)
+	{
+		auto& v = vs[vi];
+
+		auto normal = UnpackVector3DF(v.Normal);
+		auto tangent = UnpackVector3DF(v.Tangent);
+		Effekseer::Vector3D binormal;
+		Effekseer::Vector3D::Cross(binormal, normal, tangent);
+
+		FDynamicMeshVertex DynamicVertex;
+		DynamicVertex.Position = UEFVector3f(v.Pos.X, v.Pos.Z, v.Pos.Y);
+		DynamicVertex.Color = FColor(v.Col.R, v.Col.G, v.Col.B, v.Col.A);
+		DynamicVertex.SetTangents(
+			UEFVector3f(binormal.X, binormal.Z, binormal.Y),
+			UEFVector3f(tangent.X, tangent.Z, tangent.Y),
+			UEFVector3f(normal.X, normal.Z, normal.Y));
+		DynamicVertex.TextureCoordinate[0] = UEFVector2f(v.UV[0], v.UV[1]);
+		DynamicVertex.TextureCoordinate[1] = UEFVector2f(v.AlphaUV[0], v.AlphaUV[1]);
+		DynamicVertex.TextureCoordinate[2] = UEFVector2f(v.UVDistortionUV[0], v.UVDistortionUV[1]);
+		DynamicVertex.TextureCoordinate[3] = UEFVector2f(v.BlendUV[0], v.BlendUV[1]);
+		DynamicVertex.TextureCoordinate[4] = UEFVector2f(v.BlendAlphaUV[0], v.BlendAlphaUV[1]);
+		DynamicVertex.TextureCoordinate[5] = UEFVector2f(v.BlendUVDistortionUV[0], v.BlendUVDistortionUV[1]);
+		DynamicVertex.TextureCoordinate[6] = UEFVector2f(v.FlipbookIndexAndNextRate, v.AlphaThreshold);
+
+		meshBuilder.AddVertex(DynamicVertex);
+	}
+}
+
+template <>
+void RendererImplemented::AddVertex<Effekseer::RendererMaterialType::Lighting, false>(FDynamicMeshBuilder& meshBuilder, int32_t spriteCount, int32_t vertexOffset)
+{
+	VertexLighting* vs = (VertexLighting*)m_vertexBuffer->GetResource();
+
+	for (int32_t vi = vertexOffset; vi < vertexOffset + spriteCount * 4; vi++)
+	{
+		auto& v = vs[vi];
+
+		FDynamicMeshVertex meshVert;
+
+		auto normal = UnpackVector3DF(v.Normal);
+		auto tangent = UnpackVector3DF(v.Tangent);
+		Effekseer::Vector3D binormal;
+		Effekseer::Vector3D::Cross(binormal, normal, tangent);
+
+		meshVert.Position = UEFVector3f(v.Pos.X, v.Pos.Z, v.Pos.Y);
+		meshVert.Color = FColor(v.Col.R, v.Col.G, v.Col.B, v.Col.A);
+
+		meshVert.TextureCoordinate[0] = UEFVector2f(v.UV1[0], v.UV1[1]);
+		meshVert.TextureCoordinate[1] = UEFVector2f(v.UV2[0], v.UV2[1]);
+		meshVert.TextureCoordinate[2] = UEFVector2f(0.0f);
+		meshVert.TextureCoordinate[3] = UEFVector2f(0.0f);
+		meshVert.TextureCoordinate[4] = UEFVector2f(0.0f);
+		meshVert.TextureCoordinate[5] = UEFVector2f(0.0f);
+		meshVert.TextureCoordinate[6] = UEFVector2f(0.0f);
+
+		meshVert.SetTangents(
+			UEFVector3f(binormal.X, binormal.Z, binormal.Y),
+			UEFVector3f(tangent.X, tangent.Z, tangent.Y),
+			UEFVector3f(normal.X, normal.Z, normal.Y));
+
+		meshBuilder.AddVertex(meshVert);
+	}
+}
+
+template <>
+void RendererImplemented::AddVertex<Effekseer::RendererMaterialType::Lighting, true>(FDynamicMeshBuilder& meshBuilder, int32_t spriteCount, int32_t vertexOffset)
+{
+	AdvancedVertexLighting* vs = (AdvancedVertexLighting*)m_vertexBuffer->GetResource();
+
+	for (int32_t vi = vertexOffset; vi < vertexOffset + spriteCount * 4; vi++)
+	{
+		auto& v = vs[vi];
+
+		FDynamicMeshVertex meshVert;
+
+		auto normal = UnpackVector3DF(v.Normal);
+		auto tangent = UnpackVector3DF(v.Tangent);
+		Effekseer::Vector3D binormal;
+		Effekseer::Vector3D::Cross(binormal, normal, tangent);
+
+		meshVert.Position = UEFVector3f(v.Pos.X, v.Pos.Z, v.Pos.Y);
+		meshVert.Color = FColor(v.Col.R, v.Col.G, v.Col.B, v.Col.A);
+
+		meshVert.TextureCoordinate[0] = UEFVector2f(v.UV1[0], v.UV1[1]);
+		meshVert.TextureCoordinate[1] = UEFVector2f(v.AlphaUV[0], v.AlphaUV[1]);
+		meshVert.TextureCoordinate[2] = UEFVector2f(v.UVDistortionUV[0], v.UVDistortionUV[1]);
+		meshVert.TextureCoordinate[3] = UEFVector2f(v.BlendUV[0], v.BlendUV[1]);
+		meshVert.TextureCoordinate[4] = UEFVector2f(v.BlendAlphaUV[0], v.BlendAlphaUV[1]);
+		meshVert.TextureCoordinate[5] = UEFVector2f(v.BlendUVDistortionUV[0], v.BlendUVDistortionUV[1]);
+		meshVert.TextureCoordinate[6] = UEFVector2f(v.FlipbookIndexAndNextRate, v.AlphaThreshold);
+
+		meshVert.SetTangents(
+			UEFVector3f(binormal.X, binormal.Z, binormal.Y),
+			UEFVector3f(tangent.X, tangent.Z, tangent.Y),
+			UEFVector3f(normal.X, normal.Z, normal.Y));
+
+		meshBuilder.AddVertex(meshVert);
+	}
+}
+
+void RendererImplemented::DrawModel(void* model,
+									std::vector<Effekseer::Matrix44>& matrixes,
+									std::vector<Effekseer::RectF>& uvs,
+									std::vector<Effekseer::RectF>& alphaUVs,
+									std::vector<Effekseer::RectF>& uvDistortionUVs,
+									std::vector<Effekseer::RectF>& blendUVs,
+									std::vector<Effekseer::RectF>& blendAlphaUVs,
+									std::vector<Effekseer::RectF>& blendUVDistortionUVs,
+									std::vector<float>& flipbookIndexAndNextRates,
+									std::vector<float>& alphaThresholds,
+									std::vector<Effekseer::Color>& colors,
+									std::vector<int32_t>& times,
+									std::vector<std::array<float, 4>>& customData1,
+									std::vector<std::array<float, 4>>& customData2)
+{
+	// StaticMesh
+	if (model == nullptr)
+		return;
+	auto mdl = (EffekseerInternalModel*)model;
+
+	if (mdl->UserData != nullptr)
+	{
+		if (mdl->UserData->Mesh == nullptr)
 		{
-			auto& v = vs[vi];
+			return;
+		}
 
-			FDynamicMeshVertex DynamicVertex;
-			DynamicVertex.Position = UEFVector3f(v.Pos.X, v.Pos.Z, v.Pos.Y);
-			DynamicVertex.Color = FColor(v.Col.R, v.Col.G, v.Col.B, v.Col.A);
-			DynamicVertex.SetTangents(UEFVector3f(1, 0, 0), UEFVector3f(1, 1, 0), UEFVector3f(0, 0, 1));
-			DynamicVertex.TextureCoordinate[0] = UEFVector2f(v.UV[0], v.UV[1]);
-			DynamicVertex.TextureCoordinate[1] = UEFVector2f(v.AlphaUV[0], v.AlphaUV[1]);
-			DynamicVertex.TextureCoordinate[2] = UEFVector2f(v.UVDistortionUV[0], v.UVDistortionUV[1]);
-			DynamicVertex.TextureCoordinate[3] = UEFVector2f(v.BlendUV[0], v.BlendUV[1]);
-			DynamicVertex.TextureCoordinate[4] = UEFVector2f(v.BlendAlphaUV[0], v.BlendAlphaUV[1]);
-			DynamicVertex.TextureCoordinate[5] = UEFVector2f(v.BlendUVDistortionUV[0], v.BlendUVDistortionUV[1]);
-			DynamicVertex.TextureCoordinate[6] = UEFVector2f(v.FlipbookIndexAndNextRate, v.AlphaThreshold);
-
-			meshBuilder.AddVertex(DynamicVertex);
+		if (mdl->UserData->Mesh->GetRenderData()->LODResources.Num() == 0)
+		{
+			return;
+		}
+	}
+	else if (mdl->ProceduralData != nullptr)
+	{
+		if (!mdl->ProceduralData->GenerateRenderDataIfRequired(m_meshElementCollector->GetFeatureLevel()))
+		{
+			return;
 		}
 	}
 
-	template<> void RendererImplemented::AddVertex<Effekseer::RendererMaterialType::BackDistortion, false>
-		(FDynamicMeshBuilder& meshBuilder, int32_t spriteCount, int32_t vertexOffset)
+	auto efkmdl = ((UEffekseerModel*)mdl->UserData);
+
+	// Material
+	auto reunderingUserData = static_cast<EffekseerRenderingUserData*>(GetImpl()->CurrentRenderingUserData.Get());
+	auto mat = FindMaterial(reunderingUserData);
+
+	if (mat == nullptr)
+		return;
+
+	for (int32_t objectIndex = 0; objectIndex < matrixes.size(); objectIndex++)
 	{
-		VertexDistortion* vs = (VertexDistortion*)m_vertexBuffer->GetResource();
+		auto& matOrigin = matrixes[objectIndex];
+		auto& uvOrigin = uvs[objectIndex];
+		auto& alphaUVOrigin = alphaUVs[objectIndex];
+		auto& uvDistortionUVOrigin = uvDistortionUVs[objectIndex];
+		auto& blendUVOrigin = blendUVs[objectIndex];
+		auto& blendAlphaUVOrigin = blendAlphaUVs[objectIndex];
+		auto& blendUVDistortionUVOrigin = blendUVDistortionUVs[objectIndex];
 
-		for (int32_t vi = vertexOffset; vi < vertexOffset + spriteCount * 4; vi++)
-		{
-			auto& v = vs[vi];
+		auto& flipbookIndexAndNextRate = flipbookIndexAndNextRates[objectIndex];
+		auto& alphaThreshold = alphaThresholds[objectIndex];
+		auto& colorOrigin = colors[objectIndex];
 
-			auto normal = UnpackVector3DF(v.Normal);
-			auto tangent = UnpackVector3DF(v.Tangent);
-			Effekseer::Vector3D binormal;
-			Effekseer::Vector3D::Cross(binormal, normal, tangent);
+		FMatrix matLocalToWorld = FMatrix(
+			FVector(matOrigin.Values[0][0], matOrigin.Values[0][2], matOrigin.Values[0][1]),
+			FVector(matOrigin.Values[2][0], matOrigin.Values[2][2], matOrigin.Values[2][1]),
+			FVector(matOrigin.Values[1][0], matOrigin.Values[1][2], matOrigin.Values[1][1]),
+			FVector(matOrigin.Values[3][0], matOrigin.Values[3][2], matOrigin.Values[3][1]));
 
-			FDynamicMeshVertex DynamicVertex;
-			DynamicVertex.Position = UEFVector3f(v.Pos.X, v.Pos.Z, v.Pos.Y);
-			DynamicVertex.Color = FColor(v.Col.R, v.Col.G, v.Col.B, v.Col.A);
-			DynamicVertex.SetTangents(
-				UEFVector3f(binormal.X, binormal.Z, binormal.Y),
-				UEFVector3f(tangent.X, tangent.Z, tangent.Y),
-				UEFVector3f(normal.X, normal.Z, normal.Y));
-			DynamicVertex.TextureCoordinate[0] = UEFVector2f(v.UV[0], v.UV[1]);
-			DynamicVertex.TextureCoordinate[1] = UEFVector2f(0.0f);
-			DynamicVertex.TextureCoordinate[2] = UEFVector2f(0.0f);
-			DynamicVertex.TextureCoordinate[3] = UEFVector2f(0.0f);
-			DynamicVertex.TextureCoordinate[4] = UEFVector2f(0.0f);
-			DynamicVertex.TextureCoordinate[5] = UEFVector2f(0.0f);
-			DynamicVertex.TextureCoordinate[6] = UEFVector2f(0.0f);
+		FLinearColor uv = FLinearColor(uvOrigin.X, uvOrigin.Y, uvOrigin.Width, uvOrigin.Height);
 
-			meshBuilder.AddVertex(DynamicVertex);
-		}
-	}
+		FLinearColor alphaUV = FLinearColor(alphaUVOrigin.X, alphaUVOrigin.Y, alphaUVOrigin.Width, alphaUVOrigin.Height);
+		FLinearColor uvDistortionUV = FLinearColor(uvDistortionUVOrigin.X, uvDistortionUVOrigin.Y, uvDistortionUVOrigin.Width, uvDistortionUVOrigin.Height);
+		FLinearColor blendUV = FLinearColor(blendUVOrigin.X, blendUVOrigin.Y, blendUVOrigin.Width, blendUVOrigin.Height);
+		FLinearColor blendAlphaUV = FLinearColor(blendAlphaUVOrigin.X, blendAlphaUVOrigin.Y, blendAlphaUVOrigin.Width, blendAlphaUVOrigin.Height);
+		FLinearColor blendUVDistortionUV = FLinearColor(blendUVDistortionUVOrigin.X, blendUVDistortionUVOrigin.Y, blendUVDistortionUVOrigin.Width, blendUVDistortionUVOrigin.Height);
 
-	template<> void RendererImplemented::AddVertex<Effekseer::RendererMaterialType::BackDistortion, true>
-		(FDynamicMeshBuilder& meshBuilder, int32_t spriteCount, int32_t vertexOffset)
-	{
-		AdvancedVertexDistortion* vs = (AdvancedVertexDistortion*)m_vertexBuffer->GetResource();
-
-		for (int32_t vi = vertexOffset; vi < vertexOffset + spriteCount * 4; vi++)
-		{
-			auto& v = vs[vi];
-
-			auto normal = UnpackVector3DF(v.Normal);
-			auto tangent = UnpackVector3DF(v.Tangent);
-			Effekseer::Vector3D binormal;
-			Effekseer::Vector3D::Cross(binormal, normal, tangent);
-
-			FDynamicMeshVertex DynamicVertex;
-			DynamicVertex.Position = UEFVector3f(v.Pos.X, v.Pos.Z, v.Pos.Y);
-			DynamicVertex.Color = FColor(v.Col.R, v.Col.G, v.Col.B, v.Col.A);
-			DynamicVertex.SetTangents(
-				UEFVector3f(binormal.X, binormal.Z, binormal.Y),
-				UEFVector3f(tangent.X, tangent.Z, tangent.Y),
-				UEFVector3f(normal.X, normal.Z, normal.Y));
-			DynamicVertex.TextureCoordinate[0] = UEFVector2f(v.UV[0], v.UV[1]);
-			DynamicVertex.TextureCoordinate[1] = UEFVector2f(v.AlphaUV[0], v.AlphaUV[1]);
-			DynamicVertex.TextureCoordinate[2] = UEFVector2f(v.UVDistortionUV[0], v.UVDistortionUV[1]);
-			DynamicVertex.TextureCoordinate[3] = UEFVector2f(v.BlendUV[0], v.BlendUV[1]);
-			DynamicVertex.TextureCoordinate[4] = UEFVector2f(v.BlendAlphaUV[0], v.BlendAlphaUV[1]);
-			DynamicVertex.TextureCoordinate[5] = UEFVector2f(v.BlendUVDistortionUV[0], v.BlendUVDistortionUV[1]);
-			DynamicVertex.TextureCoordinate[6] = UEFVector2f(v.FlipbookIndexAndNextRate, v.AlphaThreshold);
-
-			meshBuilder.AddVertex(DynamicVertex);
-		}
-	}
-
-	template<> void RendererImplemented::AddVertex<Effekseer::RendererMaterialType::Lighting, false>
-		(FDynamicMeshBuilder& meshBuilder, int32_t spriteCount, int32_t vertexOffset)
-	{
-		VertexLighting* vs = (VertexLighting*)m_vertexBuffer->GetResource();
-
-		for (int32_t vi = vertexOffset; vi < vertexOffset + spriteCount * 4; vi++)
-		{
-			auto& v = vs[vi];
-
-			FDynamicMeshVertex meshVert;
-
-			auto normal = UnpackVector3DF(v.Normal);
-			auto tangent = UnpackVector3DF(v.Tangent);
-			Effekseer::Vector3D binormal;
-			Effekseer::Vector3D::Cross(binormal, normal, tangent);
-
-			meshVert.Position = UEFVector3f(v.Pos.X, v.Pos.Z, v.Pos.Y);
-			meshVert.Color = FColor(v.Col.R, v.Col.G, v.Col.B, v.Col.A);
-
-			meshVert.TextureCoordinate[0] = UEFVector2f(v.UV1[0], v.UV1[1]);
-			meshVert.TextureCoordinate[1] = UEFVector2f(v.UV2[0], v.UV2[1]);
-			meshVert.TextureCoordinate[2] = UEFVector2f(0.0f);
-			meshVert.TextureCoordinate[3] = UEFVector2f(0.0f);
-			meshVert.TextureCoordinate[4] = UEFVector2f(0.0f);
-			meshVert.TextureCoordinate[5] = UEFVector2f(0.0f);
-			meshVert.TextureCoordinate[6] = UEFVector2f(0.0f);
-
-			meshVert.SetTangents(
-				UEFVector3f(binormal.X, binormal.Z, binormal.Y),
-				UEFVector3f(tangent.X, tangent.Z, tangent.Y),
-				UEFVector3f(normal.X, normal.Z, normal.Y));
-
-			meshBuilder.AddVertex(meshVert);
-		}
-	}
-
-	template<> void RendererImplemented::AddVertex<Effekseer::RendererMaterialType::Lighting, true>
-		(FDynamicMeshBuilder& meshBuilder, int32_t spriteCount, int32_t vertexOffset)
-	{
-		AdvancedVertexLighting* vs = (AdvancedVertexLighting*)m_vertexBuffer->GetResource();
-
-		for (int32_t vi = vertexOffset; vi < vertexOffset + spriteCount * 4; vi++)
-		{
-			auto& v = vs[vi];
-
-			FDynamicMeshVertex meshVert;
-
-			auto normal = UnpackVector3DF(v.Normal);
-			auto tangent = UnpackVector3DF(v.Tangent);
-			Effekseer::Vector3D binormal;
-			Effekseer::Vector3D::Cross(binormal, normal, tangent);
-
-			meshVert.Position = UEFVector3f(v.Pos.X, v.Pos.Z, v.Pos.Y);
-			meshVert.Color = FColor(v.Col.R, v.Col.G, v.Col.B, v.Col.A);
-
-			meshVert.TextureCoordinate[0] = UEFVector2f(v.UV1[0], v.UV1[1]);
-			meshVert.TextureCoordinate[1] = UEFVector2f(v.AlphaUV[0], v.AlphaUV[1]);
-			meshVert.TextureCoordinate[2] = UEFVector2f(v.UVDistortionUV[0], v.UVDistortionUV[1]);
-			meshVert.TextureCoordinate[3] = UEFVector2f(v.BlendUV[0], v.BlendUV[1]);
-			meshVert.TextureCoordinate[4] = UEFVector2f(v.BlendAlphaUV[0], v.BlendAlphaUV[1]);
-			meshVert.TextureCoordinate[5] = UEFVector2f(v.BlendUVDistortionUV[0], v.BlendUVDistortionUV[1]);
-			meshVert.TextureCoordinate[6] = UEFVector2f(v.FlipbookIndexAndNextRate, v.AlphaThreshold);
-
-			meshVert.SetTangents(
-				UEFVector3f(binormal.X, binormal.Z, binormal.Y),
-				UEFVector3f(tangent.X, tangent.Z, tangent.Y),
-				UEFVector3f(normal.X, normal.Z, normal.Y));
-
-			meshBuilder.AddVertex(meshVert);
-		}
-	}
-
-	void RendererImplemented::DrawModel(void* model, 
-				   std::vector<Effekseer::Matrix44>& matrixes, 
-				   std::vector<Effekseer::RectF>& uvs, 
-				   std::vector<Effekseer::RectF>& alphaUVs,
-				   std::vector<Effekseer::RectF>& uvDistortionUVs,
-				   std::vector<Effekseer::RectF>& blendUVs,
-				   std::vector<Effekseer::RectF>& blendAlphaUVs,
-				   std::vector<Effekseer::RectF>& blendUVDistortionUVs,
-				   std::vector<float>& flipbookIndexAndNextRates,
-				   std::vector<float>& alphaThresholds,
-				   std::vector<Effekseer::Color>& colors, 
-				   std::vector<int32_t>& times, 
-				   std::vector<std::array<float, 4>>& customData1, 
-				   std::vector<std::array<float, 4>>& customData2)
-	{
-		// StaticMesh
-		if (model == nullptr) return;
-		auto mdl = (EffekseerInternalModel*)model;
+		FLinearColor color = FLinearColor(colorOrigin.R / 255.0f, colorOrigin.G / 255.0f, colorOrigin.B / 255.0f, colorOrigin.A / 255.0f);
+		int frameTime = times[objectIndex] % mdl->GetFrameCount();
 
 		if (mdl->UserData != nullptr)
 		{
-			if (mdl->UserData->Mesh == nullptr)
-			{
-				return;
-			}
+			const auto& lodResource = mdl->UserData->Mesh->GetRenderData()->LODResources[0];
 
-			if (mdl->UserData->Mesh->GetRenderData()->LODResources.Num() == 0)
+			if (mdl->UserData->AnimationFaceOffsets.Num() > 0)
 			{
-				return;
+				if (lodResource.Sections.Num() <= frameTime)
+				{
+					continue;
+				}
 			}
-		}
-		else if (mdl->ProceduralData != nullptr)
-		{
-			if (!mdl->ProceduralData->GenerateRenderDataIfRequired(m_meshElementCollector->GetFeatureLevel()))
+			else
 			{
-				return;
+				frameTime = 0;
 			}
 		}
 
-		auto efkmdl = ((UEffekseerModel*)mdl->UserData);
-	
-		// Material
-		auto reunderingUserData = static_cast<EffekseerRenderingUserData*>(GetImpl()->CurrentRenderingUserData.Get());
-		auto mat = FindMaterial(reunderingUserData);
-
-		if (mat == nullptr) return;
-
-		for (int32_t objectIndex = 0; objectIndex < matrixes.size(); objectIndex++)
 		{
-			auto& matOrigin = matrixes[objectIndex];
-			auto& uvOrigin = uvs[objectIndex];
-			auto& alphaUVOrigin = alphaUVs[objectIndex];
-			auto& uvDistortionUVOrigin = uvDistortionUVs[objectIndex];
-			auto& blendUVOrigin = blendUVs[objectIndex];
-			auto& blendAlphaUVOrigin = blendAlphaUVs[objectIndex];
-			auto& blendUVDistortionUVOrigin = blendUVDistortionUVs[objectIndex];
+			auto proxy = mat->GetRenderProxy();
 
-			auto& flipbookIndexAndNextRate = flipbookIndexAndNextRates[objectIndex];
-			auto& alphaThreshold = alphaThresholds[objectIndex];
-			auto& colorOrigin = colors[objectIndex];
+			if (m_currentShader != nullptr && m_currentShader->GetType() == Effekseer::RendererMaterialType::File)
+			{
+				const auto nativeMaterial = m_currentShader->GetEffekseerMaterial()->GetNativePtr();
+				const auto uniformCount = m_currentShader->GetEffekseerMaterial()->Uniforms.Num() + m_currentShader->GetEffekseerMaterial()->Gradients.Num() * 13;
 
-			FMatrix matLocalToWorld = FMatrix(
-				FVector(matOrigin.Values[0][0], matOrigin.Values[0][2], matOrigin.Values[0][1]),
-				FVector(matOrigin.Values[2][0], matOrigin.Values[2][2], matOrigin.Values[2][1]),
-				FVector(matOrigin.Values[1][0], matOrigin.Values[1][2], matOrigin.Values[1][1]),
-				FVector(matOrigin.Values[3][0], matOrigin.Values[3][2], matOrigin.Values[3][1])
-			);
+				auto uniformOffset = m_currentShader->GetParameterGenerator()->PixelUserUniformOffset;
+				auto buffer = static_cast<uint8_t*>(m_currentShader->GetPixelConstantBuffer()) + uniformOffset;
+				auto newProxy = new FFileMaterialRenderProxy(
+					proxy,
+					m_currentShader->GetEffekseerMaterial(),
+					reinterpret_cast<float*>(buffer),
+					uniformCount,
+					true,
+					m_renderState->GetActiveState().CullingType,
+					reunderingUserData->Magnification);
 
-			FLinearColor uv = FLinearColor(uvOrigin.X, uvOrigin.Y, uvOrigin.Width, uvOrigin.Height);
+				auto predefined = reinterpret_cast<float*>(static_cast<uint8_t*>(m_currentShader->GetPixelConstantBuffer()) + m_currentShader->GetParameterGenerator()->PixelPredefinedOffset);
 
-			FLinearColor alphaUV = FLinearColor(alphaUVOrigin.X, alphaUVOrigin.Y, alphaUVOrigin.Width, alphaUVOrigin.Height);
-			FLinearColor uvDistortionUV = FLinearColor(uvDistortionUVOrigin.X, uvDistortionUVOrigin.Y, uvDistortionUVOrigin.Width, uvDistortionUVOrigin.Height);
-			FLinearColor blendUV = FLinearColor(blendUVOrigin.X, blendUVOrigin.Y, blendUVOrigin.Width, blendUVOrigin.Height);
-			FLinearColor blendAlphaUV = FLinearColor(blendAlphaUVOrigin.X, blendAlphaUVOrigin.Y, blendAlphaUVOrigin.Width, blendAlphaUVOrigin.Height);
-			FLinearColor blendUVDistortionUV = FLinearColor(blendUVDistortionUVOrigin.X, blendUVDistortionUVOrigin.Y, blendUVDistortionUVOrigin.Width, blendUVDistortionUVOrigin.Height);
+				newProxy->LightDirection = FLinearColor::White;
+				newProxy->LightColor = FLinearColor::White;
+				newProxy->LightAmbientColor = FLinearColor::White;
+				newProxy->LocalTime = predefined[3];
 
-			FLinearColor color = FLinearColor(colorOrigin.R / 255.0f, colorOrigin.G / 255.0f, colorOrigin.B / 255.0f, colorOrigin.A / 255.0f);
-			int frameTime = times[objectIndex] % mdl->GetFrameCount();
-			
+				newProxy->ModelUV = uv;
+				newProxy->ModelColor = color;
+				newProxy->Textures = textures_;
+
+				if (nativeMaterial->GetCustomData1Count() > 0)
+				{
+					auto cd = customData1[objectIndex];
+					newProxy->CustomData1 = FLinearColor(cd[0], cd[1], cd[2], cd[3]);
+				}
+
+				if (nativeMaterial->GetCustomData2Count() > 0)
+				{
+					auto cd = customData2[objectIndex];
+					newProxy->CustomData2 = FLinearColor(cd[0], cd[1], cd[2], cd[3]);
+				}
+
+				proxy = newProxy;
+				m_meshElementCollector->RegisterOneFrameMaterialProxy(proxy);
+			}
+			else
+			{
+				proxy = new FModelMaterialRenderProxy(
+					proxy,
+					uv,
+					alphaUV,
+					uvDistortionUV,
+					blendUV,
+					blendAlphaUV,
+					blendUVDistortionUV,
+					flipbookIndexAndNextRate,
+					alphaThreshold,
+					color,
+					m_distortionIntensity,
+					m_renderState->GetActiveState().CullingType);
+				m_meshElementCollector->RegisterOneFrameMaterialProxy(proxy);
+			}
+
 			if (mdl->UserData != nullptr)
 			{
 				const auto& lodResource = mdl->UserData->Mesh->GetRenderData()->LODResources[0];
+				auto& section = lodResource.Sections[frameTime];
 
-				if (mdl->UserData->AnimationFaceOffsets.Num() > 0)
+				FMeshBatch& meshElement = m_meshElementCollector->AllocateMesh();
+				auto& element = meshElement.Elements[0];
+
+				FDynamicPrimitiveUniformBuffer& dynamicPrimitiveUniformBuffer = m_meshElementCollector->AllocateOneFrameResource<FDynamicPrimitiveUniformBuffer>();
+				dynamicPrimitiveUniformBuffer.Set(matLocalToWorld, matLocalToWorld, FBoxSphereBounds(EForceInit::ForceInit), FBoxSphereBounds(EForceInit::ForceInit), false, false, false, false);
+
+				element.PrimitiveUniformBufferResource = &dynamicPrimitiveUniformBuffer.UniformBuffer;
+
+				meshElement.MaterialRenderProxy = proxy;
+				meshElement.VertexFactory = &mdl->UserData->Mesh->GetRenderData()->LODVertexFactories[0].VertexFactory;
+				meshElement.Type = PT_TriangleList;
+
+				if (efkmdl->AnimationFaceOffsets.Num() > 0)
 				{
-					if (lodResource.Sections.Num() <= frameTime)
-					{
-						continue;
-					}
+					element.IndexBuffer = &(lodResource.IndexBuffer);
+					element.FirstIndex = section.FirstIndex;
+					element.NumPrimitives = section.NumTriangles;
 				}
 				else
 				{
-					frameTime = 0;
+					element.IndexBuffer = &(lodResource.IndexBuffer);
+					element.FirstIndex = section.FirstIndex;
+					element.NumPrimitives = section.NumTriangles;
 				}
-			}
 
+				element.MinVertexIndex = section.MinVertexIndex;
+				element.MaxVertexIndex = section.MaxVertexIndex;
+				meshElement.LODIndex = 0;
+
+				element.MaxScreenSize = 0.0f;
+				element.MinScreenSize = -1.0f;
+
+				m_meshElementCollector->AddMesh(m_viewIndex, meshElement);
+			}
+			else if (mdl->ProceduralData != nullptr)
 			{
-				auto proxy = mat->GetRenderProxy();
-
-				if (m_currentShader != nullptr && m_currentShader->GetType() == Effekseer::RendererMaterialType::File)
+				if (!mdl->ProceduralData->GenerateRenderDataIfRequired(m_meshElementCollector->GetFeatureLevel()))
 				{
-					const auto nativeMaterial = m_currentShader->GetEffekseerMaterial()->GetNativePtr();
-					const auto uniformCount = m_currentShader->GetEffekseerMaterial()->Uniforms.Num() + m_currentShader->GetEffekseerMaterial()->Gradients.Num() * 13;
-
-					auto uniformOffset = m_currentShader->GetParameterGenerator()->PixelUserUniformOffset;
-					auto buffer = static_cast<uint8_t*>(m_currentShader->GetPixelConstantBuffer()) + uniformOffset;
-					auto newProxy = new FFileMaterialRenderProxy(
-						proxy,
-						m_currentShader->GetEffekseerMaterial(),
-						reinterpret_cast<float*>(buffer),
-						uniformCount,
-						true,
-						m_renderState->GetActiveState().CullingType,
-						reunderingUserData->Magnification);
-
-					auto predefined = reinterpret_cast<float*>(static_cast<uint8_t*>(m_currentShader->GetPixelConstantBuffer()) + m_currentShader->GetParameterGenerator()->PixelPredefinedOffset);
-
-					newProxy->LightDirection = FLinearColor::White;
-					newProxy->LightColor = FLinearColor::White;
-					newProxy->LightAmbientColor = FLinearColor::White;
-					newProxy->LocalTime = predefined[3];
-
-					newProxy->ModelUV = uv;
-					newProxy->ModelColor = color;
-					newProxy->Textures = textures_;
-
-					if (nativeMaterial->GetCustomData1Count() > 0)
-					{
-						auto cd = customData1[objectIndex];
-						newProxy->CustomData1 = FLinearColor(cd[0], cd[1], cd[2], cd[3]);
-					}
-
-					if (nativeMaterial->GetCustomData2Count() > 0)
-					{
-						auto cd = customData2[objectIndex];
-						newProxy->CustomData2 = FLinearColor(cd[0], cd[1], cd[2], cd[3]);
-					}
-
-					proxy = newProxy;
-					m_meshElementCollector->RegisterOneFrameMaterialProxy(proxy);
-				}
-				else
-				{
-					proxy = new FModelMaterialRenderProxy(
-						proxy,
-						uv,
-						alphaUV,
-						uvDistortionUV,
-						blendUV,
-						blendAlphaUV,
-						blendUVDistortionUV,
-						flipbookIndexAndNextRate,
-						alphaThreshold,
-						color,
-						m_distortionIntensity,
-						m_renderState->GetActiveState().CullingType);
-					m_meshElementCollector->RegisterOneFrameMaterialProxy(proxy);
+					return;
 				}
 
-
-				if (mdl->UserData != nullptr)
-				{
-					const auto& lodResource = mdl->UserData->Mesh->GetRenderData()->LODResources[0];
-					auto& section = lodResource.Sections[frameTime];
-
-					FMeshBatch& meshElement = m_meshElementCollector->AllocateMesh();
-					auto& element = meshElement.Elements[0];
-
-					FDynamicPrimitiveUniformBuffer& dynamicPrimitiveUniformBuffer = m_meshElementCollector->AllocateOneFrameResource<FDynamicPrimitiveUniformBuffer>();
-					dynamicPrimitiveUniformBuffer.Set(matLocalToWorld, matLocalToWorld, FBoxSphereBounds(EForceInit::ForceInit), FBoxSphereBounds(EForceInit::ForceInit), false, false, false, false);
-
-					element.PrimitiveUniformBufferResource = &dynamicPrimitiveUniformBuffer.UniformBuffer;
-
-					meshElement.MaterialRenderProxy = proxy;
-					meshElement.VertexFactory = &mdl->UserData->Mesh->GetRenderData()->LODVertexFactories[0].VertexFactory;
-					meshElement.Type = PT_TriangleList;
-
-					if (efkmdl->AnimationFaceOffsets.Num() > 0)
-					{
-						element.IndexBuffer = &(lodResource.IndexBuffer);
-						element.FirstIndex = section.FirstIndex;
-						element.NumPrimitives = section.NumTriangles;
-					}
-					else
-					{
-						element.IndexBuffer = &(lodResource.IndexBuffer);
-						element.FirstIndex = section.FirstIndex;
-						element.NumPrimitives = section.NumTriangles;
-					}
-
-					element.MinVertexIndex = section.MinVertexIndex;
-					element.MaxVertexIndex = section.MaxVertexIndex;
-					meshElement.LODIndex = 0;
-
-					element.MaxScreenSize = 0.0f;
-					element.MinScreenSize = -1.0f;
-
-					m_meshElementCollector->AddMesh(m_viewIndex, meshElement);
-				}
-				else if (mdl->ProceduralData != nullptr)
-				{
-					if (!mdl->ProceduralData->GenerateRenderDataIfRequired(m_meshElementCollector->GetFeatureLevel()))
-					{
-						return;
-					}
-
-					mdl->ProceduralData->Render(m_viewIndex, *m_meshElementCollector, matLocalToWorld, proxy);
-				}
+				mdl->ProceduralData->Render(m_viewIndex, *m_meshElementCollector, matLocalToWorld, proxy);
 			}
 		}
 	}
+}
 
-	UMaterialInterface* RendererImplemented::FindMaterial(EffekseerRenderingUserData* userData)
+UMaterialInterface* RendererImplemented::FindMaterial(EffekseerRenderingUserData* userData)
+{
+	if (m_currentShader->GetType() == Effekseer::RendererMaterialType::File)
 	{
-		if (m_currentShader->GetType() == Effekseer::RendererMaterialType::File)
-		{
-			return m_currentShader->GetEffekseerMaterial()->FindMatrial((EEffekseerAlphaBlendType)m_renderState->GetActiveState().AlphaBlend);
-		}
-
-		if (userData == nullptr)
-		{
-			return nullptr;
-		}
-
-		EffekseerEffectMaterialKey m = userData->Key;
-		UMaterialInstanceDynamic* mat = nullptr;
-
-		auto it = m_nmaterials.find(m);
-
-		if (it != m_nmaterials.end())
-		{
-			mat = it->second;
-		}
-
-		return mat;
+		return m_currentShader->GetEffekseerMaterial()->FindMatrial((EEffekseerAlphaBlendType)m_renderState->GetActiveState().AlphaBlend);
 	}
 
-	Shader* RendererImplemented::GetShader(::EffekseerRenderer::RendererShaderType shaderType) const
+	if (userData == nullptr)
 	{
-		if (shaderType == ::EffekseerRenderer::RendererShaderType::AdvancedBackDistortion)
-		{
-			return backDistortedShaderAd_.get();
-		}
-		else if (shaderType == ::EffekseerRenderer::RendererShaderType::AdvancedLit)
-		{
-			return lightingShaderAd_.get();
-		}
-		else if (shaderType == ::EffekseerRenderer::RendererShaderType::AdvancedUnlit)
-		{
-			return stanShaderAd_.get();
-		}
-		else if (shaderType == ::EffekseerRenderer::RendererShaderType::BackDistortion)
-		{
-			return backDistortedShader_.get();
-		}
-		else if (shaderType == ::EffekseerRenderer::RendererShaderType::Lit)
-		{
-			return lightingShader_.get();
-		}
-		else if (shaderType == ::EffekseerRenderer::RendererShaderType::Unlit)
-		{
-			return stanShader_.get();
-		}
+		return nullptr;
+	}
 
-		// return as default shader
+	EffekseerEffectMaterialKey m = userData->Key;
+	UMaterialInstanceDynamic* mat = nullptr;
+
+	auto it = m_nmaterials.find(m);
+
+	if (it != m_nmaterials.end())
+	{
+		mat = it->second;
+	}
+
+	return mat;
+}
+
+Shader* RendererImplemented::GetShader(::EffekseerRenderer::RendererShaderType shaderType) const
+{
+	if (shaderType == ::EffekseerRenderer::RendererShaderType::AdvancedBackDistortion)
+	{
+		return backDistortedShaderAd_.get();
+	}
+	else if (shaderType == ::EffekseerRenderer::RendererShaderType::AdvancedLit)
+	{
+		return lightingShaderAd_.get();
+	}
+	else if (shaderType == ::EffekseerRenderer::RendererShaderType::AdvancedUnlit)
+	{
+		return stanShaderAd_.get();
+	}
+	else if (shaderType == ::EffekseerRenderer::RendererShaderType::BackDistortion)
+	{
+		return backDistortedShader_.get();
+	}
+	else if (shaderType == ::EffekseerRenderer::RendererShaderType::Lit)
+	{
+		return lightingShader_.get();
+	}
+	else if (shaderType == ::EffekseerRenderer::RendererShaderType::Unlit)
+	{
 		return stanShader_.get();
 	}
 
-	void RendererImplemented::BeginShader(Shader* shader)
-	{
-		m_currentShader = shader;
-	}
+	// return as default shader
+	return stanShader_.get();
+}
 
-	void RendererImplemented::RendererImplemented::EndShader(Shader* shader)
-	{
+void RendererImplemented::BeginShader(Shader* shader)
+{
+	m_currentShader = shader;
+}
 
-	}
+void RendererImplemented::RendererImplemented::EndShader(Shader* shader)
+{
+}
 
-	void RendererImplemented::SetVertexBufferToShader(const void* data, int32_t size, int32_t dstOffset)
-	{
-		assert(currentShader != nullptr);
-		auto p = static_cast<uint8_t*>(m_currentShader->GetVertexConstantBuffer()) + dstOffset;
-		memcpy(p, data, size);
-	}
+void RendererImplemented::SetVertexBufferToShader(const void* data, int32_t size, int32_t dstOffset)
+{
+	assert(currentShader != nullptr);
+	auto p = static_cast<uint8_t*>(m_currentShader->GetVertexConstantBuffer()) + dstOffset;
+	memcpy(p, data, size);
+}
 
-	void RendererImplemented::SetPixelBufferToShader(const void* data, int32_t size, int32_t dstOffset)
-	{
-		assert(currentShader != nullptr);
-		auto p = static_cast<uint8_t*>(m_currentShader->GetPixelConstantBuffer()) + dstOffset;
-		memcpy(p, data, size);
-	}
+void RendererImplemented::SetPixelBufferToShader(const void* data, int32_t size, int32_t dstOffset)
+{
+	assert(currentShader != nullptr);
+	auto p = static_cast<uint8_t*>(m_currentShader->GetPixelConstantBuffer()) + dstOffset;
+	memcpy(p, data, size);
+}
 
-	void RendererImplemented::SetTextures(Shader* shader, ::Effekseer::Backend::TextureRef* textures, int32_t count)
+void RendererImplemented::SetTextures(Shader* shader, ::Effekseer::Backend::TextureRef* textures, int32_t count)
+{
+	if (count > 0)
 	{
-		if (count > 0)
+		for (int32_t i = 0; i < count; i++)
 		{
-			for (int32_t i = 0; i < count; i++)
+			auto texture = static_cast<EffekseerInternalTexture*>(textures[i].Get());
+			if (texture != nullptr && texture != (void*)1)
 			{
-				auto texture = static_cast<EffekseerInternalTexture*>(textures[i].Get());
-				if (texture != nullptr && texture != (void*)1)
-				{
-					textures_[i] = texture->UserData;
-				}
-				else
-				{
-					textures_[i] = nullptr;
-				}
+				textures_[i] = texture->UserData;
+			}
+			else
+			{
+				textures_[i] = nullptr;
 			}
 		}
-		else
-		{
-			textures_.fill(nullptr);
-		}
 	}
-
-	void RendererImplemented::SetLocalToWorld(FMatrix localToWorld)
+	else
 	{
-		m_localToWorld = localToWorld;
-	}
-
-	void RendererImplemented::SetViewIndex(int32_t viewIndex)
-	{
-		m_viewIndex = viewIndex;
-	}
-
-	void RendererImplemented::SetMaterials(const TMap<UTexture2D*, UMaterialInstanceDynamic*>* materials, int32_t index)
-	{
-		m_materials[index] = (TMap<UTexture2D*, UMaterialInstanceDynamic*>*)materials;
-	}
-
-	void RendererImplemented::SetNMaterials(const std::map<EffekseerEffectMaterialKey, UMaterialInstanceDynamic*>& nmaterials)
-	{
-		m_nmaterials = nmaterials;
-	}
-
-	void RendererImplemented::SetMeshElementCollector(FMeshElementCollector* meshElementCollector)
-	{
-		m_meshElementCollector = meshElementCollector;
+		textures_.fill(nullptr);
 	}
 }
+
+void RendererImplemented::SetLocalToWorld(FMatrix localToWorld)
+{
+	m_localToWorld = localToWorld;
+}
+
+void RendererImplemented::SetViewIndex(int32_t viewIndex)
+{
+	m_viewIndex = viewIndex;
+}
+
+void RendererImplemented::SetMaterials(const TMap<UTexture2D*, UMaterialInstanceDynamic*>* materials, int32_t index)
+{
+	m_materials[index] = (TMap<UTexture2D*, UMaterialInstanceDynamic*>*)materials;
+}
+
+void RendererImplemented::SetNMaterials(const std::map<EffekseerEffectMaterialKey, UMaterialInstanceDynamic*>& nmaterials)
+{
+	m_nmaterials = nmaterials;
+}
+
+void RendererImplemented::SetMeshElementCollector(FMeshElementCollector* meshElementCollector)
+{
+	m_meshElementCollector = meshElementCollector;
+}
+} // namespace EffekseerRendererUE

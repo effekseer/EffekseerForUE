@@ -1,10 +1,10 @@
 // Copyright 1998-2016 Epic Games, Inc. All Rights Reserved.
 
-#include "EffekseerEdPrivatePCH.h"
-#include "AssetTypeActions_EffekseerEffect.h"
-#include "AssetTypeActions_EffekseerModel.h"
-#include "AssetTypeActions_EffekseerMaterial.h"
 #include "AssetTypeActions_EffekseerCurve.h"
+#include "AssetTypeActions_EffekseerEffect.h"
+#include "AssetTypeActions_EffekseerMaterial.h"
+#include "AssetTypeActions_EffekseerModel.h"
+#include "EffekseerEdPrivatePCH.h"
 
 class FEffekseerEd : public IEffekseerEd
 {
@@ -17,7 +17,7 @@ class FEffekseerEd : public IEffekseerEd
 	TSharedPtr<FAssetTypeActions_EffekseerCurve> EffekseerCurve_AssetTypeActions;
 };
 
-IMPLEMENT_MODULE( FEffekseerEd, EffekseerEd)
+IMPLEMENT_MODULE(FEffekseerEd, EffekseerEd)
 
 void FEffekseerEd::StartupModule()
 {
@@ -26,19 +26,14 @@ void FEffekseerEd::StartupModule()
 	EffekseerMaterial_AssetTypeActions = MakeShareable(new FAssetTypeActions_EffekseerMaterial);
 	EffekseerCurve_AssetTypeActions = MakeShareable(new FAssetTypeActions_EffekseerCurve);
 
-	FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools").Get()
-		.RegisterAssetTypeActions(EffekseerEffect_AssetTypeActions.ToSharedRef());
+	FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools").Get().RegisterAssetTypeActions(EffekseerEffect_AssetTypeActions.ToSharedRef());
 
-	FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools").Get()
-		.RegisterAssetTypeActions(EffekseerModel_AssetTypeActions.ToSharedRef());
+	FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools").Get().RegisterAssetTypeActions(EffekseerModel_AssetTypeActions.ToSharedRef());
 
-	FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools").Get()
-		.RegisterAssetTypeActions(EffekseerMaterial_AssetTypeActions.ToSharedRef());
+	FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools").Get().RegisterAssetTypeActions(EffekseerMaterial_AssetTypeActions.ToSharedRef());
 
-	FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools").Get()
-		.RegisterAssetTypeActions(EffekseerCurve_AssetTypeActions.ToSharedRef());
+	FModuleManager::LoadModuleChecked<FAssetToolsModule>("AssetTools").Get().RegisterAssetTypeActions(EffekseerCurve_AssetTypeActions.ToSharedRef());
 }
-
 
 void FEffekseerEd::ShutdownModule()
 {
@@ -46,8 +41,7 @@ void FEffekseerEd::ShutdownModule()
 	{
 		if (FModuleManager::Get().IsModuleLoaded("AssetTools"))
 		{
-			FModuleManager::GetModuleChecked<FAssetToolsModule>("AssetTools").Get()
-				.UnregisterAssetTypeActions(EffekseerEffect_AssetTypeActions.ToSharedRef());
+			FModuleManager::GetModuleChecked<FAssetToolsModule>("AssetTools").Get().UnregisterAssetTypeActions(EffekseerEffect_AssetTypeActions.ToSharedRef());
 		}
 		EffekseerEffect_AssetTypeActions.Reset();
 	}
@@ -56,8 +50,7 @@ void FEffekseerEd::ShutdownModule()
 	{
 		if (FModuleManager::Get().IsModuleLoaded("AssetTools"))
 		{
-			FModuleManager::GetModuleChecked<FAssetToolsModule>("AssetTools").Get()
-				.UnregisterAssetTypeActions(EffekseerModel_AssetTypeActions.ToSharedRef());
+			FModuleManager::GetModuleChecked<FAssetToolsModule>("AssetTools").Get().UnregisterAssetTypeActions(EffekseerModel_AssetTypeActions.ToSharedRef());
 		}
 		EffekseerModel_AssetTypeActions.Reset();
 	}
@@ -66,8 +59,7 @@ void FEffekseerEd::ShutdownModule()
 	{
 		if (FModuleManager::Get().IsModuleLoaded("AssetTools"))
 		{
-			FModuleManager::GetModuleChecked<FAssetToolsModule>("AssetTools").Get()
-				.UnregisterAssetTypeActions(EffekseerMaterial_AssetTypeActions.ToSharedRef());
+			FModuleManager::GetModuleChecked<FAssetToolsModule>("AssetTools").Get().UnregisterAssetTypeActions(EffekseerMaterial_AssetTypeActions.ToSharedRef());
 		}
 		EffekseerMaterial_AssetTypeActions.Reset();
 	}
@@ -76,12 +68,8 @@ void FEffekseerEd::ShutdownModule()
 	{
 		if (FModuleManager::Get().IsModuleLoaded("AssetTools"))
 		{
-			FModuleManager::GetModuleChecked<FAssetToolsModule>("AssetTools").Get()
-				.UnregisterAssetTypeActions(EffekseerCurve_AssetTypeActions.ToSharedRef());
+			FModuleManager::GetModuleChecked<FAssetToolsModule>("AssetTools").Get().UnregisterAssetTypeActions(EffekseerCurve_AssetTypeActions.ToSharedRef());
 		}
 		EffekseerCurve_AssetTypeActions.Reset();
 	}
 }
-
-
-

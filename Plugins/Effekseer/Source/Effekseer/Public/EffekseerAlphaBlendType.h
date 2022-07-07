@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "UObject/Object.h"
+
 #include "EffekseerAlphaBlendType.generated.h"
 
 UENUM(BlueprintType)

@@ -24,7 +24,6 @@ void FAssetTypeActions_EffekseerModel::GetResolvedSourceFilePaths(const TArray<U
 	}
 }
 
-
 void FAssetTypeActions_EffekseerModel::GetActions(
 	const TArray<UObject*>& InObjects, FMenuBuilder& MenuBuilder)
 {
@@ -49,7 +48,7 @@ void FAssetTypeActions_EffekseerModel::ExecuteAssignResources(TArray<TWeakObject
 		auto Object = (*ObjIt).Get();
 		if (Object)
 		{
-			//Object->AssignResources();
+			// Object->AssignResources();
 		}
 	}
 }

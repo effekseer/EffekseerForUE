@@ -5,12 +5,12 @@
 
 namespace EffekseerRendererUE
 {
-	class RenderState
-		: public EffekseerRenderer::RenderStateBase
-	{
-	public:
-		RenderState();
-		~RenderState();
-		void Update(bool forced);
-	};
-}
+class RenderState
+	: public EffekseerRenderer::RenderStateBase
+{
+public:
+	RenderState();
+	~RenderState();
+	void Update(bool forced);
+};
+} // namespace EffekseerRendererUE

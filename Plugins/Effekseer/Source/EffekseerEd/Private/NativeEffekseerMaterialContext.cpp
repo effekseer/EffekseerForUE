@@ -1,4 +1,5 @@
 #include "NativeEffekseerMaterialContext.h"
+
 #include "MaterialNode/InternalNode.h"
 
 std::shared_ptr<NativeEffekseerMaterialContext> NativeEffekseerMaterialContext::Load(const uint8* data, int size, const char* basePath)

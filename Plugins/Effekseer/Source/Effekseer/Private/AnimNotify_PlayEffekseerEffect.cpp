@@ -3,11 +3,9 @@
 
 #include "Animation/AnimSequenceBase.h"
 #include "Components/SkeletalMeshComponent.h"
-#include "Runtime/Launch/Resources/Version.h"
-
-#include "EffekseerEmitterComponent.h"
 #include "EffekseerEffect.h"
-
+#include "EffekseerEmitterComponent.h"
+#include "Runtime/Launch/Resources/Version.h"
 
 static UEffekseerEmitterComponent* CreateEffekseerEmitter(UEffekseerEffect* effekseerEffect, UWorld* World, AActor* Actor, bool bAutoDestroy)
 {
@@ -21,8 +19,10 @@ static UEffekseerEmitterComponent* CreateEffekseerEmitter(UEffekseerEffect* effe
 
 static void SpawnEmitterAtLocation(UWorld* world, UEffekseerEffect* effekseerEffect, const FTransform& transform, bool bAutoDestroy = true)
 {
-	if (effekseerEffect == nullptr) return;
-	if (world == nullptr) return;
+	if (effekseerEffect == nullptr)
+		return;
+	if (world == nullptr)
+		return;
 
 	auto eec = CreateEffekseerEmitter(effekseerEffect, world, world->GetWorldSettings(), bAutoDestroy);
 	eec->SetUsingAbsoluteLocation(true);
@@ -37,7 +37,8 @@ static void SpawnEmitterAtLocation(UWorld* world, UEffekseerEffect* effekseerEff
 
 static void SpawnEmitterAttached(UEffekseerEffect* effekseerEffect, class USceneComponent* attachToComponent, FName attachPointName, FVector location, FRotator rotation, EAttachLocation::Type locationType = EAttachLocation::KeepRelativeOffset, bool bAutoDestroy = true)
 {
-	if (effekseerEffect == nullptr) return;
+	if (effekseerEffect == nullptr)
+		return;
 
 	if (attachToComponent == nullptr)
 	{
@@ -46,8 +47,10 @@ static void SpawnEmitterAttached(UEffekseerEffect* effekseerEffect, class UScene
 	}
 
 	auto world = attachToComponent->GetWorld();
-	if (world == nullptr) return;
-	if (world->GetNetMode() == NM_DedicatedServer) return;
+	if (world == nullptr)
+		return;
+	if (world->GetNetMode() == NM_DedicatedServer)
+		return;
 
 	auto eec = CreateEffekseerEmitter(effekseerEffect, world, attachToComponent->GetOwner(), bAutoDestroy);
 	eec->SetupAttachment(attachToComponent, attachPointName);
@@ -95,8 +98,10 @@ UAnimNotify_PlayEffekseerEffect::UAnimNotify_PlayEffekseerEffect()
 
 void UAnimNotify_PlayEffekseerEffect::Notify(class USkeletalMeshComponent* smc, class UAnimSequenceBase* animSequence)
 {
-	if (smc == nullptr) return;
-	if (animSequence == nullptr) return;
+	if (smc == nullptr)
+		return;
+	if (animSequence == nullptr)
+		return;
 
 	if (EffekseerEffect == nullptr)
 	{
@@ -114,8 +119,7 @@ void UAnimNotify_PlayEffekseerEffect::Notify(class USkeletalMeshComponent* smc, 
 		auto tr = smc->GetSocketTransform(SocketName);
 		auto spawnTransform = FTransform(
 			tr.GetRotation() * quat,
-			tr.TransformPosition(LocationOffset)
-		);
+			tr.TransformPosition(LocationOffset));
 		SpawnEmitterAtLocation(smc->GetWorld(), EffekseerEffect, spawnTransform);
 	}
 }
@@ -126,6 +130,6 @@ FString UAnimNotify_PlayEffekseerEffect::GetNotifyName_Implementation() const
 	{
 		return EffekseerEffect->Name;
 	}
-	
+
 	return Super::GetNotifyName_Implementation();
 }

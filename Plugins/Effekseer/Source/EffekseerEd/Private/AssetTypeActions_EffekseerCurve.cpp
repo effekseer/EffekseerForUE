@@ -43,7 +43,7 @@ void FAssetTypeActions_EffekseerCurve::ExecuteAssignResources(TArray<TWeakObject
 		auto Object = (*ObjIt).Get();
 		if (Object)
 		{
-			//Object->AssignResources();
+			// Object->AssignResources();
 		}
 	}
 }

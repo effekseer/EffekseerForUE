@@ -2,8 +2,9 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UObject/Object.h"
 #include "EffekseerEffect.h"
+#include "UObject/Object.h"
+
 #include "EffekseerHandle.generated.h"
 
 class UEffekseerSystemComponent;

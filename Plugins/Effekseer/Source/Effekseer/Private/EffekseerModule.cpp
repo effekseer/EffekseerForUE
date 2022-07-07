@@ -1,4 +1,5 @@
 #include "EffekseerModule.h"
+
 #include "Interfaces/IPluginManager.h"
 
 class FEffekseer : public IEffekseer

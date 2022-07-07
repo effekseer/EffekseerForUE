@@ -30,18 +30,29 @@ public:
 	ConvertedNode() = default;
 	virtual ~ConvertedNode() = default;
 
-	virtual UMaterialExpression* GetExpression() const { return nullptr; }
+	virtual UMaterialExpression* GetExpression() const
+	{
+		return nullptr;
+	}
 
-	virtual UMaterialExpression* GetExpressions(int32_t i) const { return GetExpression(); }
+	virtual UMaterialExpression* GetExpressions(int32_t i) const
+	{
+		return GetExpression();
+	}
 
-	virtual int32_t GetExpressionCount() const { return 1; }
+	virtual int32_t GetExpressionCount() const
+	{
+		return 1;
+	}
 
 	virtual ConvertedNodeOutputConnector GetNodeOutputConnector(int32_t index) const
 	{
 		return ConvertedNodeOutputConnector(GetExpressions(index), 0);
 	}
 
-	virtual void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) {}
+	virtual void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex)
+	{
+	}
 
 	virtual void SetEditorPosition(int32_t x, int32_t y)
 	{
@@ -57,7 +68,7 @@ public:
 	}
 };
 
-template<class T>
+template <class T>
 class ConvertedNodeSimple : public ConvertedNode
 {
 private:
@@ -70,5 +81,8 @@ public:
 		material->Expressions.Add(expression_);
 	}
 
-	UMaterialExpression* GetExpression() const override { return expression_; }
+	UMaterialExpression* GetExpression() const override
+	{
+		return expression_;
+	}
 };

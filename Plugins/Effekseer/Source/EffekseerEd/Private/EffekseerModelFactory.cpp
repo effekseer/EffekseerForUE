@@ -1,13 +1,11 @@
 
 #include "EffekseerModelFactory.h"
-#include "EffekseerModel.h"
-
-#include "EffekseerUECompatibility.h"
 
 #include "Editor.h"
+#include "EffekseerModel.h"
+#include "EffekseerUECompatibility.h"
 #include "HAL/FileManager.h"
 #include "RawMesh.h"
-
 #include "Runtime/Launch/Resources/Version.h"
 
 UEffekseerModelFactory::UEffekseerModelFactory(const FObjectInitializer& ObjectInitializer)
@@ -68,9 +66,9 @@ UObject* UEffekseerModelFactory::FactoryCreateBinary(
 		assetSM->GetStaticMaterials().Add(FStaticMaterial(nullptr, NAME_None));
 
 		FRawMesh rawMesh;
-		
+
 		auto mesh = assetEfkMdl->GetMesh();
-		
+
 		for (auto i = 0; i < mesh.Positions.Num(); i++)
 		{
 			rawMesh.VertexPositions.Add(mesh.Positions[i]);
@@ -92,7 +90,8 @@ UObject* UEffekseerModelFactory::FactoryCreateBinary(
 		auto faceOffsets = assetEfkMdl->GetAnimationFaceOffsets();
 		for (auto i = 0; i < mesh.Indexes.Num() / 3; i++)
 		{
-			if (faceInd < faceOffsets.Num() - 1 && faceOffsets[faceInd + 1] <= i) faceInd++;
+			if (faceInd < faceOffsets.Num() - 1 && faceOffsets[faceInd + 1] <= i)
+				faceInd++;
 
 			rawMesh.FaceMaterialIndices.Add(faceInd);
 			rawMesh.FaceSmoothingMasks.Add(faceInd);
@@ -192,13 +191,13 @@ EReimportResult::Type UEffekseerModelFactory::Reimport(UObject* Obj)
 	EReimportResult::Type Result = EReimportResult::Failed;
 
 	if (UFactory::StaticImportObject(
-		asset->GetClass(), 
-		asset->GetOuter(),
-		*asset->GetName(), 
-		RF_Public | RF_Standalone, 
-		*Filename, 
-		NULL, 
-		this))
+			asset->GetClass(),
+			asset->GetOuter(),
+			*asset->GetName(),
+			RF_Public | RF_Standalone,
+			*Filename,
+			NULL,
+			this))
 	{
 		if (asset->GetOuter())
 		{

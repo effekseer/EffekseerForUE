@@ -2,11 +2,12 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UObject/Object.h"
-#include "EffekseerModel.h"
-#include "EffekseerMaterial.h"
-#include "EffekseerCurve.h"
 #include "EffekseerAlphaBlendType.h"
+#include "EffekseerCurve.h"
+#include "EffekseerMaterial.h"
+#include "EffekseerModel.h"
+#include "UObject/Object.h"
+
 #include "EffekseerEffect.generated.h"
 
 namespace Effekseer
@@ -37,7 +38,6 @@ inline bool CompareColor(const FLinearColor& lhs, const FLinearColor& rhs)
 	}
 
 	return false;
-
 }
 
 USTRUCT()
@@ -51,10 +51,14 @@ struct FFlipbookParameters
 
 	bool operator==(const FFlipbookParameters& rhs) const
 	{
-		if (Enable   != rhs.Enable) return false;
-		if (LoopType != rhs.LoopType) return false;
-		if (DivideX  != rhs.DivideX) return false;
-		if (DivideY  != rhs.DivideY) return false;
+		if (Enable != rhs.Enable)
+			return false;
+		if (LoopType != rhs.LoopType)
+			return false;
+		if (DivideX != rhs.DivideX)
+			return false;
+		if (DivideY != rhs.DivideY)
+			return false;
 
 		return true;
 	}
@@ -64,12 +68,16 @@ struct FFlipbookParameters
 		return !(*this == rhs);
 	}
 
-	bool operator < (const FFlipbookParameters& rhs) const
+	bool operator<(const FFlipbookParameters& rhs) const
 	{
-		if (Enable != rhs.Enable) return Enable < rhs.Enable;
-		if (LoopType != rhs.LoopType) return LoopType < rhs.LoopType;
-		if (DivideX != rhs.DivideX) return DivideX < rhs.DivideX;
-		if (DivideY != rhs.DivideY) return DivideY < rhs.DivideY;
+		if (Enable != rhs.Enable)
+			return Enable < rhs.Enable;
+		if (LoopType != rhs.LoopType)
+			return LoopType < rhs.LoopType;
+		if (DivideX != rhs.DivideX)
+			return DivideX < rhs.DivideX;
+		if (DivideY != rhs.DivideY)
+			return DivideY < rhs.DivideY;
 		return false;
 	}
 };
@@ -84,9 +92,12 @@ struct FEdgeParameters
 
 	bool operator==(const FEdgeParameters& rhs) const
 	{
-		if (Color != rhs.Color) return false;
-		if (Threshold  != rhs.Threshold) return false;
-		if (ColorScaling  != rhs.ColorScaling) return false;
+		if (Color != rhs.Color)
+			return false;
+		if (Threshold != rhs.Threshold)
+			return false;
+		if (ColorScaling != rhs.ColorScaling)
+			return false;
 
 		return true;
 	}
@@ -96,7 +107,7 @@ struct FEdgeParameters
 		return !(*this == rhs);
 	}
 
-	bool operator < (const FEdgeParameters& rhs) const
+	bool operator<(const FEdgeParameters& rhs) const
 	{
 		if (Color != rhs.Color)
 		{
@@ -122,17 +133,21 @@ struct FFalloffParameter
 {
 	GENERATED_USTRUCT_BODY()
 
-	int32			ColorBlendType = 0;
-	FLinearColor	BeginColor = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);
-	FLinearColor	EndColor = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);
-	float			Pow = 1.0f;
+	int32 ColorBlendType = 0;
+	FLinearColor BeginColor = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);
+	FLinearColor EndColor = FLinearColor(1.0f, 1.0f, 1.0f, 1.0f);
+	float Pow = 1.0f;
 
 	bool operator==(const FFalloffParameter& rhs) const
 	{
-		if (ColorBlendType != rhs.ColorBlendType) return false;
-		if (BeginColor != rhs.BeginColor) return false;
-		if (EndColor != rhs.EndColor) return false;
-		if (Pow != rhs.Pow) return false;
+		if (ColorBlendType != rhs.ColorBlendType)
+			return false;
+		if (BeginColor != rhs.BeginColor)
+			return false;
+		if (EndColor != rhs.EndColor)
+			return false;
+		if (Pow != rhs.Pow)
+			return false;
 
 		return true;
 	}
@@ -142,12 +157,16 @@ struct FFalloffParameter
 		return !(*this == rhs);
 	}
 
-	bool operator < (const FFalloffParameter& rhs) const
+	bool operator<(const FFalloffParameter& rhs) const
 	{
-		if (ColorBlendType != rhs.ColorBlendType) return ColorBlendType < rhs.ColorBlendType;
-		if (BeginColor != rhs.BeginColor) return CompareColor(BeginColor,rhs.BeginColor);
-		if (EndColor != rhs.EndColor) return CompareColor(EndColor,rhs.EndColor);
-		if (Pow != rhs.Pow) return Pow < rhs.Pow;
+		if (ColorBlendType != rhs.ColorBlendType)
+			return ColorBlendType < rhs.ColorBlendType;
+		if (BeginColor != rhs.BeginColor)
+			return CompareColor(BeginColor, rhs.BeginColor);
+		if (EndColor != rhs.EndColor)
+			return CompareColor(EndColor, rhs.EndColor);
+		if (Pow != rhs.Pow)
+			return Pow < rhs.Pow;
 
 		return false;
 	}
@@ -194,44 +213,44 @@ struct FSoftParticleParameter
 struct EffekseerEffectMaterialKey
 {
 	UTexture2D* Texture = nullptr;
-	int32			TextureAddressType = 0;
+	int32 TextureAddressType = 0;
 	UTexture2D* AlphaTexture = nullptr;
-	int32			AlphaTextureAddressType = 0;
+	int32 AlphaTextureAddressType = 0;
 	UTexture2D* UVDistortionTexture = nullptr;
-	int32			UVDistortionTextureAddressType = 0;
+	int32 UVDistortionTextureAddressType = 0;
 	UTexture2D* BlendTexture = nullptr;
-	int32			BlendTextureAddress = 0;
+	int32 BlendTextureAddress = 0;
 	UTexture2D* BlendAlphaTexture = nullptr;
-	int32			BlendAlphaTextureAddress = 0;
+	int32 BlendAlphaTextureAddress = 0;
 	UTexture2D* BlendUVDistortionTexture = nullptr;
-	int32			BlendUVDistortionTextureAddress = 0;
+	int32 BlendUVDistortionTextureAddress = 0;
 	FFlipbookParameters FlipbookParams;
-	float			UVDistortionIntensity = 1.0f;
-	int32			TextureBlendType = -1;
-	float			BlendUVDistortionIntensity = 1.0f;
-	bool			EnableFalloff = false;
+	float UVDistortionIntensity = 1.0f;
+	int32 TextureBlendType = -1;
+	float BlendUVDistortionIntensity = 1.0f;
+	bool EnableFalloff = false;
 	FFalloffParameter FalloffParam;
-	float			EmissiveScaling = 1;
-	FEdgeParameters	EdgeParams;
+	float EmissiveScaling = 1;
+	FEdgeParameters EdgeParams;
 	FSoftParticleParameter SoftParticleParam;
 
-	EEffekseerAlphaBlendType	AlphaBlend = EEffekseerAlphaBlendType::Opacity;
-	bool			IsDepthTestDisabled = false;
-	bool			IsLighting = false;
-	bool			IsDistorted = false;
+	EEffekseerAlphaBlendType AlphaBlend = EEffekseerAlphaBlendType::Opacity;
+	bool IsDepthTestDisabled = false;
+	bool IsLighting = false;
+	bool IsDistorted = false;
 	UEffekseerMaterial* Material = nullptr;
 
-	bool operator == (const EffekseerEffectMaterialKey& rhs) const
+	bool operator==(const EffekseerEffectMaterialKey& rhs) const
 	{
 		return !((*this) < rhs) && !(rhs < (*this));
 	}
 
-	bool operator != (const EffekseerEffectMaterialKey& rhs) const
+	bool operator!=(const EffekseerEffectMaterialKey& rhs) const
 	{
 		return !((*this) == rhs);
 	}
 
-	bool operator < (const EffekseerEffectMaterialKey& rhs) const
+	bool operator<(const EffekseerEffectMaterialKey& rhs) const
 	{
 		if (Texture != rhs.Texture)
 		{
@@ -363,7 +382,6 @@ struct EffekseerEffectMaterialKey
 			return Material < rhs.Material;
 		}
 
-
 		return false;
 	}
 };
@@ -376,79 +394,79 @@ public:
 	GENERATED_BODY()
 
 	UPROPERTY()
-	UTexture2D*		Texture = nullptr;
+	UTexture2D* Texture = nullptr;
 
 	UPROPERTY()
-	int32			TextureAddressType = 0;
+	int32 TextureAddressType = 0;
 
 	UPROPERTY()
-	UTexture2D*		AlphaTexture = nullptr;
+	UTexture2D* AlphaTexture = nullptr;
 
 	UPROPERTY()
-	int32			AlphaTextureAddressType = 0;
+	int32 AlphaTextureAddressType = 0;
 
 	UPROPERTY()
-	UTexture2D*		UVDistortionTexture = nullptr;
+	UTexture2D* UVDistortionTexture = nullptr;
 
 	UPROPERTY()
-	int32			UVDistortionTextureAddressType = 0;
+	int32 UVDistortionTextureAddressType = 0;
 
 	UPROPERTY()
-	UTexture2D*		BlendTexture = nullptr;
+	UTexture2D* BlendTexture = nullptr;
 
 	UPROPERTY()
-	int32			BlendTextureAddress = 0;
+	int32 BlendTextureAddress = 0;
 
 	UPROPERTY()
-	UTexture2D*		BlendAlphaTexture = nullptr;
+	UTexture2D* BlendAlphaTexture = nullptr;
 
 	UPROPERTY()
-	int32			BlendAlphaTextureAddress = 0;
+	int32 BlendAlphaTextureAddress = 0;
 
 	UPROPERTY()
-	UTexture2D*		BlendUVDistortionTexture = nullptr;
+	UTexture2D* BlendUVDistortionTexture = nullptr;
 
 	UPROPERTY()
-	int32			BlendUVDistortionTextureAddress = 0;
+	int32 BlendUVDistortionTextureAddress = 0;
 
 	UPROPERTY()
 	FFlipbookParameters FlipbookParams;
 
 	UPROPERTY()
-	float			UVDistortionIntensity = 1.0f;
+	float UVDistortionIntensity = 1.0f;
 
 	UPROPERTY()
-	int32			TextureBlendType = -1;
+	int32 TextureBlendType = -1;
 
 	UPROPERTY()
-	float			BlendUVDistortionIntensity = 1.0f;
+	float BlendUVDistortionIntensity = 1.0f;
 
 	UPROPERTY()
-	bool			EnableFalloff = false;
+	bool EnableFalloff = false;
 
 	UPROPERTY()
 	FFalloffParameter FalloffParam;
 
 	UPROPERTY()
-	float			EmissiveScaling = 1;
+	float EmissiveScaling = 1;
 
 	UPROPERTY()
-	FEdgeParameters	EdgeParams;
+	FEdgeParameters EdgeParams;
 
 	UPROPERTY()
 	FSoftParticleParameter SoftParticleParam;
 
 	UPROPERTY()
-	EEffekseerAlphaBlendType	AlphaBlend = EEffekseerAlphaBlendType::Opacity;
+	EEffekseerAlphaBlendType AlphaBlend = EEffekseerAlphaBlendType::Opacity;
 
 	UPROPERTY()
-	bool			IsDepthTestDisabled;
+	bool IsDepthTestDisabled;
 
 	UPROPERTY()
-	bool			IsLighting = false;
+	bool IsLighting = false;
 
 	UPROPERTY()
-	bool			IsDistorted = false;
+	bool IsDistorted = false;
 
 	UPROPERTY()
 	UEffekseerMaterial* Material = nullptr;
@@ -467,13 +485,13 @@ class EFFEKSEER_API UEffekseerEffect : public UObject
 	friend class ProceduralModelGenerator;
 
 private:
-	void*			effectPtr = nullptr;
-	TArray<uint8>	buffer;
+	void* effectPtr = nullptr;
+	TArray<uint8> buffer;
 
 	// scale when loaded
-	float			loadedScale = 1.0f;
+	float loadedScale = 1.0f;
 
-	bool			isDirty = true;
+	bool isDirty = true;
 
 	void LoadEffect(const uint8_t* data, int32_t size, const TCHAR* path, bool isResourceReset);
 	void ReleaseEffect();
@@ -497,26 +515,26 @@ public:
 	float Scale = 20.0f;
 
 	UPROPERTY(VisibleAnywhere)
-	FString	Name = TEXT("Effect");
+	FString Name = TEXT("Effect");
 
 	UPROPERTY(VisibleAnywhere)
-	TArray<UTexture2D*>	ColorTextures;
+	TArray<UTexture2D*> ColorTextures;
 
 	UPROPERTY(VisibleAnywhere)
-	TArray<UTexture2D*>	DistortionTextures;
+	TArray<UTexture2D*> DistortionTextures;
 
 	UPROPERTY(VisibleAnywhere)
-	TArray<UEffekseerModel*>	Models;
+	TArray<UEffekseerModel*> Models;
 
 	UPROPERTY(VisibleAnywhere)
-	TArray<UEffekseerMaterial*>	Materials;
+	TArray<UEffekseerMaterial*> Materials;
 
 	UPROPERTY(VisibleAnywhere)
 	TArray<UEffekseerCurve*> Curves;
 
 	UPROPERTY(Transient)
-	TArray<UEffekseerEffectMaterialParameterHolder*>	EffekseerMaterials;
-		
+	TArray<UEffekseerEffectMaterialParameterHolder*> EffekseerMaterials;
+
 	/*
 	UPROPERTY(VisibleAnywhere, Transient)
 	TArray<UTexture2D*>	ColorTextures;
@@ -537,7 +555,10 @@ public:
 	void ReloadIfRequired();
 	void AssignResources();
 
-	void* GetNativePtr() { return effectPtr; }
+	void* GetNativePtr()
+	{
+		return effectPtr;
+	}
 
 	virtual void PostLoad() override;
 

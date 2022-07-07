@@ -1,17 +1,17 @@
 
 #pragma once
 
-#include <memory>
 #include "CoreMinimal.h"
 #include "Factories/Factory.h"
+#include <memory>
 
 #if WITH_EDITOR
 #include "EditorReimportHandler.h"
 #endif
 
 #include "EffekseerMaterial.h"
-#include "EffekseerMaterialFactory.generated.h"
 
+#include "EffekseerMaterialFactory.generated.h"
 
 struct NativeEffekseerMaterialContext;
 
@@ -37,5 +37,4 @@ class UEffekseerMaterialFactory : public UFactory, public FReimportHandler
 	virtual bool CanReimport(UObject* Obj, TArray<FString>& OutFilenames) override;
 	virtual void SetReimportPaths(UObject* Obj, const TArray<FString>& NewReimportPaths) override;
 	virtual EReimportResult::Type Reimport(UObject* Obj) override;
-
 };

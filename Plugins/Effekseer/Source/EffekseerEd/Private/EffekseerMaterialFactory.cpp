@@ -1,18 +1,15 @@
 #include "EffekseerMaterialFactory.h"
 
 #include "Editor.h"
-#include "HAL/FileManager.h"
-
-#include "Runtime/Launch/Resources/Version.h"
 #include "EditorFramework/AssetImportData.h"
-#include "NativeEffekseerMaterialContext.h"
+#include "EffekseerMaterialFunctions.h"
+#include "HAL/FileManager.h"
 #include "Materials/MaterialInstance.h"
+#include "NativeEffekseerMaterialContext.h"
+#include "Runtime/Launch/Resources/Version.h"
+#include <functional>
 #include <map>
 #include <memory>
-#include <functional>
-
-#include "EffekseerMaterialFunctions.h"
-
 
 UEffekseerMaterialFactory::UEffekseerMaterialFactory(const FObjectInitializer& ObjectInitializer)
 	: Super(ObjectInitializer)
@@ -39,8 +36,8 @@ protected:
 	{
 		UpdateParameterNames();
 	}
+
 public:
-	
 };
 
 UObject* UEffekseerMaterialFactory::FactoryCreateBinary(
@@ -92,7 +89,7 @@ UObject* UEffekseerMaterialFactory::FactoryCreateBinary(
 
 		UE4MaterialFromEffekseerMaterialOption option;
 		auto originalMaterial = CreateUE4MaterialFromEffekseerMaterial(native, InParent->GetFName().ToString() + TEXT("_Mat/"), InName.ToString() + TEXT("_M"), option);
-		
+
 		assetEfkMat->Uniforms.Empty();
 		for (auto u : native->result.Uniforms)
 		{
@@ -178,7 +175,7 @@ EReimportResult::Type UEffekseerMaterialFactory::Reimport(UObject* Obj)
 	}
 
 	const FString Filename = asset->AssetImportData->GetFirstFilename();
-	
+
 	if (!Filename.Len() || IFileManager::Get().FileSize(*Filename) == INDEX_NONE)
 	{
 		return EReimportResult::Failed;
@@ -187,13 +184,13 @@ EReimportResult::Type UEffekseerMaterialFactory::Reimport(UObject* Obj)
 	EReimportResult::Type Result = EReimportResult::Failed;
 
 	if (UFactory::StaticImportObject(
-		asset->GetClass(),
-		asset->GetOuter(),
-		*asset->GetName(),
-		RF_Public | RF_Standalone,
-		*Filename,
-		asset,
-		this))
+			asset->GetClass(),
+			asset->GetOuter(),
+			*asset->GetName(),
+			RF_Public | RF_Standalone,
+			*Filename,
+			asset,
+			this))
 	{
 		if (asset->GetOuter())
 		{

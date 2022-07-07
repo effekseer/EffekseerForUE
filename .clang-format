@@ -17,3 +17,10 @@ AllowShortIfStatementsOnASingleLine: false
 AllowShortCaseLabelsOnASingleLine: false
 AllowShortBlocksOnASingleLine: false
 BreakConstructorInitializersBeforeComma : true
+
+IncludeBlocks: Regroup
+IncludeCategories:
+  - Regex: '.*\.generated\.h'
+    Priority: 100
+  - Regex: '.*'
+    Priority: 1

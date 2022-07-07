@@ -1,12 +1,11 @@
 
 #pragma once
 
-#include "CoreMinimal.h"
 #include "Components/PrimitiveComponent.h"
-#include "EngineUtils.h"
-
+#include "CoreMinimal.h"
 #include "EffekseerEffect.h"
 #include "EffekseerHandle.h"
+#include "EngineUtils.h"
 
 #include "EffekseerEmitterComponent.generated.h"
 
@@ -16,14 +15,14 @@ class EFFEKSEER_API UEffekseerEmitterComponent : public UPrimitiveComponent
 	GENERATED_BODY()
 
 private:
-	bool		shouldActivate = false;
-	bool		isPlaying = false;
-	FEffekseerHandle		handle;
+	bool shouldActivate = false;
+	bool isPlaying = false;
+	FEffekseerHandle handle;
 
 	FColor AllColor_ = FColor(255, 255, 255, 255);
 	float Speed_ = 1.0f;
 	TArray<float> DynamicInput_;
-	
+
 	//! HACK for activate
 	bool autoActivateOnActivate_ = false;
 
@@ -53,7 +52,7 @@ public:
 
 #if WITH_EDITOR
 	UFUNCTION(BlueprintCallable, CallInEditor, Category = Effect)
-		void Preview();
+	void Preview();
 #endif
 
 	UPROPERTY()

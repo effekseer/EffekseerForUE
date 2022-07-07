@@ -1,38 +1,35 @@
 
 #pragma once
 
+#include "../NativeEffekseerMaterialContext.h"
 #include "ConvertedNode.h"
 #include "EffekseerEffect.h"
 #include "Materials/MaterialExpressionAbs.h"
 #include "Materials/MaterialExpressionAdd.h"
-#include "Materials/MaterialExpressionSubtract.h"
-#include "Materials/MaterialExpressionMultiply.h"
-#include "Materials/MaterialExpressionDivide.h"
-#include "Materials/MaterialExpressionFmod.h"
+#include "Materials/MaterialExpressionAppendVector.h"
+#include "Materials/MaterialExpressionArctangent2.h"
 #include "Materials/MaterialExpressionCeil.h"
+#include "Materials/MaterialExpressionClamp.h"
+#include "Materials/MaterialExpressionComponentMask.h"
+#include "Materials/MaterialExpressionConstant.h"
+#include "Materials/MaterialExpressionCrossProduct.h"
+#include "Materials/MaterialExpressionDivide.h"
+#include "Materials/MaterialExpressionDotProduct.h"
 #include "Materials/MaterialExpressionFloor.h"
+#include "Materials/MaterialExpressionFmod.h"
 #include "Materials/MaterialExpressionFrac.h"
+#include "Materials/MaterialExpressionLinearInterpolate.h"
 #include "Materials/MaterialExpressionMax.h"
 #include "Materials/MaterialExpressionMin.h"
-#include "Materials/MaterialExpressionPower.h"
-#include "Materials/MaterialExpressionSquareRoot.h"
-#include "Materials/MaterialExpressionClamp.h"
-#include "Materials/MaterialExpressionDotProduct.h"
-#include "Materials/MaterialExpressionCrossProduct.h"
+#include "Materials/MaterialExpressionMultiply.h"
 #include "Materials/MaterialExpressionNormalize.h"
-#include "Materials/MaterialExpressionLinearInterpolate.h"
 #include "Materials/MaterialExpressionOneMinus.h"
-
-#include "Materials/MaterialExpressionComponentMask.h"
-#include "Materials/MaterialExpressionAppendVector.h"
-
+#include "Materials/MaterialExpressionPower.h"
 #include "Materials/MaterialExpressionSine.h"
-#include "Materials/MaterialExpressionArctangent2.h"
+#include "Materials/MaterialExpressionSquareRoot.h"
+#include "Materials/MaterialExpressionSubtract.h"
 
-#include "Materials/MaterialExpressionConstant.h"
-#include "../NativeEffekseerMaterialContext.h"
-
-template<class T>
+template <class T>
 class ConvertedNodeOneInput : public ConvertedNode
 {
 private:
@@ -45,7 +42,10 @@ public:
 		material->Expressions.Add(expression_);
 	}
 
-	UMaterialExpression* GetExpression() const override { return expression_; }
+	UMaterialExpression* GetExpression() const override
+	{
+		return expression_;
+	}
 
 	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) override
 	{
@@ -53,7 +53,7 @@ public:
 	}
 };
 
-template<class T>
+template <class T>
 class ConvertedNodeOneVectorInput : public ConvertedNode
 {
 private:
@@ -66,7 +66,10 @@ public:
 		material->Expressions.Add(expression_);
 	}
 
-	UMaterialExpression* GetExpression() const override { return expression_; }
+	UMaterialExpression* GetExpression() const override
+	{
+		return expression_;
+	}
 
 	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) override
 	{
@@ -74,7 +77,7 @@ public:
 	}
 };
 
-template<class T>
+template <class T>
 class ConvertedNodeConstABInputProp : public ConvertedNode
 {
 private:
@@ -92,7 +95,10 @@ public:
 		expression_->ConstB = effekseerNode_->GetProperty("ConstValue2")->Floats[0];
 	}
 
-	UMaterialExpression* GetExpression() const override { return expression_; }
+	UMaterialExpression* GetExpression() const override
+	{
+		return expression_;
+	}
 
 	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) override
 	{
@@ -108,7 +114,7 @@ public:
 	}
 };
 
-template<class T>
+template <class T>
 class ConvertedNodeABInput : public ConvertedNode
 {
 private:
@@ -123,7 +129,10 @@ public:
 		material->Expressions.Add(expression_);
 	}
 
-	UMaterialExpression* GetExpression() const override { return expression_; }
+	UMaterialExpression* GetExpression() const override
+	{
+		return expression_;
+	}
 
 	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) override
 	{
@@ -138,8 +147,6 @@ public:
 		}
 	}
 };
-
-
 
 using ConvertedNodeAbs = ConvertedNodeOneInput<UMaterialExpressionAbs>;
 
@@ -159,7 +166,10 @@ public:
 		expression_->Period = 3.141592f * 2.0f;
 	}
 
-	UMaterialExpression* GetExpression() const override { return expression_; }
+	UMaterialExpression* GetExpression() const override
+	{
+		return expression_;
+	}
 
 	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) override
 	{
@@ -174,6 +184,7 @@ private:
 	UMaterialExpressionArctangent2* expression_ = nullptr;
 	UMaterialExpressionConstant* expression1_ = nullptr;
 	UMaterialExpressionConstant* expression2_ = nullptr;
+
 public:
 	ConvertedNodeArctangent2(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
 		: effekseerNode_(effekseerNode)
@@ -199,16 +210,26 @@ public:
 		}
 	}
 
-	UMaterialExpression* GetExpression() const override { return expression_; }
+	UMaterialExpression* GetExpression() const override
+	{
+		return expression_;
+	}
 
-	UMaterialExpression* GetExpressions(int32_t ind) const override {
-		if (ind == 0) return expression_;
-		if (ind == 1) return expression1_;
-		if (ind == 2) return expression2_;
+	UMaterialExpression* GetExpressions(int32_t ind) const override
+	{
+		if (ind == 0)
+			return expression_;
+		if (ind == 1)
+			return expression1_;
+		if (ind == 2)
+			return expression2_;
 		return nullptr;
 	}
 
-	int32_t GetExpressionCount() const { return 3; }
+	int32_t GetExpressionCount() const
+	{
+		return 3;
+	}
 
 	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) override
 	{
@@ -266,16 +287,26 @@ public:
 		}
 	}
 
-	UMaterialExpression* GetExpression() const override { return expression_; }
+	UMaterialExpression* GetExpression() const override
+	{
+		return expression_;
+	}
 
-	UMaterialExpression* GetExpressions(int32_t ind) const override {
-		if (ind == 0) return expression_;
-		if (ind == 1) return expression1_;
-		if (ind == 2) return expression2_;
+	UMaterialExpression* GetExpressions(int32_t ind) const override
+	{
+		if (ind == 0)
+			return expression_;
+		if (ind == 1)
+			return expression1_;
+		if (ind == 2)
+			return expression2_;
 		return nullptr;
 	}
 
-	int32_t GetExpressionCount() const { return 3; }
+	int32_t GetExpressionCount() const
+	{
+		return 3;
+	}
 
 	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) override
 	{
@@ -309,7 +340,10 @@ public:
 		expression_->SetMaterialFunction(func);
 	}
 
-	UMaterialExpression* GetExpression() const override { return expression_; }
+	UMaterialExpression* GetExpression() const override
+	{
+		return expression_;
+	}
 
 	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) override
 	{
@@ -331,7 +365,6 @@ using ConvertedNodeFrac = ConvertedNodeOneInput<UMaterialExpressionFrac>;
 using ConvertedNodeMax = ConvertedNodeConstABInputProp<UMaterialExpressionMax>;
 using ConvertedNodeMin = ConvertedNodeConstABInputProp<UMaterialExpressionMin>;
 
-
 class ConvertedNodePower : public ConvertedNode
 {
 private:
@@ -348,7 +381,10 @@ public:
 		expression_->ConstExponent = effekseerNode_->GetProperty("Exp")->Floats[0];
 	}
 
-	UMaterialExpression* GetExpression() const override { return expression_; }
+	UMaterialExpression* GetExpression() const override
+	{
+		return expression_;
+	}
 
 	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) override
 	{
@@ -383,7 +419,10 @@ public:
 		expression_->MaxDefault = effekseerNode_->GetProperty("Max")->Floats[0];
 	}
 
-	UMaterialExpression* GetExpression() const override { return expression_; }
+	UMaterialExpression* GetExpression() const override
+	{
+		return expression_;
+	}
 
 	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) override
 	{
@@ -426,7 +465,10 @@ public:
 		expression_->ConstAlpha = effekseerNode_->GetProperty("Alpha")->Floats[0];
 	}
 
-	UMaterialExpression* GetExpression() const override { return expression_; }
+	UMaterialExpression* GetExpression() const override
+	{
+		return expression_;
+	}
 
 	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) override
 	{
@@ -467,7 +509,10 @@ public:
 		expression_->A = effekseerNode->GetProperty("A")->Floats[0] > 0 ? 1 : 0;
 	}
 
-	UMaterialExpression* GetExpression() const override { return expression_; }
+	UMaterialExpression* GetExpression() const override
+	{
+		return expression_;
+	}
 
 	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) override
 	{

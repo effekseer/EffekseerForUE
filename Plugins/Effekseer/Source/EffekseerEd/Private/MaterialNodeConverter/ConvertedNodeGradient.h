@@ -1,11 +1,10 @@
 #pragma once
 
-#include <array>
-
 #include "../MaterialNode/InternalNode.h"
 #include "../NativeEffekseerMaterialContext.h"
 #include "ConvertedNode.h"
 #include "EffekseerEffect.h"
+#include <array>
 
 class ConvertedNodeSampleGradient : public ConvertedNode
 {

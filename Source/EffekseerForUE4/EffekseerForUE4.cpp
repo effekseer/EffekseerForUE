@@ -2,4 +2,4 @@
 
 #include "EffekseerForUE4.h"
 
-IMPLEMENT_PRIMARY_GAME_MODULE( FDefaultGameModuleImpl, EffekseerForUE4, "EffekseerForUE4" );
+IMPLEMENT_PRIMARY_GAME_MODULE(FDefaultGameModuleImpl, EffekseerForUE4, "EffekseerForUE4");

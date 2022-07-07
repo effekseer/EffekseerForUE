@@ -1,7 +1,7 @@
 #include "EffekseerModel.h"
-#include "EffekseerInternalModel.h"
 
 #include "EffekseerCustomVersion.h"
+#include "EffekseerInternalModel.h"
 
 void UEffekseerModel::BeginDestroy()
 {
@@ -32,7 +32,8 @@ void UEffekseerModel::Load(const uint8_t* data, int32_t size, const TCHAR* path)
 void UEffekseerModel::AssignInternalPtr()
 {
 	auto p = (EffekseerInternalModel*)modelPtr;
-	if (p == nullptr) return;
+	if (p == nullptr)
+		return;
 
 	p->UserData = this;
 }
@@ -42,7 +43,8 @@ FEffekseerModelMesh UEffekseerModel::GetMesh()
 	FEffekseerModelMesh mesh;
 
 	auto p = (EffekseerInternalModel*)modelPtr;
-	if (p == nullptr) return mesh;
+	if (p == nullptr)
+		return mesh;
 
 	int vertexOffset = 0;
 
@@ -69,7 +71,7 @@ FEffekseerModelMesh UEffekseerModel::GetMesh()
 		}
 
 		vertexOffset += p->GetVertexCount(f);
-		//break;
+		// break;
 	}
 
 	return mesh;
@@ -78,7 +80,8 @@ FEffekseerModelMesh UEffekseerModel::GetMesh()
 TArray<int> UEffekseerModel::GetAnimationFaceCounts()
 {
 	auto p = (EffekseerInternalModel*)modelPtr;
-	if (p == nullptr) return TArray<int>();
+	if (p == nullptr)
+		return TArray<int>();
 
 	TArray<int> ret;
 
@@ -86,7 +89,7 @@ TArray<int> UEffekseerModel::GetAnimationFaceCounts()
 	{
 		auto vc = p->GetFaceCount(i);
 		ret.Add(vc);
-		//break;
+		// break;
 	}
 
 	return ret;
@@ -95,7 +98,8 @@ TArray<int> UEffekseerModel::GetAnimationFaceCounts()
 TArray<int> UEffekseerModel::GetAnimationFaceOffsets()
 {
 	auto p = (EffekseerInternalModel*)modelPtr;
-	if (p == nullptr) return TArray<int>();
+	if (p == nullptr)
+		return TArray<int>();
 
 	TArray<int> ret;
 
@@ -106,7 +110,7 @@ TArray<int> UEffekseerModel::GetAnimationFaceOffsets()
 		auto vc = p->GetFaceCount(i);
 		ret.Add(offset);
 		offset += vc;
-		//break;
+		// break;
 	}
 
 	return ret;
@@ -115,7 +119,7 @@ TArray<int> UEffekseerModel::GetAnimationFaceOffsets()
 void UEffekseerModel::Serialize(FArchive& Ar)
 {
 	Super::Serialize(Ar);
-	
+
 	Ar.UsingCustomVersion(FEffekseerCustomVersion::GUID);
 
 	/*

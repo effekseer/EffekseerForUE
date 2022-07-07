@@ -1,4 +1,5 @@
 #include "EffekseerMaterial.h"
+
 #include "EffekseerCustomVersion.h"
 #include <Effekseer/Material/Effekseer.MaterialFile.h>
 

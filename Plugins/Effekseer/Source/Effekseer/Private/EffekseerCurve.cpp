@@ -1,7 +1,7 @@
 #include "EffekseerCurve.h"
-#include "EffekseerInternalCurve.h"
 
 #include "EffekseerCustomVersion.h"
+#include "EffekseerInternalCurve.h"
 
 void UEffekseerCurve::BeginDestroy()
 {
@@ -32,7 +32,8 @@ void UEffekseerCurve::Load(const uint8_t* data, int32_t size, const TCHAR* path)
 void UEffekseerCurve::AssignInternalPtr()
 {
 	auto p = (EffekseerInternalCurve*)curvePtr;
-	if (p == nullptr) return;
+	if (p == nullptr)
+		return;
 
 	p->UserData = this;
 }
@@ -42,7 +43,8 @@ FEffekseerCurve UEffekseerCurve::GetCurve()
 	FEffekseerCurve curve;
 
 	auto p = (EffekseerInternalCurve*)curvePtr;
-	if (p == nullptr) return curve;
+	if (p == nullptr)
+		return curve;
 
 	return curve;
 }
@@ -50,7 +52,7 @@ FEffekseerCurve UEffekseerCurve::GetCurve()
 void UEffekseerCurve::Serialize(FArchive& Ar)
 {
 	Super::Serialize(Ar);
-	
+
 	Ar.UsingCustomVersion(FEffekseerCustomVersion::GUID);
 
 	/*
