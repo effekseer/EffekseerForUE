@@ -773,10 +773,14 @@ void UEffekseerEffect::GenerateRenderingData()
 			mat->BlendUVDistortionTexture = blendUVDistortionTexture;
 			mat->BlendUVDistortionTextureAddress = static_cast<int32>(param.BlendUVDistortionTexWrapType);
 
-			mat->FlipbookParams.Enable = param.FlipbookParams.Enable;
-			mat->FlipbookParams.LoopType = param.FlipbookParams.LoopType;
-			mat->FlipbookParams.DivideX = param.FlipbookParams.DivideX;
-			mat->FlipbookParams.DivideY = param.FlipbookParams.DivideY;
+			mat->FlipbookParams.Enable = param.FlipbookParams.EnableInterpolation;
+			mat->FlipbookParams.LoopType = param.FlipbookParams.UVLoopType;
+			mat->FlipbookParams.DivideX = param.FlipbookParams.FlipbookDivideX;
+			mat->FlipbookParams.DivideY = param.FlipbookParams.FlipbookDivideY;
+			mat->FlipbookParams.OneSizeX = param.FlipbookParams.OneSize[0];
+			mat->FlipbookParams.OneSizeY = param.FlipbookParams.OneSize[1];
+			mat->FlipbookParams.OffsetX = param.FlipbookParams.Offset[0];
+			mat->FlipbookParams.OffsetY = param.FlipbookParams.Offset[1];
 
 			mat->UVDistortionIntensity = param.UVDistortionIntensity;
 

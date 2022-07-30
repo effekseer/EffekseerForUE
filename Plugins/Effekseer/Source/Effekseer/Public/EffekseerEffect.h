@@ -48,6 +48,10 @@ struct FFlipbookParameters
 	int32 LoopType = 0;
 	int32 DivideX = 1;
 	int32 DivideY = 1;
+	float OneSizeX = 0;
+	float OneSizeY = 0;
+	float OffsetX = 0;
+	float OffsetY = 0;
 
 	bool operator==(const FFlipbookParameters& rhs) const
 	{
@@ -59,7 +63,14 @@ struct FFlipbookParameters
 			return false;
 		if (DivideY != rhs.DivideY)
 			return false;
-
+		if (OneSizeX != rhs.OneSizeX)
+			return false;
+		if (OneSizeY != rhs.OneSizeY)
+			return false;
+		if (OffsetX != rhs.OffsetX)
+			return false;
+		if (OffsetY != rhs.OffsetY)
+			return false;
 		return true;
 	}
 
@@ -78,6 +89,14 @@ struct FFlipbookParameters
 			return DivideX < rhs.DivideX;
 		if (DivideY != rhs.DivideY)
 			return DivideY < rhs.DivideY;
+		if (OneSizeX != rhs.OneSizeX)
+			return OneSizeX < rhs.OneSizeX;
+		if (OneSizeY != rhs.OneSizeY)
+			return OneSizeY < rhs.OneSizeY;
+		if (OffsetX != rhs.OffsetX)
+			return OffsetX < rhs.OffsetX;
+		if (OffsetY != rhs.OffsetY)
+			return OffsetY < rhs.OffsetY;
 		return false;
 	}
 };
