@@ -84,7 +84,11 @@ public:
 	{
 		if (Type == EMaterialParameterType::Scalar)
 		{
-			return GetScalarValue(ParameterInfo, &(OutValue.Float[0]), Context);
+			if (GetScalarValue(ParameterInfo, &(OutValue.Float[0]), Context))
+			{
+				OutValue.Type = Type;
+				return true;
+			}
 		}
 		else if (Type == EMaterialParameterType::Vector)
 		{
@@ -95,15 +99,21 @@ public:
 				OutValue.Float[1] = color.G;
 				OutValue.Float[2] = color.B;
 				OutValue.Float[3] = color.A;
+				OutValue.Type = Type;
+
 				return true;
 			}
 		}
 		else if (Type == EMaterialParameterType::Texture)
 		{
-			return GetParentTextureValue(ParameterInfo, const_cast<const UTexture**>(&(OutValue.Texture)), Context);
+			if (GetTextureValue(ParameterInfo, const_cast<const UTexture**>(&(OutValue.Texture)), Context))
+			{
+				OutValue.Type = Type;
+				return true;
+			}
 		}
 
-		return false;
+		return Parent->GetParameterValue(Type, ParameterInfo, OutValue, Context);
 	}
 #endif
 
