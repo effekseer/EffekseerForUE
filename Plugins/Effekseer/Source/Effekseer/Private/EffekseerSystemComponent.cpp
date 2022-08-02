@@ -112,6 +112,8 @@ public:
 			if (!(VisibilityMap & (1 << ViewIndex)))
 				continue;
 
+			const auto& view = Views[ViewIndex];
+
 			effekseerRenderer->SetLocalToWorld(GetLocalToWorld());
 			effekseerRenderer->SetMaterials(&OpaqueDynamicMaterials, 0);
 			effekseerRenderer->SetMaterials(&TranslucentDynamicMaterials, 1);
@@ -126,9 +128,17 @@ public:
 			effekseerRenderer->SetViewIndex(ViewIndex);
 
 			{
-				auto vmat = Views[ViewIndex]->ViewMatrices.GetViewMatrix();
-				::Effekseer::Matrix44 evmat = *((::Effekseer::Matrix44*)(&vmat));
+				const auto vmat = view->ViewMatrices.GetViewMatrix();
+				::Effekseer::Matrix44 evmat;
 
+				for (int i = 0; i < 4; i++)
+				{
+					for (int j = 0; j < 4; j++)
+					{
+						evmat.Values[i][j] = static_cast<float>(vmat.M[i][j]);
+					}
+				}
+				
 				std::swap(evmat.Values[1][0], evmat.Values[2][0]);
 				std::swap(evmat.Values[1][1], evmat.Values[2][1]);
 				std::swap(evmat.Values[1][2], evmat.Values[2][2]);
