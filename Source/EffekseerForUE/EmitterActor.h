@@ -7,7 +7,7 @@
 #include "EmitterActor.generated.h"
 
 UCLASS()
-class EFFEKSEERFORUE4_API AEmitterActor : public AActor
+class EFFEKSEERFORUE_API AEmitterActor : public AActor
 {
 	GENERATED_BODY()
 

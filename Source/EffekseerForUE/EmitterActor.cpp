@@ -2,7 +2,7 @@
 
 #include "EmitterActor.h"
 
-#include "EffekseerForUE4.h"
+#include "EffekseerForUE.h"
 
 // Sets default values
 AEmitterActor::AEmitterActor()
