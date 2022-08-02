@@ -3,12 +3,12 @@
 using UnrealBuildTool;
 using System.Collections.Generic;
 
-public class EffekseerForUE4EditorTarget : TargetRules
+public class EffekseerForUEEditorTarget : TargetRules
 {
-    public EffekseerForUE4EditorTarget(TargetInfo Target)
+    public EffekseerForUEEditorTarget(TargetInfo Target)
         : base(Target)
     {
         Type = TargetType.Editor;
-        ExtraModuleNames.Add("EffekseerForUE4");
+        ExtraModuleNames.Add("EffekseerForUE");
     }
 }
