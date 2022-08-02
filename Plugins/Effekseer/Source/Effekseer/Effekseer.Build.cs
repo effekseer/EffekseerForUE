@@ -56,9 +56,9 @@ namespace UnrealBuildTool.Rules
 				}
 				);
 
-			if (!(Target.Platform == UnrealTargetPlatform.Win64 || Target.Platform == UnrealTargetPlatform.Win32))
+			if (!(Target.Platform == UnrealTargetPlatform.Win64))
 			{
-				PrivateDefinitions.Add("__EFFEKSEER_NETWORK_DISABLED__");
+				PrivateDefinitions.Add("__EFFEKSEER_NETWORK_ENABLED__");
 			}
 
 			PrivateDefinitions.Add("__EFFEKSEER_FOR_UE4__");

@@ -26,10 +26,8 @@ private:
 	::Effekseer::ManagerRef effekseerManager = nullptr;
 	::Effekseer::RefPtr<::EffekseerRendererUE::RendererImplemented> effekseerRenderer = nullptr;
 
-#ifdef _WIN32
 	::Effekseer::ServerRef server_ = nullptr;
 	std::map<std::u16string, ::Effekseer::RefPtr<::Effekseer::Effect>> registeredEffects;
-#endif
 
 	TMap<UTexture2D*, UMaterialInstanceDynamic*> OpaqueDynamicMaterials;
 	TMap<UTexture2D*, UMaterialInstanceDynamic*> TranslucentDynamicMaterials;
@@ -92,12 +90,10 @@ public:
 
 	virtual ~FEffekseerSystemSceneProxy()
 	{
-#ifdef _WIN32
 		if (server_ != nullptr)
 		{
 			server_.Reset();
 		}
-#endif
 
 		effekseerManager.Reset();
 		effekseerRenderer.Reset();
@@ -210,7 +206,6 @@ public:
 				auto eid = effekseerManager->Play(effect, position.X, position.Z, position.Y);
 				internalHandle2EfkHandle.Add(cmd.ID, eid);
 
-#ifdef _WIN32
 				if (server_ != nullptr)
 				{
 					if (registeredEffects.count(effect->GetName()) == 0)
@@ -219,7 +214,6 @@ public:
 						server_->Register(effect->GetName(), effect);
 					}
 				}
-#endif
 			}
 
 			if (cmd.Type == EffekseerUpdateData_CommandType::SetP)
@@ -301,31 +295,30 @@ public:
 
 			if (cmd.Type == EffekseerUpdateData_CommandType::StartNetwork)
 			{
-#ifdef _WIN32
 				if (server_ == nullptr)
 				{
 					server_ = Effekseer::Server::Create();
-					if (server_->Start(cmd.ID))
+					if (server_ == nullptr)
 					{
-					}
-					else
-					{
-						server_.Reset();
+						if (server_->Start(cmd.ID))
+						{
+						}
+						else
+						{
+							server_.Reset();
+						}
 					}
 				}
-#endif
 			}
 
 			if (cmd.Type == EffekseerUpdateData_CommandType::StopNetwork)
 			{
-#ifdef _WIN32
 				if (server_ != nullptr)
 				{
 					server_->Stop();
 					server_.Reset();
 					registeredEffects.clear();
 				}
-#endif
 			}
 		}
 
@@ -336,12 +329,10 @@ public:
 		Time -= frame * (1.0f / 60.0f);
 
 		{
-#ifdef _WIN32
 			if (server_ != nullptr)
 			{
 				server_->Update(&effekseerManager, 1, Effekseer::ReloadingThreadType::Render);
 			}
-#endif
 
 			if (effekseerManager != nullptr)
 			{
