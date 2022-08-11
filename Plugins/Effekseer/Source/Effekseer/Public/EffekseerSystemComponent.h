@@ -28,6 +28,7 @@ enum class EffekseerUpdateData_CommandType
 	SetDynamicInput,
 	StartNetwork,
 	StopNetwork,
+	SendTrigger,
 };
 
 class EffekseerUpdateData_Command
@@ -44,7 +45,7 @@ public:
 	union
 	{
 		float Speed;
-
+		int TriggerIndex;
 		struct
 		{
 			float Value;
@@ -203,6 +204,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Control")
 	bool Exists(FEffekseerHandle handle) const;
+
+	UFUNCTION(BlueprintCallable, Category = "Control")
+	void SendTrigger(FEffekseerHandle handle, int index);
 
 	UFUNCTION(BlueprintCallable, Category = "Control")
 	void Stop(FEffekseerHandle handle);

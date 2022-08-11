@@ -219,6 +219,14 @@ bool UEffekseerEmitterComponent::Exists() const
 	return false;
 }
 
+void UEffekseerEmitterComponent::SendTrigger(int index)
+{
+	if (system_ != nullptr)
+	{
+		return system_->SendTrigger(handle, index);
+	}
+}
+
 FEffekseerHandle UEffekseerEmitterComponent::Play()
 {
 	if (System != nullptr)

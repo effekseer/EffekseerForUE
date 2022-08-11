@@ -88,6 +88,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = Effect)
 	bool Exists() const;
 
+	UFUNCTION(BlueprintCallable, Category = Effect)
+	void SendTrigger(int index);
+
 	UFUNCTION(BlueprintCallable, Category = Deprecated)
 	FEffekseerHandle Play();
 };

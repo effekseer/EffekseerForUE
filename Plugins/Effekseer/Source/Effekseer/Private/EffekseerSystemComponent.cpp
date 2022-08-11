@@ -225,8 +225,7 @@ public:
 					}
 				}
 			}
-
-			if (cmd.Type == EffekseerUpdateData_CommandType::SetP)
+			else if (cmd.Type == EffekseerUpdateData_CommandType::SetP)
 			{
 				if (internalHandle2EfkHandle.Contains(cmd.ID))
 				{
@@ -235,8 +234,7 @@ public:
 					effekseerManager->SetLocation(eid, position.X, position.Z, position.Y);
 				}
 			}
-
-			if (cmd.Type == EffekseerUpdateData_CommandType::SetR)
+			else if (cmd.Type == EffekseerUpdateData_CommandType::SetR)
 			{
 				if (internalHandle2EfkHandle.Contains(cmd.ID))
 				{
@@ -247,8 +245,7 @@ public:
 					effekseerManager->SetRotation(eid, Effekseer::Vector3D(axis.X, axis.Y, axis.Z), rotation.GetAngle());
 				}
 			}
-
-			if (cmd.Type == EffekseerUpdateData_CommandType::SetS)
+			else if (cmd.Type == EffekseerUpdateData_CommandType::SetS)
 			{
 				if (internalHandle2EfkHandle.Contains(cmd.ID))
 				{
@@ -257,8 +254,7 @@ public:
 					effekseerManager->SetScale(eid, scale.X, scale.Z, scale.Y);
 				}
 			}
-
-			if (cmd.Type == EffekseerUpdateData_CommandType::StopRoot)
+			else if (cmd.Type == EffekseerUpdateData_CommandType::StopRoot)
 			{
 				if (internalHandle2EfkHandle.Contains(cmd.ID))
 				{
@@ -266,8 +262,7 @@ public:
 					effekseerManager->StopRoot(eid);
 				}
 			}
-
-			if (cmd.Type == EffekseerUpdateData_CommandType::Stop)
+			else if (cmd.Type == EffekseerUpdateData_CommandType::Stop)
 			{
 				if (internalHandle2EfkHandle.Contains(cmd.ID))
 				{
@@ -275,8 +270,7 @@ public:
 					effekseerManager->StopEffect(eid);
 				}
 			}
-
-			if (cmd.Type == EffekseerUpdateData_CommandType::SetAllColor)
+			else if (cmd.Type == EffekseerUpdateData_CommandType::SetAllColor)
 			{
 				if (internalHandle2EfkHandle.Contains(cmd.ID))
 				{
@@ -284,8 +278,7 @@ public:
 					effekseerManager->SetAllColor(eid, Effekseer::Color(cmd.AllColor.R, cmd.AllColor.G, cmd.AllColor.B, cmd.AllColor.A));
 				}
 			}
-
-			if (cmd.Type == EffekseerUpdateData_CommandType::SetDynamicInput)
+			else if (cmd.Type == EffekseerUpdateData_CommandType::SetDynamicInput)
 			{
 				if (internalHandle2EfkHandle.Contains(cmd.ID))
 				{
@@ -293,8 +286,7 @@ public:
 					effekseerManager->SetDynamicInput(eid, cmd.DynamicInput.Index, cmd.DynamicInput.Value);
 				}
 			}
-
-			if (cmd.Type == EffekseerUpdateData_CommandType::SetSpeed)
+			else if (cmd.Type == EffekseerUpdateData_CommandType::SetSpeed)
 			{
 				if (internalHandle2EfkHandle.Contains(cmd.ID))
 				{
@@ -302,8 +294,7 @@ public:
 					effekseerManager->SetSpeed(eid, cmd.Speed);
 				}
 			}
-
-			if (cmd.Type == EffekseerUpdateData_CommandType::StartNetwork)
+			else if (cmd.Type == EffekseerUpdateData_CommandType::StartNetwork)
 			{
 				if (server_ == nullptr)
 				{
@@ -320,14 +311,21 @@ public:
 					}
 				}
 			}
-
-			if (cmd.Type == EffekseerUpdateData_CommandType::StopNetwork)
+			else if (cmd.Type == EffekseerUpdateData_CommandType::StopNetwork)
 			{
 				if (server_ != nullptr)
 				{
 					server_->Stop();
 					server_.Reset();
 					registeredEffects.clear();
+				}
+			}
+			else if (cmd.Type == EffekseerUpdateData_CommandType::SendTrigger)
+			{
+				if (internalHandle2EfkHandle.Contains(cmd.ID))
+				{
+					auto eid = internalHandle2EfkHandle[cmd.ID];
+					effekseerManager->SendTrigger(eid, cmd.TriggerIndex);
 				}
 			}
 		}
@@ -818,6 +816,19 @@ bool UEffekseerSystemComponent::Exists(FEffekseerHandle handle) const
 	if (handle.Effect == nullptr)
 		return false;
 	return internalHandle2EfkHandle.Contains(handle.ID);
+}
+
+void UEffekseerSystemComponent::SendTrigger(FEffekseerHandle handle, int index)
+{
+	if (handle.Effect == nullptr)
+		return;
+
+	EffekseerUpdateData_Command cmd;
+	cmd.Type = EffekseerUpdateData_CommandType::SendTrigger;
+	cmd.ID = handle.ID;
+	cmd.TriggerIndex = index;
+
+	currentUpdateData->Commands.Add(cmd);
 }
 
 void UEffekseerSystemComponent::Stop(FEffekseerHandle handle)

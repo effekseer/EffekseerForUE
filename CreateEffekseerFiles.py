@@ -2,6 +2,10 @@ import shutil
 import os
 from distutils.dir_util import copy_tree
 
+def createEmptyFile(path):
+    f = open(path, "w")
+    f.close()
+
 copy_tree("../Effekseer/Dev/Cpp/Effekseer", "./Plugins/Effekseer/Source/Effekseer/Private/Effekseer")
 copy_tree("../Effekseer/Dev/Cpp/EffekseerRendererCommon", "./Plugins/Effekseer/Source/Effekseer/Private/EffekseerRendererCommon")
 
@@ -16,3 +20,7 @@ os.remove("./Plugins/Effekseer/Source/Effekseer/Private/EffekseerRendererCommon/
 os.remove("./Plugins/Effekseer/Source/Effekseer/Private/EffekseerRendererCommon/EffekseerRenderer.TGATextureLoader.h")
 os.remove("./Plugins/Effekseer/Source/Effekseer/Private/EffekseerRendererCommon/EffekseerRenderer.PngTextureLoader.cpp")
 os.remove("./Plugins/Effekseer/Source/Effekseer/Private/EffekseerRendererCommon/EffekseerRenderer.PngTextureLoader.h")
+
+createEmptyFile("./Plugins/Effekseer/Source/Effekseer/Private/EffekseerRendererCommon/TextureLoader.h")
+createEmptyFile("./Plugins/Effekseer/Source/Effekseer/Private/EffekseerRendererCommon/TextureLoader.cpp")
+
