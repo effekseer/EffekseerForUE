@@ -7,39 +7,73 @@
 std::array<std::array<float, 4>, 13> GetFixedGradient(const EffekseerMaterial::Gradient& gradient)
 {
 	std::array<std::array<float, 4>, 13> ret;
-
-	for (size_t i = 0; i < 13; i++)
-	{
-		ret[i].fill(0.0f);
-	}
-
 	ret[0][0] = gradient.ColorCount;
 	ret[0][1] = gradient.AlphaCount;
-	ret[0][2] = 0.0f;
-	ret[0][3] = 0.0f;
+	ret[0][2] = 0.0F;
+	ret[0][3] = 0.0F;
 
-	std::stringstream ss;
-
-	for (int32_t i = 0; i < gradient.Colors.size(); i++)
+	const auto getColorKey = [](const EffekseerMaterial::Gradient& gradient, size_t index)
 	{
-		ret[i + 1][0] = gradient.Colors[i].Color[0] * gradient.Colors[i].Intensity;
-		ret[i + 1][1] = gradient.Colors[i].Color[1] * gradient.Colors[i].Intensity;
-		ret[i + 1][2] = gradient.Colors[i].Color[2] * gradient.Colors[i].Intensity;
-		ret[i + 1][3] = gradient.Colors[i].Position;
-	}
-
-	for (int32_t i = 0; i < gradient.Alphas.size(); i++)
-	{
-		if (i % 2 == 0)
+		if (gradient.ColorCount == 0)
 		{
-			ret[i / 2 + 9][0] = gradient.Alphas[i].Alpha;
-			ret[i / 2 + 9][1] = gradient.Alphas[i].Position;
+			EffekseerMaterial::Gradient::ColorMarker key;
+			key.Color = { 1.0f, 1.0f, 1.0f };
+			key.Intensity = 1.0f;
+			key.Position = 0.0;
+			return key;
 		}
 		else
 		{
-			ret[i / 2 + 9][2] = gradient.Alphas[i].Alpha;
-			ret[i / 2 + 9][3] = gradient.Alphas[i].Position;
+			if (gradient.ColorCount <= index)
+			{
+				auto key = gradient.Colors[gradient.ColorCount - 1];
+				key.Position += index;
+				return key;
+			}
+
+			return gradient.Colors[index];
 		}
+	};
+
+	const auto getAlphaKey = [](const EffekseerMaterial::Gradient& gradient, size_t index)
+	{
+		if (gradient.AlphaCount == 0)
+		{
+			EffekseerMaterial::Gradient::AlphaMarker key;
+			key.Alpha = 1.0f;
+			key.Position = 0.0;
+			return key;
+		}
+		else
+		{
+			if (gradient.AlphaCount <= index)
+			{
+				auto key = gradient.Alphas[gradient.AlphaCount - 1];
+				key.Position += index;
+				return key;
+			}
+
+			return gradient.Alphas[index];
+		}
+	};
+
+	for (size_t i = 0; i < gradient.Colors.size(); i++)
+	{
+		const auto colorKey = getColorKey(gradient, i);
+		ret[1 + i][0] = colorKey.Color[0] * colorKey.Intensity;
+		ret[1 + i][1] = colorKey.Color[1] * colorKey.Intensity;
+		ret[1 + i][2] = colorKey.Color[2] * colorKey.Intensity;
+		ret[1 + i][3] = colorKey.Position;
+	}
+
+	for (size_t i = 0; i < 4; i++)
+	{
+		const auto alphaKey0 = getAlphaKey(gradient, i * 2 + 0);
+		const auto alphaKey1 = getAlphaKey(gradient, i * 2 + 1);
+		ret[9 + i][0] = alphaKey0.Alpha;
+		ret[9 + i][1] = alphaKey0.Position;
+		ret[9 + i][2] = alphaKey1.Alpha;
+		ret[9 + i][3] = alphaKey1.Position;
 	}
 
 	return ret;
