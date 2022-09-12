@@ -98,7 +98,8 @@ UObject* UEffekseerModelFactory::FactoryCreateBinary(
 		}
 
 #if ENGINE_MAJOR_VERSION == 5
-		FStaticMeshSourceModel* lodModel = const_cast<FStaticMeshSourceModel*>(&(assetSM->GetSourceModels()[0]));
+		auto& newModel = assetSM->AddSourceModel();
+		FStaticMeshSourceModel* lodModel = &newModel;
 #else
 		FStaticMeshSourceModel* lodModel = new (assetSM->GetSourceModels()) FStaticMeshSourceModel();
 #endif

@@ -335,7 +335,7 @@ public:
 		expression_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
 		material->Expressions.Add(expression_);
 
-		FStringAssetReference assetPath("/Effekseer/MaterialFunctions/EfkStep.EfkStep");
+		EffekseerUE::UEFSoftObjectPath assetPath("/Effekseer/MaterialFunctions/EfkStep.EfkStep");
 		UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
 		expression_->SetMaterialFunction(func);
 	}

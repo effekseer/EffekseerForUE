@@ -88,7 +88,7 @@ ConvertedNodeSampleGradient::ConvertedNodeSampleGradient(UMaterial* material, st
 	expression_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
 	material->Expressions.Add(expression_);
 
-	FStringAssetReference assetPath("/Effekseer/MaterialFunctions/EfkSampleGradient.EfkSampleGradient");
+	EffekseerUE::UEFSoftObjectPath assetPath("/Effekseer/MaterialFunctions/EfkSampleGradient.EfkSampleGradient");
 	UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
 	expression_->SetMaterialFunction(func);
 

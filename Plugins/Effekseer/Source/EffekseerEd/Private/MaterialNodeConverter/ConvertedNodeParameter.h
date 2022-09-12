@@ -186,7 +186,7 @@ public:
 		function_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
 		material->Expressions.Add(function_);
 
-		FStringAssetReference assetPath("/Effekseer/MaterialFunctions/EfkCustomData1.EfkCustomData1");
+		EffekseerUE::UEFSoftObjectPath assetPath("/Effekseer/MaterialFunctions/EfkCustomData1.EfkCustomData1");
 		UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
 		function_->SetMaterialFunction(func);
 
@@ -232,7 +232,7 @@ public:
 		function_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
 		material->Expressions.Add(function_);
 
-		FStringAssetReference assetPath("/Effekseer/MaterialFunctions/EfkCustomData2.EfkCustomData2");
+		EffekseerUE::UEFSoftObjectPath assetPath("/Effekseer/MaterialFunctions/EfkCustomData2.EfkCustomData2");
 		UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
 		function_->SetMaterialFunction(func);
 

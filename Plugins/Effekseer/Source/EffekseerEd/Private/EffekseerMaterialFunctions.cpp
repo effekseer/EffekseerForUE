@@ -79,14 +79,14 @@ public:
 		material->Expressions.Add(opacityMaskCullingFunction_);
 
 		{
-			FStringAssetReference assetPath("/Effekseer/MaterialFunctions/EfkCullingMask.EfkCullingMask");
+			EffekseerUE::UEFSoftObjectPath assetPath("/Effekseer/MaterialFunctions/EfkCullingMask.EfkCullingMask");
 			UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
 			opacityCullingFunction_->SetMaterialFunction(func);
 			opacityMaskCullingFunction_->SetMaterialFunction(func);
 		}
 
 		{
-			FStringAssetReference assetPath("/Effekseer/MaterialFunctions/EfkOpacity.EfkOpacity");
+			EffekseerUE::UEFSoftObjectPath assetPath("/Effekseer/MaterialFunctions/EfkOpacity.EfkOpacity");
 			UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
 			opacityFunction_->SetMaterialFunction(func);
 		}
@@ -103,7 +103,7 @@ public:
 		{
 			baseColorPower_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material_);
 			material_->Expressions.Add(baseColorPower_);
-			FStringAssetReference assetPath("/Effekseer/MaterialFunctions/EfkToLinear3.EfkToLinear3");
+			EffekseerUE::UEFSoftObjectPath assetPath("/Effekseer/MaterialFunctions/EfkToLinear3.EfkToLinear3");
 			UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
 			baseColorPower_->SetMaterialFunction(func);
 			material_->Expressions.Add(baseColorPower_);
@@ -116,7 +116,7 @@ public:
 		{
 			emissiveColorPower_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material_);
 			material_->Expressions.Add(emissiveColorPower_);
-			FStringAssetReference assetPath("/Effekseer/MaterialFunctions/EfkToLinear3.EfkToLinear3");
+			EffekseerUE::UEFSoftObjectPath assetPath("/Effekseer/MaterialFunctions/EfkToLinear3.EfkToLinear3");
 			UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
 			emissiveColorPower_->SetMaterialFunction(func);
 			material_->Expressions.Add(emissiveColorPower_);
@@ -232,7 +232,7 @@ public:
 		expression_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
 		material->Expressions.Add(expression_);
 
-		FStringAssetReference assetPath("/Effekseer/MaterialFunctions/EfkRotator.EfkRotator");
+		EffekseerUE::UEFSoftObjectPath assetPath("/Effekseer/MaterialFunctions/EfkRotator.EfkRotator");
 		UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
 		expression_->SetMaterialFunction(func);
 	}
@@ -278,7 +278,7 @@ public:
 		expression_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
 		material->Expressions.Add(expression_);
 
-		FStringAssetReference assetPath("/Effekseer/MaterialFunctions/EfkPolarCoords.EfkPolarCoords");
+		EffekseerUE::UEFSoftObjectPath assetPath("/Effekseer/MaterialFunctions/EfkPolarCoords.EfkPolarCoords");
 		UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
 		expression_->SetMaterialFunction(func);
 
@@ -365,7 +365,7 @@ public:
 		expression_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
 		material->Expressions.Add(expression_);
 
-		FStringAssetReference assetPath("/Effekseer/MaterialFunctions/EfkDepthFade.EfkDepthFade");
+		EffekseerUE::UEFSoftObjectPath assetPath("/Effekseer/MaterialFunctions/EfkDepthFade.EfkDepthFade");
 		UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
 		expression_->SetMaterialFunction(func);
 
@@ -428,7 +428,7 @@ public:
 			expressionToLinear_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
 			material->Expressions.Add(expressionToLinear_);
 
-			FStringAssetReference assetPath("/Effekseer/MaterialFunctions/EfkToLinear.EfkToLinear");
+			EffekseerUE::UEFSoftObjectPath assetPath("/Effekseer/MaterialFunctions/EfkToLinear.EfkToLinear");
 			UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
 			expressionToLinear_->SetMaterialFunction(func);
 		}
@@ -465,7 +465,7 @@ public:
 			int slash_i = texturePath.find_last_of("/");
 			texturePath = texturePath + "." + texturePath.substr(slash_i + 1, texturePath.size());
 
-			FStringAssetReference assetPath(texturePath.c_str());
+			EffekseerUE::UEFSoftObjectPath assetPath(texturePath.c_str());
 			UTexture* texture = Cast<UTexture>(assetPath.TryLoad());
 
 			expression_->Texture = texture;
@@ -489,7 +489,7 @@ public:
 
 		if (expression_->Texture == nullptr)
 		{
-			FStringAssetReference assetPath("/Engine/EngineResources/DefaultTexture.DefaultTexture");
+			EffekseerUE::UEFSoftObjectPath assetPath("/Engine/EngineResources/DefaultTexture.DefaultTexture");
 			UTexture* texture = Cast<UTexture>(assetPath.TryLoad());
 
 			expression_->Texture = texture;
@@ -641,7 +641,7 @@ public:
 			int slash_i = texturePath.find_last_of("/");
 			texturePath = texturePath + "." + texturePath.substr(slash_i + 1, texturePath.size());
 
-			FStringAssetReference assetPath(texturePath.c_str());
+			EffekseerUE::UEFSoftObjectPath assetPath(texturePath.c_str());
 			UTexture* texture = Cast<UTexture>(assetPath.TryLoad());
 
 			expression_->Texture = texture;
@@ -665,7 +665,7 @@ public:
 
 		if (expression_->Texture == nullptr)
 		{
-			FStringAssetReference assetPath("/Engine/EngineResources/DefaultTexture.DefaultTexture");
+			EffekseerUE::UEFSoftObjectPath assetPath("/Engine/EngineResources/DefaultTexture.DefaultTexture");
 			UTexture* texture = Cast<UTexture>(assetPath.TryLoad());
 
 			expression_->Texture = texture;
@@ -720,7 +720,7 @@ public:
 			int slash_i = texturePath.find_last_of("/");
 			texturePath = texturePath + "." + texturePath.substr(slash_i + 1, texturePath.size());
 
-			FStringAssetReference assetPath(texturePath.c_str());
+			EffekseerUE::UEFSoftObjectPath assetPath(texturePath.c_str());
 			UTexture* texture = Cast<UTexture>(assetPath.TryLoad());
 
 			expression_->Texture = texture;
@@ -744,7 +744,7 @@ public:
 
 		if (expression_->Texture == nullptr)
 		{
-			FStringAssetReference assetPath("/Engine/EngineResources/DefaultTexture.DefaultTexture");
+			EffekseerUE::UEFSoftObjectPath assetPath("/Engine/EngineResources/DefaultTexture.DefaultTexture");
 			UTexture* texture = Cast<UTexture>(assetPath.TryLoad());
 
 			expression_->Texture = texture;
@@ -786,7 +786,7 @@ public:
 		expression_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
 		material->Expressions.Add(expression_);
 
-		FStringAssetReference assetPath("/Effekseer/MaterialFunctions/EfkLight.EfkLight");
+		EffekseerUE::UEFSoftObjectPath assetPath("/Effekseer/MaterialFunctions/EfkLight.EfkLight");
 		UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
 		expression_->SetMaterialFunction(func);
 	}
@@ -828,7 +828,7 @@ public:
 		expression_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
 		material->Expressions.Add(expression_);
 
-		FStringAssetReference assetPath("/Effekseer/MaterialFunctions/EfkLocalTime.EfkLocalTime");
+		EffekseerUE::UEFSoftObjectPath assetPath("/Effekseer/MaterialFunctions/EfkLocalTime.EfkLocalTime");
 		UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
 		expression_->SetMaterialFunction(func);
 	}

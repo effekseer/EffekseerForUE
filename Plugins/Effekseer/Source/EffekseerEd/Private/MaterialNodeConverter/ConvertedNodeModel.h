@@ -47,13 +47,13 @@ public:
 
 		if (index == 0)
 		{
-			FStringAssetReference assetPath("/Effekseer/MaterialFunctions/EfkUV1.EfkUV1");
+			EffekseerUE::UEFSoftObjectPath assetPath("/Effekseer/MaterialFunctions/EfkUV1.EfkUV1");
 			UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
 			expression_->SetMaterialFunction(func);
 		}
 		else
 		{
-			FStringAssetReference assetPath("/Effekseer/MaterialFunctions/EfkUV2.EfkUV2");
+			EffekseerUE::UEFSoftObjectPath assetPath("/Effekseer/MaterialFunctions/EfkUV2.EfkUV2");
 			UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
 			expression_->SetMaterialFunction(func);
 		}
@@ -123,7 +123,7 @@ public:
 		function_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
 		material->Expressions.Add(function_);
 
-		FStringAssetReference assetPath("/Effekseer/MaterialFunctions/EfkVertexColor.EfkVertexColor");
+		EffekseerUE::UEFSoftObjectPath assetPath("/Effekseer/MaterialFunctions/EfkVertexColor.EfkVertexColor");
 		UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
 		function_->SetMaterialFunction(func);
 	}
@@ -164,7 +164,7 @@ public:
 		expression_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
 		material->Expressions.Add(expression_);
 
-		FStringAssetReference assetPath("/Engine/Functions/Engine_MaterialFunctions02/WorldPositionOffset/ObjectScale.ObjectScale");
+		EffekseerUE::UEFSoftObjectPath assetPath("/Engine/Functions/Engine_MaterialFunctions02/WorldPositionOffset/ObjectScale.ObjectScale");
 		UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
 		expression_->SetMaterialFunction(func);
 	}

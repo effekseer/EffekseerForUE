@@ -21,7 +21,7 @@ public:
 		expression_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
 		material->Expressions.Add(expression_);
 
-		FStringAssetReference assetPath("/Effekseer/MaterialFunctions/EfkCastFloat2ToFloat4.EfkCastFloat2ToFloat4");
+		EffekseerUE::UEFSoftObjectPath assetPath("/Effekseer/MaterialFunctions/EfkCastFloat2ToFloat4.EfkCastFloat2ToFloat4");
 		UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
 		expression_->SetMaterialFunction(func);
 	}
@@ -50,7 +50,7 @@ public:
 		expression_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
 		material->Expressions.Add(expression_);
 
-		FStringAssetReference assetPath("/Effekseer/MaterialFunctions/EfkCastFloat3ToFloat4.EfkCastFloat3ToFloat4");
+		EffekseerUE::UEFSoftObjectPath assetPath("/Effekseer/MaterialFunctions/EfkCastFloat3ToFloat4.EfkCastFloat3ToFloat4");
 		UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
 		expression_->SetMaterialFunction(func);
 	}

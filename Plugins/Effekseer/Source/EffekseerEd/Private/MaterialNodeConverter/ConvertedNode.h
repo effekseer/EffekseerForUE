@@ -3,6 +3,7 @@
 
 #include "CoreMinimal.h"
 #include "Materials/MaterialExpression.h"
+#include "EffekseerUECompatibility.h"
 #include <memory>
 
 struct ConvertedNodeOutputConnector
