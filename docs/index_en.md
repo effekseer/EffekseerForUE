@@ -1,11 +1,11 @@
-﻿% EffekseerForUnrealEngine4
+﻿% EffekseerForUnrealEngine
 
 <div class="main">
 
 ## Overview
 
-This is Effekseer plugin for UnrealEngine 4.
-With this plugin, you can play effects created with Effekseer on UnrealEngine 4.
+This is Effekseer plugin for UnrealEngine.
+With this plugin, you can play effects created with Effekseer on UnrealEngine.
 
 ## Important notice
 
@@ -15,12 +15,12 @@ Please reimport model files if you upgrade it from 1.4
 
 #### Version
 
-UnrealEngine4.23 or later
+UnrealEngine4.27 or later
 
 #### Compiler
 
 It is necessary to install a compiler suitable for the environment.
-For example, you need to install VisualStudio 2017 or 2019 on Windows.
+For example, you need to install VisualStudio 2019 or 2022 on Windows.
 
 #### Platform
 
@@ -30,7 +30,7 @@ EffekseerForUnrealEngine4 works on most platforms.
 
 ## Constitution
 
-EffekseerForUE4 consists mainly of two components.
+EffekseerForUE consists mainly of two components.
 
 It is ```EffekseerSystemComponent``` and ```EffekseerEmitterComponent```.
 
@@ -45,7 +45,7 @@ There are also ```BP_EffekseerSystem``` and ```BP_EffekseerEmitter``` blueprints
 
 ## Sample
 
-``` EffekseerForUE4.uproject ``` contains sample levels.
+``` EffekseerForUE.uproject ``` contains sample levels.
 
 You can see that Effekseer's effect is being played.
 

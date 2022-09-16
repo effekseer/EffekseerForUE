@@ -1,11 +1,11 @@
-﻿% EffekseerForUnrealEngine4
+﻿% EffekseerForUnrealEngine
 
 <div class="main">
 
 ## 概要
 
-これはUnrealEngine4向けのEffekseerプラグインです。
-このプラグインを使用すると、UnrealEngine4上でEffekseerで作成したエフェクトを再生できるようになります。
+これはUnrealEngine向けのEffekseerプラグインです。
+このプラグインを使用すると、UnrealEngine上でEffekseerで作成したエフェクトを再生できるようになります。
 
 ## 重要なお知らせ
 
@@ -15,21 +15,21 @@
 
 #### バージョン
 
-UnrealEngine4.23以降
+UnrealEngine4.27以降
 
 #### コンパイラ
 
 環境に合わせたコンパイラをインストールする必要があります。
-例えば、WindowsではVisualStudio2017、もしくはVisualStudio2019をインストールする必要があります。
+例えば、WindowsではVisualStudio2019、もしくはVisualStudio2022をインストールする必要があります。
 
 #### プラットフォーム
 
 プラットフォーム固有の機能は使用していないため、
-EffekseerForUnrealEngine4はほとんどのプラットフォームで動作します。
+EffekseerForUnrealEngineはほとんどのプラットフォームで動作します。
 
 ## 構成
 
-EffekseerForUE4では主に2つのコンポーネントで構成されています。
+EffekseerForUEでは主に2つのコンポーネントで構成されています。
 
 それは、```EffekseerSystemComponent``` と ```EffekseerEmitterComponent``` です。
 
@@ -44,7 +44,7 @@ Effekseerのefkmdlファイルに対応するアセットの```EffekseerModel```
 
 ## サンプル
 
-``` EffekseerForUE4.uproject ``` にサンプルのレベルが収録されています。
+``` EffekseerForUE.uproject ``` にサンプルのレベルが収録されています。
 
 これを見るとEffekseerのエフェクトが再生されていることがわかります。
 

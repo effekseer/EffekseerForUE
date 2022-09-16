@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="generator" content="pandoc" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes" />
-  <title>EffekseerForUnrealEngine4</title>
+  <title>EffekseerForUnrealEngine</title>
   <style>
     code{white-space: pre-wrap;}
     span.smallcaps{font-variant: small-caps;}
@@ -12,7 +12,6 @@
     div.column{display: inline-block; vertical-align: top; width: 50%;}
     div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
     ul.task-list{list-style: none;}
-    .display.math{display: block; text-align: center; margin: 0.5rem auto;}
   </style>
   <link rel="stylesheet" href="base.css" />
   <!--[if lt IE 9]>
@@ -21,12 +20,12 @@
 </head>
 <body>
 <header id="title-block-header">
-<h1 class="title">EffekseerForUnrealEngine4</h1>
+<h1 class="title">EffekseerForUnrealEngine</h1>
 </header>
 <div class="main">
 <section class="level2">
 <h2>概要</h2>
-<p>これはUnrealEngine4向けのEffekseerプラグインです。 このプラグインを使用すると、UnrealEngine4上でEffekseerで作成したエフェクトを再生できるようになります。</p>
+<p>これはUnrealEngine向けのEffekseerプラグインです。 このプラグインを使用すると、UnrealEngine上でEffekseerで作成したエフェクトを再生できるようになります。</p>
 </section>
 <section class="level2">
 <h2>重要なお知らせ</h2>
@@ -35,21 +34,21 @@
 <h3>動作環境</h3>
 <section class="level4">
 <h4>バージョン</h4>
-<p>UnrealEngine4.23以降</p>
+<p>UnrealEngine4.27以降</p>
 </section>
 <section class="level4">
 <h4>コンパイラ</h4>
-<p>環境に合わせたコンパイラをインストールする必要があります。 例えば、WindowsではVisualStudio2017、もしくはVisualStudio2019をインストールする必要があります。</p>
+<p>環境に合わせたコンパイラをインストールする必要があります。 例えば、WindowsではVisualStudio2019、もしくはVisualStudio2022をインストールする必要があります。</p>
 </section>
 <section class="level4">
 <h4>プラットフォーム</h4>
-<p>プラットフォーム固有の機能は使用していないため、 EffekseerForUnrealEngine4はほとんどのプラットフォームで動作します。</p>
+<p>プラットフォーム固有の機能は使用していないため、 EffekseerForUnrealEngineはほとんどのプラットフォームで動作します。</p>
 </section>
 </section>
 </section>
 <section class="level2">
 <h2>構成</h2>
-<p>EffekseerForUE4では主に2つのコンポーネントで構成されています。</p>
+<p>EffekseerForUEでは主に2つのコンポーネントで構成されています。</p>
 <p>それは、<code>EffekseerSystemComponent</code> と <code>EffekseerEmitterComponent</code> です。</p>
 <p>EffekseerSystemはエフェクトの描画を行います。そのため、レベル内に必ず1つ必要です。</p>
 <p>EffekseerEmitterComponentはエフェクトの生成や操作を行います。エフェクト1つ1つに必要です。</p>
@@ -58,7 +57,7 @@
 </section>
 <section class="level2">
 <h2>サンプル</h2>
-<p><code>EffekseerForUE4.uproject</code> にサンプルのレベルが収録されています。</p>
+<p><code>EffekseerForUE.uproject</code> にサンプルのレベルが収録されています。</p>
 <p>これを見るとEffekseerのエフェクトが再生されていることがわかります。</p>
 <div data-align="center">
 <p><img src="img/ss.png"></p>
