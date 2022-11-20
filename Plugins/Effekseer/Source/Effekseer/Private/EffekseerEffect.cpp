@@ -174,7 +174,20 @@ Effekseer::TextureRef TextureLoader::Load(const EFK_CHAR* path, ::Effekseer::Tex
 	{
 		if (m_requiredToCreateResource)
 		{
-			auto texture = Cast<UTexture2D>(StaticLoadObject(UTexture2D::StaticClass(), NULL, path_.c_str()));
+			UTexture2D* texture = nullptr;
+
+			texture = Cast<UTexture2D>(StaticLoadObject(UTexture2D::StaticClass(), NULL, path_.c_str()));
+			
+			// for UE5.1
+			if (texture == nullptr)
+			{
+				if (path_we.size() > 5 && path_we.substr(path_we.size() - 5, 5) == u"_1024")
+				{
+					const auto path_1024 = tStr<512>((path_we.substr(0, path_we.size() - 5)).c_str());
+					texture = Cast<UTexture2D>(StaticLoadObject(UTexture2D::StaticClass(), NULL, path_1024.c_str()));
+				}
+			}
+
 			m_uobject->ColorTextures.Add(texture);
 
 			if (texture == nullptr)
