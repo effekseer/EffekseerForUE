@@ -21,7 +21,7 @@ public:
 		: effekseerNode_(effekseerNode)
 	{
 		expression_ = NewObject<UMaterialExpressionWorldPosition>(material);
-		material->Expressions.Add(expression_);
+		ConvertedNodeHelper::AddExpression(material, expression_);
 	}
 
 	UMaterialExpression* GetExpression() const override
@@ -41,7 +41,7 @@ public:
 		: effekseerNode_(effekseerNode)
 	{
 		expression_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
-		material->Expressions.Add(expression_);
+		ConvertedNodeHelper::AddExpression(material, expression_);
 
 		auto index = static_cast<int32_t>(effekseerNode_->GetProperty("UVIndex")->Floats[0]);
 
@@ -76,7 +76,7 @@ public:
 		: effekseerNode_(effekseerNode)
 	{
 		expression_ = NewObject<UMaterialExpressionPanner>(material);
-		material->Expressions.Add(expression_);
+		ConvertedNodeHelper::AddExpression(material, expression_);
 
 		auto index = static_cast<int32_t>(effekseerNode_->GetProperty("UVIndex")->Floats[0]);
 
@@ -121,7 +121,7 @@ public:
 	ConvertedNodeVertexColor(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
 	{
 		function_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
-		material->Expressions.Add(function_);
+		ConvertedNodeHelper::AddExpression(material, function_);
 
 		EffekseerUE::UEFSoftObjectPath assetPath("/Effekseer/MaterialFunctions/EfkVertexColor.EfkVertexColor");
 		UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
@@ -162,7 +162,7 @@ public:
 		: effekseerNode_(effekseerNode)
 	{
 		expression_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
-		material->Expressions.Add(expression_);
+		ConvertedNodeHelper::AddExpression(material, expression_);
 
 		EffekseerUE::UEFSoftObjectPath assetPath("/Engine/Functions/Engine_MaterialFunctions02/WorldPositionOffset/ObjectScale.ObjectScale");
 		UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
