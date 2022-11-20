@@ -16,7 +16,7 @@ public:
 		: effekseerNode_(effekseerNode)
 	{
 		expression_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
-		material->Expressions.Add(expression_);
+		ConvertedNodeHelper::AddExpression(material, expression_);
 
 		EffekseerUE::UEFSoftObjectPath assetPath("/Effekseer/MaterialFunctions/EfkSimpleNoise.EfkSimpleNoise");
 		UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());

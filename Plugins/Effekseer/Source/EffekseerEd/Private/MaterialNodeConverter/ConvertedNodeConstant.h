@@ -21,7 +21,7 @@ public:
 		: effekseerNode_(effekseerNode)
 	{
 		expression_ = NewObject<UMaterialExpressionConstant>(material);
-		material->Expressions.Add(expression_);
+		ConvertedNodeHelper::AddExpression(material, expression_);
 
 		expression_->R = effekseerNode_->GetProperty("Value")->Floats[0];
 	}
@@ -43,7 +43,7 @@ public:
 		: effekseerNode_(effekseerNode)
 	{
 		expression_ = NewObject<UMaterialExpressionConstant2Vector>(material);
-		material->Expressions.Add(expression_);
+		ConvertedNodeHelper::AddExpression(material, expression_);
 
 		expression_->R = effekseerNode_->GetProperty("Value")->Floats[0];
 		expression_->G = effekseerNode_->GetProperty("Value")->Floats[1];
@@ -66,7 +66,7 @@ public:
 		: effekseerNode_(effekseerNode)
 	{
 		expression_ = NewObject<UMaterialExpressionConstant3Vector>(material);
-		material->Expressions.Add(expression_);
+		ConvertedNodeHelper::AddExpression(material, expression_);
 
 		expression_->Constant.R = effekseerNode_->GetProperty("Value")->Floats[0];
 		expression_->Constant.G = effekseerNode_->GetProperty("Value")->Floats[1];
@@ -90,7 +90,7 @@ public:
 		: effekseerNode_(effekseerNode)
 	{
 		expression_ = NewObject<UMaterialExpressionConstant4Vector>(material);
-		material->Expressions.Add(expression_);
+		ConvertedNodeHelper::AddExpression(material, expression_);
 
 		expression_->Constant.R = effekseerNode_->GetProperty("Value")->Floats[0];
 		expression_->Constant.G = effekseerNode_->GetProperty("Value")->Floats[1];
@@ -115,7 +115,7 @@ public:
 		: effekseerNode_(effekseerNode)
 	{
 		expression_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
-		material->Expressions.Add(expression_);
+		ConvertedNodeHelper::AddExpression(material, expression_);
 
 		EffekseerUE::UEFSoftObjectPath assetPath("/Effekseer/MaterialFunctions/EfkTime.EfkTime");
 		UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
@@ -139,7 +139,7 @@ public:
 		: effekseerNode_(effekseerNode)
 	{
 		expression_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
-		material->Expressions.Add(expression_);
+		ConvertedNodeHelper::AddExpression(material, expression_);
 
 		EffekseerUE::UEFSoftObjectPath assetPath("/Effekseer/MaterialFunctions/EfkCameraPosition.EfkCameraPosition");
 		UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
@@ -163,7 +163,7 @@ public:
 		: effekseerNode_(effekseerNode)
 	{
 		expression_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
-		material->Expressions.Add(expression_);
+		ConvertedNodeHelper::AddExpression(material, expression_);
 
 		EffekseerUE::UEFSoftObjectPath assetPath("/Effekseer/MaterialFunctions/EfkEffectScale.EfkEffectScale");
 		UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());

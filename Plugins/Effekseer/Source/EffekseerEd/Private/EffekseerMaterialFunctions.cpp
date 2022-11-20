@@ -1,6 +1,11 @@
 #include "EffekseerMaterialFunctions.h"
 
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 1
+#include "AssetRegistry/AssetRegistryModule.h"
+#else
 #include "AssetRegistryModule.h"
+#endif
+
 #include "AssetToolsModule.h"
 #include "EffekseerMaterial/efkMat.Library.h"
 #include "EffekseerMaterial/efkMat.Models.h"
@@ -72,11 +77,11 @@ public:
 		}
 
 		opacityFunction_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
-		material->Expressions.Add(opacityFunction_);
+		ConvertedNodeHelper::AddExpression(material, opacityFunction_);
 		opacityCullingFunction_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
-		material->Expressions.Add(opacityCullingFunction_);
+		ConvertedNodeHelper::AddExpression(material, opacityCullingFunction_);
 		opacityMaskCullingFunction_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
-		material->Expressions.Add(opacityMaskCullingFunction_);
+		ConvertedNodeHelper::AddExpression(material, opacityMaskCullingFunction_);
 
 		{
 			EffekseerUE::UEFSoftObjectPath assetPath("/Effekseer/MaterialFunctions/EfkCullingMask.EfkCullingMask");
@@ -91,8 +96,8 @@ public:
 			opacityFunction_->SetMaterialFunction(func);
 		}
 
-		material_->Opacity.Expression = opacityCullingFunction_;
-		material_->OpacityMask.Expression = opacityMaskCullingFunction_;
+		ConvertedNodeHelper::ConnectToOpacity(material_, opacityCullingFunction_);
+		ConvertedNodeHelper::ConnectToOpacityMask(material_, opacityMaskCullingFunction_);
 		opacityCullingFunction_->GetInput(0)->Expression = opacityFunction_;
 		opacityCullingFunction_->GetInput(0)->OutputIndex = 0;
 	}
@@ -102,27 +107,27 @@ public:
 		if (targetInd == effekseerNode_->GetInputPinIndex("BaseColor"))
 		{
 			baseColorPower_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material_);
-			material_->Expressions.Add(baseColorPower_);
+			ConvertedNodeHelper::AddExpression(material_, baseColorPower_);
 			EffekseerUE::UEFSoftObjectPath assetPath("/Effekseer/MaterialFunctions/EfkToLinear3.EfkToLinear3");
 			UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
 			baseColorPower_->SetMaterialFunction(func);
-			material_->Expressions.Add(baseColorPower_);
+			ConvertedNodeHelper::AddExpression(material_, baseColorPower_);
 
 			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(*baseColorPower_->GetInput(0));
-			material_->BaseColor.Expression = baseColorPower_;
+			ConvertedNodeHelper::ConnectToBaseColor(material_, baseColorPower_);
 		}
 
 		if (targetInd == effekseerNode_->GetInputPinIndex("Emissive"))
 		{
 			emissiveColorPower_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material_);
-			material_->Expressions.Add(emissiveColorPower_);
+			ConvertedNodeHelper::AddExpression(material_, emissiveColorPower_);
 			EffekseerUE::UEFSoftObjectPath assetPath("/Effekseer/MaterialFunctions/EfkToLinear3.EfkToLinear3");
 			UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
 			emissiveColorPower_->SetMaterialFunction(func);
-			material_->Expressions.Add(emissiveColorPower_);
+			ConvertedNodeHelper::AddExpression(material_, emissiveColorPower_);
 
 			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(*emissiveColorPower_->GetInput(0));
-			material_->EmissiveColor.Expression = emissiveColorPower_;
+			ConvertedNodeHelper::ConnectToBaseColor(material_, emissiveColorPower_);
 		}
 
 		if (targetInd == effekseerNode_->GetInputPinIndex("Opacity"))
@@ -138,22 +143,22 @@ public:
 
 		if (targetInd == effekseerNode_->GetInputPinIndex("Roughness"))
 		{
-			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(material_->Roughness);
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(ConvertedNodeHelper::GetRoughness(material_));
 		}
 
 		if (targetInd == effekseerNode_->GetInputPinIndex("AmbientOcclusion"))
 		{
-			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(material_->AmbientOcclusion);
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(ConvertedNodeHelper::GetAmbientOcclusion(material_));
 		}
 
 		if (targetInd == effekseerNode_->GetInputPinIndex("Metallic"))
 		{
-			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(material_->Metallic);
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(ConvertedNodeHelper::GetMetallic(material_));
 		}
 
 		if (targetInd == effekseerNode_->GetInputPinIndex("WorldPositionOffset"))
 		{
-			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(material_->WorldPositionOffset);
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(ConvertedNodeHelper::GetWorldPositionOffset(material_));
 		}
 	}
 
@@ -194,7 +199,7 @@ public:
 		: effekseerNode_(effekseerNode)
 	{
 		expression_ = NewObject<UMaterialExpressionFresnel>(material);
-		material->Expressions.Add(expression_);
+		ConvertedNodeHelper::AddExpression(material, expression_);
 
 		expression_->Exponent = effekseerNode_->GetProperty("Exponent")->Floats[0];
 		expression_->BaseReflectFraction = effekseerNode_->GetProperty("BaseReflectFraction")->Floats[0];
@@ -230,7 +235,7 @@ public:
 		: effekseerNode_(effekseerNode)
 	{
 		expression_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
-		material->Expressions.Add(expression_);
+		ConvertedNodeHelper::AddExpression(material, expression_);
 
 		EffekseerUE::UEFSoftObjectPath assetPath("/Effekseer/MaterialFunctions/EfkRotator.EfkRotator");
 		UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
@@ -276,7 +281,7 @@ public:
 		: effekseerNode_(effekseerNode)
 	{
 		expression_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
-		material->Expressions.Add(expression_);
+		ConvertedNodeHelper::AddExpression(material, expression_);
 
 		EffekseerUE::UEFSoftObjectPath assetPath("/Effekseer/MaterialFunctions/EfkPolarCoords.EfkPolarCoords");
 		UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
@@ -285,7 +290,7 @@ public:
 		if (effekseerMaterial->material->GetConnectedPins(effekseerNode->InputPins[0]).size() == 0)
 		{
 			expression1_ = NewObject<UMaterialExpressionConstant2Vector>(material);
-			material->Expressions.Add(expression1_);
+			ConvertedNodeHelper::AddExpression(material, expression1_);
 			expression1_->R = effekseerNode->Properties[0]->Floats[0];
 			expression1_->G = effekseerNode->Properties[0]->Floats[1];
 			expression_->GetInput(0)->Connect(0, expression1_);
@@ -294,7 +299,7 @@ public:
 		if (effekseerMaterial->material->GetConnectedPins(effekseerNode->InputPins[1]).size() == 0)
 		{
 			expression2_ = NewObject<UMaterialExpressionConstant2Vector>(material);
-			material->Expressions.Add(expression2_);
+			ConvertedNodeHelper::AddExpression(material, expression2_);
 			expression2_->R = effekseerNode->Properties[1]->Floats[0];
 			expression2_->G = effekseerNode->Properties[1]->Floats[1];
 			expression_->GetInput(1)->Connect(0, expression2_);
@@ -303,7 +308,8 @@ public:
 		if (effekseerMaterial->material->GetConnectedPins(effekseerNode->InputPins[2]).size() == 0)
 		{
 			expression3_ = NewObject<UMaterialExpressionConstant>(material);
-			material->Expressions.Add(expression3_);
+			ConvertedNodeHelper::AddExpression(material, expression3_);
+
 			expression3_->R = effekseerNode->Properties[2]->Floats[0];
 			expression_->GetInput(2)->Connect(0, expression3_);
 		}
@@ -363,7 +369,7 @@ public:
 		: effekseerNode_(effekseerNode)
 	{
 		expression_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
-		material->Expressions.Add(expression_);
+		ConvertedNodeHelper::AddExpression(material, expression_);
 
 		EffekseerUE::UEFSoftObjectPath assetPath("/Effekseer/MaterialFunctions/EfkDepthFade.EfkDepthFade");
 		UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
@@ -372,7 +378,7 @@ public:
 		if (effekseerMaterial->material->GetConnectedPins(effekseerNode->InputPins[0]).size() == 0)
 		{
 			expression1_ = NewObject<UMaterialExpressionConstant>(material);
-			material->Expressions.Add(expression1_);
+			ConvertedNodeHelper::AddExpression(material, expression1_);
 			expression1_->R = effekseerNode->Properties[0]->Floats[0];
 			expression_->GetInput(0)->Connect(0, expression1_);
 		}
@@ -422,11 +428,11 @@ public:
 		, effekseerNode_(effekseerNode)
 	{
 		expression_ = NewObject<UMaterialExpressionTextureSample>(material);
-		material->Expressions.Add(expression_);
+		ConvertedNodeHelper::AddExpression(material, expression_);
 
 		{
 			expressionToLinear_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
-			material->Expressions.Add(expressionToLinear_);
+			ConvertedNodeHelper::AddExpression(material, expressionToLinear_);
 
 			EffekseerUE::UEFSoftObjectPath assetPath("/Effekseer/MaterialFunctions/EfkToLinear.EfkToLinear");
 			UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
@@ -517,7 +523,7 @@ public:
 		if (expressionConstant_ == nullptr)
 		{
 			expressionConstant_ = NewObject<UMaterialExpressionConstant>(material_);
-			material_->Expressions.Add(expressionConstant_);
+			ConvertedNodeHelper::AddExpression(material_, expressionConstant_);
 			expressionToLinear_->GetInput(6)->Expression = expressionConstant_;
 			expressionToLinear_->GetInput(6)->OutputIndex = 0;
 		}
@@ -628,7 +634,7 @@ public:
 		: effekseerNode_(effekseerNode)
 	{
 		expression_ = NewObject<UMaterialExpressionTextureObject>(material);
-		material->Expressions.Add(expression_);
+		ConvertedNodeHelper::AddExpression(material, expression_);
 
 		auto originalTexturePath = effekseerNode_->GetProperty("Texture")->Str;
 
@@ -705,7 +711,7 @@ public:
 		: effekseerNode_(effekseerNode)
 	{
 		expression_ = NewObject<UMaterialExpressionTextureObjectParameter>(material);
-		material->Expressions.Add(expression_);
+		ConvertedNodeHelper::AddExpression(material, expression_);
 
 		expression_->ParameterName = FName(effekseerMaterial->textureNames[effekseerNode_->GUID].c_str());
 
@@ -784,7 +790,7 @@ public:
 		: effekseerNode_(effekseerNode)
 	{
 		expression_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
-		material->Expressions.Add(expression_);
+		ConvertedNodeHelper::AddExpression(material, expression_);
 
 		EffekseerUE::UEFSoftObjectPath assetPath("/Effekseer/MaterialFunctions/EfkLight.EfkLight");
 		UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
@@ -826,7 +832,7 @@ public:
 		: effekseerNode_(effekseerNode)
 	{
 		expression_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
-		material->Expressions.Add(expression_);
+		ConvertedNodeHelper::AddExpression(material, expression_);
 
 		EffekseerUE::UEFSoftObjectPath assetPath("/Effekseer/MaterialFunctions/EfkLocalTime.EfkLocalTime");
 		UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());

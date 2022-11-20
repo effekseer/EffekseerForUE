@@ -39,7 +39,7 @@ public:
 	ConvertedNodeOneInput(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
 	{
 		expression_ = NewObject<T>(material);
-		material->Expressions.Add(expression_);
+		ConvertedNodeHelper::AddExpression(material, expression_);
 	}
 
 	UMaterialExpression* GetExpression() const override
@@ -63,7 +63,7 @@ public:
 	ConvertedNodeOneVectorInput(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
 	{
 		expression_ = NewObject<T>(material);
-		material->Expressions.Add(expression_);
+		ConvertedNodeHelper::AddExpression(material, expression_);
 	}
 
 	UMaterialExpression* GetExpression() const override
@@ -89,7 +89,7 @@ public:
 		: effekseerNode_(effekseerNode)
 	{
 		expression_ = NewObject<T>(material);
-		material->Expressions.Add(expression_);
+		ConvertedNodeHelper::AddExpression(material, expression_);
 
 		expression_->ConstA = effekseerNode_->GetProperty("ConstValue1")->Floats[0];
 		expression_->ConstB = effekseerNode_->GetProperty("ConstValue2")->Floats[0];
@@ -126,7 +126,7 @@ public:
 		: effekseerNode_(effekseerNode)
 	{
 		expression_ = NewObject<T>(material);
-		material->Expressions.Add(expression_);
+		ConvertedNodeHelper::AddExpression(material, expression_);
 	}
 
 	UMaterialExpression* GetExpression() const override
@@ -161,7 +161,7 @@ public:
 		: effekseerNode_(effekseerNode)
 	{
 		expression_ = NewObject<UMaterialExpressionSine>(material);
-		material->Expressions.Add(expression_);
+		ConvertedNodeHelper::AddExpression(material, expression_);
 
 		expression_->Period = 3.141592f * 2.0f;
 	}
@@ -191,12 +191,12 @@ public:
 	{
 		expression_ = NewObject<UMaterialExpressionArctangent2>(material);
 
-		material->Expressions.Add(expression_);
+		ConvertedNodeHelper::AddExpression(material, expression_);
 
 		if (effekseerMaterial->material->GetConnectedPins(effekseerNode->InputPins[effekseerNode_->GetInputPinIndex("Y")]).size() == 0)
 		{
 			expression1_ = NewObject<UMaterialExpressionConstant>(material);
-			material->Expressions.Add(expression1_);
+			ConvertedNodeHelper::AddExpression(material, expression1_);
 			expression1_->R = effekseerNode->Properties[effekseerNode_->GetInputPinIndex("Y")]->Floats[0];
 			expression_->Y.Expression = expression1_;
 		}
@@ -204,7 +204,7 @@ public:
 		if (effekseerMaterial->material->GetConnectedPins(effekseerNode->InputPins[effekseerNode_->GetInputPinIndex("X")]).size() == 0)
 		{
 			expression2_ = NewObject<UMaterialExpressionConstant>(material);
-			material->Expressions.Add(expression2_);
+			ConvertedNodeHelper::AddExpression(material, expression2_);
 			expression2_->R = effekseerNode->Properties[effekseerNode_->GetInputPinIndex("X")]->Floats[0];
 			expression_->X.Expression = expression2_;
 		}
@@ -268,12 +268,12 @@ public:
 		: effekseerNode_(effekseerNode)
 	{
 		expression_ = NewObject<UMaterialExpressionFmod>(material);
-		material->Expressions.Add(expression_);
+		ConvertedNodeHelper::AddExpression(material, expression_);
 
 		if (effekseerMaterial->material->GetConnectedPins(effekseerNode->InputPins[0]).size() == 0)
 		{
 			expression1_ = NewObject<UMaterialExpressionConstant>(material);
-			material->Expressions.Add(expression1_);
+			ConvertedNodeHelper::AddExpression(material, expression1_);
 			expression1_->R = effekseerNode->Properties[0]->Floats[0];
 			expression_->A.Expression = expression1_;
 		}
@@ -281,7 +281,7 @@ public:
 		if (effekseerMaterial->material->GetConnectedPins(effekseerNode->InputPins[1]).size() == 0)
 		{
 			expression2_ = NewObject<UMaterialExpressionConstant>(material);
-			material->Expressions.Add(expression2_);
+			ConvertedNodeHelper::AddExpression(material, expression2_);
 			expression2_->R = effekseerNode->Properties[1]->Floats[0];
 			expression_->B.Expression = expression2_;
 		}
@@ -333,7 +333,7 @@ public:
 		: effekseerNode_(effekseerNode)
 	{
 		expression_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
-		material->Expressions.Add(expression_);
+		ConvertedNodeHelper::AddExpression(material, expression_);
 
 		EffekseerUE::UEFSoftObjectPath assetPath("/Effekseer/MaterialFunctions/EfkStep.EfkStep");
 		UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
@@ -376,7 +376,7 @@ public:
 		: effekseerNode_(effekseerNode)
 	{
 		expression_ = NewObject<UMaterialExpressionPower>(material);
-		material->Expressions.Add(expression_);
+		ConvertedNodeHelper::AddExpression(material, expression_);
 
 		expression_->ConstExponent = effekseerNode_->GetProperty("Exp")->Floats[0];
 	}
@@ -413,7 +413,7 @@ public:
 		: effekseerNode_(effekseerNode)
 	{
 		expression_ = NewObject<UMaterialExpressionClamp>(material);
-		material->Expressions.Add(expression_);
+		ConvertedNodeHelper::AddExpression(material, expression_);
 
 		expression_->MinDefault = effekseerNode_->GetProperty("Min")->Floats[0];
 		expression_->MaxDefault = effekseerNode_->GetProperty("Max")->Floats[0];
@@ -458,7 +458,7 @@ public:
 		: effekseerNode_(effekseerNode)
 	{
 		expression_ = NewObject<UMaterialExpressionLinearInterpolate>(material);
-		material->Expressions.Add(expression_);
+		ConvertedNodeHelper::AddExpression(material, expression_);
 
 		expression_->ConstA = effekseerNode_->GetProperty("Value1")->Floats[0];
 		expression_->ConstB = effekseerNode_->GetProperty("Value2")->Floats[0];
@@ -502,7 +502,7 @@ public:
 		: effekseerNode_(effekseerNode)
 	{
 		expression_ = NewObject<UMaterialExpressionComponentMask>(material);
-		material->Expressions.Add(expression_);
+		ConvertedNodeHelper::AddExpression(material, expression_);
 		expression_->R = effekseerNode->GetProperty("R")->Floats[0] > 0 ? 1 : 0;
 		expression_->G = effekseerNode->GetProperty("G")->Floats[0] > 0 ? 1 : 0;
 		expression_->B = effekseerNode->GetProperty("B")->Floats[0] > 0 ? 1 : 0;

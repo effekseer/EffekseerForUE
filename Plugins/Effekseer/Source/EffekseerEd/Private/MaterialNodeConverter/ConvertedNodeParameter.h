@@ -19,7 +19,7 @@ public:
 		: effekseerNode_(effekseerNode)
 	{
 		expression_ = NewObject<UMaterialExpressionScalarParameter>(material);
-		material->Expressions.Add(expression_);
+		ConvertedNodeHelper::AddExpression(material, expression_);
 		expression_->ParameterName = FName(effekseerMaterial->uniformNames[effekseerNode_->GUID].c_str());
 		expression_->DefaultValue = effekseerNode_->GetProperty("Value")->Floats[0];
 	}
@@ -42,10 +42,10 @@ public:
 		: effekseerNode_(effekseerNode)
 	{
 		expression_ = NewObject<UMaterialExpressionComponentMask>(material);
-		material->Expressions.Add(expression_);
+		ConvertedNodeHelper::AddExpression(material, expression_);
 
 		function_ = NewObject<UMaterialExpressionVectorParameter>(material);
-		material->Expressions.Add(function_);
+		ConvertedNodeHelper::AddExpression(material, function_);
 		function_->ParameterName = FName(effekseerMaterial->uniformNames[effekseerNode_->GUID].c_str());
 		function_->DefaultValue.R = effekseerNode_->GetProperty("Value")->Floats[0];
 		function_->DefaultValue.G = effekseerNode_->GetProperty("Value")->Floats[1];
@@ -89,10 +89,10 @@ public:
 		: effekseerNode_(effekseerNode)
 	{
 		expression_ = NewObject<UMaterialExpressionComponentMask>(material);
-		material->Expressions.Add(expression_);
+		ConvertedNodeHelper::AddExpression(material, expression_);
 
 		function_ = NewObject<UMaterialExpressionVectorParameter>(material);
-		material->Expressions.Add(function_);
+		ConvertedNodeHelper::AddExpression(material, function_);
 		function_->ParameterName = FName(effekseerMaterial->uniformNames[effekseerNode_->GUID].c_str());
 		function_->DefaultValue.R = effekseerNode_->GetProperty("Value")->Floats[0];
 		function_->DefaultValue.G = effekseerNode_->GetProperty("Value")->Floats[1];
@@ -137,10 +137,10 @@ public:
 		: effekseerNode_(effekseerNode)
 	{
 		expression_ = NewObject<UMaterialExpressionAppendVector>(material);
-		material->Expressions.Add(expression_);
+		ConvertedNodeHelper::AddExpression(material, expression_);
 
 		function_ = NewObject<UMaterialExpressionVectorParameter>(material);
-		material->Expressions.Add(expression_);
+		ConvertedNodeHelper::AddExpression(material, expression_);
 		function_->ParameterName = FName(effekseerMaterial->uniformNames[effekseerNode_->GUID].c_str());
 		function_->DefaultValue.R = effekseerNode_->GetProperty("Value")->Floats[0];
 		function_->DefaultValue.G = effekseerNode_->GetProperty("Value")->Floats[1];
@@ -181,10 +181,10 @@ public:
 	ConvertedNodeCustomData1(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
 	{
 		expression_ = NewObject<UMaterialExpressionComponentMask>(material);
-		material->Expressions.Add(expression_);
+		ConvertedNodeHelper::AddExpression(material, expression_);
 
 		function_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
-		material->Expressions.Add(function_);
+		ConvertedNodeHelper::AddExpression(material, function_);
 
 		EffekseerUE::UEFSoftObjectPath assetPath("/Effekseer/MaterialFunctions/EfkCustomData1.EfkCustomData1");
 		UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
@@ -227,10 +227,10 @@ public:
 	ConvertedNodeCustomData2(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
 	{
 		expression_ = NewObject<UMaterialExpressionComponentMask>(material);
-		material->Expressions.Add(expression_);
+		ConvertedNodeHelper::AddExpression(material, expression_);
 
 		function_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
-		material->Expressions.Add(function_);
+		ConvertedNodeHelper::AddExpression(material, function_);
 
 		EffekseerUE::UEFSoftObjectPath assetPath("/Effekseer/MaterialFunctions/EfkCustomData2.EfkCustomData2");
 		UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());

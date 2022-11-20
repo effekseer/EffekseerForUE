@@ -86,7 +86,7 @@ ConvertedNodeSampleGradient::ConvertedNodeSampleGradient(UMaterial* material, st
 	appends_.fill(nullptr);
 
 	expression_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
-	material->Expressions.Add(expression_);
+	ConvertedNodeHelper::AddExpression(material, expression_);
 
 	EffekseerUE::UEFSoftObjectPath assetPath("/Effekseer/MaterialFunctions/EfkSampleGradient.EfkSampleGradient");
 	UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
@@ -108,7 +108,7 @@ ConvertedNodeSampleGradient::ConvertedNodeSampleGradient(UMaterial* material, st
 			paramExpression->Constant.G = params[i][1];
 			paramExpression->Constant.B = params[i][2];
 			paramExpression->Constant.A = params[i][3];
-			material->Expressions.Add(paramExpression);
+			ConvertedNodeHelper::AddExpression(material, paramExpression);
 			parameters_[i] = paramExpression;
 			expression_->GetInput(i)->Connect(0, paramExpression);
 		}
@@ -131,7 +131,7 @@ ConvertedNodeSampleGradient::ConvertedNodeSampleGradient(UMaterial* material, st
 				paramExpression->Constant.G = params[i][1];
 				paramExpression->Constant.B = params[i][2];
 				paramExpression->Constant.A = params[i][3];
-				material->Expressions.Add(paramExpression);
+				ConvertedNodeHelper::AddExpression(material, paramExpression);
 				parameters_[i] = paramExpression;
 				expression_->GetInput(i)->Connect(0, paramExpression);
 			}
@@ -143,7 +143,8 @@ ConvertedNodeSampleGradient::ConvertedNodeSampleGradient(UMaterial* material, st
 			for (size_t i = 0; i < 13; i++)
 			{
 				auto append = NewObject<UMaterialExpressionAppendVector>(material);
-				material->Expressions.Add(append);
+				ConvertedNodeHelper::AddExpression(material, append);
+
 				appends_[i] = append;
 
 				auto paramExpression = NewObject<UMaterialExpressionVectorParameter>(material);
@@ -152,7 +153,7 @@ ConvertedNodeSampleGradient::ConvertedNodeSampleGradient(UMaterial* material, st
 				paramExpression->DefaultValue.G = 0.0f;
 				paramExpression->DefaultValue.B = 0.0f;
 				paramExpression->DefaultValue.A = 0.0f;
-				material->Expressions.Add(paramExpression);
+				ConvertedNodeHelper::AddExpression(material, paramExpression);
 				parameters_[i] = paramExpression;
 
 				append->A.Connect(0, paramExpression);
