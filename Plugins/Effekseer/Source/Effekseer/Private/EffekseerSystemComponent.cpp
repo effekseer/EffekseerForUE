@@ -5,6 +5,10 @@
 #include <Effekseer.h>
 #include <mutex>
 
+#if WITH_EDITOR
+#include "ShaderCompiler.h"
+#endif
+
 EffekseerUpdateData::EffekseerUpdateData()
 {
 }
@@ -107,6 +111,13 @@ public:
 
 	virtual void GetDynamicMeshElements(const TArray<const FSceneView*>& Views, const FSceneViewFamily& ViewFamily, uint32 VisibilityMap, FMeshElementCollector& Collector) const override
 	{
+#if WITH_EDITOR
+		if (GShaderCompilingManager->IsCompiling())
+		{
+			return;
+		}
+#endif
+
 		for (int32 ViewIndex = 0; ViewIndex < Views.Num(); ViewIndex++)
 		{
 			if (!(VisibilityMap & (1 << ViewIndex)))
