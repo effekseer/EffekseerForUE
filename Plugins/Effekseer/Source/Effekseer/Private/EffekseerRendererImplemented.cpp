@@ -129,7 +129,7 @@ public:
 
 	const FMaterialRenderProxy* GetFallback(ERHIFeatureLevel::Type InFeatureLevel) const override
 	{
-		return this;
+		return Parent->GetFallback(InFeatureLevel);
 	}
 };
 
