@@ -127,7 +127,7 @@ public:
 			ConvertedNodeHelper::AddExpression(material_, emissiveColorPower_);
 
 			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(*emissiveColorPower_->GetInput(0));
-			ConvertedNodeHelper::ConnectToBaseColor(material_, emissiveColorPower_);
+			ConvertedNodeHelper::ConnectToEmissiveColor(material_, emissiveColorPower_);
 		}
 
 		if (targetInd == effekseerNode_->GetInputPinIndex("Opacity"))
