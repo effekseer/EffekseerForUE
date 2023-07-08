@@ -49,6 +49,7 @@ public:
 	UPROPERTY(Category = ImportSettings, VisibleAnywhere)
 	UAssetImportData* AssetImportData = nullptr;
 #endif
+	void GetAssetRegistryTags(TArray<FAssetRegistryTag>& OutTags) const override;
 
 	void AssignInternalPtr();
 

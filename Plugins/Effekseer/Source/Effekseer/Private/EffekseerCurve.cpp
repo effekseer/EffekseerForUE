@@ -29,6 +29,18 @@ void UEffekseerCurve::Load(const uint8_t* data, int32_t size, const TCHAR* path)
 	LoadModel(data, size, path);
 }
 
+void UEffekseerCurve::GetAssetRegistryTags(TArray<FAssetRegistryTag>& OutTags) const
+{
+#if WITH_EDITORONLY_DATA
+	if (AssetImportData)
+	{
+		OutTags.Add(FAssetRegistryTag(SourceFileTagName(), AssetImportData->GetSourceData().ToJson(), FAssetRegistryTag::TT_Hidden));
+	}
+#endif
+
+	Super::GetAssetRegistryTags(OutTags);
+}
+
 void UEffekseerCurve::AssignInternalPtr()
 {
 	auto p = (EffekseerInternalCurve*)curvePtr;

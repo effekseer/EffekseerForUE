@@ -940,6 +940,18 @@ void UEffekseerEffect::BeginDestroy()
 	Super::BeginDestroy();
 }
 
+void UEffekseerEffect::GetAssetRegistryTags(TArray<FAssetRegistryTag>& OutTags) const
+{
+#if WITH_EDITORONLY_DATA
+	if (AssetImportData)
+	{
+		OutTags.Add(FAssetRegistryTag(SourceFileTagName(), AssetImportData->GetSourceData().ToJson(), FAssetRegistryTag::TT_Hidden));
+	}
+#endif
+
+	Super::GetAssetRegistryTags(OutTags);
+}
+
 void UEffekseerEffect::GenerateRenderingDataIfRequired()
 {
 	auto effect = ::Effekseer::RefPtr<::Effekseer::Effect>::FromPinned(effectPtr);

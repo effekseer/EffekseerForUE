@@ -569,6 +569,7 @@ public:
 	UPROPERTY(Category = ImportSettings, VisibleAnywhere)
 	class UAssetImportData* AssetImportData;
 #endif
+	void GetAssetRegistryTags(TArray<FAssetRegistryTag>& OutTags) const override;
 
 	void GenerateRenderingDataIfRequired();
 	void ReloadIfRequired();

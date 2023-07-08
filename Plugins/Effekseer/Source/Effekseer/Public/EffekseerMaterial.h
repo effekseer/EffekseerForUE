@@ -115,6 +115,7 @@ public:
 	UPROPERTY(Category = ImportSettings, VisibleAnywhere)
 	UAssetImportData* AssetImportData = nullptr;
 #endif
+	void GetAssetRegistryTags(TArray<FAssetRegistryTag>& OutTags) const override;
 
 #if WITH_EDITOR
 	//! Reupdate elements to apply parent shaders (UE4 requires to update after a parent material finishes to be compiled)
