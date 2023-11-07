@@ -2,6 +2,7 @@
 
 #include "DynamicMeshBuilder.h"
 #include "EffekseerRendererImplemented.h"
+#include "EffekseerSystem.h"
 #include <Effekseer.h>
 #include <mutex>
 
@@ -9,409 +10,7 @@
 #include "ShaderCompiler.h"
 #endif
 
-EffekseerUpdateData::EffekseerUpdateData()
-{
-}
-
-EffekseerUpdateData::~EffekseerUpdateData()
-{
-	for (auto c : Commands)
-	{
-		if (c.Effect == nullptr)
-			continue;
-		::Effekseer::RefPtr<::Effekseer::Effect>::Unpin(c.Effect);
-	}
-}
-
-class FEffekseerSystemSceneProxy : public FPrimitiveSceneProxy
-{
-private:
-	int32_t maxSprite_ = 10000;
-	::Effekseer::ManagerRef effekseerManager = nullptr;
-	::Effekseer::RefPtr<::EffekseerRendererUE::RendererImplemented> effekseerRenderer = nullptr;
-
-	::Effekseer::ServerRef server_ = nullptr;
-	std::map<std::u16string, ::Effekseer::RefPtr<::Effekseer::Effect>> registeredEffects;
-
-	TMap<UTexture2D*, UMaterialInstanceDynamic*> OpaqueDynamicMaterials;
-	TMap<UTexture2D*, UMaterialInstanceDynamic*> TranslucentDynamicMaterials;
-	TMap<UTexture2D*, UMaterialInstanceDynamic*> AdditiveDynamicMaterials;
-	TMap<UTexture2D*, UMaterialInstanceDynamic*> SubtractiveDynamicMaterials;
-	TMap<UTexture2D*, UMaterialInstanceDynamic*> ModulateDynamicMaterials;
-	TMap<UTexture2D*, UMaterialInstanceDynamic*> LightingDynamicMaterials;
-
-	TMap<UEffekseerEffectMaterialParameterHolder*, UMaterialInstanceDynamic*> Materials;
-	std::map<EffekseerEffectMaterialKey, UMaterialInstanceDynamic*> NMaterials;
-
-	float Time = 0;
-
-	TMap<int, int> internalHandle2EfkHandle;
-
-	// is it safe?
-	std::mutex criticalSection;
-	TArray<int32_t> removedHandles;
-
-	void CalculateCameraDirectionAndPosition(const Effekseer::Matrix44& matrix, Effekseer::Vector3D& direction, Effekseer::Vector3D& position) const
-	{
-		const auto& mat = matrix;
-
-		direction = -::Effekseer::Vector3D(matrix.Values[0][2], matrix.Values[1][2], matrix.Values[2][2]);
-
-		{
-			auto localPos = ::Effekseer::Vector3D(-mat.Values[3][0], -mat.Values[3][1], -mat.Values[3][2]);
-			auto f = ::Effekseer::Vector3D(mat.Values[0][2], mat.Values[1][2], mat.Values[2][2]);
-			auto r = ::Effekseer::Vector3D(mat.Values[0][0], mat.Values[1][0], mat.Values[2][0]);
-			auto u = ::Effekseer::Vector3D(mat.Values[0][1], mat.Values[1][1], mat.Values[2][1]);
-
-			position = r * localPos.X + u * localPos.Y + f * localPos.Z;
-		}
-	}
-
-public:
-	FEffekseerSystemSceneProxy(const UEffekseerSystemComponent* InComponent, int32_t maxSprite, int32_t threadCount, EEffekseerColorSpaceType colorSpace)
-		: FPrimitiveSceneProxy(InComponent)
-		, maxSprite_(maxSprite)
-	{
-		effekseerManager = ::Effekseer::Manager::Create(maxSprite_);
-#ifndef __EMSCRIPTEN__
-		if (threadCount >= 2)
-		{
-			effekseerManager->LaunchWorkerThreads(threadCount);
-		}
-#endif
-		effekseerRenderer = ::EffekseerRendererUE::RendererImplemented::Create();
-		effekseerRenderer->Initialize(maxSprite_, colorSpace);
-
-		effekseerManager->SetSpriteRenderer(effekseerRenderer->CreateSpriteRenderer());
-		effekseerManager->SetRibbonRenderer(effekseerRenderer->CreateRibbonRenderer());
-		effekseerManager->SetRingRenderer(effekseerRenderer->CreateRingRenderer());
-		effekseerManager->SetTrackRenderer(effekseerRenderer->CreateTrackRenderer());
-		effekseerManager->SetModelRenderer(effekseerRenderer->CreateModelRenderer());
-
-		// To avoid verify error (I don't know why caused error)
-		bVerifyUsedMaterials = false;
-	}
-
-	virtual ~FEffekseerSystemSceneProxy()
-	{
-		if (server_ != nullptr)
-		{
-			server_.Reset();
-		}
-
-		effekseerManager.Reset();
-		effekseerRenderer.Reset();
-	}
-
-	virtual SIZE_T GetTypeHash() const
-	{
-		static size_t UniquePointer;
-		return reinterpret_cast<size_t>(&UniquePointer);
-	}
-
-	virtual void GetDynamicMeshElements(const TArray<const FSceneView*>& Views, const FSceneViewFamily& ViewFamily, uint32 VisibilityMap, FMeshElementCollector& Collector) const override
-	{
-#if WITH_EDITOR
-		if (GShaderCompilingManager->IsCompiling())
-		{
-			return;
-		}
-#endif
-
-		for (int32 ViewIndex = 0; ViewIndex < Views.Num(); ViewIndex++)
-		{
-			if (!(VisibilityMap & (1 << ViewIndex)))
-				continue;
-
-			const auto& view = Views[ViewIndex];
-
-			effekseerRenderer->SetLocalToWorld(GetLocalToWorld());
-			effekseerRenderer->SetMaterials(&OpaqueDynamicMaterials, 0);
-			effekseerRenderer->SetMaterials(&TranslucentDynamicMaterials, 1);
-			effekseerRenderer->SetMaterials(&AdditiveDynamicMaterials, 2);
-			effekseerRenderer->SetMaterials(&SubtractiveDynamicMaterials, 3);
-			effekseerRenderer->SetMaterials(&ModulateDynamicMaterials, 4);
-			effekseerRenderer->SetMaterials(&LightingDynamicMaterials, 5);
-
-			effekseerRenderer->SetNMaterials(NMaterials);
-
-			effekseerRenderer->SetMeshElementCollector(&Collector);
-			effekseerRenderer->SetViewIndex(ViewIndex);
-
-			{
-				const auto vmat = view->ViewMatrices.GetViewMatrix();
-				::Effekseer::Matrix44 evmat;
-
-				for (int i = 0; i < 4; i++)
-				{
-					for (int j = 0; j < 4; j++)
-					{
-						evmat.Values[i][j] = static_cast<float>(vmat.M[i][j]);
-					}
-				}
-
-				std::swap(evmat.Values[1][0], evmat.Values[2][0]);
-				std::swap(evmat.Values[1][1], evmat.Values[2][1]);
-				std::swap(evmat.Values[1][2], evmat.Values[2][2]);
-
-				evmat.Values[0][2] = -evmat.Values[0][2];
-				evmat.Values[1][2] = -evmat.Values[1][2];
-				evmat.Values[2][2] = -evmat.Values[2][2];
-				evmat.Values[3][2] = -evmat.Values[3][2];
-
-				effekseerRenderer->SetCameraMatrix(evmat);
-				effekseerRenderer->BeginRendering();
-
-				Effekseer::Vector3D direction;
-				Effekseer::Vector3D position;
-				CalculateCameraDirectionAndPosition(evmat, direction, position);
-
-				Effekseer::Manager::DrawParameter drawParam;
-				drawParam.CameraFrontDirection = direction;
-				drawParam.CameraPosition = position;
-				drawParam.IsSortingEffectsEnabled = true;
-
-				effekseerManager->Draw(drawParam);
-				effekseerRenderer->EndRendering();
-			}
-		}
-	}
-
-	virtual FPrimitiveViewRelevance GetViewRelevance(const FSceneView* View) const override
-	{
-		bool bVisible = true;
-		FPrimitiveViewRelevance Result;
-		Result.bDrawRelevance = IsShown(View);
-		Result.bDynamicRelevance = true;
-		Result.bShadowRelevance = IsShadowCast(View);
-		Result.bOpaque = false;
-		Result.bMasked = false;
-		Result.bSeparateTranslucency = true;
-		Result.bNormalTranslucency = true;
-		Result.bDistortion = true;
-
-		return Result;
-	}
-	virtual uint32 GetMemoryFootprint() const
-	{
-		return sizeof(*this) + GetAllocatedSize();
-	}
-	uint32 GetAllocatedSize() const
-	{
-		return FPrimitiveSceneProxy::GetAllocatedSize();
-	}
-
-	void UpdateData_RenderThread(EffekseerUpdateData* updateData)
-	{
-		OpaqueDynamicMaterials = updateData->OpaqueDynamicMaterials;
-		TranslucentDynamicMaterials = updateData->TranslucentDynamicMaterials;
-		AdditiveDynamicMaterials = updateData->AdditiveDynamicMaterials;
-		SubtractiveDynamicMaterials = updateData->SubtractiveDynamicMaterials;
-		ModulateDynamicMaterials = updateData->ModulateDynamicMaterials;
-		LightingDynamicMaterials = updateData->LightingDynamicMaterials;
-
-		Materials = updateData->Materials;
-		NMaterials = updateData->NMaterials;
-
-		// TODO become fast
-
-		// Execute commands.
-		for (auto i = 0; i < updateData->Commands.Num(); i++)
-		{
-			auto& cmd = updateData->Commands[i];
-			if (cmd.Type == EffekseerUpdateData_CommandType::Play)
-			{
-				auto effect = ::Effekseer::RefPtr<::Effekseer::Effect>::FromPinned(updateData->Commands[i].Effect);
-				auto position = updateData->Commands[i].Position;
-
-				auto eid = effekseerManager->Play(effect, position.X, position.Z, position.Y);
-				internalHandle2EfkHandle.Add(cmd.ID, eid);
-
-				if (server_ != nullptr)
-				{
-					if (registeredEffects.count(effect->GetName()) == 0)
-					{
-						registeredEffects[effect->GetName()] = effect;
-						server_->Register(effect->GetName(), effect);
-					}
-				}
-			}
-			else if (cmd.Type == EffekseerUpdateData_CommandType::SetP)
-			{
-				if (internalHandle2EfkHandle.Contains(cmd.ID))
-				{
-					auto eid = internalHandle2EfkHandle[cmd.ID];
-					auto position = updateData->Commands[i].Position;
-					effekseerManager->SetLocation(eid, position.X, position.Z, position.Y);
-				}
-			}
-			else if (cmd.Type == EffekseerUpdateData_CommandType::SetR)
-			{
-				if (internalHandle2EfkHandle.Contains(cmd.ID))
-				{
-					auto eid = internalHandle2EfkHandle[cmd.ID];
-					auto rotation = updateData->Commands[i].Rotation;
-					rotation = FQuat(rotation.X, rotation.Z, rotation.Y, -rotation.W);
-					FVector axis = rotation.GetRotationAxis();
-					effekseerManager->SetRotation(eid, Effekseer::Vector3D(axis.X, axis.Y, axis.Z), rotation.GetAngle());
-				}
-			}
-			else if (cmd.Type == EffekseerUpdateData_CommandType::SetS)
-			{
-				if (internalHandle2EfkHandle.Contains(cmd.ID))
-				{
-					auto eid = internalHandle2EfkHandle[cmd.ID];
-					auto scale = updateData->Commands[i].Scale;
-					effekseerManager->SetScale(eid, scale.X, scale.Z, scale.Y);
-				}
-			}
-			else if (cmd.Type == EffekseerUpdateData_CommandType::StopRoot)
-			{
-				if (internalHandle2EfkHandle.Contains(cmd.ID))
-				{
-					auto eid = internalHandle2EfkHandle[cmd.ID];
-					effekseerManager->StopRoot(eid);
-				}
-			}
-			else if (cmd.Type == EffekseerUpdateData_CommandType::Stop)
-			{
-				if (internalHandle2EfkHandle.Contains(cmd.ID))
-				{
-					auto eid = internalHandle2EfkHandle[cmd.ID];
-					effekseerManager->StopEffect(eid);
-				}
-			}
-			else if (cmd.Type == EffekseerUpdateData_CommandType::SetAllColor)
-			{
-				if (internalHandle2EfkHandle.Contains(cmd.ID))
-				{
-					auto eid = internalHandle2EfkHandle[cmd.ID];
-					effekseerManager->SetAllColor(eid, Effekseer::Color(cmd.AllColor.R, cmd.AllColor.G, cmd.AllColor.B, cmd.AllColor.A));
-				}
-			}
-			else if (cmd.Type == EffekseerUpdateData_CommandType::SetDynamicInput)
-			{
-				if (internalHandle2EfkHandle.Contains(cmd.ID))
-				{
-					auto eid = internalHandle2EfkHandle[cmd.ID];
-					effekseerManager->SetDynamicInput(eid, cmd.DynamicInput.Index, cmd.DynamicInput.Value);
-				}
-			}
-			else if (cmd.Type == EffekseerUpdateData_CommandType::SetSpeed)
-			{
-				if (internalHandle2EfkHandle.Contains(cmd.ID))
-				{
-					auto eid = internalHandle2EfkHandle[cmd.ID];
-					effekseerManager->SetSpeed(eid, cmd.Speed);
-				}
-			}
-			else if (cmd.Type == EffekseerUpdateData_CommandType::StartNetwork)
-			{
-				if (server_ == nullptr)
-				{
-					server_ = Effekseer::Server::Create();
-					if (server_ == nullptr)
-					{
-						if (server_->Start(cmd.ID))
-						{
-						}
-						else
-						{
-							server_.Reset();
-						}
-					}
-				}
-			}
-			else if (cmd.Type == EffekseerUpdateData_CommandType::StopNetwork)
-			{
-				if (server_ != nullptr)
-				{
-					server_->Stop();
-					server_.Reset();
-					registeredEffects.clear();
-				}
-			}
-			else if (cmd.Type == EffekseerUpdateData_CommandType::SendTrigger)
-			{
-				if (internalHandle2EfkHandle.Contains(cmd.ID))
-				{
-					auto eid = internalHandle2EfkHandle[cmd.ID];
-					effekseerManager->SendTrigger(eid, cmd.TriggerIndex);
-				}
-			}
-		}
-
-		// Update effects.
-		Time += updateData->DeltaTime;
-
-		auto frame = (int32_t)(Time * 60);
-		Time -= frame * (1.0f / 60.0f);
-
-		{
-			if (server_ != nullptr)
-			{
-				server_->Update(&effekseerManager, 1, Effekseer::ReloadingThreadType::Render);
-			}
-
-			if (effekseerManager != nullptr)
-			{
-				const auto evmat = effekseerRenderer->GetCameraMatrix();
-
-				Effekseer::Vector3D direction;
-				Effekseer::Vector3D position;
-				CalculateCameraDirectionAndPosition(evmat, direction, position);
-
-				Effekseer::Manager::LayerParameter layerParams;
-				layerParams.ViewerPosition = position;
-				effekseerManager->SetLayerParameter(0, layerParams);
-
-				effekseerManager->Update(frame);
-			}
-		}
-
-		// Check existence.
-		{
-			criticalSection.lock();
-
-			TArray<int32_t> removingHandle;
-			for (auto& kv : internalHandle2EfkHandle)
-			{
-				if (!effekseerManager->Exists(kv.Value))
-				{
-					removingHandle.Add(kv.Key);
-					removedHandles.Add(kv.Key);
-				}
-			}
-
-			for (auto& k : removingHandle)
-			{
-				internalHandle2EfkHandle.Remove(k);
-			}
-
-			criticalSection.unlock();
-		}
-
-		delete updateData;
-	}
-
-	// This function can be called out of renderThread.
-	void UpdateData(EffekseerUpdateData* updateData)
-	{
-		ENQUEUE_RENDER_COMMAND(
-			EffekseerUpdateDataCommand)
-		([this, updateData](FRHICommandListImmediate& RHICmdList)
-		 { this->UpdateData_RenderThread(updateData); });
-	}
-
-	TArray<int32_t> PopRemovedHandles()
-	{
-		criticalSection.lock();
-		auto ret = removedHandles;
-		removedHandles.Reset();
-		criticalSection.unlock();
-		return ret;
-	}
-};
+#include "EffekseerSystemSceneProxy.h"
 
 UEffekseerSystemComponent::UEffekseerSystemComponent()
 {
@@ -454,7 +53,7 @@ void UEffekseerSystemComponent::EndPlay(const EEndPlayReason::Type EndPlayReason
 
 void UEffekseerSystemComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
-	auto sp = (FEffekseerSystemSceneProxy*)sceneProxy;
+	auto sp = static_cast<FEffekseerSystemSceneProxy*>(sceneProxy_);
 	if (sp != nullptr)
 	{
 		sp->UpdateData(currentUpdateData);
@@ -475,7 +74,7 @@ void UEffekseerSystemComponent::TickComponent(float DeltaTime, ELevelTick TickTy
 		auto removedHandles = sp->PopRemovedHandles();
 		for (auto& h : removedHandles)
 		{
-			internalHandle2EfkHandle.Remove(h);
+			internalHandle2EfkHandle_.Remove(h);
 		}
 	}
 
@@ -485,7 +84,7 @@ void UEffekseerSystemComponent::TickComponent(float DeltaTime, ELevelTick TickTy
 FPrimitiveSceneProxy* UEffekseerSystemComponent::CreateSceneProxy()
 {
 	auto sp = new FEffekseerSystemSceneProxy(this, MaxSprite, ThreadCount, ColorSpace);
-	sceneProxy = sp;
+	sceneProxy_ = sp;
 	return sp;
 }
 
@@ -503,7 +102,6 @@ UMaterialInterface* UEffekseerSystemComponent::GetMaterial(int32 ElementIndex) c
 		return ModulateMaterial;
 	if (ElementIndex == 5)
 		return LightingMaterial;
-
 	if (ElementIndex == 6)
 		return DistortionTranslucentMaterial;
 	if (ElementIndex == 7)
@@ -585,20 +183,17 @@ FBoxSphereBounds UEffekseerSystemComponent::CalcBounds(const FTransform& LocalTo
 	return FBoxSphereBounds(LocalToWorld.GetLocation(), FVector(infinity, infinity, infinity), infinity);
 }
 
-FEffekseerHandle UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVector position)
+void UEffekseerSystemComponent::AssignMaterials(UEffekseerEffect* effect, TArray<UMaterialInstanceDynamic*>* currentMaterials)
 {
-	if (effect == nullptr)
-		return FEffekseerHandle();
-	if (effect->GetNativePtr() == nullptr)
-		return FEffekseerHandle();
+	if (effect == nullptr || effect->GetNativePtr() == nullptr)
+	{
+		return;
+	}
 
 	if (isNetworkRunning_)
 	{
 		effect->GenerateRenderingDataIfRequired();
 	}
-
-	// Convert to a position relative from the system.
-	position -= this->GetRelativeLocation();
 
 	// it generates a material dynamically.
 	std::array<UMaterialInstanceConstant*, 16> baseMats;
@@ -624,7 +219,9 @@ FEffekseerHandle UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVect
 	for (auto paramHolder : effect->EffekseerMaterials)
 	{
 		if (Materials.Contains(paramHolder))
+		{
 			continue;
+		}
 
 		if (paramHolder->Material != nullptr)
 		{
@@ -717,14 +314,44 @@ FEffekseerHandle UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVect
 		}
 	}
 
+	if (currentMaterials != nullptr)
+	{
+		currentMaterials->Empty();
+		for (auto paramHolder : effect->EffekseerMaterials)
+		{
+			if (Materials.Contains(paramHolder))
+			{
+				currentMaterials->Add(Materials[paramHolder]);
+			}
+		}
+	}
+
 	effect->ReloadIfRequired();
+}
+
+FEffekseerHandle UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVector position)
+{
+	if (effect == nullptr)
+		return FEffekseerHandle();
+	if (effect->GetNativePtr() == nullptr)
+		return FEffekseerHandle();
+
+	if (isNetworkRunning_)
+	{
+		effect->GenerateRenderingDataIfRequired();
+	}
+
+	// Convert to a position relative from the system.
+	position -= this->GetRelativeLocation();
+
+	AssignMaterials(effect, nullptr);
 
 	auto efk = ::Effekseer::RefPtr<::Effekseer::Effect>::FromPinned(effect->GetNativePtr());
 	auto p = efk.Pin();
 
-	auto handle = nextInternalHandle;
+	auto handle = nextInternalHandle_;
 
-	internalHandle2EfkHandle.Add(handle, -1);
+	internalHandle2EfkHandle_.Add(handle, -1);
 
 	EffekseerUpdateData_Command cmd;
 	cmd.Type = EffekseerUpdateData_CommandType::Play;
@@ -734,7 +361,7 @@ FEffekseerHandle UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVect
 
 	currentUpdateData->Commands.Add(cmd);
 
-	nextInternalHandle++;
+	nextInternalHandle_++;
 
 	FEffekseerHandle ehandle;
 	ehandle.Effect = effect;
@@ -787,7 +414,7 @@ bool UEffekseerSystemComponent::Exists(FEffekseerHandle handle) const
 {
 	if (handle.Effect == nullptr)
 		return false;
-	return internalHandle2EfkHandle.Contains(handle.ID);
+	return internalHandle2EfkHandle_.Contains(handle.ID);
 }
 
 void UEffekseerSystemComponent::SendTrigger(FEffekseerHandle handle, int index)

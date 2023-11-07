@@ -9,15 +9,18 @@
 
 #include "EffekseerEmitterComponent.generated.h"
 
+class FEffekseerEmitterSceneProxy;
+
 UCLASS(ClassGroup = (Effekseer), meta = (BlueprintSpawnableComponent))
 class EFFEKSEER_API UEffekseerEmitterComponent : public UPrimitiveComponent
 {
 	GENERATED_BODY()
 
 private:
+	FEffekseerEmitterSceneProxy* sceneProxy_ = nullptr;
 	bool shouldActivate = false;
 	bool isPlaying = false;
-	FEffekseerHandle handle;
+	FEffekseerHandle handle_;
 
 	FColor AllColor_ = FColor(255, 255, 255, 255);
 	float Speed_ = 1.0f;
@@ -26,11 +29,29 @@ private:
 	//! HACK for activate
 	bool autoActivateOnActivate_ = false;
 
+	UPROPERTY(Transient)
+	UEffekseerEffect* lastPlayingEffect = nullptr;
+
+	UPROPERTY(Transient)
+	TArray<UMaterialInstanceDynamic*> materials_;
+
 	void ApplyParameters(bool forced);
+
+	FEffekseerHandle PlayInternal();
 
 public:
 	UEffekseerEmitterComponent(const FObjectInitializer& ObjectInitializer);
 	virtual ~UEffekseerEmitterComponent();
+
+	virtual FPrimitiveSceneProxy* CreateSceneProxy() override;
+
+	virtual UMaterialInterface* GetMaterial(int32 ElementIndex) const override;
+
+	virtual void GetUsedMaterials(TArray<UMaterialInterface*>& OutMaterials, bool bGetDebugMaterials = false) const override;
+
+	virtual int32 GetNumMaterials() const override;
+
+	virtual FBoxSphereBounds CalcBounds(const FTransform& LocalToWorld) const override;
 
 #if WITH_EDITOR
 	virtual void PostEditChangeProperty(struct FPropertyChangedEvent& PropertyChangedEvent) override;
@@ -91,6 +112,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = Effect)
 	void SendTrigger(int index);
 
-	UFUNCTION(BlueprintCallable, Category = Deprecated)
-	FEffekseerHandle Play();
+	// UFUNCTION(BlueprintCallable, Category = Deprecated)
+	// FEffekseerHandle Play();
 };

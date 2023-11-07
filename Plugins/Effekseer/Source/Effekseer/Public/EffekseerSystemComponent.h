@@ -13,68 +13,7 @@
 
 #include "EffekseerSystemComponent.generated.h"
 
-enum class EffekseerUpdateData_CommandType
-{
-	Play,
-	SetP,
-	SetR,
-	SetS,
-	SetPRS,
-	Stop,
-	StopRoot,
-	StopAll,
-	SetSpeed,
-	SetAllColor,
-	SetDynamicInput,
-	StartNetwork,
-	StopNetwork,
-	SendTrigger,
-};
-
-class EffekseerUpdateData_Command
-{
-public:
-	//! ID or port
-	int32_t ID = -1;
-	void* Effect = nullptr;
-	FVector Position;
-	FQuat Rotation;
-	FVector Scale;
-	FColor AllColor;
-
-	union
-	{
-		float Speed;
-		int TriggerIndex;
-		struct
-		{
-			float Value;
-			int Index;
-		} DynamicInput;
-	};
-
-	EffekseerUpdateData_CommandType Type;
-};
-
-class EffekseerUpdateData
-{
-public:
-	TArray<EffekseerUpdateData_Command> Commands;
-	TMap<UEffekseerEffectMaterialParameterHolder*, UMaterialInstanceDynamic*> Materials;
-	std::map<EffekseerEffectMaterialKey, UMaterialInstanceDynamic*> NMaterials;
-
-	TMap<UTexture2D*, UMaterialInstanceDynamic*> OpaqueDynamicMaterials;
-	TMap<UTexture2D*, UMaterialInstanceDynamic*> TranslucentDynamicMaterials;
-	TMap<UTexture2D*, UMaterialInstanceDynamic*> AdditiveDynamicMaterials;
-	TMap<UTexture2D*, UMaterialInstanceDynamic*> SubtractiveDynamicMaterials;
-	TMap<UTexture2D*, UMaterialInstanceDynamic*> ModulateDynamicMaterials;
-	TMap<UTexture2D*, UMaterialInstanceDynamic*> LightingDynamicMaterials;
-
-	float DeltaTime = 0;
-
-	EffekseerUpdateData();
-	virtual ~EffekseerUpdateData();
-};
+class EffekseerUpdateData;
 
 UCLASS(ClassGroup = (Effekseer), meta = (BlueprintSpawnableComponent))
 class EFFEKSEER_API UEffekseerSystemComponent : public UPrimitiveComponent
@@ -82,10 +21,10 @@ class EFFEKSEER_API UEffekseerSystemComponent : public UPrimitiveComponent
 	GENERATED_BODY()
 
 private:
-	FPrimitiveSceneProxy* sceneProxy = nullptr;
+	FPrimitiveSceneProxy* sceneProxy_ = nullptr;
 	EffekseerUpdateData* currentUpdateData = nullptr;
-	int32_t nextInternalHandle = 0;
-	TMap<int32_t, int32_t> internalHandle2EfkHandle;
+	int32_t nextInternalHandle_ = 0;
+	TMap<int32_t, int32_t> internalHandle2EfkHandle_;
 	bool isNetworkRunning_ = false;
 
 public:
@@ -99,6 +38,7 @@ public:
 	virtual void GetUsedMaterials(TArray<UMaterialInterface*>& OutMaterials, bool bGetDebugMaterials = false) const override;
 
 	virtual int32 GetNumMaterials() const override;
+
 	virtual FBoxSphereBounds CalcBounds(const FTransform& LocalToWorld) const override;
 
 	virtual void BeginPlay() override;
@@ -189,6 +129,8 @@ public:
 
 	UPROPERTY(Transient)
 	TMap<UTexture2D*, UMaterialInstanceDynamic*> DistortionAdditiveDynamicMaterials;
+
+	void AssignMaterials(UEffekseerEffect* effect, TArray<UMaterialInstanceDynamic*>* currentMaterials);
 
 	UFUNCTION(BlueprintCallable, Category = "Control")
 	FEffekseerHandle Play(UEffekseerEffect* effect, FVector position);
