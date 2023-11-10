@@ -149,7 +149,7 @@ public:
 						evmat.Values[i][j] = static_cast<float>(vmat.M[i][j]);
 					}
 				}
-				
+
 				std::swap(evmat.Values[1][0], evmat.Values[2][0]);
 				std::swap(evmat.Values[1][1], evmat.Values[2][1]);
 				std::swap(evmat.Values[1][2], evmat.Values[2][2]);
@@ -601,92 +601,54 @@ FEffekseerHandle UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVect
 	position -= this->GetRelativeLocation();
 
 	// it generates a material dynamically.
-	UMaterialInstanceConstant* _mats[16];
-	TMap<UTexture2D*, UMaterialInstanceDynamic*>* _matss[8];
+	std::array<UMaterialInstanceConstant*, 16> baseMats;
 
-	_mats[0] = OpaqueMaterial;
-	_mats[1] = TranslucentMaterial;
-	_mats[2] = AdditiveMaterial;
-	_mats[3] = SubtractiveMaterial;
-	_mats[4] = ModulateMaterial;
-	_mats[5] = LightingMaterial;
-	_mats[6] = DistortionTranslucentMaterial;
-	_mats[7] = DistortionAdditiveMaterial;
+	baseMats[0] = OpaqueMaterial;
+	baseMats[1] = TranslucentMaterial;
+	baseMats[2] = AdditiveMaterial;
+	baseMats[3] = SubtractiveMaterial;
+	baseMats[4] = ModulateMaterial;
+	baseMats[5] = LightingMaterial;
+	baseMats[6] = DistortionTranslucentMaterial;
+	baseMats[7] = DistortionAdditiveMaterial;
 
-	_mats[0 + 8] = Opaque_DD_Material;
-	_mats[1 + 8] = Translucent_DD_Material;
-	_mats[2 + 8] = Additive_DD_Material;
-	_mats[3 + 8] = Subtractive_DD_Material;
-	_mats[4 + 8] = Modulate_DD_Material;
-	_mats[5 + 8] = LightingMaterial;
-	_mats[6 + 8] = DistortionTranslucent_DD_Material;
-	_mats[7 + 8] = DistortionAdditive_DD_Material;
+	baseMats[0 + 8] = Opaque_DD_Material;
+	baseMats[1 + 8] = Translucent_DD_Material;
+	baseMats[2 + 8] = Additive_DD_Material;
+	baseMats[3 + 8] = Subtractive_DD_Material;
+	baseMats[4 + 8] = Modulate_DD_Material;
+	baseMats[5 + 8] = LightingMaterial;
+	baseMats[6 + 8] = DistortionTranslucent_DD_Material;
+	baseMats[7 + 8] = DistortionAdditive_DD_Material;
 
-	_matss[0] = &OpaqueDynamicMaterials;
-	_matss[1] = &TranslucentDynamicMaterials;
-	_matss[2] = &AdditiveDynamicMaterials;
-	_matss[3] = &SubtractiveDynamicMaterials;
-	_matss[4] = &ModulateDynamicMaterials;
-	_matss[5] = &LightingDynamicMaterials;
-	_matss[6] = &DistortionTranslucentDynamicMaterials;
-	_matss[7] = &DistortionAdditiveDynamicMaterials;
-
-	for (int i = 0; i < 8; i++)
+	for (auto paramHolder : effect->EffekseerMaterials)
 	{
-		auto& mat = _mats[i];
-		auto& mats = *_matss[i];
-
-		if (!mats.Contains(nullptr))
-		{
-			if (mat != nullptr)
-			{
-				auto dynamicMaterial = UMaterialInstanceDynamic::Create(mat, this);
-				mats.Add(nullptr, dynamicMaterial);
-			}
-		}
-
-		for (auto& tex : effect->ColorTextures)
-		{
-			if (!mats.Contains(tex))
-			{
-				if (mat != nullptr)
-				{
-					auto dynamicMaterial = UMaterialInstanceDynamic::Create(mat, this);
-					dynamicMaterial->SetTextureParameterValue(TEXT("ColorTexture"), tex);
-					mats.Add(tex, dynamicMaterial);
-				}
-			}
-		}
-	}
-
-	for (auto m : effect->EffekseerMaterials)
-	{
-		if (Materials.Contains(m))
+		if (Materials.Contains(paramHolder))
 			continue;
 
-		if (m->Material != nullptr)
+		if (paramHolder->Material != nullptr)
 		{
-			m->Material->GenerateColorSpaceMaterial(m->AlphaBlend, ColorSpace);
+			paramHolder->Material->GenerateColorSpaceMaterial(paramHolder->AlphaBlend, ColorSpace);
 		}
 		else
 		{
-			auto blendInd = (int32_t)m->AlphaBlend;
-			if (m->IsLighting)
+			auto blendInd = static_cast<int32_t>(paramHolder->AlphaBlend);
+			if (paramHolder->IsLighting)
 				blendInd = 5;
-			if (blendInd == 1 && m->IsDistorted)
+			if (blendInd == 1 && paramHolder->IsDistorted)
 				blendInd = 6;
-			if (blendInd == 2 && m->IsDistorted)
+			if (blendInd == 2 && paramHolder->IsDistorted)
 				blendInd = 7;
 
-			if (m->IsDepthTestDisabled)
+			if (paramHolder->IsDepthTestDisabled)
 				blendInd += 8;
-			auto mat = _mats[blendInd];
+			auto baseMat = baseMats[blendInd];
 
-			if (mat != nullptr)
+			if (baseMat != nullptr)
 			{
 				UMaterialInstanceDynamic* created = nullptr;
 
-				auto found = NMaterials.find(m->Key);
+				auto found = NMaterials.find(paramHolder->Key);
 
 				if (found != NMaterials.end())
 				{
@@ -694,64 +656,63 @@ FEffekseerHandle UEffekseerSystemComponent::Play(UEffekseerEffect* effect, FVect
 				}
 				else
 				{
-					auto dynamicMaterial = UMaterialInstanceDynamic::Create(mat, this);
-					dynamicMaterial->SetTextureParameterValue(TEXT("ColorTexture"), m->Texture);
+					auto createdMaterial = UMaterialInstanceDynamic::Create(baseMat, this);
+					createdMaterial->SetTextureParameterValue(TEXT("ColorTexture"), paramHolder->Texture);
 
-					dynamicMaterial->SetTextureParameterValue(TEXT("AlphaTexture"), m->AlphaTexture);
-					dynamicMaterial->SetTextureParameterValue(TEXT("UVDistortionTexture"), m->UVDistortionTexture);
-					dynamicMaterial->SetTextureParameterValue(TEXT("BlendTexture"), m->BlendTexture);
-					dynamicMaterial->SetTextureParameterValue(TEXT("BlendAlphaTexture"), m->BlendAlphaTexture);
-					dynamicMaterial->SetTextureParameterValue(TEXT("BlendUVDistortionTexture"), m->BlendUVDistortionTexture);
+					createdMaterial->SetTextureParameterValue(TEXT("AlphaTexture"), paramHolder->AlphaTexture);
+					createdMaterial->SetTextureParameterValue(TEXT("UVDistortionTexture"), paramHolder->UVDistortionTexture);
+					createdMaterial->SetTextureParameterValue(TEXT("BlendTexture"), paramHolder->BlendTexture);
+					createdMaterial->SetTextureParameterValue(TEXT("BlendAlphaTexture"), paramHolder->BlendAlphaTexture);
+					createdMaterial->SetTextureParameterValue(TEXT("BlendUVDistortionTexture"), paramHolder->BlendUVDistortionTexture);
 
-					dynamicMaterial->SetScalarParameterValue(TEXT("TextureTilingType"), m->TextureAddressType);
-					dynamicMaterial->SetScalarParameterValue(TEXT("AlphaTextureTilingType"), m->AlphaTextureAddressType);
-					dynamicMaterial->SetScalarParameterValue(TEXT("UVDistortionTextureTilingType"), m->UVDistortionTextureAddressType);
-					dynamicMaterial->SetScalarParameterValue(TEXT("BlendTextureTilingType"), m->BlendTextureAddress);
-					dynamicMaterial->SetScalarParameterValue(TEXT("BlendAlphaTextureTilingType"), m->BlendAlphaTextureAddress);
-					dynamicMaterial->SetScalarParameterValue(TEXT("BlendUVDistortionTextureTilingType"), m->BlendUVDistortionTextureAddress);
+					createdMaterial->SetScalarParameterValue(TEXT("TextureTilingType"), paramHolder->TextureAddressType);
+					createdMaterial->SetScalarParameterValue(TEXT("AlphaTextureTilingType"), paramHolder->AlphaTextureAddressType);
+					createdMaterial->SetScalarParameterValue(TEXT("UVDistortionTextureTilingType"), paramHolder->UVDistortionTextureAddressType);
+					createdMaterial->SetScalarParameterValue(TEXT("BlendTextureTilingType"), paramHolder->BlendTextureAddress);
+					createdMaterial->SetScalarParameterValue(TEXT("BlendAlphaTextureTilingType"), paramHolder->BlendAlphaTextureAddress);
+					createdMaterial->SetScalarParameterValue(TEXT("BlendUVDistortionTextureTilingType"), paramHolder->BlendUVDistortionTextureAddress);
 
-					dynamicMaterial->SetVectorParameterValue(TEXT("FlipbookParameters1"), FLinearColor(m->FlipbookParams.Enable ? 1.0f : 0.0f, m->FlipbookParams.LoopType, m->FlipbookParams.DivideX, m->FlipbookParams.DivideY));
-					dynamicMaterial->SetVectorParameterValue(TEXT("FlipbookParameters2"), FLinearColor(m->FlipbookParams.OneSizeX, m->FlipbookParams.OneSizeY, m->FlipbookParams.OffsetX, m->FlipbookParams.OffsetY));
+					createdMaterial->SetVectorParameterValue(TEXT("FlipbookParameters1"), FLinearColor(paramHolder->FlipbookParams.Enable ? 1.0f : 0.0f, paramHolder->FlipbookParams.LoopType, paramHolder->FlipbookParams.DivideX, paramHolder->FlipbookParams.DivideY));
+					createdMaterial->SetVectorParameterValue(TEXT("FlipbookParameters2"), FLinearColor(paramHolder->FlipbookParams.OneSizeX, paramHolder->FlipbookParams.OneSizeY, paramHolder->FlipbookParams.OffsetX, paramHolder->FlipbookParams.OffsetY));
 
-					dynamicMaterial->SetScalarParameterValue(TEXT("UVDistortionIntensity"), m->UVDistortionIntensity);
+					createdMaterial->SetScalarParameterValue(TEXT("UVDistortionIntensity"), paramHolder->UVDistortionIntensity);
 
-					dynamicMaterial->SetScalarParameterValue(TEXT("TextureBlendType"), m->TextureBlendType);
+					createdMaterial->SetScalarParameterValue(TEXT("TextureBlendType"), paramHolder->TextureBlendType);
 
-					dynamicMaterial->SetScalarParameterValue(TEXT("BlendUVDistortionIntensity"), m->BlendUVDistortionIntensity);
+					createdMaterial->SetScalarParameterValue(TEXT("BlendUVDistortionIntensity"), paramHolder->BlendUVDistortionIntensity);
 
-					dynamicMaterial->SetScalarParameterValue(TEXT("EnableFalloff"), static_cast<float>(m->EnableFalloff));
-					dynamicMaterial->SetScalarParameterValue(TEXT("FalloffBlendType"), static_cast<float>(m->FalloffParam.ColorBlendType));
-					dynamicMaterial->SetVectorParameterValue(TEXT("BeginColor"), m->FalloffParam.BeginColor);
-					dynamicMaterial->SetVectorParameterValue(TEXT("EndColor"), m->FalloffParam.EndColor);
-					dynamicMaterial->SetScalarParameterValue(TEXT("FalloffPow"), static_cast<float>(m->FalloffParam.Pow));
+					createdMaterial->SetScalarParameterValue(TEXT("EnableFalloff"), static_cast<float>(paramHolder->EnableFalloff));
+					createdMaterial->SetScalarParameterValue(TEXT("FalloffBlendType"), static_cast<float>(paramHolder->FalloffParam.ColorBlendType));
+					createdMaterial->SetVectorParameterValue(TEXT("BeginColor"), paramHolder->FalloffParam.BeginColor);
+					createdMaterial->SetVectorParameterValue(TEXT("EndColor"), paramHolder->FalloffParam.EndColor);
+					createdMaterial->SetScalarParameterValue(TEXT("FalloffPow"), static_cast<float>(paramHolder->FalloffParam.Pow));
 
-					dynamicMaterial->SetScalarParameterValue(TEXT("EmissiveScaling"), m->EmissiveScaling);
+					createdMaterial->SetScalarParameterValue(TEXT("EmissiveScaling"), paramHolder->EmissiveScaling);
 
-					dynamicMaterial->SetVectorParameterValue(TEXT("EdgeColor"), m->EdgeParams.Color);
-					dynamicMaterial->SetScalarParameterValue(TEXT("EdgeThreshold"), m->EdgeParams.Threshold);
-					dynamicMaterial->SetScalarParameterValue(TEXT("EdgeColorScaling"), static_cast<float>(m->EdgeParams.ColorScaling));
+					createdMaterial->SetVectorParameterValue(TEXT("EdgeColor"), paramHolder->EdgeParams.Color);
+					createdMaterial->SetScalarParameterValue(TEXT("EdgeThreshold"), paramHolder->EdgeParams.Threshold);
+					createdMaterial->SetScalarParameterValue(TEXT("EdgeColorScaling"), static_cast<float>(paramHolder->EdgeParams.ColorScaling));
 
-					dynamicMaterial->SetVectorParameterValue(TEXT("SoftParticleParams"), FLinearColor(float(m->SoftParticleParam.DepthFadeFar), m->SoftParticleParam.DepthFadeNear, m->SoftParticleParam.DepthFadeNearOffset, 0.0f));
+					createdMaterial->SetVectorParameterValue(TEXT("SoftParticleParams"), FLinearColor(float(paramHolder->SoftParticleParam.DepthFadeFar), paramHolder->SoftParticleParam.DepthFadeNear, paramHolder->SoftParticleParam.DepthFadeNearOffset, 0.0f));
 
 					if (ColorSpace == EEffekseerColorSpaceType::Gamma)
 					{
-						dynamicMaterial->SetScalarParameterValue(TEXT("GammaScale"), 2.2f);
-						dynamicMaterial->SetScalarParameterValue(TEXT("InvGammaScale"), 1.0f / 2.2f);
-						dynamicMaterial->SetScalarParameterValue(TEXT("GammaScaleEnabled"), 1.0f);
+						createdMaterial->SetScalarParameterValue(TEXT("GammaScale"), 2.2f);
+						createdMaterial->SetScalarParameterValue(TEXT("InvGammaScale"), 1.0f / 2.2f);
+						createdMaterial->SetScalarParameterValue(TEXT("GammaScaleEnabled"), 1.0f);
 					}
 					else
 					{
-						dynamicMaterial->SetScalarParameterValue(TEXT("GammaScale"), 1.0f);
-						dynamicMaterial->SetScalarParameterValue(TEXT("InvGammaScale"), 1.0f);
-						dynamicMaterial->SetScalarParameterValue(TEXT("GammaScaleEnabled"), 0.0f);
+						createdMaterial->SetScalarParameterValue(TEXT("GammaScale"), 1.0f);
+						createdMaterial->SetScalarParameterValue(TEXT("InvGammaScale"), 1.0f);
+						createdMaterial->SetScalarParameterValue(TEXT("GammaScaleEnabled"), 0.0f);
 					}
 
-					NMaterials[m->Key] = dynamicMaterial;
-
-					created = dynamicMaterial;
+					NMaterials[paramHolder->Key] = createdMaterial;
+					created = createdMaterial;
 				}
 
-				Materials.Add(m, created);
+				Materials.Add(paramHolder, created);
 			}
 		}
 	}
