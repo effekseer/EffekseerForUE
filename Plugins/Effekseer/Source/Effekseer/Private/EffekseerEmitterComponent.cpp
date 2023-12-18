@@ -22,10 +22,11 @@ private:
 	std::vector<FEffekseerHandle> handles_;
 
 public:
-	FEffekseerEmitterSceneProxy(const UEffekseerEmitterComponent* InComponent)
+	FEffekseerEmitterSceneProxy(const UEffekseerEmitterComponent* InComponent, std::vector<FEffekseerHandle> handles)
 		: FPrimitiveSceneProxy(InComponent)
 	{
 		component_ = InComponent;
+		handles_ = handles;
 	}
 
 	virtual ~FEffekseerEmitterSceneProxy() override
@@ -142,6 +143,16 @@ public:
 				this->SetUsedMaterialForVerification(Materials);
 			});
 #endif
+	}
+
+	const UEffekseerEmitterComponent* GetInComponent() const
+	{
+		return component_;
+	}
+
+	std::vector<FEffekseerHandle> GetHandles() const
+	{
+		return handles_;
 	}
 };
 
@@ -271,9 +282,18 @@ UEffekseerEmitterComponent::~UEffekseerEmitterComponent()
 
 FPrimitiveSceneProxy* UEffekseerEmitterComponent::CreateSceneProxy()
 {
-	auto sp = new FEffekseerEmitterSceneProxy(this);
-	sceneProxy_ = sp;
-	return sp;
+	if (sceneProxy_ != nullptr)
+	{
+		auto sp = new FEffekseerEmitterSceneProxy(sceneProxy_->GetInComponent(), sceneProxy_->GetHandles());
+		sceneProxy_ = sp;
+	}
+	else
+	{
+		auto sp = new FEffekseerEmitterSceneProxy(this, {});
+		sceneProxy_ = sp;
+	}
+
+	return sceneProxy_;
 }
 
 UMaterialInterface* UEffekseerEmitterComponent::GetMaterial(int32 ElementIndex) const
