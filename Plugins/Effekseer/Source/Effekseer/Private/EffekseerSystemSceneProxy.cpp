@@ -128,7 +128,7 @@ void FEffekseerSystemSceneProxy::UpdateData_RenderThread(EffekseerUpdateData* up
 	check(IsInRenderingThread());
 
 	{
-		std::lock_guard<std::mutex> lock(system_->Mutex);
+		std::lock_guard<std::mutex> lock_renderThread(system_->Mutex);
 
 		OpaqueDynamicMaterials = updateData->OpaqueDynamicMaterials;
 		TranslucentDynamicMaterials = updateData->TranslucentDynamicMaterials;

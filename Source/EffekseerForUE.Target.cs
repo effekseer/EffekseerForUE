@@ -5,10 +5,13 @@ using System.Collections.Generic;
 
 public class EffekseerForUETarget : TargetRules
 {
-    public EffekseerForUETarget(TargetInfo Target)
-    : base(Target)
-    {
-        Type = TargetType.Game;
-        ExtraModuleNames.Add("EffekseerForUE");
-    }
+	public EffekseerForUETarget(TargetInfo Target)
+	: base(Target)
+	{
+		DefaultBuildSettings = BuildSettingsVersion.Latest;
+		bOverrideBuildEnvironment = true;
+
+		Type = TargetType.Game;
+		ExtraModuleNames.Add("EffekseerForUE");
+	}
 }

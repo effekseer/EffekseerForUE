@@ -11,6 +11,11 @@
 #include <map>
 #include <memory>
 
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 4
+#include "DynamicMeshBuilder.h"
+#endif
+
+
 namespace EffekseerRendererUE
 {
 class RendererImplemented;

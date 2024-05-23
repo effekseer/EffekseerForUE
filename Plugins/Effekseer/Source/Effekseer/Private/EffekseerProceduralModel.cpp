@@ -3,6 +3,10 @@
 #include "EffekseerUECompatibility.h"
 #include "StaticMeshResources.h"
 
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 4
+#include "DynamicMeshBuilder.h"
+#endif
+
 class FProceduralModelMeshRenderData
 {
 public:
@@ -108,7 +112,14 @@ void UEFfekseerProceduralModel::Render(int32_t viewIndex, FMeshElementCollector&
 	auto& element = meshElement.Elements[0];
 
 	FDynamicPrimitiveUniformBuffer& dynamicPrimitiveUniformBuffer = collector.AllocateOneFrameResource<FDynamicPrimitiveUniformBuffer>();
+
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 4
+	auto bounds = FBoxSphereBounds(EForceInit::ForceInit);
+	dynamicPrimitiveUniformBuffer.Set(collector.GetRHICommandList(), localToWorld, localToWorld, bounds, bounds, bounds, false, false, false);
+#else
 	dynamicPrimitiveUniformBuffer.Set(localToWorld, localToWorld, FBoxSphereBounds(EForceInit::ForceInit), FBoxSphereBounds(EForceInit::ForceInit), false, false, false, false);
+#endif
+
 	element.PrimitiveUniformBufferResource = &dynamicPrimitiveUniformBuffer.UniformBuffer;
 
 	meshElement.MaterialRenderProxy = materialRenderProxy;

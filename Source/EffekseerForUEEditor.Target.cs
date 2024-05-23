@@ -5,10 +5,13 @@ using System.Collections.Generic;
 
 public class EffekseerForUEEditorTarget : TargetRules
 {
-    public EffekseerForUEEditorTarget(TargetInfo Target)
-        : base(Target)
-    {
-        Type = TargetType.Editor;
-        ExtraModuleNames.Add("EffekseerForUE");
-    }
+	public EffekseerForUEEditorTarget(TargetInfo Target)
+		: base(Target)
+	{
+		DefaultBuildSettings = BuildSettingsVersion.Latest;
+		bOverrideBuildEnvironment = true;
+
+		Type = TargetType.Editor;
+		ExtraModuleNames.Add("EffekseerForUE");
+	}
 }

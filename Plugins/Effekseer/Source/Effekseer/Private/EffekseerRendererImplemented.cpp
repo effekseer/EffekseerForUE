@@ -19,6 +19,10 @@
 #include <EffekseerRenderer.SpriteRendererBase.h>
 #include <EffekseerRenderer.TrackRendererBase.h>
 
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 4
+#include "Materials/MaterialRenderProxy.h"
+#endif
+
 using namespace EffekseerUE;
 
 #define GET_MAT_PARAM_NAME
@@ -1406,7 +1410,13 @@ void RendererImplemented::DrawModel(void* model,
 				auto& element = meshElement.Elements[0];
 
 				FDynamicPrimitiveUniformBuffer& dynamicPrimitiveUniformBuffer = m_meshElementCollector->AllocateOneFrameResource<FDynamicPrimitiveUniformBuffer>();
+
+#if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 4
+				auto bounds = FBoxSphereBounds(EForceInit::ForceInit);
+				dynamicPrimitiveUniformBuffer.Set(m_meshElementCollector->GetRHICommandList(), matLocalToWorld, matLocalToWorld, bounds, bounds, bounds, false, false, false);
+#else
 				dynamicPrimitiveUniformBuffer.Set(matLocalToWorld, matLocalToWorld, FBoxSphereBounds(EForceInit::ForceInit), FBoxSphereBounds(EForceInit::ForceInit), false, false, false, false);
+#endif
 
 				element.PrimitiveUniformBufferResource = &dynamicPrimitiveUniformBuffer.UniformBuffer;
 
