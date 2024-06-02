@@ -19,10 +19,10 @@ class FEffekseerEmitterSceneProxy : public FPrimitiveSceneProxy
 {
 private:
 	const UEffekseerEmitterComponent* component_ = nullptr;
-	std::vector<FEffekseerHandle> handles_;
+	TArray<FEffekseerHandle> handles_;
 
 public:
-	FEffekseerEmitterSceneProxy(const UEffekseerEmitterComponent* InComponent, std::vector<FEffekseerHandle> handles)
+	FEffekseerEmitterSceneProxy(const UEffekseerEmitterComponent* InComponent, TArray<FEffekseerHandle> handles)
 		: FPrimitiveSceneProxy(InComponent)
 	{
 		component_ = InComponent;
@@ -105,15 +105,15 @@ public:
 
 		if (updateData->Type == EffekseerEmitterUpdateData_CommandType::Add)
 		{
-			handles_.push_back(updateData->Handle);
+			handles_.Add(updateData->Handle);
 		}
 		else if (updateData->Type == EffekseerEmitterUpdateData_CommandType::Remove)
 		{
-			for (size_t i = 0; i < handles_.size(); i++)
+			for (int32_t i = 0; i < handles_.Num(); i++)
 			{
 				if (handles_[i].ID == updateData->Handle.ID)
 				{
-					handles_.erase(handles_.begin() + i);
+					handles_.RemoveAt(i);
 					break;
 				}
 			}
@@ -149,24 +149,19 @@ public:
 	{
 		return component_;
 	}
-
-	std::vector<FEffekseerHandle> GetHandles() const
-	{
-		return handles_;
-	}
 };
 
-void UEffekseerEmitterComponent::ApplyParameters(bool forced)
+void UEffekseerEmitterComponent::ApplyParameters(const FEffekseerHandle& handle, bool forced)
 {
 	if (AllColor != AllColor_ || forced)
 	{
-		system_->SetEffectAllColor(handle_, AllColor);
+		system_->SetEffectAllColor(handle, AllColor);
 		AllColor_ = AllColor;
 	}
 
 	if (Speed != Speed_ || forced)
 	{
-		system_->SetEffectSpeed(handle_, Speed);
+		system_->SetEffectSpeed(handle, Speed);
 		Speed_ = Speed;
 	}
 
@@ -175,7 +170,7 @@ void UEffekseerEmitterComponent::ApplyParameters(bool forced)
 	{
 		if (DynamicInput[i] != DynamicInput_[i] || forced)
 		{
-			system_->SetEffectDynamicInput(handle_, i, DynamicInput[i]);
+			system_->SetEffectDynamicInput(handle, i, DynamicInput[i]);
 			isDynamicInputChanged = true;
 		}
 	}
@@ -284,7 +279,7 @@ FPrimitiveSceneProxy* UEffekseerEmitterComponent::CreateSceneProxy()
 {
 	if (sceneProxy_ != nullptr)
 	{
-		auto sp = new FEffekseerEmitterSceneProxy(sceneProxy_->GetInComponent(), sceneProxy_->GetHandles());
+		auto sp = new FEffekseerEmitterSceneProxy(this, handles_);
 		sceneProxy_ = sp;
 	}
 	else
@@ -382,50 +377,69 @@ void UEffekseerEmitterComponent::TickComponent(float DeltaTime, ELevelTick TickT
 
 		if (handle.Effect != nullptr)
 		{
-			handle_ = handle;
+			handles_.Add(handle);
 			isPlaying = true;
 			shouldActivate = false;
-			ApplyParameters(true);
+			ApplyParameters(handle, true);
 		}
 	}
 
 	if (system_ != nullptr && isPlaying)
 	{
-		if (system_->Exists(handle_))
+		for (int i = 0; i < handles_.Num();)
 		{
-			auto transform = GetComponentToWorld();
-
-			system_->SetEffectPosition(handle_, transform.GetTranslation());
-			system_->SetEffectRotation(handle_, transform.GetRotation());
-			system_->SetEffectScaling(handle_, transform.GetScale3D());
-
-			ApplyParameters(false);
-		}
-		else
-		{
+			auto handle = handles_[i];
+			if (system_->Exists(handle))
 			{
-				auto cmd = new EffekseerEmitterUpdateData_Command();
-				cmd->Type = EffekseerEmitterUpdateData_CommandType::Remove;
-				cmd->Handle = handle_;
-				sceneProxy_->UpdateData(cmd);
-				handle_ = FEffekseerHandle();
-			}
+				auto transform = GetComponentToWorld();
 
-			if (IsLooping)
-			{
-				AllColor_ = FColor(255, 255, 255, 255);
-				Speed_ = 1.0f;
-				handle_ = PlayInternal();
+				system_->SetEffectPosition(handle, transform.GetTranslation());
+				system_->SetEffectRotation(handle, transform.GetRotation());
+				system_->SetEffectScaling(handle, transform.GetScale3D());
+
+				ApplyParameters(handle, false);
+				i++;
 			}
 			else
 			{
-				isPlaying = false;
-
-				if (bAutoDestroy)
 				{
-					DestroyComponent();
-					return;
+					auto cmd = new EffekseerEmitterUpdateData_Command();
+					cmd->Type = EffekseerEmitterUpdateData_CommandType::Remove;
+					cmd->Handle = handle;
+					sceneProxy_->UpdateData(cmd);
 				}
+
+				if (IsLooping)
+				{
+					AllColor_ = FColor(255, 255, 255, 255);
+					Speed_ = 1.0f;
+					auto new_handle = PlayInternal();
+
+					if (new_handle.Effect != nullptr)
+					{
+						handles_[i] = new_handle;
+						ApplyParameters(new_handle, true);
+						i++;
+					}
+					else
+					{
+						handles_.RemoveAt(i);
+					}
+				}
+				else
+				{
+					handles_.RemoveAt(i);
+				}
+			}
+		}
+
+		if (handles_.Num() == 0)
+		{
+			isPlaying = false;
+
+			if (bAutoDestroy)
+			{
+				DestroyComponent();
 			}
 		}
 	}
@@ -466,14 +480,19 @@ void UEffekseerEmitterComponent::Stop()
 {
 	if (system_ != nullptr)
 	{
-		system_->Stop(handle_);
-
+		for (auto handle : handles_)
 		{
-			auto cmd = new EffekseerEmitterUpdateData_Command();
-			cmd->Type = EffekseerEmitterUpdateData_CommandType::Remove;
-			cmd->Handle = handle_;
-			sceneProxy_->UpdateData(cmd);
+			system_->Stop(handle);
+
+			{
+				auto cmd = new EffekseerEmitterUpdateData_Command();
+				cmd->Type = EffekseerEmitterUpdateData_CommandType::Remove;
+				cmd->Handle = handle;
+				sceneProxy_->UpdateData(cmd);
+			}
 		}
+
+		handles_.Empty();
 
 		isPlaying = false;
 	}
@@ -483,7 +502,10 @@ void UEffekseerEmitterComponent::StopRoot()
 {
 	if (system_ != nullptr)
 	{
-		system_->StopRoot(handle_);
+		for (auto handle : handles_)
+		{
+			system_->StopRoot(handle);
+		}
 	}
 }
 
@@ -491,7 +513,12 @@ bool UEffekseerEmitterComponent::Exists() const
 {
 	if (system_ != nullptr)
 	{
-		return system_->Exists(handle_);
+		bool exists = false;
+		for (auto handle : handles_)
+		{
+			exists |= system_->Exists(handle);
+		}
+		return exists;
 	}
 	return false;
 }
@@ -500,7 +527,10 @@ void UEffekseerEmitterComponent::SendTrigger(int index)
 {
 	if (system_ != nullptr)
 	{
-		return system_->SendTrigger(handle_, index);
+		for (auto handle : handles_)
+		{
+			system_->SendTrigger(handle, index);
+		}
 	}
 }
 

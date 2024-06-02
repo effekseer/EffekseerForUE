@@ -20,7 +20,7 @@ private:
 	FEffekseerEmitterSceneProxy* sceneProxy_ = nullptr;
 	bool shouldActivate = false;
 	bool isPlaying = false;
-	FEffekseerHandle handle_;
+	TArray<FEffekseerHandle> handles_;
 
 	FColor AllColor_ = FColor(255, 255, 255, 255);
 	float Speed_ = 1.0f;
@@ -35,7 +35,7 @@ private:
 	UPROPERTY(Transient)
 	TArray<UMaterialInstanceDynamic*> materials_;
 
-	void ApplyParameters(bool forced);
+	void ApplyParameters(const FEffekseerHandle& handle, bool forced);
 
 	FEffekseerHandle PlayInternal();
 
