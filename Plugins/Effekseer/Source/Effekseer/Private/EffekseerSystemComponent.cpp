@@ -183,7 +183,7 @@ FBoxSphereBounds UEffekseerSystemComponent::CalcBounds(const FTransform& LocalTo
 	return FBoxSphereBounds(LocalToWorld.GetLocation(), FVector(infinity, infinity, infinity), infinity);
 }
 
-void UEffekseerSystemComponent::AssignMaterials(UEffekseerEffect* effect, TArray<UMaterialInstanceDynamic*>* currentMaterials)
+void UEffekseerSystemComponent::AssignMaterials(UEffekseerEffect* effect, TArray<UMaterialInterface*>* currentMaterials)
 {
 	if (effect == nullptr || effect->GetNativePtr() == nullptr)
 	{
@@ -319,9 +319,20 @@ void UEffekseerSystemComponent::AssignMaterials(UEffekseerEffect* effect, TArray
 		currentMaterials->Empty();
 		for (auto paramHolder : effect->EffekseerMaterials)
 		{
+			UMaterialInterface* mat = nullptr;
+
+			if (paramHolder->Material != nullptr)
+			{
+				mat = paramHolder->Material->FindMatrial(paramHolder->AlphaBlend);
+			}
+			else
+			{
+				mat = Materials[paramHolder];
+			}
+
 			if (Materials.Contains(paramHolder))
 			{
-				currentMaterials->Add(Materials[paramHolder]);
+				currentMaterials->Add(mat);
 			}
 		}
 	}

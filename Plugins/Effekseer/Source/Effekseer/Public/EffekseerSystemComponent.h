@@ -130,7 +130,7 @@ public:
 	UPROPERTY(Transient)
 	TMap<UTexture2D*, UMaterialInstanceDynamic*> DistortionAdditiveDynamicMaterials;
 
-	void AssignMaterials(UEffekseerEffect* effect, TArray<UMaterialInstanceDynamic*>* currentMaterials);
+	void AssignMaterials(UEffekseerEffect* effect, TArray<UMaterialInterface*>* currentMaterials);
 
 	UFUNCTION(BlueprintCallable, Category = "Control")
 	FEffekseerHandle Play(UEffekseerEffect* effect, FVector position);

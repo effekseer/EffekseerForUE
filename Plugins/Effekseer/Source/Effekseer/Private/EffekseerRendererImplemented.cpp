@@ -865,14 +865,17 @@ inline Effekseer::Vector3D UnpackVector3DF(const Effekseer::Color& v)
 void RendererImplemented::DrawSprites(int32_t spriteCount, int32_t vertexOffset)
 {
 	auto reunderingUserData = static_cast<EffekseerRenderingUserData*>(GetImpl()->CurrentRenderingUserData.Get());
+	auto shader = m_currentShader;
 
-	auto mat = FindMaterial(reunderingUserData);
+	auto mat = FindMaterial(reunderingUserData, shader);
 	if (mat == nullptr)
-		return;
-
-	if (m_currentShader != nullptr && m_currentShader->GetType() == Effekseer::RendererMaterialType::File)
 	{
-		const auto nativeMaterial = m_currentShader->GetEffekseerMaterial()->GetNativePtr();
+		return;
+	}
+
+	if (shader != nullptr && shader->GetType() == Effekseer::RendererMaterialType::File)
+	{
+		const auto nativeMaterial = shader->GetEffekseerMaterial()->GetNativePtr();
 		assert(!nativeMaterial->GetIsSimpleVertex());
 
 		auto* origin = (uint8_t*)m_vertexBuffer->GetResource();
@@ -952,24 +955,24 @@ void RendererImplemented::DrawSprites(int32_t spriteCount, int32_t vertexOffset)
 
 		auto proxy = mat->GetRenderProxy();
 
-		const auto hasLight = m_currentShader->RequiredPredefinedMethodTypes.count(Effekseer::MaterialFile::RequiredPredefinedMethodType::Light) != 0;
-		const auto hasLocalTime = m_currentShader->RequiredPredefinedMethodTypes.count(Effekseer::MaterialFile::RequiredPredefinedMethodType::LocalTime) != 0;
+		const auto hasLight = shader->RequiredPredefinedMethodTypes.count(Effekseer::MaterialFile::RequiredPredefinedMethodType::Light) != 0;
+		const auto hasLocalTime = shader->RequiredPredefinedMethodTypes.count(Effekseer::MaterialFile::RequiredPredefinedMethodType::LocalTime) != 0;
 
-		if (m_currentShader->GetEffekseerMaterial()->UniformHashedNameToIndex.Num() > 0 ||
-			m_currentShader->GetEffekseerMaterial()->TextureNameToIndex.Num() > 0 ||
+		if (shader->GetEffekseerMaterial()->UniformHashedNameToIndex.Num() > 0 ||
+			shader->GetEffekseerMaterial()->TextureNameToIndex.Num() > 0 ||
 			nativeMaterial->GetCustomData1Count() > 0 ||
 			nativeMaterial->GetCustomData2Count() > 0 ||
-			m_currentShader->GetEffekseerMaterial()->IsEffectScaleRequired ||
+			shader->GetEffekseerMaterial()->IsEffectScaleRequired ||
 			hasLight ||
 			hasLocalTime)
 		{
-			auto uniformOffset = m_currentShader->GetParameterGenerator()->PixelUserUniformOffset;
-			auto buffer = static_cast<uint8_t*>(m_currentShader->GetPixelConstantBuffer()) + uniformOffset;
+			auto uniformOffset = shader->GetParameterGenerator()->PixelUserUniformOffset;
+			auto buffer = static_cast<uint8_t*>(shader->GetPixelConstantBuffer()) + uniformOffset;
 
-			const auto uniformCount = m_currentShader->GetEffekseerMaterial()->Uniforms.Num() + m_currentShader->GetEffekseerMaterial()->Gradients.Num() * 13;
-			auto newProxy = new FFileMaterialRenderProxy(proxy, m_currentShader->GetEffekseerMaterial(), reinterpret_cast<float*>(buffer), uniformCount, false, m_renderState->GetActiveState().CullingType, reunderingUserData->Magnification);
+			const auto uniformCount = shader->GetEffekseerMaterial()->Uniforms.Num() + shader->GetEffekseerMaterial()->Gradients.Num() * 13;
+			auto newProxy = new FFileMaterialRenderProxy(proxy, shader->GetEffekseerMaterial(), reinterpret_cast<float*>(buffer), uniformCount, false, m_renderState->GetActiveState().CullingType, reunderingUserData->Magnification);
 
-			auto predefined = reinterpret_cast<float*>(static_cast<uint8_t*>(m_currentShader->GetPixelConstantBuffer()) + m_currentShader->GetParameterGenerator()->PixelPredefinedOffset);
+			auto predefined = reinterpret_cast<float*>(static_cast<uint8_t*>(shader->GetPixelConstantBuffer()) + shader->GetParameterGenerator()->PixelPredefinedOffset);
 
 			newProxy->LightDirection = FLinearColor::White;
 			newProxy->LightColor = FLinearColor::White;
@@ -986,12 +989,12 @@ void RendererImplemented::DrawSprites(int32_t spriteCount, int32_t vertexOffset)
 		return;
 	}
 
-	Effekseer::RendererMaterialType MaterialType = m_currentShader->GetType();
-	bool IsAdvanced = m_currentShader->IsAdvancedMaterial();
+	Effekseer::RendererMaterialType MaterialType = shader->GetType();
+	bool IsAdvanced = shader->IsAdvancedMaterial();
 
 	if (MaterialType == Effekseer::RendererMaterialType::BackDistortion)
 	{
-		auto pixelBuffer = reinterpret_cast<EffekseerRenderer::PixelConstantBufferDistortion*>(m_currentShader->GetPixelConstantBuffer());
+		auto pixelBuffer = reinterpret_cast<EffekseerRenderer::PixelConstantBufferDistortion*>(shader->GetPixelConstantBuffer());
 		auto intensity = pixelBuffer->DistortionIntencity[0];
 		SetDistortionIntensity(intensity);
 	}
@@ -1044,7 +1047,7 @@ void RendererImplemented::DrawSprites(int32_t spriteCount, int32_t vertexOffset)
 
 	auto proxy = mat->GetRenderProxy();
 
-	if (m_currentShader->GetType() == Effekseer::RendererMaterialType::BackDistortion)
+	if (shader->GetType() == Effekseer::RendererMaterialType::BackDistortion)
 	{
 		proxy = new FDistortionMaterialRenderProxy(proxy, m_distortionIntensity);
 		m_meshElementCollector->RegisterOneFrameMaterialProxy(proxy);
@@ -1285,10 +1288,12 @@ void RendererImplemented::DrawModel(void* model,
 
 	// Material
 	auto reunderingUserData = static_cast<EffekseerRenderingUserData*>(GetImpl()->CurrentRenderingUserData.Get());
-	auto mat = FindMaterial(reunderingUserData);
+	auto mat = FindMaterial(reunderingUserData, m_currentShader);
 
 	if (mat == nullptr)
+	{
 		return;
+	}
 
 	for (int32_t objectIndex = 0; objectIndex < matrixes.size(); objectIndex++)
 	{
@@ -1459,11 +1464,12 @@ void RendererImplemented::DrawModel(void* model,
 	}
 }
 
-UMaterialInterface* RendererImplemented::FindMaterial(EffekseerRenderingUserData* userData)
+UMaterialInterface* RendererImplemented::FindMaterial(EffekseerRenderingUserData* userData, Shader* shader)
 {
-	if (m_currentShader->GetType() == Effekseer::RendererMaterialType::File)
+	if (shader->GetType() == Effekseer::RendererMaterialType::File)
 	{
-		return m_currentShader->GetEffekseerMaterial()->FindMatrial((EEffekseerAlphaBlendType)m_renderState->GetActiveState().AlphaBlend);
+		auto alphaBlend = static_cast<EEffekseerAlphaBlendType>(m_renderState->GetActiveState().AlphaBlend);
+		return shader->GetEffekseerMaterial()->FindMatrial(alphaBlend);
 	}
 
 	if (userData == nullptr)

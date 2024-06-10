@@ -283,7 +283,7 @@ public:
 				   std::vector<std::array<float, 4>>& customData1,
 				   std::vector<std::array<float, 4>>& customData2);
 
-	UMaterialInterface* FindMaterial(EffekseerRenderingUserData* userData);
+	UMaterialInterface* FindMaterial(EffekseerRenderingUserData* userData, Shader* shader);
 
 	Shader* GetShader(::EffekseerRenderer::RendererShaderType shaderType) const;
 

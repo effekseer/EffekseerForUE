@@ -3,6 +3,10 @@
 #include "EffekseerSystemComponent.h"
 #include "EffekseerSystemSceneProxy.h"
 
+#if WITH_EDITOR
+#include "ShaderCompiler.h"
+#endif
+
 enum class EffekseerEmitterUpdateData_CommandType
 {
 	Add,
@@ -22,11 +26,10 @@ private:
 	TArray<FEffekseerHandle> handles_;
 
 public:
-	FEffekseerEmitterSceneProxy(const UEffekseerEmitterComponent* InComponent, TArray<FEffekseerHandle> handles)
+	FEffekseerEmitterSceneProxy(const UEffekseerEmitterComponent* InComponent)
 		: FPrimitiveSceneProxy(InComponent)
 	{
 		component_ = InComponent;
-		handles_ = handles;
 	}
 
 	virtual ~FEffekseerEmitterSceneProxy() override
@@ -41,6 +44,13 @@ public:
 
 	virtual void GetDynamicMeshElements(const TArray<const FSceneView*>& Views, const FSceneViewFamily& ViewFamily, uint32 VisibilityMap, FMeshElementCollector& Collector) const override
 	{
+#if WITH_EDITOR
+		if (GShaderCompilingManager->IsCompiling())
+		{
+			return;
+		}
+#endif
+
 		auto systemComponent = component_->system_;
 		if (systemComponent != nullptr)
 		{
@@ -140,6 +150,22 @@ public:
 		(
 			[this, Materials](FRHICommandListImmediate& RHICmdList)
 			{
+				this->SetUsedMaterialForVerification(Materials);
+			});
+#endif
+	}
+
+	virtual void UpdatedReferencedMaterialsWithHandles(TArray<FEffekseerHandle> handles)
+	{
+		// copied from FPrimitiveSceneProxy::FPrimitiveSceneProxy()
+#if WITH_EDITOR
+		TArray<UMaterialInterface*> Materials;
+		component_->GetUsedMaterials(Materials, true);
+		ENQUEUE_RENDER_COMMAND(FMeshRenderBufferSetDestroy)
+		(
+			[this, Materials, handles](FRHICommandListImmediate& RHICmdList)
+			{
+				handles_ = handles;
 				this->SetUsedMaterialForVerification(Materials);
 			});
 #endif
@@ -279,13 +305,18 @@ FPrimitiveSceneProxy* UEffekseerEmitterComponent::CreateSceneProxy()
 {
 	if (sceneProxy_ != nullptr)
 	{
-		auto sp = new FEffekseerEmitterSceneProxy(this, handles_);
-		sceneProxy_ = sp;
+		sceneProxy_ = new FEffekseerEmitterSceneProxy(this);
+
+		if (system_ != nullptr && lastPlayingEffect != nullptr)
+		{
+			system_->AssignMaterials(lastPlayingEffect, &materials_);
+		}
+
+		sceneProxy_->UpdatedReferencedMaterialsWithHandles(handles_);
 	}
 	else
 	{
-		auto sp = new FEffekseerEmitterSceneProxy(this, {});
-		sceneProxy_ = sp;
+		sceneProxy_ = new FEffekseerEmitterSceneProxy(this);
 	}
 
 	return sceneProxy_;
