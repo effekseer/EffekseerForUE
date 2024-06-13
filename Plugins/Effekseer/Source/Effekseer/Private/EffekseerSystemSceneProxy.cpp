@@ -59,7 +59,7 @@ void FEffekseerSystemSceneProxy::GetDynamicMeshElements(const TArray<const FScen
 #if WITH_EDITOR
 	if (GShaderCompilingManager->IsCompiling())
 	{
-		return;
+	//	return;
 	}
 #endif
 
@@ -105,8 +105,11 @@ FPrimitiveViewRelevance FEffekseerSystemSceneProxy::GetViewRelevance(const FScen
 
 void FEffekseerSystemSceneProxy::ConvertInternalHandleToEffekseerHandles(const std::vector<int32_t>& internalHandles, std::vector<int32_t>& efkHandles)
 {
+#if ENGINE_MAJOR_VERSION == 4
 	check(IsInRenderingThread());
-	//std::lock_guard<std::mutex> lock(criticalSection_);
+#endif
+
+	std::lock_guard<std::mutex> lock(mutex_removedHandles_);
 
 	efkHandles.clear();
 

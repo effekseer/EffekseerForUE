@@ -47,7 +47,7 @@ public:
 #if WITH_EDITOR
 		if (GShaderCompilingManager->IsCompiling())
 		{
-			return;
+		//	return;
 		}
 #endif
 
