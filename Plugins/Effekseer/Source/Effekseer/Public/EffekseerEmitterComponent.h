@@ -33,7 +33,7 @@ private:
 	UEffekseerEffect* lastPlayingEffect = nullptr;
 
 	UPROPERTY(Transient)
-	TArray<UMaterialInstanceDynamic*> materials_;
+	TArray<UMaterialInterface*> materials_;
 
 	void ApplyParameters(const FEffekseerHandle& handle, bool forced);
 

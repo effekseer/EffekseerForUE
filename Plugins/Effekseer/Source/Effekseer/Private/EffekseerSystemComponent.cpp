@@ -66,7 +66,7 @@ void UEffekseerSystemComponent::TickComponent(float DeltaTime, ELevelTick TickTy
 		currentUpdateData->ModulateDynamicMaterials = ModulateDynamicMaterials;
 		currentUpdateData->LightingDynamicMaterials = LightingDynamicMaterials;
 
-		currentUpdateData->Materials = Materials;
+		currentUpdateData->Materials = GeneratedFixedMaterials;
 		currentUpdateData->NMaterials = NMaterials;
 
 		currentUpdateData->DeltaTime = DeltaTime;
@@ -183,7 +183,7 @@ FBoxSphereBounds UEffekseerSystemComponent::CalcBounds(const FTransform& LocalTo
 	return FBoxSphereBounds(LocalToWorld.GetLocation(), FVector(infinity, infinity, infinity), infinity);
 }
 
-void UEffekseerSystemComponent::AssignMaterials(UEffekseerEffect* effect, TArray<UMaterialInstanceDynamic*>* currentMaterials)
+void UEffekseerSystemComponent::AssignMaterials(UEffekseerEffect* effect, TArray<UMaterialInterface*>* currentMaterials)
 {
 	if (effect == nullptr || effect->GetNativePtr() == nullptr)
 	{
@@ -218,17 +218,17 @@ void UEffekseerSystemComponent::AssignMaterials(UEffekseerEffect* effect, TArray
 
 	for (auto paramHolder : effect->EffekseerMaterials)
 	{
-		if (Materials.Contains(paramHolder))
-		{
-			continue;
-		}
-
 		if (paramHolder->Material != nullptr)
 		{
 			paramHolder->Material->GenerateColorSpaceMaterial(paramHolder->AlphaBlend, ColorSpace);
 		}
 		else
 		{
+			if (GeneratedFixedMaterials.Contains(paramHolder))
+			{
+				continue;
+			}
+
 			auto blendInd = static_cast<int32_t>(paramHolder->AlphaBlend);
 			if (paramHolder->IsLighting)
 				blendInd = 5;
@@ -253,7 +253,11 @@ void UEffekseerSystemComponent::AssignMaterials(UEffekseerEffect* effect, TArray
 				}
 				else
 				{
-					auto createdMaterial = UMaterialInstanceDynamic::Create(baseMat, this);
+					FName name = FName(baseMat->GetName() + TEXT("_Base_Dynamic_") + FString::FromInt(dynamicMaterialCount_));
+					dynamicMaterialCount_++;
+
+					auto createdMaterial = UMaterialInstanceDynamic::Create(baseMat, this, name);
+
 					createdMaterial->SetTextureParameterValue(TEXT("ColorTexture"), paramHolder->Texture);
 
 					createdMaterial->SetTextureParameterValue(TEXT("AlphaTexture"), paramHolder->AlphaTexture);
@@ -309,7 +313,7 @@ void UEffekseerSystemComponent::AssignMaterials(UEffekseerEffect* effect, TArray
 					created = createdMaterial;
 				}
 
-				Materials.Add(paramHolder, created);
+				GeneratedFixedMaterials.Add(paramHolder, created);
 			}
 		}
 	}
@@ -319,9 +323,20 @@ void UEffekseerSystemComponent::AssignMaterials(UEffekseerEffect* effect, TArray
 		currentMaterials->Empty();
 		for (auto paramHolder : effect->EffekseerMaterials)
 		{
-			if (Materials.Contains(paramHolder))
+			UMaterialInterface* mat = nullptr;
+
+			if (paramHolder->Material != nullptr)
 			{
-				currentMaterials->Add(Materials[paramHolder]);
+				mat = paramHolder->Material->FindMatrial(paramHolder->AlphaBlend);
+			}
+			else
+			{
+				mat = GeneratedFixedMaterials[paramHolder];
+			}
+
+			if (mat != nullptr)
+			{
+				currentMaterials->Add(mat);
 			}
 		}
 	}
