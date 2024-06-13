@@ -109,7 +109,8 @@ bool UEffekseerMaterial::GenerateColorSpaceMaterial(EEffekseerAlphaBlendType alp
 	{
 		if (e.AlphaBlend == alphaBlend && e.Material != nullptr)
 		{
-			auto dynamicMaterial = UMaterialInstanceDynamic::Create(e.Material, this);
+			FName name = FName(Material->GetName() + TEXT("_Dynamic_") + FString::FromInt(static_cast<int>(e.AlphaBlend)));
+			auto dynamicMaterial = UMaterialInstanceDynamic::Create(e.Material, this, name);
 			ColorSpaceMaterials.Add(alphaBlend, dynamicMaterial);
 
 			if (colorSpaceType == EEffekseerColorSpaceType::Gamma)

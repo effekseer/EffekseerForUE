@@ -27,6 +27,8 @@ private:
 	TMap<int32_t, int32_t> internalHandle2EfkHandle_;
 	bool isNetworkRunning_ = false;
 
+	int dynamicMaterialCount_ = 0;
+
 public:
 	UEffekseerSystemComponent();
 	virtual ~UEffekseerSystemComponent();
@@ -104,7 +106,7 @@ public:
 	std::map<EffekseerEffectMaterialKey, UMaterialInstanceDynamic*> NMaterials;
 
 	UPROPERTY(Transient)
-	TMap<UEffekseerEffectMaterialParameterHolder*, UMaterialInstanceDynamic*> Materials;
+	TMap<UEffekseerEffectMaterialParameterHolder*, UMaterialInstanceDynamic*> GeneratedFixedMaterials;
 
 	UPROPERTY(Transient)
 	TMap<UTexture2D*, UMaterialInstanceDynamic*> OpaqueDynamicMaterials;

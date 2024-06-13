@@ -253,8 +253,10 @@ LoopExit:;
 	{
 		Stop();
 		lastPlayingEffect = Effect;
-		system_->AssignMaterials(lastPlayingEffect, &materials_);
 	}
+
+	// TODO : Optimize
+	system_->AssignMaterials(lastPlayingEffect, &materials_);
 
 	auto transform = GetComponentToWorld();
 
