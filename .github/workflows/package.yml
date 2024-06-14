@@ -23,7 +23,7 @@ jobs:
         python CreatePackage.py
     - uses: actions/upload-artifact@v1
       with:
-        name: EffekseerForUE_170f
+        name: EffekseerForUE_1.7.1.0
         path: EffekseerForUE
   
 
