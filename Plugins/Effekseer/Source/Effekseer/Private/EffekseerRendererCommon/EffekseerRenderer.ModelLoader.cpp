@@ -1,4 +1,4 @@
-﻿clude "EffekseerRenderer.ModelLoader.h"
+﻿#include "EffekseerRenderer.ModelLoader.h"
 
 namespace EffekseerRenderer
 {
