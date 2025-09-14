@@ -177,7 +177,7 @@ Effekseer::TextureRef TextureLoader::Load(const EFK_CHAR* path, ::Effekseer::Tex
 			UTexture2D* texture = nullptr;
 
 			texture = Cast<UTexture2D>(StaticLoadObject(UTexture2D::StaticClass(), NULL, path_.c_str()));
-			
+
 			// for UE5.1
 			if (texture == nullptr)
 			{
@@ -696,68 +696,68 @@ void UEffekseerEffect::GenerateRenderingData()
 
 			if (param.Distortion)
 			{
-				if (0 <= param.ColorTextureIndex &&
-					param.ColorTextureIndex < this->DistortionTextures.Num())
+				if (0 <= param.TextureIndexes[0] &&
+					param.TextureIndexes[0] < this->DistortionTextures.Num())
 				{
-					texture = this->DistortionTextures[param.ColorTextureIndex];
+					texture = this->DistortionTextures[param.TextureIndexes[0]];
 				}
 
-				if (0 <= param.AlphaTextureIndex && param.AlphaTextureIndex < this->DistortionTextures.Num())
+				if (0 <= param.TextureIndexes[2] && param.TextureIndexes[2] < this->DistortionTextures.Num())
 				{
-					alphaTexture = this->DistortionTextures[param.AlphaTextureIndex];
+					alphaTexture = this->DistortionTextures[param.TextureIndexes[2]];
 				}
 
-				if (0 <= param.UVDistortionIndex && param.UVDistortionIndex < this->DistortionTextures.Num())
+				if (0 <= param.TextureIndexes[3] && param.TextureIndexes[3] < this->DistortionTextures.Num())
 				{
-					uvDistortionTexture = this->DistortionTextures[param.UVDistortionIndex];
+					uvDistortionTexture = this->DistortionTextures[param.TextureIndexes[3]];
 				}
 
-				if (0 <= param.BlendTextureIndex && param.BlendTextureIndex < this->DistortionTextures.Num())
+				if (0 <= param.TextureIndexes[4] && param.TextureIndexes[4] < this->DistortionTextures.Num())
 				{
-					blendTexture = this->DistortionTextures[param.BlendTextureIndex];
+					blendTexture = this->DistortionTextures[param.TextureIndexes[4]];
 				}
 
-				if (0 <= param.BlendAlphaTextureIndex && param.BlendAlphaTextureIndex < this->DistortionTextures.Num())
+				if (0 <= param.TextureIndexes[5] && param.TextureIndexes[5] < this->DistortionTextures.Num())
 				{
-					blendAlphaTexture = this->DistortionTextures[param.BlendAlphaTextureIndex];
+					blendAlphaTexture = this->DistortionTextures[param.TextureIndexes[5]];
 				}
 
-				if (0 <= param.BlendUVDistortionTextureIndex && param.BlendUVDistortionTextureIndex < this->DistortionTextures.Num())
+				if (0 <= param.TextureIndexes[6] && param.TextureIndexes[6] < this->DistortionTextures.Num())
 				{
-					blendUVDistortionTexture = this->DistortionTextures[param.BlendUVDistortionTextureIndex];
+					blendUVDistortionTexture = this->DistortionTextures[param.TextureIndexes[6]];
 				}
 			}
 			else
 			{
-				if (0 <= param.ColorTextureIndex &&
-					param.ColorTextureIndex < this->ColorTextures.Num())
+				if (0 <= param.TextureIndexes[0] &&
+					param.TextureIndexes[0] < this->ColorTextures.Num())
 				{
-					texture = this->ColorTextures[param.ColorTextureIndex];
+					texture = this->ColorTextures[param.TextureIndexes[0]];
 				}
 
-				if (0 <= param.AlphaTextureIndex && param.AlphaTextureIndex < this->ColorTextures.Num())
+				if (0 <= param.TextureIndexes[2] && param.TextureIndexes[2] < this->ColorTextures.Num())
 				{
-					alphaTexture = this->ColorTextures[param.AlphaTextureIndex];
+					alphaTexture = this->ColorTextures[param.TextureIndexes[2]];
 				}
 
-				if (0 <= param.UVDistortionIndex && param.UVDistortionIndex < this->ColorTextures.Num())
+				if (0 <= param.TextureIndexes[3] && param.TextureIndexes[3] < this->ColorTextures.Num())
 				{
-					uvDistortionTexture = this->ColorTextures[param.UVDistortionIndex];
+					uvDistortionTexture = this->ColorTextures[param.TextureIndexes[3]];
 				}
 
-				if (0 <= param.BlendTextureIndex && param.BlendTextureIndex < this->ColorTextures.Num())
+				if (0 <= param.TextureIndexes[4] && param.TextureIndexes[4] < this->ColorTextures.Num())
 				{
-					blendTexture = this->ColorTextures[param.BlendTextureIndex];
+					blendTexture = this->ColorTextures[param.TextureIndexes[4]];
 				}
 
-				if (0 <= param.BlendAlphaTextureIndex && param.BlendAlphaTextureIndex < this->ColorTextures.Num())
+				if (0 <= param.TextureIndexes[5] && param.TextureIndexes[5] < this->ColorTextures.Num())
 				{
-					blendAlphaTexture = this->ColorTextures[param.BlendAlphaTextureIndex];
+					blendAlphaTexture = this->ColorTextures[param.TextureIndexes[5]];
 				}
 
-				if (0 <= param.BlendUVDistortionTextureIndex && param.BlendUVDistortionTextureIndex < this->ColorTextures.Num())
+				if (0 <= param.TextureIndexes[6] && param.TextureIndexes[6] < this->ColorTextures.Num())
 				{
-					blendUVDistortionTexture = this->ColorTextures[param.BlendUVDistortionTextureIndex];
+					blendUVDistortionTexture = this->ColorTextures[param.TextureIndexes[6]];
 				}
 			}
 
@@ -769,22 +769,22 @@ void UEffekseerEffect::GenerateRenderingData()
 			UEffekseerEffectMaterialParameterHolder* mat = NewObject<UEffekseerEffectMaterialParameterHolder>();
 			mat->Texture = texture;
 
-			mat->TextureAddressType = static_cast<int32>(param.WrapType);
+			mat->TextureAddressType = static_cast<int32>(param.TextureWraps[0]);
 
 			mat->AlphaTexture = alphaTexture;
-			mat->AlphaTextureAddressType = static_cast<int32>(param.AlphaTexWrapType);
+			mat->AlphaTextureAddressType = static_cast<int32>(param.TextureWraps[2]);
 
 			mat->UVDistortionTexture = uvDistortionTexture;
-			mat->UVDistortionTextureAddressType = static_cast<int32>(param.UVDistortionTexWrapType);
+			mat->UVDistortionTextureAddressType = static_cast<int32>(param.TextureWraps[3]);
 
 			mat->BlendTexture = blendTexture;
-			mat->BlendTextureAddress = static_cast<int32>(param.BlendTexWrapType);
+			mat->BlendTextureAddress = static_cast<int32>(param.TextureWraps[4]);
 
 			mat->BlendAlphaTexture = blendAlphaTexture;
-			mat->BlendAlphaTextureAddress = static_cast<int32>(param.BlendAlphaTexWrapType);
+			mat->BlendAlphaTextureAddress = static_cast<int32>(param.TextureWraps[5]);
 
 			mat->BlendUVDistortionTexture = blendUVDistortionTexture;
-			mat->BlendUVDistortionTextureAddress = static_cast<int32>(param.BlendUVDistortionTexWrapType);
+			mat->BlendUVDistortionTextureAddress = static_cast<int32>(param.TextureWraps[6]);
 
 			mat->FlipbookParams.Enable = param.FlipbookParams.EnableInterpolation;
 			mat->FlipbookParams.LoopType = param.FlipbookParams.UVLoopType;
@@ -916,13 +916,13 @@ void UEffekseerEffect::SetTextureAddressMode(::Effekseer::EffectNode* node)
 	}
 
 	Effekseer::EffectBasicRenderParameter param = node->GetBasicRenderParameter();
-	if (param.ColorTextureIndex >= 0)
+	if (param.TextureIndexes[0] >= 0)
 	{
-		SetAtTextureAddressWrap(node, param.ColorTextureIndex, param.Distortion);
+		SetAtTextureAddressWrap(node, param.TextureIndexes[0], param.Distortion);
 	}
-	if (param.AlphaTextureIndex >= 0)
+	if (param.TextureIndexes[2] >= 0)
 	{
-		SetAtTextureAddressWrap(node, param.AlphaTextureIndex, param.Distortion);
+		SetAtTextureAddressWrap(node, param.TextureIndexes[2], param.Distortion);
 	}
 }
 
