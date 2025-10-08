@@ -1,23 +1,23 @@
 #include "EffekseerRendererImplemented.h"
 
+#include "Backend/EffekseerRendererUE.IndexBuffer.h"
+#include "Backend/EffekseerRendererUE.VertexBuffer.h"
 #include "DynamicMeshBuilder.h"
 #include "EffekseerInternalModel.h"
 #include "EffekseerInternalTexture.h"
 #include "EffekseerProceduralModel.h"
-#include "EffekseerRendererIndexBuffer.h"
 #include "EffekseerRendererRenderState.h"
 #include "EffekseerRendererShader.h"
-#include "EffekseerRendererVertexBuffer.h"
 #include "EffekseerUECompatibility.h"
 #include "MaterialShared.h"
 #include "Materials/MaterialInstanceDynamic.h"
 #include "Math/Color.h"
 #include "Runtime/Engine/Public/StaticMeshResources.h"
 #include "Runtime/Launch/Resources/Version.h"
-#include <EffekseerRenderer.RibbonRendererBase.h>
-#include <EffekseerRenderer.RingRendererBase.h>
-#include <EffekseerRenderer.SpriteRendererBase.h>
-#include <EffekseerRenderer.TrackRendererBase.h>
+#include <EffekseerRendererCommon/EffekseerRenderer.RibbonRendererBase.h>
+#include <EffekseerRendererCommon/EffekseerRenderer.RingRendererBase.h>
+#include <EffekseerRendererCommon/EffekseerRenderer.SpriteRendererBase.h>
+#include <EffekseerRendererCommon/EffekseerRenderer.TrackRendererBase.h>
 
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 4
 #include "Materials/MaterialRenderProxy.h"
@@ -606,7 +606,7 @@ void ModelRenderer::EndRendering(const efkModelNodeParam& parameter, void* userD
 
 	EffekseerRenderer::RendererShaderType type = collector_.ShaderType;
 
-	Shader* shader = m_renderer->GetShader(type);
+	Shader* shader = nullptr;
 
 	if (param.BasicParameterPtr->MaterialType == Effekseer::RendererMaterialType::File &&
 		param.BasicParameterPtr->MaterialRenderDataPtr != nullptr &&
@@ -614,6 +614,10 @@ void ModelRenderer::EndRendering(const efkModelNodeParam& parameter, void* userD
 		param.EffectPointer->GetMaterial(param.BasicParameterPtr->MaterialRenderDataPtr->MaterialIndex) != nullptr)
 	{
 		shader = (Shader*)param.EffectPointer->GetMaterial(param.BasicParameterPtr->MaterialRenderDataPtr->MaterialIndex)->ModelUserPtr;
+	}
+	else
+	{
+		shader = (Shader*)m_renderer->GetImpl()->GetShader(type);
 	}
 
 	m_renderer->BeginShader(shader);
@@ -690,27 +694,43 @@ RendererImplemented::RendererImplemented()
 	auto internalBackgroundTexture_ = Effekseer::MakeRefPtr<EffekseerInternalTexture>();
 	internalBackgroundTexture_->UserData = reinterpret_cast<void*>(0x1);
 	backgroundTexture_ = internalBackgroundTexture_;
+
+	graphics_device_ = Effekseer::MakeRefPtr<Backend::GraphicsDevice>();
 }
 
 RendererImplemented::~RendererImplemented()
 {
 	ES_SAFE_DELETE(m_renderState);
 	ES_SAFE_DELETE(m_standardRenderer);
-	ES_SAFE_DELETE(m_vertexBuffer);
 }
 
 bool RendererImplemented::Initialize(int32_t squareMaxCount, EEffekseerColorSpaceType colorSpace)
 {
 	colorSpace_ = colorSpace;
 	m_squareMaxCount = squareMaxCount;
+
+	// generate a vertex buffer
+	{
+		GetImpl()->InternalVertexBuffer = std::make_shared<EffekseerRenderer::VertexBufferRing>(graphics_device_, EffekseerRenderer::GetMaximumVertexSizeInAllTypes() * m_squareMaxCount * 4, 1);
+		if (!GetImpl()->InternalVertexBuffer->GetIsValid())
+		{
+			GetImpl()->InternalVertexBuffer = nullptr;
+			return false;
+		}
+	}
+
+	if (!EffekseerRenderer::GenerateIndexDataStride<int16_t>(graphics_device_, m_squareMaxCount, index_buffer_, index_buffer_for_wireframe_))
+	{
+		return false;
+	}
+
 	m_renderState = new RenderState();
-	m_vertexBuffer = new VertexBuffer(EffekseerRenderer::GetMaximumVertexSizeInAllTypes() * m_squareMaxCount * 4, true);
-	stanShader_ = std::unique_ptr<Shader>(new Shader(Effekseer::RendererMaterialType::Default, false));
-	backDistortedShader_ = std::unique_ptr<Shader>(new Shader(Effekseer::RendererMaterialType::BackDistortion, false));
-	lightingShader_ = std::unique_ptr<Shader>(new Shader(Effekseer::RendererMaterialType::Lighting, false));
-	stanShaderAd_ = std::unique_ptr<Shader>(new Shader(Effekseer::RendererMaterialType::Default, true));
-	backDistortedShaderAd_ = std::unique_ptr<Shader>(new Shader(Effekseer::RendererMaterialType::BackDistortion, true));
-	lightingShaderAd_ = std::unique_ptr<Shader>(new Shader(Effekseer::RendererMaterialType::Lighting, true));
+	GetImpl()->ShaderUnlit = std::unique_ptr<Shader>(new Shader(Effekseer::RendererMaterialType::Default, false));
+	GetImpl()->ShaderDistortion = std::unique_ptr<Shader>(new Shader(Effekseer::RendererMaterialType::BackDistortion, false));
+	GetImpl()->ShaderLit = std::unique_ptr<Shader>(new Shader(Effekseer::RendererMaterialType::Lighting, false));
+	GetImpl()->ShaderAdUnlit = std::unique_ptr<Shader>(new Shader(Effekseer::RendererMaterialType::Default, true));
+	GetImpl()->ShaderAdDistortion = std::unique_ptr<Shader>(new Shader(Effekseer::RendererMaterialType::BackDistortion, true));
+	GetImpl()->ShaderAdLit = std::unique_ptr<Shader>(new Shader(Effekseer::RendererMaterialType::Lighting, true));
 
 	m_standardRenderer = new EffekseerRenderer::StandardRenderer<RendererImplemented, Shader>(this);
 
@@ -821,12 +841,7 @@ const ::Effekseer::Backend::TextureRef& RendererImplemented::GetBackground()
 	return backgroundTexture_;
 }
 
-VertexBuffer* RendererImplemented::GetVertexBuffer()
-{
-	return m_vertexBuffer;
-}
-
-IndexBuffer* RendererImplemented::GetIndexBuffer()
+Effekseer::Backend::IndexBufferRef RendererImplemented::GetIndexBuffer()
 {
 	return nullptr;
 }
@@ -841,12 +856,14 @@ EffekseerRenderer::StandardRenderer<RendererImplemented, Shader>* RendererImplem
 	return m_renderState;
 }
 
-void RendererImplemented::SetVertexBuffer(VertexBuffer* vertexBuffer, int32_t size)
+void RendererImplemented::SetVertexBuffer(const Effekseer::Backend::VertexBufferRef& vertexBuffer, int32_t size)
 {
+	current_vertex_buffer_ = vertexBuffer;
 }
 
-void RendererImplemented::SetIndexBuffer(IndexBuffer* indexBuffer)
+void RendererImplemented::SetIndexBuffer(const Effekseer::Backend::IndexBufferRef& indexBuffer)
 {
+	// Dummy
 }
 
 void RendererImplemented::SetLayout(Shader* shader)
@@ -878,7 +895,7 @@ void RendererImplemented::DrawSprites(int32_t spriteCount, int32_t vertexOffset)
 		const auto nativeMaterial = shader->GetEffekseerMaterial()->GetNativePtr();
 		assert(!nativeMaterial->GetIsSimpleVertex());
 
-		auto* origin = (uint8_t*)m_vertexBuffer->GetResource();
+		auto* origin = static_cast<Backend::VertexBuffer*>(current_vertex_buffer_.Get())->GetResource();
 
 		const int32_t stride = (int32_t)sizeof(EffekseerRenderer::DynamicVertex) + (nativeMaterial->GetCustomData1Count() + nativeMaterial->GetCustomData2Count()) * sizeof(float);
 		EffekseerRenderer::StrideView<EffekseerRenderer::DynamicVertex> vs(origin, stride, vertexOffset + spriteCount * 4);
@@ -1059,7 +1076,7 @@ void RendererImplemented::DrawSprites(int32_t spriteCount, int32_t vertexOffset)
 template <>
 void RendererImplemented::AddVertex<Effekseer::RendererMaterialType::Default, false>(FDynamicMeshBuilder& meshBuilder, int32_t spriteCount, int32_t vertexOffset)
 {
-	Vertex* vs = (Vertex*)m_vertexBuffer->GetResource();
+	Vertex* vs = (Vertex*)static_cast<Backend::VertexBuffer*>(current_vertex_buffer_.Get())->GetResource();
 
 	for (int32_t vi = vertexOffset; vi < vertexOffset + spriteCount * 4; vi++)
 	{
@@ -1084,7 +1101,7 @@ void RendererImplemented::AddVertex<Effekseer::RendererMaterialType::Default, fa
 template <>
 void RendererImplemented::AddVertex<Effekseer::RendererMaterialType::Default, true>(FDynamicMeshBuilder& meshBuilder, int32_t spriteCount, int32_t vertexOffset)
 {
-	AdvancedVertex* vs = (AdvancedVertex*)m_vertexBuffer->GetResource();
+	AdvancedVertex* vs = (AdvancedVertex*)static_cast<Backend::VertexBuffer*>(current_vertex_buffer_.Get())->GetResource();
 
 	for (int32_t vi = vertexOffset; vi < vertexOffset + spriteCount * 4; vi++)
 	{
@@ -1109,7 +1126,7 @@ void RendererImplemented::AddVertex<Effekseer::RendererMaterialType::Default, tr
 template <>
 void RendererImplemented::AddVertex<Effekseer::RendererMaterialType::BackDistortion, false>(FDynamicMeshBuilder& meshBuilder, int32_t spriteCount, int32_t vertexOffset)
 {
-	VertexDistortion* vs = (VertexDistortion*)m_vertexBuffer->GetResource();
+	VertexDistortion* vs = (VertexDistortion*)static_cast<Backend::VertexBuffer*>(current_vertex_buffer_.Get())->GetResource();
 
 	for (int32_t vi = vertexOffset; vi < vertexOffset + spriteCount * 4; vi++)
 	{
@@ -1142,7 +1159,7 @@ void RendererImplemented::AddVertex<Effekseer::RendererMaterialType::BackDistort
 template <>
 void RendererImplemented::AddVertex<Effekseer::RendererMaterialType::BackDistortion, true>(FDynamicMeshBuilder& meshBuilder, int32_t spriteCount, int32_t vertexOffset)
 {
-	AdvancedVertexDistortion* vs = (AdvancedVertexDistortion*)m_vertexBuffer->GetResource();
+	AdvancedVertexDistortion* vs = (AdvancedVertexDistortion*)static_cast<Backend::VertexBuffer*>(current_vertex_buffer_.Get())->GetResource();
 
 	for (int32_t vi = vertexOffset; vi < vertexOffset + spriteCount * 4; vi++)
 	{
@@ -1175,7 +1192,7 @@ void RendererImplemented::AddVertex<Effekseer::RendererMaterialType::BackDistort
 template <>
 void RendererImplemented::AddVertex<Effekseer::RendererMaterialType::Lighting, false>(FDynamicMeshBuilder& meshBuilder, int32_t spriteCount, int32_t vertexOffset)
 {
-	VertexLighting* vs = (VertexLighting*)m_vertexBuffer->GetResource();
+	VertexLighting* vs = (VertexLighting*)static_cast<Backend::VertexBuffer*>(current_vertex_buffer_.Get())->GetResource();
 
 	for (int32_t vi = vertexOffset; vi < vertexOffset + spriteCount * 4; vi++)
 	{
@@ -1211,7 +1228,7 @@ void RendererImplemented::AddVertex<Effekseer::RendererMaterialType::Lighting, f
 template <>
 void RendererImplemented::AddVertex<Effekseer::RendererMaterialType::Lighting, true>(FDynamicMeshBuilder& meshBuilder, int32_t spriteCount, int32_t vertexOffset)
 {
-	AdvancedVertexLighting* vs = (AdvancedVertexLighting*)m_vertexBuffer->GetResource();
+	AdvancedVertexLighting* vs = (AdvancedVertexLighting*)static_cast<Backend::VertexBuffer*>(current_vertex_buffer_.Get())->GetResource();
 
 	for (int32_t vi = vertexOffset; vi < vertexOffset + spriteCount * 4; vi++)
 	{
@@ -1488,37 +1505,6 @@ UMaterialInterface* RendererImplemented::FindMaterial(EffekseerRenderingUserData
 	}
 
 	return mat;
-}
-
-Shader* RendererImplemented::GetShader(::EffekseerRenderer::RendererShaderType shaderType) const
-{
-	if (shaderType == ::EffekseerRenderer::RendererShaderType::AdvancedBackDistortion)
-	{
-		return backDistortedShaderAd_.get();
-	}
-	else if (shaderType == ::EffekseerRenderer::RendererShaderType::AdvancedLit)
-	{
-		return lightingShaderAd_.get();
-	}
-	else if (shaderType == ::EffekseerRenderer::RendererShaderType::AdvancedUnlit)
-	{
-		return stanShaderAd_.get();
-	}
-	else if (shaderType == ::EffekseerRenderer::RendererShaderType::BackDistortion)
-	{
-		return backDistortedShader_.get();
-	}
-	else if (shaderType == ::EffekseerRenderer::RendererShaderType::Lit)
-	{
-		return lightingShader_.get();
-	}
-	else if (shaderType == ::EffekseerRenderer::RendererShaderType::Unlit)
-	{
-		return stanShader_.get();
-	}
-
-	// return as default shader
-	return stanShader_.get();
 }
 
 void RendererImplemented::BeginShader(Shader* shader)

@@ -9,7 +9,7 @@
 #include "EffekseerRenderingUserData.h"
 #include <Effekseer.h>
 #include <Effekseer/Effekseer/Material/Effekseer.MaterialFile.h>
-#include <Effekseer/Effekseer/Model/ProceduralModelGenerator.h>
+#include <Effekseer/Effekseer/Model/Effekseer.ProceduralModelGenerator.h>
 #include <functional>
 #include <string>
 #include <vector>

@@ -9,8 +9,9 @@
 #include "Effekseer.Matrix43.h"
 #include "Effekseer.Matrix44.h"
 #include "Effekseer.WorkerThread.h"
-#include "Geometry/GeometryUtility.h"
+#include "Geometry/Effekseer.GeometryUtility.h"
 #include "Utils/Effekseer.CustomAllocator.h"
+#include "Utils/Effekseer.InstancePool.h"
 
 namespace Effekseer
 {
@@ -22,7 +23,7 @@ class ManagerImplemented : public Manager, public ReferenceObject
 	friend class InstanceContainer;
 	friend class InstanceGroup;
 
-private:
+public:
 	class alignas(32) DrawSet
 	{
 	public:
@@ -126,17 +127,16 @@ private:
 	// 確保済みインスタンス数
 	int m_instance_max;
 
-	// buffers which is allocated while initializing
-	// 初期化中に確保されたバッファ
-	CustomAlignedVector<InstanceChunk> reservedChunksBuffer_;
-	CustomAlignedVector<uint8_t> reservedGroupBuffer_;
-	CustomAlignedVector<uint8_t> reservedContainerBuffer_;
+	int m_nextComputeCount;
 
-	// pooled instances. Thease are not used and waiting to be used.
-	// プールされたインスタンス。使用されておらず、使用されてるのを待っている。
-	std::queue<InstanceChunk*> pooledChunks_;
-	std::queue<InstanceGroup*> pooledGroups_;
-	std::queue<InstanceContainer*> pooledContainers_;
+	/**
+		@note
+		An user can specify only the maximum number of instance.
+		But the number of instance container is larger than one of instance.
+	*/
+	InstancePool<InstanceChunk> pooledInstanceChunks_;
+	InstancePool<InstanceGroup> pooledInstanceGroup_;
+	InstancePool<InstanceContainer> pooledInstanceContainers_;
 
 	// instance chunks by generations
 	// 世代ごとのインスタンスチャンク
@@ -166,6 +166,7 @@ private:
 	SettingRef m_setting;
 
 	int m_updateTime;
+	int m_computeTime;
 	int m_drawTime;
 
 	uint32_t m_sequenceNumber;
@@ -179,6 +180,10 @@ private:
 	ModelRendererRef m_modelRenderer;
 
 	TrackRendererRef m_trackRenderer;
+
+	GpuParticleSystemRef m_gpuParticleSystem;
+
+	GpuTimerRef m_gpuTimer;
 
 	SoundPlayerRef m_soundPlayer;
 
@@ -254,6 +259,18 @@ public:
 
 	void SetTrackRenderer(TrackRendererRef renderer) override;
 
+	GpuTimerRef GetGpuTimer() override;
+
+	void SetGpuTimer(GpuTimerRef gpuTimer) override;
+
+	GpuParticleSystemRef GetGpuParticleSystem() override;
+
+	void SetGpuParticleSystem(GpuParticleSystemRef system) override;
+
+	GpuParticleFactoryRef GetGpuParticleFactory() override;
+
+	void SetGpuParticleFactory(GpuParticleFactoryRef factory) override;
+
 	const SettingRef& GetSetting() const override;
 
 	void SetSetting(const SettingRef& setting) override;
@@ -295,6 +312,8 @@ public:
 	void StopRoot(const EffectRef& effect) override;
 
 	bool Exists(Handle handle) override;
+
+	EffectRef GetEffect(Handle handle) override;
 
 	int32_t GetInstanceCount(Handle handle) override;
 
@@ -408,6 +427,8 @@ private:
 	void ResetAndPlayWithDataSet(DrawSet& drawSet, float frame);
 
 public:
+	void Compute() override;
+
 	void Draw(const Manager::DrawParameter& drawParameter) override;
 
 	void DrawBack(const Manager::DrawParameter& drawParameter) override;
@@ -432,11 +453,20 @@ public:
 
 	int GetDrawTime() const override;
 
+	int32_t GetGpuTime() const override;
+
+	int32_t GetGpuTime(Handle handle) const override;
+
 	int32_t GetRestInstancesCount() const override;
 
 	void BeginReloadEffect(const EffectRef& effect, bool doLockThread);
 
 	void EndReloadEffect(const EffectRef& effect, bool doLockThread);
+
+	const CustomAlignedMap<Handle, DrawSet>& GetPlayingDrawSets() const
+	{
+		return m_DrawSets;
+	}
 
 	virtual int GetRef() override
 	{

@@ -5,7 +5,7 @@
 //----------------------------------------------------------------------------------
 // Include
 //----------------------------------------------------------------------------------
-#include "Effekseer.Base.h"
+#include "Effekseer.Base.Pre.h"
 #include "Effekseer.File.h"
 
 //----------------------------------------------------------------------------------
@@ -603,12 +603,19 @@ public:
 	*/
 	virtual EffectTerm CalculateTerm() const = 0;
 
+	/**
+	@brief
+	\~English	Get values of default dynamic inputs.
+	\~Japanese	動的パラメーターのデフォルトの値を取得する。
+	*/
+	virtual std::array<float, 4> GetDefaultDynamicInputs() const = 0;
+
 	virtual EffectImplemented* GetImplemented() = 0;
 	virtual const EffectImplemented* GetImplemented() const = 0;
 };
 
 /**
-	@brief	
+	@brief
 	\~English	Node rendering parameters
 	\~Japanese	ノードの描画パラメーター
 	@note

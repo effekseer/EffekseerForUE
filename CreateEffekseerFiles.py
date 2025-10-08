@@ -14,13 +14,13 @@ copy_tree("../Effekseer/Dev/Cpp/EffekseerMaterial", "./Plugins/Effekseer/Source/
 os.remove("./Plugins/Effekseer/Source/Effekseer/Private/Effekseer/CMakeLists.txt")
 
 os.remove("./Plugins/Effekseer/Source/Effekseer/Private/EffekseerRendererCommon/CMakeLists.txt")
-os.remove("./Plugins/Effekseer/Source/Effekseer/Private/EffekseerRendererCommon/EffekseerRenderer.DDSTextureLoader.cpp")
-os.remove("./Plugins/Effekseer/Source/Effekseer/Private/EffekseerRendererCommon/EffekseerRenderer.DDSTextureLoader.h")
-os.remove("./Plugins/Effekseer/Source/Effekseer/Private/EffekseerRendererCommon/EffekseerRenderer.TGATextureLoader.cpp")
-os.remove("./Plugins/Effekseer/Source/Effekseer/Private/EffekseerRendererCommon/EffekseerRenderer.TGATextureLoader.h")
-os.remove("./Plugins/Effekseer/Source/Effekseer/Private/EffekseerRendererCommon/EffekseerRenderer.PngTextureLoader.cpp")
-os.remove("./Plugins/Effekseer/Source/Effekseer/Private/EffekseerRendererCommon/EffekseerRenderer.PngTextureLoader.h")
+os.remove("./Plugins/Effekseer/Source/Effekseer/Private/EffekseerRendererCommon/EffekseerRendererCommon/EffekseerRenderer.DDSTextureLoader.cpp")
+os.remove("./Plugins/Effekseer/Source/Effekseer/Private/EffekseerRendererCommon/EffekseerRendererCommon/EffekseerRenderer.DDSTextureLoader.h")
+os.remove("./Plugins/Effekseer/Source/Effekseer/Private/EffekseerRendererCommon/EffekseerRendererCommon/EffekseerRenderer.TGATextureLoader.cpp")
+os.remove("./Plugins/Effekseer/Source/Effekseer/Private/EffekseerRendererCommon/EffekseerRendererCommon/EffekseerRenderer.TGATextureLoader.h")
+os.remove("./Plugins/Effekseer/Source/Effekseer/Private/EffekseerRendererCommon/EffekseerRendererCommon/EffekseerRenderer.PngTextureLoader.cpp")
+os.remove("./Plugins/Effekseer/Source/Effekseer/Private/EffekseerRendererCommon/EffekseerRendererCommon/EffekseerRenderer.PngTextureLoader.h")
 
-createEmptyFile("./Plugins/Effekseer/Source/Effekseer/Private/EffekseerRendererCommon/TextureLoader.h")
-createEmptyFile("./Plugins/Effekseer/Source/Effekseer/Private/EffekseerRendererCommon/TextureLoader.cpp")
+createEmptyFile("./Plugins/Effekseer/Source/Effekseer/Private/EffekseerRendererCommon/EffekseerRendererCommon/TextureLoader.h")
+createEmptyFile("./Plugins/Effekseer/Source/Effekseer/Private/EffekseerRendererCommon/EffekseerRendererCommon/TextureLoader.cpp")
 

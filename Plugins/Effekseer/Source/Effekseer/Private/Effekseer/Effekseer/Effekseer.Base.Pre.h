@@ -33,7 +33,7 @@
 //----------------------------------------------------------------------------------
 
 #ifdef _WIN32
-//#include <windows.h>
+// #include <windows.h>
 #elif defined(_PSVITA)
 #elif defined(_PS4)
 #elif defined(_SWITCH)
@@ -73,6 +73,8 @@ class RibbonRenderer;
 class RingRenderer;
 class ModelRenderer;
 class TrackRenderer;
+class GpuTimer;
+class GpuParticleSystem;
 
 class EffectLoader;
 class TextureLoader;
@@ -80,6 +82,8 @@ class MaterialLoader;
 class SoundLoader;
 class ModelLoader;
 class CurveLoader;
+class VectorFieldLoader;
+class GpuParticleFactory;
 
 class Texture;
 class SoundData;
@@ -127,7 +131,7 @@ using ThreadNativeHandleType = std::thread::native_handle_type;
 	static_assert(std::is_class<decltype(val)>::value != true, "val must not be class/struct"); \
 	if ((val) != nullptr)                                                                       \
 	{                                                                                           \
-		delete[](val);                                                                          \
+		delete[] (val);                                                                         \
 		(val) = nullptr;                                                                        \
 	}
 
@@ -188,6 +192,7 @@ enum class TextureWrapType : int32_t
 {
 	Repeat = 0,
 	Clamp = 1,
+	Mirror = 2,
 };
 
 enum class CullingType : int32_t
@@ -206,6 +211,7 @@ enum class BillboardType : int32_t
 	YAxisFixed = 1,
 	Fixed = 2,
 	RotatedBillboard = 3,
+	DirectionalBillboard = 4,
 };
 
 enum class CoordinateSystem : int32_t
@@ -331,11 +337,11 @@ T Clamp(T t, U max_, V min_)
 }
 
 /**
-    @brief    Convert UTF16 into UTF8
-    @param    dst    a pointer to destination buffer
-    @param    dst_size    a length of destination buffer
-    @param    src            a source buffer
-    @return    length except 0
+	@brief    Convert UTF16 into UTF8
+	@param    dst    a pointer to destination buffer
+	@param    dst_size    a length of destination buffer
+	@param    src            a source buffer
+	@return    length except 0
 */
 inline int32_t ConvertUtf16ToUtf8(char* dst, int32_t dst_size, const char16_t* src)
 {
@@ -379,11 +385,11 @@ inline int32_t ConvertUtf16ToUtf8(char* dst, int32_t dst_size, const char16_t* s
 }
 
 /**
-    @brief    Convert UTF8 into UTF16
-    @param    dst    a pointer to destination buffer
-    @param    dst_size    a length of destination buffer
-    @param    src            a source buffer
-    @return    length except 0
+	@brief    Convert UTF8 into UTF16
+	@param    dst    a pointer to destination buffer
+	@param    dst_size    a length of destination buffer
+	@param    src            a source buffer
+	@return    length except 0
 */
 inline int32_t ConvertUtf8ToUtf16(char16_t* dst, int32_t dst_size, const char* src)
 {
@@ -692,6 +698,11 @@ public:
 		SafeAddRef(ptr);
 		return RefPtr<T>(ptr);
 	}
+
+	explicit operator bool() const
+	{
+		return ptr_ != nullptr;
+	};
 };
 
 template <class T, class U>
@@ -728,6 +739,9 @@ RefPtr<T> MakeRefPtr(Arg&&... args)
 	return RefPtr<T>(new T(args...));
 }
 
+class VectorField;
+class VectorFieldLoader;
+
 using SettingRef = RefPtr<Setting>;
 using ManagerRef = RefPtr<Manager>;
 using EffectRef = RefPtr<Effect>;
@@ -736,12 +750,15 @@ using SoundDataRef = RefPtr<SoundData>;
 using ModelRef = RefPtr<Model>;
 using MaterialRef = RefPtr<Material>;
 using CurveRef = RefPtr<Curve>;
+using VectorFieldRef = RefPtr<VectorField>;
 
 using SpriteRendererRef = RefPtr<SpriteRenderer>;
 using RibbonRendererRef = RefPtr<RibbonRenderer>;
 using RingRendererRef = RefPtr<RingRenderer>;
 using ModelRendererRef = RefPtr<ModelRenderer>;
 using TrackRendererRef = RefPtr<TrackRenderer>;
+using GpuTimerRef = RefPtr<GpuTimer>;
+using GpuParticleSystemRef = RefPtr<GpuParticleSystem>;
 using SoundPlayerRef = RefPtr<SoundPlayer>;
 
 using EffectLoaderRef = RefPtr<EffectLoader>;
@@ -750,7 +767,9 @@ using MaterialLoaderRef = RefPtr<MaterialLoader>;
 using SoundLoaderRef = RefPtr<SoundLoader>;
 using ModelLoaderRef = RefPtr<ModelLoader>;
 using CurveLoaderRef = RefPtr<CurveLoader>;
+using VectorFieldLoaderRef = RefPtr<VectorFieldLoader>;
 using ProceduralModelGeneratorRef = RefPtr<ProceduralModelGenerator>;
+using GpuParticleFactoryRef = RefPtr<GpuParticleFactory>;
 
 /**
 	@brief	This object generates random values.

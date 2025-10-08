@@ -22,13 +22,14 @@
 #include "Effekseer.EffectNodeRing.h"
 #include "Effekseer.EffectNodeSprite.h"
 #include "Effekseer.EffectNodeTrack.h"
-#include "ForceField/ForceFields.h"
+#include "ForceField/Effekseer.ForceFields.h"
 
-#include "Parameter/AlphaCutoff.h"
-#include "Parameter/CustomData.h"
-#include "Parameter/Rotation.h"
-#include "Parameter/Scaling.h"
-#include "Parameter/UV.h"
+#include "Parameter/Effekseer.AlphaCutoff.h"
+#include "Parameter/Effekseer.Collisions.h"
+#include "Parameter/Effekseer.CustomData.h"
+#include "Parameter/Effekseer.Rotation.h"
+#include "Parameter/Effekseer.Scaling.h"
+#include "Parameter/Effekseer.UV.h"
 
 namespace Effekseer
 {
@@ -71,8 +72,16 @@ protected:
 	SIMD::Vec3f prevPosition_;
 	SIMD::Vec3f prevGlobalPosition_;
 
+	SIMD::Vec3f prevLocalVelocity_;
+
 	SIMD::Vec3f parentPosition_;
-	SIMD::Vec3f steeringVec_;
+
+	SIMD::Vec3f steering_vec_;
+
+	SIMD::Vec3f location_modify_global_;
+	SIMD::Vec3f velocity_modify_global_;
+
+	SIMD::Vec3f globalDirection_;
 
 public:
 	static const int32_t ChildrenMax = 16;
@@ -110,7 +119,7 @@ public:
 		float steeringSpeed;
 	} followParentParam;
 
-	InstanceTranslationState translation_values;
+	InstanceTranslationState translation_state_;
 
 	RotationState rotation_values;
 
@@ -171,6 +180,10 @@ public:
 	AlphaCuttoffState alpha_cutoff_values;
 
 	float m_AlphaThreshold = 0.0f;
+
+	CollisionsState collisionState_;
+
+	int32_t m_gpuEmitterID = -1;
 
 	Instance(ManagerImplemented* pManager, EffectNodeImplemented* pEffectNode, InstanceContainer* pContainer, InstanceGroup* pGroup);
 
@@ -236,6 +249,8 @@ public:
 	bool AreChildrenActive() const;
 
 	float GetFlipbookIndexAndNextRate() const;
+
+	SIMD::Vec3f GetGlobalDirection() const;
 
 private:
 	void UpdateTransform(float deltaFrame);

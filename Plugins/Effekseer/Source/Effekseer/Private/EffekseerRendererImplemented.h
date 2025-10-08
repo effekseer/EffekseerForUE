@@ -1,20 +1,20 @@
 
 #pragma once
 
+#include "Backend/EffekseerRendererUE.GraphicsDevice.h"
 #include "CoreMinimal.h"
 #include "EffekseerRenderingUserData.h"
 #include <EffekseerEffect.h>
-#include <EffekseerRenderer.ModelRendererBase.h>
-#include <EffekseerRenderer.Renderer.h>
-#include <EffekseerRenderer.ShaderBase.h>
-#include <EffekseerRenderer.StandardRenderer.h>
+#include <EffekseerRendererCommon/EffekseerRenderer.ModelRendererBase.h>
+#include <EffekseerRendererCommon/EffekseerRenderer.Renderer.h>
+#include <EffekseerRendererCommon/EffekseerRenderer.ShaderBase.h>
+#include <EffekseerRendererCommon/EffekseerRenderer.StandardRenderer.h>
 #include <map>
 #include <memory>
 
 #if ENGINE_MAJOR_VERSION == 5 && ENGINE_MINOR_VERSION >= 4
 #include "DynamicMeshBuilder.h"
 #endif
-
 
 namespace EffekseerRendererUE
 {
@@ -66,15 +66,13 @@ protected:
 	::Effekseer::Color m_lightAmbient;
 	int32_t m_squareMaxCount;
 
-	VertexBuffer* m_vertexBuffer = nullptr;
+	Effekseer::RefPtr<Backend::GraphicsDevice> graphics_device_;
 
-	std::unique_ptr<Shader> stanShader_;
-	std::unique_ptr<Shader> backDistortedShader_;
-	std::unique_ptr<Shader> lightingShader_;
+	Effekseer::Backend::VertexBufferRef current_vertex_buffer_;
 
-	std::unique_ptr<Shader> stanShaderAd_;
-	std::unique_ptr<Shader> backDistortedShaderAd_;
-	std::unique_ptr<Shader> lightingShaderAd_;
+	Effekseer::Backend::IndexBufferRef current_index_buffer_;
+	Effekseer::Backend::IndexBufferRef index_buffer_;
+	Effekseer::Backend::IndexBufferRef index_buffer_for_wireframe_;
 
 	Shader* m_currentShader = nullptr;
 	RenderState* m_renderState = nullptr;
@@ -238,16 +236,14 @@ public:
 	{
 	}
 
-	VertexBuffer* GetVertexBuffer();
-
-	IndexBuffer* GetIndexBuffer();
+	Effekseer::Backend::IndexBufferRef GetIndexBuffer();
 
 	EffekseerRenderer::StandardRenderer<RendererImplemented, Shader>* GetStandardRenderer();
 
 	::EffekseerRenderer::RenderStateBase* GetRenderState();
 
-	void SetVertexBuffer(VertexBuffer* vertexBuffer, int32_t size);
-	void SetIndexBuffer(IndexBuffer* indexBuffer);
+	void SetVertexBuffer(const Effekseer::Backend::VertexBufferRef& vertexBuffer, int32_t size);
+	void SetIndexBuffer(const Effekseer::Backend::IndexBufferRef& indexBuffer);
 
 	void SetLayout(Shader* shader);
 	void DrawSprites(int32_t spriteCount, int32_t vertexOffset);
@@ -284,8 +280,6 @@ public:
 				   std::vector<std::array<float, 4>>& customData2);
 
 	UMaterialInterface* FindMaterial(EffekseerRenderingUserData* userData, Shader* shader);
-
-	Shader* GetShader(::EffekseerRenderer::RendererShaderType shaderType) const;
 
 	void BeginShader(Shader* shader);
 	void EndShader(Shader* shader);

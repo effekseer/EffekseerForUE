@@ -4,7 +4,7 @@
 
 #include "../Effekseer.Base.Pre.h"
 #include "../Parameter/Effekseer.Parameters.h"
-#include "../Utils/BinaryVersion.h"
+#include "../Utils/Effekseer.BinaryVersion.h"
 #include <array>
 #include <assert.h>
 #include <map>
@@ -66,7 +66,7 @@ private:
 
 	std::vector<Uniform> uniforms_;
 
-	static const int32_t LatestSupportVersion = MaterialVersion17;
+	static const int32_t LatestSupportVersion = MaterialVersion18;
 	static const int32_t OldestSupportVersion = 0;
 
 public:

@@ -11,8 +11,8 @@ Shader::Shader(UEffekseerMaterial* material, bool isModel, bool isRefraction)
 	, parameterGenerator_(*material->GetNativePtr(), isModel, isRefraction ? 1 : 0, 1)
 	, type_(Effekseer::RendererMaterialType::File)
 {
-	vertexConstantBuffer.resize(parameterGenerator_.VertexShaderUniformBufferSize);
-	pixelConstantBuffer.resize(parameterGenerator_.PixelShaderUniformBufferSize);
+	vertex_constant_buffer_.resize(parameterGenerator_.VertexShaderUniformBufferSize);
+	pixel_constant_buffer_.resize(parameterGenerator_.PixelShaderUniformBufferSize);
 
 	for (const auto method : effekseerMaterial_->GetNativePtr()->RequiredMethods)
 	{
@@ -23,19 +23,15 @@ Shader::Shader(UEffekseerMaterial* material, bool isModel, bool isRefraction)
 Shader::Shader(Effekseer::RendererMaterialType type, bool isAdvancedMaterial)
 	: parameterGenerator_(::Effekseer::MaterialFile(), false, 0, 1)
 	, type_(type)
-	, isAdvancedMaterial_(isAdvancedMaterial)
+	, is_advanced_material_(isAdvancedMaterial)
 {
 	auto vertexConstantBufferSize = sizeof(EffekseerRenderer::ModelRendererAdvancedVertexConstantBuffer<1>);
 	vertexConstantBufferSize = std::max(vertexConstantBufferSize, sizeof(EffekseerRenderer::ModelRendererVertexConstantBuffer<1>));
 	vertexConstantBufferSize = std::max(vertexConstantBufferSize, sizeof(EffekseerRenderer::StandardRendererVertexBuffer));
 
-	vertexConstantBuffer.resize(vertexConstantBufferSize);
+	vertex_constant_buffer_.resize(vertexConstantBufferSize);
 
-	pixelConstantBuffer.resize(std::max(sizeof(EffekseerRenderer::PixelConstantBuffer), sizeof(EffekseerRenderer::PixelConstantBufferDistortion)));
-}
-
-Shader::~Shader()
-{
+	pixel_constant_buffer_.resize(std::max(sizeof(EffekseerRenderer::PixelConstantBuffer), sizeof(EffekseerRenderer::PixelConstantBufferDistortion)));
 }
 
 Effekseer::RendererMaterialType Shader::GetType() const
@@ -45,7 +41,7 @@ Effekseer::RendererMaterialType Shader::GetType() const
 
 bool Shader::IsAdvancedMaterial() const
 {
-	return isAdvancedMaterial_;
+	return is_advanced_material_;
 }
 
 UEffekseerMaterial* Shader::GetEffekseerMaterial() const

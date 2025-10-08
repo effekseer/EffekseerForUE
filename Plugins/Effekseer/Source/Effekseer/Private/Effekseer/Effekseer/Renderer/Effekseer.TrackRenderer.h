@@ -5,9 +5,10 @@
 //----------------------------------------------------------------------------------
 // Include
 //----------------------------------------------------------------------------------
-#include "../Effekseer.Base.h"
+#include "../Effekseer.Base.Pre.h"
 #include "../Effekseer.Color.h"
 #include "../Effekseer.Matrix43.h"
+#include "../Effekseer.RectF.h"
 #include "../Effekseer.Vector2D.h"
 #include "../Effekseer.Vector3D.h"
 #include "../SIMD/Mat43f.h"
@@ -35,6 +36,7 @@ public:
 		int32_t SplineDivision;
 
 		bool IsRightHand;
+		float GlobalScale = 1.0f;
 		float Maginification = 1.0f;
 
 		NodeRendererDepthParameter* DepthParameterPtr = nullptr;

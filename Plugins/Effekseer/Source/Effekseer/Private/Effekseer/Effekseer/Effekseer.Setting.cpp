@@ -3,25 +3,24 @@
 //
 //----------------------------------------------------------------------------------
 #include "Effekseer.Setting.h"
-#include "Effekseer.EffectLoader.h"
-#include "Effekseer.RectF.h"
-
 #include "Effekseer.CurveLoader.h"
+#include "Effekseer.Effect.h"
+#include "Effekseer.EffectLoader.h"
 #include "Effekseer.MaterialLoader.h"
+#include "Effekseer.RectF.h"
+#include "Effekseer.ResourceManager.h"
 #include "Effekseer.SoundLoader.h"
 #include "Effekseer.TextureLoader.h"
-#include "Model/ModelLoader.h"
-#include "Model/ProceduralModelGenerator.h"
-
+#include "IO/Effekseer.EfkEfcFactory.h"
+#include "Model/Effekseer.ModelLoader.h"
+#include "Model/Effekseer.ProceduralModelGenerator.h"
+#include "Renderer/Effekseer.GpuParticles.h"
 #include "Renderer/Effekseer.ModelRenderer.h"
 #include "Renderer/Effekseer.RibbonRenderer.h"
 #include "Renderer/Effekseer.RingRenderer.h"
 #include "Renderer/Effekseer.SpriteRenderer.h"
 #include "Renderer/Effekseer.TrackRenderer.h"
-
-#include "Effekseer.Effect.h"
-#include "Effekseer.ResourceManager.h"
-#include "IO/Effekseer.EfkEfcFactory.h"
+#include "VectorField/Effekseer.VectorFieldLoader.h"
 
 //----------------------------------------------------------------------------------
 //
@@ -158,36 +157,44 @@ void Setting::SetMaterialLoader(MaterialLoaderRef loader)
 	resourceManager_->SetMaterialLoader(loader);
 }
 
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
 CurveLoaderRef Setting::GetCurveLoader() const
 {
 	return resourceManager_->GetCurveLoader();
 }
 
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
 void Setting::SetCurveLoader(CurveLoaderRef loader)
 {
 	resourceManager_->SetCurveLoader(loader);
 }
 
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
+VectorFieldLoaderRef Setting::GetVectorFieldLoader() const
+{
+	return resourceManager_->GetVectorFieldLoader();
+}
+
+void Setting::SetVectorFieldLoader(VectorFieldLoaderRef loader)
+{
+	resourceManager_->SetVectorFieldLoader(loader);
+}
+
 ProceduralModelGeneratorRef Setting::GetProceduralMeshGenerator() const
 {
 	return resourceManager_->GetProceduralMeshGenerator();
 }
 
-//----------------------------------------------------------------------------------
-//
-//----------------------------------------------------------------------------------
 void Setting::SetProceduralMeshGenerator(ProceduralModelGeneratorRef generator)
 {
 	resourceManager_->SetProceduralMeshGenerator(generator);
+}
+
+GpuParticleFactoryRef Setting::GetGpuParticleFactory() const
+{
+	return gpuParticleFactory_;
+}
+
+void Setting::SetGpuParticleFactory(GpuParticleFactoryRef gpuParticleFactory)
+{
+	gpuParticleFactory_ = gpuParticleFactory;
 }
 
 //----------------------------------------------------------------------------------

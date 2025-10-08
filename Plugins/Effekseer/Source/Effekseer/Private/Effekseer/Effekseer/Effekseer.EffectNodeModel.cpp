@@ -144,7 +144,12 @@ void EffectNodeModel::Rendering(const Instance& instance, const Instance* next_i
 
 		if (nodeParam_.EnableViewOffset)
 		{
-			instanceParameter.ViewOffsetDistance = instance.translation_values.view_offset.distance;
+			instanceParameter.ViewOffsetDistance = instance.translation_state_.view_offset.distance;
+		}
+
+		if (nodeParam_.Billboard == BillboardType::DirectionalBillboard)
+		{
+			instanceParameter.Direction = instance.GetGlobalDirection();
 		}
 
 		CalcCustomData(&instance, instanceParameter.CustomData1, instanceParameter.CustomData2);

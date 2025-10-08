@@ -5,9 +5,10 @@
 //----------------------------------------------------------------------------------
 // Include
 //----------------------------------------------------------------------------------
-#include "../Effekseer.Base.h"
+#include "../Effekseer.Base.Pre.h"
 #include "../Effekseer.Color.h"
 #include "../Effekseer.Matrix43.h"
+#include "../Effekseer.RectF.h"
 #include "../Effekseer.Vector2D.h"
 #include "../Effekseer.Vector3D.h"
 #include "../Parameter/Effekseer.Parameters.h"
@@ -78,6 +79,8 @@ public:
 
 		Color AllColor;
 		int32_t Time;
+		SIMD::Vec3f Direction;
+
 		std::array<float, 4> CustomData1;
 		std::array<float, 4> CustomData2;
 	};

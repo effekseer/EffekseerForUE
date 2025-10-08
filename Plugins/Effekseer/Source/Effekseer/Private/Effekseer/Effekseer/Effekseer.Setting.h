@@ -5,7 +5,7 @@
 //----------------------------------------------------------------------------------
 // Include
 //----------------------------------------------------------------------------------
-#include "Effekseer.Base.h"
+#include "Effekseer.Base.Pre.h"
 
 //----------------------------------------------------------------------------------
 //
@@ -34,6 +34,7 @@ private:
 
 	std::vector<RefPtr<EffectFactory>> effectFactories_;
 	RefPtr<ResourceManager> resourceManager_;
+	GpuParticleFactoryRef gpuParticleFactory_;
 
 protected:
 	Setting();
@@ -175,6 +176,26 @@ public:
 
 	/**
 		@brief
+		\~English get a vector field loader
+		\~Japanese ベクトル場ローダーを取得する。
+		@return
+		\~English	loader
+		\~Japanese ローダー
+*/
+	VectorFieldLoaderRef GetVectorFieldLoader() const;
+
+	/**
+		@brief
+		\~English specfiy a vector field loader
+		\~Japanese ベクトル場ローダーを設定する。
+		@param	loader
+		\~English	loader
+		\~Japanese ローダー
+	*/
+	void SetVectorFieldLoader(VectorFieldLoaderRef loader);
+
+	/**
+		@brief
 		\~English get a mesh generator
 		\~Japanese メッシュジェネレーターを取得する。
 		@return
@@ -192,6 +213,26 @@ public:
 		\~Japanese ジェネレータ
 	*/
 	void SetProceduralMeshGenerator(ProceduralModelGeneratorRef generator);
+	
+	/**
+		@brief
+		\~English get a gpu particle system
+		\~Japanese GPUパーティクルファクトリを取得する。
+		@return
+		\~English	gpu particle system
+		\~Japanese GPUパーティクルファクトリ
+	*/
+	GpuParticleFactoryRef GetGpuParticleFactory() const;
+
+	/**
+		@brief
+		\~English specfiy a gpu particle system
+		\~Japanese GPUパーティクルファクトリを設定する。
+		@param	gpu particle system
+		\~English	gpu particle system
+		\~Japanese GPUパーティクルファクトリ
+	*/
+	void SetGpuParticleFactory(GpuParticleFactoryRef gpuParticleFactory);
 
 	/**
 		@brief

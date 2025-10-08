@@ -26,6 +26,7 @@ struct alignas(16) Int4
 	Int4(const Int4& rhs) = default;
 	Int4(int32x4_t rhs) { s = rhs; }
 	Int4(int32_t x, int32_t y, int32_t z, int32_t w) { const int32_t v[4] = {x, y, z, w}; s = vld1q_s32(v); }
+	Int4(const std::array<int32_t, 4>& v) { *this = Load4(&v); }
 	Int4(int32_t i) { s = vdupq_n_s32(i); }
 	
 	int32_t GetX() const { return vgetq_lane_s32(s, 0); }
@@ -289,7 +290,7 @@ inline Int4 Int4::Mask()
 	static_assert(Z >= 2, "indexZ is must be set 0 or 1.");
 	static_assert(W >= 2, "indexW is must be set 0 or 1.");
 	const uint32_t in[4] = {0xffffffff * X, 0xffffffff * Y, 0xffffffff * Z, 0xffffffff * W};
-	return vld1q_u32(in);
+	return vreinterpretq_s32_u32(vld1q_u32(in));
 }
 
 inline uint32_t Int4::MoveMask(const Int4& in)

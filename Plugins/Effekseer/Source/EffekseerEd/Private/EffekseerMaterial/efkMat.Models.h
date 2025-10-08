@@ -9,13 +9,6 @@
 namespace EffekseerMaterial
 {
 
-enum class LanguageType
-{
-	Japanese,
-	English,
-	Max,
-};
-
 class CommandManager;
 
 class UserObject
@@ -148,7 +141,7 @@ public:
 	bool IsPreviewOpened = false;
 
 	//! descriptons for other editors
-	std::vector<std::shared_ptr<NodeDescription>> Descriptions;
+	std::shared_ptr<NodeDescription> Description;
 
 	//! warning
 	WarningType CurrentWarning = WarningType::None;
@@ -224,7 +217,7 @@ public:
 	}
 
 	//! descriptons for other editors
-	std::vector<std::shared_ptr<NodeDescription>> Descriptions;
+	std::shared_ptr<NodeDescription> Description;
 
 	std::array<float, 4> Values;
 };
@@ -240,7 +233,7 @@ enum class ErrorCode
 class Material : public std::enable_shared_from_this<Material>
 {
 private:
-	const int32_t lastestSupportedVersion_ = MaterialVersion17;
+	const int32_t lastestSupportedVersion_ = MaterialVersion18;
 
 	enum class SaveLoadAimType
 	{
@@ -342,8 +335,6 @@ public:
 	ErrorCode Load(std::vector<uint8_t>& data, std::shared_ptr<Library> library, const char* basePath);
 
 	bool Save(std::vector<uint8_t>& data, const char* basePath);
-
-	LanguageType Language = LanguageType::Japanese;
 
 	std::array<CustomDataProperty, 2> CustomData;
 

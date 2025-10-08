@@ -3,7 +3,8 @@
 #include "../Effekseer.Instance.h"
 #include "../Effekseer.InstanceGlobal.h"
 #include "../Effekseer.InternalScript.h"
-#include "DynamicParameter.h"
+#include "../Effekseer.InternalStruct.h"
+#include "Effekseer.DynamicParameter.h"
 #include <algorithm>
 
 namespace Effekseer
@@ -35,7 +36,7 @@ void NodeRendererTextureUVTypeParameter::Load(uint8_t*& pos, int32_t version)
 	if (Type == TextureUVType::Strech)
 	{
 	}
-	else if (Type == TextureUVType::Tile)
+	else if (Type == TextureUVType::TilePerParticle)
 	{
 		memcpy(&TileEdgeHead, pos, sizeof(TileEdgeHead));
 		pos += sizeof(TileEdgeHead);
@@ -48,6 +49,11 @@ void NodeRendererTextureUVTypeParameter::Load(uint8_t*& pos, int32_t version)
 
 		memcpy(&TileLoopAreaEnd, pos, sizeof(TileLoopAreaEnd));
 		pos += sizeof(TileLoopAreaEnd);
+	}
+	else if (Type == TextureUVType::Tile)
+	{
+		memcpy(&TileLength, pos, sizeof(TileLength));
+		pos += sizeof(TileLength);
 	}
 }
 
@@ -242,7 +248,8 @@ std::array<float, 4> Gradient::GetColorAndIntensity(float x) const
 	auto key = ColorKey();
 	key.Position = x;
 
-	auto it = std::lower_bound(Colors.begin(), Colors.begin() + ColorCount, key, [](const ColorKey& a, const ColorKey& b) { return a.Position < b.Position; });
+	auto it = std::lower_bound(Colors.begin(), Colors.begin() + ColorCount, key, [](const ColorKey& a, const ColorKey& b)
+							   { return a.Position < b.Position; });
 	auto ind = static_cast<int32_t>(std::distance(Colors.begin(), it));
 
 	{
@@ -295,7 +302,8 @@ float Gradient::GetAlpha(float x) const
 	auto key = AlphaKey();
 	key.Position = x;
 
-	auto it = std::lower_bound(Alphas.begin(), Alphas.begin() + AlphaCount, key, [](const AlphaKey& a, const AlphaKey& b) { return a.Position < b.Position; });
+	auto it = std::lower_bound(Alphas.begin(), Alphas.begin() + AlphaCount, key, [](const AlphaKey& a, const AlphaKey& b)
+							   { return a.Position < b.Position; });
 	auto ind = static_cast<int32_t>(std::distance(Alphas.begin(), it));
 
 	{

@@ -1,20 +1,15 @@
 ﻿#include "Effekseer.EffectNodeRing.h"
-
 #include "Effekseer.Effect.h"
 #include "Effekseer.EffectNode.h"
-#include "Effekseer.Manager.h"
-#include "Effekseer.Vector3D.h"
-#include "SIMD/Utils.h"
-
 #include "Effekseer.Instance.h"
 #include "Effekseer.InstanceContainer.h"
 #include "Effekseer.InstanceGlobal.h"
-
-#include "Renderer/Effekseer.RingRenderer.h"
-
+#include "Effekseer.Manager.h"
 #include "Effekseer.Setting.h"
-
-#include "Utils/Compatiblity.h"
+#include "Effekseer.Vector3D.h"
+#include "Renderer/Effekseer.RingRenderer.h"
+#include "SIMD/Utils.h"
+#include "Utils/Effekseer.Compatiblity.h"
 
 namespace Effekseer
 {
@@ -312,7 +307,12 @@ void EffectNodeRing::Rendering(const Instance& instance, const Instance* next_in
 
 		if (instance.m_pEffectNode->TranslationParam.TranslationType == ParameterTranslationType_ViewOffset)
 		{
-			instanceParameter.ViewOffsetDistance = instance.translation_values.view_offset.distance;
+			instanceParameter.ViewOffsetDistance = instance.translation_state_.view_offset.distance;
+		}
+
+		if (nodeParameter.Billboard == BillboardType::DirectionalBillboard)
+		{
+			instanceParameter.Direction = instance.GetGlobalDirection();
 		}
 
 		CalcCustomData(&instance, instanceParameter.CustomData1, instanceParameter.CustomData2);

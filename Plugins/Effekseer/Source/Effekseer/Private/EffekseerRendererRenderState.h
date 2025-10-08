@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include <EffekseerRenderer.RenderStateBase.h>
+#include <EffekseerRendererCommon/EffekseerRenderer.RenderStateBase.h>
 
 namespace EffekseerRendererUE
 {

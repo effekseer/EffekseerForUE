@@ -134,6 +134,9 @@ void EffectNodeRibbon::BeginRendering(int32_t count, Manager* manager, const Ins
 		m_nodeParameter.BasicParameterPtr = &RendererCommon.BasicParameter;
 		m_nodeParameter.TextureUVTypeParameterPtr = &TextureUVType;
 		m_nodeParameter.IsRightHand = manager->GetCoordinateSystem() == CoordinateSystem::RH;
+
+		auto scale = global->EffectGlobalMatrix.GetScale();
+		m_nodeParameter.GlobalScale = (scale.GetX() + scale.GetY() + scale.GetZ()) / 3.0f;
 		m_nodeParameter.Maginification = GetEffect()->GetMaginification();
 
 		m_nodeParameter.EnableViewOffset = (TranslationParam.TranslationType == ParameterTranslationType_ViewOffset);
@@ -186,7 +189,7 @@ void EffectNodeRibbon::BeginRenderingGroup(InstanceGroup* group, Manager* manage
 
 			if (m_nodeParameter.EnableViewOffset)
 			{
-				m_instanceParameter.ViewOffsetDistance = groupFirst->translation_values.view_offset.distance;
+				m_instanceParameter.ViewOffsetDistance = groupFirst->translation_state_.view_offset.distance;
 			}
 
 			CalcCustomData(group->GetFirst(), m_instanceParameter.CustomData1, m_instanceParameter.CustomData2);
