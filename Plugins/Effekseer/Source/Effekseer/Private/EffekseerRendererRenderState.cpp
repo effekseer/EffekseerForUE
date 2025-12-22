@@ -13,6 +13,6 @@ RenderState::~RenderState()
 
 void RenderState::Update(bool forced)
 {
-	m_active = m_next;
+	active_ = next_;
 }
 } // namespace EffekseerRendererUE

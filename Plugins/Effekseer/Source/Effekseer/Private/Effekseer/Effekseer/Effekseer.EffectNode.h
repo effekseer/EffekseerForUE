@@ -29,6 +29,7 @@
 #include "Parameter/Effekseer.Sound.h"
 #include "Parameter/Effekseer.SpawnMethod.h"
 #include "Parameter/Effekseer.Translation.h"
+#include "Parameter/Effekseer.Trigger.h"
 #include "Parameter/Effekseer.UV.h"
 #include "Renderer/Effekseer.GpuParticles.h"
 #include "SIMD/Utils.h"
@@ -37,29 +38,10 @@
 namespace Effekseer
 {
 
-enum class TriggerType : uint8_t
-{
-	None = 0,
-	ExternalTrigger = 1,
-};
-
-struct alignas(2) TriggerValues
-{
-	TriggerType type = TriggerType::None;
-	uint8_t index = 0;
-};
-
 struct SteeringBehaviorParameter
 {
 	random_float MaxFollowSpeed;
 	random_float SteeringSpeed;
-};
-
-struct TriggerParameter
-{
-	TriggerValues ToStartGeneration;
-	TriggerValues ToStopGeneration;
-	TriggerValues ToRemove;
 };
 
 struct ParameterRendererCommon
@@ -83,6 +65,8 @@ struct ParameterRendererCommon
 	int32_t TextureBlendType = -1;
 
 	float BlendUVDistortionIntensity = 1.0f;
+
+	int32_t UVHorizontalFlipProbability = 0;
 
 	float EmissiveScaling = 1.0f;
 
@@ -353,6 +337,16 @@ struct ParameterRendererCommon
 			pos += sizeof(float);
 		}
 
+		if (version >= Version18Alpha2)
+		{
+			memcpy(&UVHorizontalFlipProbability, pos, sizeof(int32_t));
+			pos += sizeof(int32_t);
+		}
+		else
+		{
+			UVHorizontalFlipProbability = 0;
+		}
+
 		if (version >= 10)
 		{
 			memcpy(&ColorBindType, pos, sizeof(int32_t));
@@ -473,6 +467,8 @@ protected:
 
 	//! calculate custom data
 	void CalcCustomData(const Instance* instance, std::array<float, 4>& customData1, std::array<float, 4>& customData2);
+
+	void ApplyRendererCommonUVHorizontalFlip(Instance& instance, IRandObject& rand) const;
 
 public:
 	/**

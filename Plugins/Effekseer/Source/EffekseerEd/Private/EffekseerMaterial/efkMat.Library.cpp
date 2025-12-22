@@ -18,6 +18,7 @@ Library::Library()
 	Contents.push_back(std::make_shared<LibraryContent<NodeFloor>>());
 	Contents.push_back(std::make_shared<LibraryContent<NodeFrac>>());
 	Contents.push_back(std::make_shared<LibraryContent<NodeStep>>());
+	Contents.push_back(std::make_shared<LibraryContent<NodeSmoothStep>>());
 
 	Contents.push_back(std::make_shared<LibraryContent<NodeMin>>());
 	Contents.push_back(std::make_shared<LibraryContent<NodeMax>>());
@@ -58,6 +59,7 @@ Library::Library()
 	// Constant
 	Contents.push_back(std::make_shared<LibraryContent<NodeTime>>());
 	Contents.push_back(std::make_shared<LibraryContent<NodeLocalTime>>());
+	Contents.push_back(std::make_shared<LibraryContent<NodeParticleTime>>());
 	Contents.push_back(std::make_shared<LibraryContent<NodeEffectScale>>());
 	Contents.push_back(std::make_shared<LibraryContent<NodeCameraPositionWS>>());
 	Contents.push_back(std::make_shared<LibraryContent<NodeConstant1>>());
@@ -71,12 +73,26 @@ Library::Library()
 	Contents.push_back(std::make_shared<LibraryContent<NodeParameter3>>());
 	Contents.push_back(std::make_shared<LibraryContent<NodeParameter4>>());
 
+	// Logical
+	Contents.push_back(std::make_shared<LibraryContent<NodeBranch>>());
+	Contents.push_back(std::make_shared<LibraryContent<NodeCompare>>());
+	Contents.push_back(std::make_shared<LibraryContent<NodeBoolAnd>>());
+	Contents.push_back(std::make_shared<LibraryContent<NodeBoolOr>>());
+	Contents.push_back(std::make_shared<LibraryContent<NodeBoolNot>>());
+	Contents.push_back(std::make_shared<LibraryContent<NodeIsFrontFace>>());
+
+	// ColorSpace
+	Contents.push_back(std::make_shared<LibraryContent<NodeRgbToHsv>>());
+	Contents.push_back(std::make_shared<LibraryContent<NodeHsvToRgb>>());
+
 	// Gradient
 	Contents.push_back(std::make_shared<LibraryContent<NodeSampleGradient>>());
 	Contents.push_back(std::make_shared<LibraryContent<NodeGradientParameter>>());
 	Contents.push_back(std::make_shared<LibraryContent<NodeGradient>>());
 
+	Contents.push_back(std::make_shared<LibraryContent<NodeWhiteNoise>>());
 	Contents.push_back(std::make_shared<LibraryContent<NodeSimpleNoise>>());
+	Contents.push_back(std::make_shared<LibraryContent<NodeCellularNoise>>());
 
 	Contents.push_back(std::make_shared<LibraryContent<NodeLight>>());
 

@@ -102,6 +102,13 @@ enum class NodeType
 	Parameter3,
 	Parameter4,
 
+	Branch,
+	Compare,
+	BoolAnd,
+	BoolOr,
+	BoolNot,
+	IsFrontFace,
+
 	Abs,
 	Sine,
 	Arctangent2,
@@ -112,6 +119,7 @@ enum class NodeType
 	FMod,
 
 	Step,
+	SmoothStep,
 	Ceil,
 	Floor,
 	Frac,
@@ -155,15 +163,21 @@ enum class NodeType
 
 	DepthFade,
 
+	RgbToHsv,
+	HsvToRgb,
+
 	Gradient,		   //! 1703
 	GradientParameter, //! 1703
 	SampleGradient,	   //! 1703
 
+	WhiteNoise, //! 1710
 	SimpleNoise, //! 1703
+	CellularNoise, //! 1710
 
 	Light, //! 1703
 
 	LocalTime, //! 1703
+	ParticleTime, //! 1810
 
 	Comment,
 	Function, // Unimplemented
@@ -191,6 +205,8 @@ enum class RequiredPredefinedMethodType : int32_t
 	Noise = 1,
 	Light = 2,
 	LocalTime = 3,
+	Hsv = 4,
+	ParticleTime = 5,
 };
 
 class PinParameter;

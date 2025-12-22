@@ -6,6 +6,7 @@
 // Include
 //----------------------------------------------------------------------------------
 #include "Effekseer.Base.Pre.h"
+#include "Effekseer.ExternalModel.h"
 #include "Effekseer.Matrix44.h"
 #include "Effekseer.Vector3D.h"
 
@@ -41,6 +42,13 @@ using RandFunc = std::function<int()>;
 	isRemovingManager マネージャーを破棄したときにエフェクトのインスタンスを破棄しているか
 */
 using EffectInstanceRemovingCallback = std::function<void(Manager*, Handle, bool)>;
+
+/**
+	@brief
+	\~English Callback to query external collision. It returns true when a collision occurs and sets collisionPosition as the hit point.
+	\~Japanese 外部との衝突を問い合わせるためのコールバック。衝突した場合はtrueを返し、collisionPositionに衝突点を設定する。
+*/
+using CollisionCallback = std::function<bool(const Vector3D& startPosition, const Vector3D& endPosition, Vector3D& collisionPosition)>;
 
 /**
 	@brief エフェクト管理クラス
@@ -159,6 +167,16 @@ public:
 		float DistanceBias = 0.0f;
 	};
 
+	struct PlayParameter
+	{
+		EffectRef Effect;
+		Vector3D Position = {0.0f, 0.0f, 0.0f};
+		Vector3D Rotation = {0.0f, 0.0f, 0.0f};
+		Vector3D Scale = {1.0f, 1.0f, 1.0f};
+		int32_t StartFrame = 0;
+		std::vector<ExternalModel> ExternalModels;
+	};
+
 protected:
 	Manager()
 	{
@@ -199,6 +217,20 @@ public:
 		@brief	ランダム関数を設定する。
 	*/
 	virtual void SetRandFunc(RandFunc func) = 0;
+
+	/**
+		@brief
+		\~English Set a callback to determine collision points against external objects.
+		\~Japanese 外部オブジェクトへの衝突判定に使用するコールバックを設定する。
+	*/
+	virtual void SetCollisionCallback(CollisionCallback callback) = 0;
+
+	/**
+		@brief
+		\~English Get a callback to determine collision points against external objects.
+		\~Japanese 外部オブジェクトへの衝突判定に使用するコールバックを取得する。
+	*/
+	virtual CollisionCallback GetCollisionCallback() const = 0;
 
 	/**
 		@brief	座標系を取得する。
@@ -933,6 +965,13 @@ public:
 		\~Japanese	途中から再生するための時間
 	*/
 	virtual Handle Play(const EffectRef& effect, const Vector3D& position, int32_t startFrame = 0) = 0;
+
+	/**
+		@brief
+		\~English	Play an effect with detailed parameters.
+		\~Japanese	再生用の詳細なパラメーターを指定して再生する。
+	*/
+	virtual Handle Play(const PlayParameter& parameter) = 0;
 
 	/**
 		@brief

@@ -24,6 +24,8 @@ public:
 		Noise = 1,
 		Light = 2,
 		LocalTime = 3,
+		Hsv = 4,
+		ParticleTime = 5,
 	};
 
 	struct GradientParameter

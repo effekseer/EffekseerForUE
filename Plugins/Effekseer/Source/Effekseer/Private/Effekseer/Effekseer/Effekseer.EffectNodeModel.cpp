@@ -65,6 +65,14 @@ void EffectNodeModel::LoadRendererParameter(unsigned char*& pos, const SettingRe
 		memcpy(&ModelIndex, pos, sizeof(int));
 		pos += sizeof(int);
 	}
+	else if (Mode == ModelReferenceType::External)
+	{
+		if (m_effect->GetVersion() >= Version18Alpha3)
+		{
+			memcpy(&ModelIndex, pos, sizeof(int));
+			pos += sizeof(int);
+		}
+	}
 
 	if (m_effect->GetVersion() >= 12)
 	{
@@ -129,7 +137,7 @@ void EffectNodeModel::Rendering(const Instance& instance, const Instance* next_i
 	{
 		ModelRenderer::InstanceParameter instanceParameter;
 		instanceParameter.SRTMatrix43 = instance.GetRenderedGlobalMatrix();
-		instanceParameter.Time = (int32_t)instance.m_LivingTime;
+		instanceParameter.Time = (int32_t)instance.livingTime_;
 
 		instanceParameter.UV = instance.GetUV(0);
 		instanceParameter.AlphaUV = instance.GetUV(1);
@@ -140,7 +148,7 @@ void EffectNodeModel::Rendering(const Instance& instance, const Instance* next_i
 
 		instanceParameter.FlipbookIndexAndNextRate = instance.GetFlipbookIndexAndNextRate();
 
-		instanceParameter.AlphaThreshold = instance.m_AlphaThreshold;
+		instanceParameter.AlphaThreshold = instance.alphaThreshold_;
 
 		if (nodeParam_.EnableViewOffset)
 		{
@@ -151,6 +159,9 @@ void EffectNodeModel::Rendering(const Instance& instance, const Instance* next_i
 		{
 			instanceParameter.Direction = instance.GetGlobalDirection();
 		}
+
+		instanceParameter.ParticleTimes[0] = instance.GetNormalizedLivetime();
+		instanceParameter.ParticleTimes[1] = instance.livingTime_ / 60.0f;
 
 		CalcCustomData(&instance, instanceParameter.CustomData1, instanceParameter.CustomData2);
 
@@ -189,7 +200,9 @@ void EffectNodeModel::InitializeRenderedInstance(Instance& instance, InstanceGro
 	InstanceValues& instValues = instance.rendererValues.model;
 
 	AllTypeColorFunctions::Init(instValues.allColorValues, rand, AllColor);
-	instValues._original = AllTypeColorFunctions::Calculate(instValues.allColorValues, AllColor, instance.m_LivingTime, instance.m_LivedTime);
+	instValues._original = AllTypeColorFunctions::Calculate(instValues.allColorValues, AllColor, instance.livingTime_, instance.livedTime_);
+
+	ApplyRendererCommonUVHorizontalFlip(instance, rand);
 
 	// TODO refactor
 	if (RendererCommon.ColorBindType == BindType::Always || RendererCommon.ColorBindType == BindType::WhenCreating)
@@ -208,7 +221,7 @@ void EffectNodeModel::UpdateRenderedInstance(Instance& instance, InstanceGroup& 
 {
 	InstanceValues& instValues = instance.rendererValues.model;
 
-	instValues._original = AllTypeColorFunctions::Calculate(instValues.allColorValues, AllColor, instance.m_LivingTime, instance.m_LivedTime);
+	instValues._original = AllTypeColorFunctions::Calculate(instValues.allColorValues, AllColor, instance.livingTime_, instance.livedTime_);
 
 	float fadeAlpha = GetFadeAlpha(instance);
 	if (fadeAlpha != 1.0f)
@@ -261,6 +274,17 @@ ModelRenderer::NodeParameter EffectNodeModel::GetNodeParameter(const Manager* ma
 	nodeParameter.EnableViewOffset = (TranslationParam.TranslationType == ParameterTranslationType_ViewOffset);
 
 	nodeParameter.IsProceduralMode = Mode == ModelReferenceType::Procedural;
+	nodeParameter.IsExternalMode = Mode == ModelReferenceType::External;
+
+	if (nodeParameter.IsExternalMode && global != nullptr)
+	{
+		const auto& externalModels = global->GetExternalModels();
+		if (0 <= ModelIndex && ModelIndex < static_cast<int32_t>(externalModels.size()))
+		{
+			nodeParameter.ExternalModel = externalModels[ModelIndex].Model;
+			nodeParameter.ExternalModelTransform = externalModels[ModelIndex].Transform;
+		}
+	}
 
 	nodeParameter.UserData = GetRenderingUserData();
 

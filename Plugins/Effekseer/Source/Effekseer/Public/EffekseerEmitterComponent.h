@@ -18,7 +18,7 @@ class EFFEKSEER_API UEffekseerEmitterComponent : public UPrimitiveComponent
 
 private:
 	FEffekseerEmitterSceneProxy* sceneProxy_ = nullptr;
-	bool shouldActivate = false;
+	bool shouldActivate_ = false;
 	bool isPlaying = false;
 	TArray<FEffekseerHandle> handles_;
 

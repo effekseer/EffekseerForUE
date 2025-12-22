@@ -567,7 +567,7 @@ void ModelRenderer::Rendering(const efkModelNodeParam& parameter, const efkModel
 
 void ModelRenderer::EndRendering(const efkModelNodeParam& parameter, void* userData)
 {
-	if (m_matrixes.size() == 0)
+	if (matrixes_.size() == 0)
 		return;
 	if (parameter.ModelIndex < 0)
 		return;
@@ -658,17 +658,17 @@ void ModelRenderer::EndRendering(const efkModelNodeParam& parameter, void* userD
 
 	m_renderer->DrawModel(
 		model,
-		m_matrixes,
-		m_uv,
-		m_alphaUV,
-		m_uvDistortionUV,
-		m_blendUV,
-		m_blendAlphaUV,
-		m_blendUVDistortionUV,
-		m_flipbookIndexAndNextRate,
-		m_alphaThreshold,
-		m_colors,
-		m_times,
+		matrixes_,
+		uv_,
+		alphaUv_,
+		uvDistortionUv_,
+		blendUv_,
+		blendAlphaUv_,
+		blendUvDistortionUv_,
+		flipbookIndexAndNextRate_,
+		alphaThreshold_,
+		colors_,
+		times_,
 		customData1_,
 		customData2_);
 

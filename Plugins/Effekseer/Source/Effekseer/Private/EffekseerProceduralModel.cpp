@@ -30,7 +30,7 @@ public:
 				EffekseerUE::UEFVector3f(v.Position.X, v.Position.Z, v.Position.Y),
 				EffekseerUE::UEFVector3f(v.Tangent.X, v.Tangent.Z, v.Tangent.Y),
 				EffekseerUE::UEFVector3f(v.Normal.X, v.Normal.Z, v.Normal.Y),
-				EffekseerUE::UEFVector2f(v.UV.X, v.UV.Y),
+				EffekseerUE::UEFVector2f(v.UV1.X, v.UV1.Y),
 				FColor(v.VColor.R, v.VColor.G, v.VColor.B, v.VColor.A));
 		}
 

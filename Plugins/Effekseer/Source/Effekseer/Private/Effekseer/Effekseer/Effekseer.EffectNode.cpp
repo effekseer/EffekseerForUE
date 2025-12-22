@@ -4,27 +4,27 @@
 //
 //----------------------------------------------------------------------------------
 #include "Effekseer.EffectNode.h"
+
 #include "Effekseer.Effect.h"
 #include "Effekseer.EffectImplemented.h"
-#include "Effekseer.Manager.h"
-
-#include "Effekseer.Vector3D.h"
-#include "SIMD/Utils.h"
-
-#include "Effekseer.Instance.h"
-#include "Effekseer.InstanceContainer.h"
-#include "Effekseer.InstanceGlobal.h"
-
 #include "Effekseer.EffectNodeRibbon.h"
 #include "Effekseer.EffectNodeRing.h"
 #include "Effekseer.EffectNodeRoot.h"
 #include "Effekseer.EffectNodeSprite.h"
+#include "Effekseer.Instance.h"
+#include "Effekseer.InstanceContainer.h"
+#include "Effekseer.InstanceGlobal.h"
+#include "Effekseer.Manager.h"
 #include "Effekseer.Resource.h"
 #include "Effekseer.Setting.h"
+#include "Effekseer.Vector3D.h"
 #include "Parameter/Effekseer.GpuParticlesParameter.h"
+#include "SIMD/Utils.h"
 #include "Sound/Effekseer.SoundPlayer.h"
 #include "Utils/Effekseer.BinaryReader.h"
 #include "Utils/Effekseer.Compatiblity.h"
+
+#include <limits>
 
 //----------------------------------------------------------------------------------
 //
@@ -84,7 +84,7 @@ void EffectNodeImplemented::AdjustSettings(const SettingRef& setting)
 			DepthValues.DepthOffset *= m_effect->GetMaginification();
 			DepthValues.SoftParticle *= m_effect->GetMaginification();
 
-			if (DepthValues.DepthParameter.DepthClipping < FLT_MAX / 10)
+			if (DepthValues.DepthParameter.DepthClipping < std::numeric_limits<float>::max() / 10)
 			{
 				DepthValues.DepthParameter.DepthClipping *= m_effect->GetMaginification();
 			}
@@ -197,26 +197,18 @@ void EffectNodeImplemented::LoadParameter(unsigned char*& pos, EffectNode* paren
 			}
 		}
 
-		if (ef->GetVersion() >= Version17Alpha1)
+		if (ef->GetVersion() < Version18Alpha3)
 		{
-			uint8_t flags = 0;
-			memcpy(&flags, pos, sizeof(uint8_t));
-			pos += sizeof(uint8_t);
+			TriggerParam.Load(pos, ef->GetVersion());
 
-			if (flags & (1 << 0))
+			CommonValues.Generation.TriggerToStart = TriggerParam.ToStartGeneration;
+			CommonValues.Generation.TriggerToStop = TriggerParam.ToStopGeneration;
+			CommonValues.Removal.TriggerToRemove = TriggerParam.ToRemove;
+
+			if (CommonValues.Removal.TriggerToRemove.type != TriggerType::None)
 			{
-				memcpy(&TriggerParam.ToStartGeneration, pos, sizeof(TriggerValues));
-				pos += sizeof(TriggerValues);
-			}
-			if (flags & (1 << 1))
-			{
-				memcpy(&TriggerParam.ToStopGeneration, pos, sizeof(TriggerValues));
-				pos += sizeof(TriggerValues);
-			}
-			if (flags & (1 << 2))
-			{
-				memcpy(&TriggerParam.ToRemove, pos, sizeof(TriggerValues));
-				pos += sizeof(TriggerValues);
+				CommonValues.Removal.Flags = static_cast<RemovalTiming>(static_cast<int32_t>(CommonValues.Removal.Flags) |
+																		static_cast<int32_t>(RemovalTiming::WhenTriggered));
 			}
 		}
 
@@ -361,6 +353,20 @@ void EffectNodeImplemented::CalcCustomData(const Instance* instance, std::array<
 			}
 		}
 	}
+}
+
+void EffectNodeImplemented::ApplyRendererCommonUVHorizontalFlip(Instance& instance, IRandObject& rand) const
+{
+	bool isFlipped = false;
+
+	const int32_t probability = RendererCommon.UVHorizontalFlipProbability;
+	if (probability > 0)
+	{
+		const auto threshold = static_cast<float>(probability);
+		isFlipped = rand.GetRand() * 100.0f < threshold;
+	}
+
+	instance.SetUVFlippedH(isFlipped);
 }
 
 bool EffectNodeImplemented::Traverse(const std::function<bool(EffectNodeImplemented*)>& visitor)
@@ -575,23 +581,23 @@ float EffectNodeImplemented::GetFadeAlpha(const Instance& instance) const
 {
 	float alpha = 1.0f;
 
-	if (RendererCommon.FadeInType == ParameterRendererCommon::FADEIN_ON && instance.m_LivingTime < RendererCommon.FadeIn.Frame)
+	if (RendererCommon.FadeInType == ParameterRendererCommon::FADEIN_ON && instance.livingTime_ < RendererCommon.FadeIn.Frame)
 	{
 		float v = 1.0f;
-		RendererCommon.FadeIn.Value.setValueToArg(v, 0.0f, 1.0f, (float)instance.m_LivingTime / (float)RendererCommon.FadeIn.Frame);
+		RendererCommon.FadeIn.Value.setValueToArg(v, 0.0f, 1.0f, (float)instance.livingTime_ / (float)RendererCommon.FadeIn.Frame);
 
 		alpha *= v;
 	}
 
 	if (RendererCommon.FadeOutType == ParameterRendererCommon::FADEOUT_WITHIN_LIFETIME)
 	{
-		if (instance.m_LivingTime + RendererCommon.FadeOut.Frame > instance.m_LivedTime)
+		if (instance.livingTime_ + RendererCommon.FadeOut.Frame > instance.livedTime_)
 		{
 			float v = 1.0f;
 			RendererCommon.FadeOut.Value.setValueToArg(v,
 													   1.0f,
 													   0.0f,
-													   (float)(instance.m_LivingTime + RendererCommon.FadeOut.Frame - instance.m_LivedTime) /
+													   (float)(instance.livingTime_ + RendererCommon.FadeOut.Frame - instance.livedTime_) /
 														   (float)RendererCommon.FadeOut.Frame);
 
 			alpha *= v;
@@ -605,7 +611,7 @@ float EffectNodeImplemented::GetFadeAlpha(const Instance& instance) const
 			RendererCommon.FadeOut.Value.setValueToArg(v,
 													   1.0f,
 													   0.0f,
-													   instance.m_RemovingTime / RendererCommon.FadeOut.Frame);
+													   instance.removingTime_ / RendererCommon.FadeOut.Frame);
 
 			alpha *= v;
 		}
@@ -618,16 +624,19 @@ EffectInstanceTerm EffectNodeImplemented::CalculateInstanceTerm(EffectInstanceTe
 {
 	EffectInstanceTerm ret;
 
-	auto addWithClip = [](int v1, int v2) -> int
+	const int int_max = std::numeric_limits<int>::max();
+	const int half_int_max = int_max / 2;
+
+	auto addWithClip = [half_int_max, int_max](int v1, int v2) -> int
 	{
 		v1 = Max(v1, 0);
 		v2 = Max(v2, 0);
 
-		if (v1 >= INT_MAX / 2)
-			return INT_MAX;
+		if (v1 >= half_int_max)
+			return int_max;
 
-		if (v2 >= INT_MAX / 2)
-			return INT_MAX;
+		if (v2 >= half_int_max)
+			return int_max;
 
 		return v1 + v2;
 	};
@@ -635,35 +644,41 @@ EffectInstanceTerm EffectNodeImplemented::CalculateInstanceTerm(EffectInstanceTe
 	int lifeMin = CommonValues.life.min;
 	int lifeMax = CommonValues.life.max;
 
-	if (CommonValues.RemoveWhenLifeIsExtinct <= 0)
+	if (!HasRemovalTiming(CommonValues.Removal.Flags, RemovalTiming::WhenLifeIsExtinct))
 	{
-		lifeMin = INT_MAX;
-		lifeMax = INT_MAX;
+		lifeMin = int_max;
+		lifeMax = int_max;
 	}
 
-	auto firstBeginMin = static_cast<int32_t>(CommonValues.GenerationTimeOffset.min);
-	auto firstBeginMax = static_cast<int32_t>(CommonValues.GenerationTimeOffset.max);
+	auto firstBeginMin = static_cast<int32_t>(CommonValues.Generation.Offset.min);
+	auto firstBeginMax = static_cast<int32_t>(CommonValues.Generation.Offset.max);
 	auto firstEndMin = addWithClip(firstBeginMin, lifeMin);
 	auto firstEndMax = addWithClip(firstBeginMax, lifeMax);
 
 	auto lastBeginMin = 0;
 	auto lastBeginMax = 0;
-	if (CommonValues.MaxGeneration > INT_MAX / 2)
+	if (CommonValues.MaxGeneration > half_int_max)
 	{
-		lastBeginMin = INT_MAX / 2;
+		lastBeginMin = half_int_max;
 	}
 	else
 	{
-		lastBeginMin = firstBeginMin + static_cast<int32_t>((CommonValues.MaxGeneration - 1) * CommonValues.GenerationTime.min);
+		lastBeginMin = firstBeginMin + static_cast<int32_t>((CommonValues.MaxGeneration - 1) * CommonValues.Generation.Interval.min);
 	}
 
-	if (CommonValues.MaxGeneration > INT_MAX / 2)
+	if (CommonValues.MaxGeneration > half_int_max)
 	{
-		lastBeginMax = INT_MAX / 2;
+		lastBeginMax = half_int_max;
 	}
 	else
 	{
-		lastBeginMax = firstBeginMax + static_cast<int32_t>((CommonValues.MaxGeneration - 1) * CommonValues.GenerationTime.max);
+		lastBeginMax = firstBeginMax + static_cast<int32_t>((CommonValues.MaxGeneration - 1) * CommonValues.Generation.Interval.max);
+	}
+
+	if (CommonValues.Generation.Type == GenerationTiming::Trigger)
+	{
+		lastBeginMin = half_int_max;
+		lastBeginMax = half_int_max;
 	}
 
 	auto lastEndMin = addWithClip(lastBeginMin, lifeMin);
@@ -674,7 +689,7 @@ EffectInstanceTerm EffectNodeImplemented::CalculateInstanceTerm(EffectInstanceTe
 	auto parentLastTermMin = parentTerm.LastInstanceEndMin - parentTerm.LastInstanceStartMin;
 	auto parentLastTermMax = parentTerm.LastInstanceEndMax - parentTerm.LastInstanceStartMax;
 
-	if (CommonValues.RemoveWhenParentIsRemoved > 0)
+	if (HasRemovalTiming(CommonValues.Removal.Flags, RemovalTiming::WhenParentIsRemoved))
 	{
 		if (firstEndMin - firstBeginMin > parentFirstTermMin)
 			firstEndMin = firstBeginMin + parentFirstTermMin;
@@ -682,7 +697,7 @@ EffectInstanceTerm EffectNodeImplemented::CalculateInstanceTerm(EffectInstanceTe
 		if (firstEndMax - firstBeginMax > parentFirstTermMax)
 			firstEndMax = firstBeginMax + parentFirstTermMax;
 
-		if (lastEndMin > INT_MAX / 2)
+		if (lastEndMin > half_int_max)
 		{
 			lastBeginMin = parentLastTermMin;
 			lastEndMin = parentLastTermMin;
@@ -692,7 +707,7 @@ EffectInstanceTerm EffectNodeImplemented::CalculateInstanceTerm(EffectInstanceTe
 			lastEndMin = lastBeginMin + parentLastTermMin;
 		}
 
-		if (lastEndMax > INT_MAX / 2)
+		if (lastEndMax > half_int_max)
 		{
 			lastBeginMax = parentLastTermMax;
 			lastEndMax = parentLastTermMax;
@@ -714,7 +729,7 @@ EffectInstanceTerm EffectNodeImplemented::CalculateInstanceTerm(EffectInstanceTe
 	ret.LastInstanceEndMax = addWithClip(parentTerm.LastInstanceStartMax, lastEndMax);
 
 	// check children
-	if (CommonValues.RemoveWhenChildrenIsExtinct > 0)
+	if (HasRemovalTiming(CommonValues.Removal.Flags, RemovalTiming::WhenChildrenIsExtinct))
 	{
 		int childFirstEndMin = 0;
 		int childFirstEndMax = 0;

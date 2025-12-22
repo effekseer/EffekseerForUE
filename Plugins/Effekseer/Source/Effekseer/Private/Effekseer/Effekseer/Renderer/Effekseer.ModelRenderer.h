@@ -52,6 +52,9 @@ public:
 		bool EnableViewOffset = false;
 
 		bool IsProceduralMode = false;
+		bool IsExternalMode = false;
+		ModelRef ExternalModel = nullptr;
+		SIMD::Mat43f ExternalModelTransform = SIMD::Mat43f::Identity;
 
 		RefPtr<RenderingUserData> UserData;
 	};
@@ -80,6 +83,8 @@ public:
 		Color AllColor;
 		int32_t Time;
 		SIMD::Vec3f Direction;
+
+		float ParticleTimes[2];
 
 		std::array<float, 4> CustomData1;
 		std::array<float, 4> CustomData2;

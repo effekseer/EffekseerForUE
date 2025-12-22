@@ -52,7 +52,7 @@ public:
 #endif
 
 		auto systemComponent = component_->system_;
-		if (systemComponent != nullptr)
+		if (systemComponent != nullptr && systemComponent->SceneProxy != nullptr)
 		{
 			auto systemComponentSceneProxy = static_cast<FEffekseerSystemSceneProxy*>(systemComponent->SceneProxy);
 			auto system = systemComponentSceneProxy->GetSystem();
@@ -358,7 +358,7 @@ void UEffekseerEmitterComponent::PostEditChangeProperty(struct FPropertyChangedE
 	Stop();
 	if (bAutoActivate)
 	{
-		shouldActivate = true;
+		shouldActivate_ = true;
 		autoActivateOnActivate_ = bAutoActivate;
 	}
 }
@@ -399,12 +399,12 @@ void UEffekseerEmitterComponent::Serialize(FArchive& Ar)
 void UEffekseerEmitterComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	// HACK for activate
-	if (shouldActivate && autoActivateOnActivate_ != bAutoActivate)
+	if (shouldActivate_ && autoActivateOnActivate_ != bAutoActivate)
 	{
-		shouldActivate = false;
+		shouldActivate_ = false;
 	}
 
-	if (shouldActivate)
+	if (shouldActivate_)
 	{
 		auto handle = PlayInternal();
 
@@ -412,7 +412,7 @@ void UEffekseerEmitterComponent::TickComponent(float DeltaTime, ELevelTick TickT
 		{
 			handles_.Add(handle);
 			isPlaying = true;
-			shouldActivate = false;
+			shouldActivate_ = false;
 			ApplyParameters(handle, true);
 		}
 	}
@@ -494,7 +494,7 @@ void UEffekseerEmitterComponent::Activate(bool bReset)
 		Stop();
 	}
 
-	shouldActivate = true;
+	shouldActivate_ = true;
 	autoActivateOnActivate_ = bAutoActivate;
 }
 
@@ -571,6 +571,6 @@ void UEffekseerEmitterComponent::SendTrigger(int index)
 void UEffekseerEmitterComponent::Preview()
 {
 	Stop();
-	shouldActivate = true;
+	shouldActivate_ = true;
 }
 #endif

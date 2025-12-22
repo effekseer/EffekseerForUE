@@ -70,7 +70,7 @@ FEffekseerModelMesh UEffekseerModel::GetMesh()
 			mesh.Normal.Add(EffekseerUE::UEFVector3f(v.Normal.X, v.Normal.Z, v.Normal.Y));
 			mesh.Binormal.Add(EffekseerUE::UEFVector3f(v.Binormal.X, v.Binormal.Z, v.Binormal.Y));
 			mesh.Tangent.Add(EffekseerUE::UEFVector3f(v.Tangent.X, v.Tangent.Z, v.Tangent.Y));
-			mesh.UV.Add(EffekseerUE::UEFVector2f(v.UV.X, v.UV.Y));
+			mesh.UV.Add(EffekseerUE::UEFVector2f(v.UV1.X, v.UV1.Y));
 			mesh.Colors.Add(FColor(v.VColor.R, v.VColor.G, v.VColor.B, v.VColor.A));
 		}
 
