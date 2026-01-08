@@ -4,22 +4,24 @@
 //
 //----------------------------------------------------------------------------------
 #include "Effekseer.EffectNode.h"
-
 #include "Effekseer.Effect.h"
 #include "Effekseer.EffectImplemented.h"
+#include "Effekseer.Manager.h"
+
+#include "Effekseer.Vector3D.h"
+#include "SIMD/Utils.h"
+
+#include "Effekseer.Instance.h"
+#include "Effekseer.InstanceContainer.h"
+#include "Effekseer.InstanceGlobal.h"
+
 #include "Effekseer.EffectNodeRibbon.h"
 #include "Effekseer.EffectNodeRing.h"
 #include "Effekseer.EffectNodeRoot.h"
 #include "Effekseer.EffectNodeSprite.h"
-#include "Effekseer.Instance.h"
-#include "Effekseer.InstanceContainer.h"
-#include "Effekseer.InstanceGlobal.h"
-#include "Effekseer.Manager.h"
 #include "Effekseer.Resource.h"
 #include "Effekseer.Setting.h"
-#include "Effekseer.Vector3D.h"
 #include "Parameter/Effekseer.GpuParticlesParameter.h"
-#include "SIMD/Utils.h"
 #include "Sound/Effekseer.SoundPlayer.h"
 #include "Utils/Effekseer.BinaryReader.h"
 #include "Utils/Effekseer.Compatiblity.h"
@@ -580,12 +582,13 @@ void EffectNodeImplemented::UpdateRenderedInstance(Instance& instance, InstanceG
 float EffectNodeImplemented::GetFadeAlpha(const Instance& instance) const
 {
 	float alpha = 1.0f;
+	float eps = 0.0001f;
 
 	if (RendererCommon.FadeInType == ParameterRendererCommon::FADEIN_ON && instance.livingTime_ < RendererCommon.FadeIn.Frame)
 	{
+		const auto fadeIn = Max(eps, static_cast<float>(RendererCommon.FadeIn.Frame));
 		float v = 1.0f;
-		RendererCommon.FadeIn.Value.setValueToArg(v, 0.0f, 1.0f, (float)instance.livingTime_ / (float)RendererCommon.FadeIn.Frame);
-
+		RendererCommon.FadeIn.Value.setValueToArg(v, 0.0f, 1.0f, instance.livingTime_ / fadeIn);
 		alpha *= v;
 	}
 
@@ -593,13 +596,12 @@ float EffectNodeImplemented::GetFadeAlpha(const Instance& instance) const
 	{
 		if (instance.livingTime_ + RendererCommon.FadeOut.Frame > instance.livedTime_)
 		{
+			const auto fadeOut = Max(eps, static_cast<float>(RendererCommon.FadeOut.Frame));
 			float v = 1.0f;
 			RendererCommon.FadeOut.Value.setValueToArg(v,
 													   1.0f,
 													   0.0f,
-													   (float)(instance.livingTime_ + RendererCommon.FadeOut.Frame - instance.livedTime_) /
-														   (float)RendererCommon.FadeOut.Frame);
-
+													   (instance.livingTime_ + fadeOut - instance.livedTime_) / fadeOut);
 			alpha *= v;
 		}
 	}
@@ -607,12 +609,12 @@ float EffectNodeImplemented::GetFadeAlpha(const Instance& instance) const
 	{
 		if (instance.IsActive())
 		{
+			const auto fadeOut = Max(eps, static_cast<float>(RendererCommon.FadeOut.Frame));
 			float v = 1.0f;
 			RendererCommon.FadeOut.Value.setValueToArg(v,
 													   1.0f,
 													   0.0f,
-													   instance.removingTime_ / RendererCommon.FadeOut.Frame);
-
+													   instance.removingTime_ / fadeOut);
 			alpha *= v;
 		}
 	}
