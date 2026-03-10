@@ -923,6 +923,10 @@ UMaterial* CreateUE4MaterialFromEffekseerMaterial(const std::shared_ptr<NativeEf
 	nodeFactories["Divide"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeDivide>>();
 	nodeFactories["Fmod"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeFmod>>();
 	nodeFactories["Step"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeStep>>();
+	nodeFactories["SmoothStep"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeSmoothStep>>();
+
+	nodeFactories["RgbToHsv"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeRgbToHsv>>();
+	nodeFactories["HsvToRgb"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeHsvToRgb>>();
 
 	nodeFactories["Ceil"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeCeil>>();
 	nodeFactories["Floor"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeFloor>>();

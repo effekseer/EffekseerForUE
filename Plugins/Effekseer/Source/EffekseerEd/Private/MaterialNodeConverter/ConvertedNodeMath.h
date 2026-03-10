@@ -28,6 +28,7 @@
 #include "Materials/MaterialExpressionSine.h"
 #include "Materials/MaterialExpressionSquareRoot.h"
 #include "Materials/MaterialExpressionSubtract.h"
+#include "Materials/MaterialExpressionSmoothStep.h"
 
 template <class T>
 class ConvertedNodeOneInput : public ConvertedNode
@@ -50,6 +51,30 @@ public:
 	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) override
 	{
 		outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(expression_->Input);
+	}
+};
+
+template <class T>
+class ConvertedNodeNInput : public ConvertedNode
+{
+private:
+	T* expression_ = nullptr;
+
+public:
+	ConvertedNodeNInput(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
+	{
+		expression_ = NewObject<T>(material);
+		ConvertedNodeHelper::AddExpression(material, expression_);
+	}
+
+	UMaterialExpression* GetExpression() const override
+	{
+		return expression_;
+	}
+
+	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) override
+	{
+		outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(*expression_->GetInput(targetInd));
 	}
 };
 
@@ -359,6 +384,7 @@ public:
 	}
 };
 
+using ConvertedNodeSmoothStep = ConvertedNodeNInput<UMaterialExpressionSmoothStep>;
 using ConvertedNodeCeil = ConvertedNodeOneInput<UMaterialExpressionCeil>;
 using ConvertedNodeFloor = ConvertedNodeOneInput<UMaterialExpressionFloor>;
 using ConvertedNodeFrac = ConvertedNodeOneInput<UMaterialExpressionFrac>;
@@ -521,3 +547,67 @@ public:
 };
 
 using ConvertedNodeAppendVector = ConvertedNodeABInput<UMaterialExpressionAppendVector>;
+
+class ConvertedNodeRgbToHsv : public ConvertedNode
+{
+private:
+	std::shared_ptr<EffekseerMaterial::Node> effekseerNode_;
+	UMaterialExpressionMaterialFunctionCall* expression_ = nullptr;
+
+public:
+	ConvertedNodeRgbToHsv(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
+		: effekseerNode_(effekseerNode)
+	{
+		expression_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
+		ConvertedNodeHelper::AddExpression(material, expression_);
+
+		EffekseerUE::UEFSoftObjectPath assetPath("/Engine/Functions/Engine_MaterialFunctions02/Math/RGBtoHSV.RGBtoHSV");
+		UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
+		expression_->SetMaterialFunction(func);
+	}
+
+	UMaterialExpression* GetExpression() const override
+	{
+		return expression_;
+	}
+
+	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) override
+	{
+		if (targetInd == effekseerNode_->GetInputPinIndex("RGB"))
+		{
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(*expression_->GetInput(0));
+		}
+	}
+};
+
+class ConvertedNodeHsvToRgb : public ConvertedNode
+{
+private:
+	std::shared_ptr<EffekseerMaterial::Node> effekseerNode_;
+	UMaterialExpressionMaterialFunctionCall* expression_ = nullptr;
+
+public:
+	ConvertedNodeHsvToRgb(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
+		: effekseerNode_(effekseerNode)
+	{
+		expression_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
+		ConvertedNodeHelper::AddExpression(material, expression_);
+
+		EffekseerUE::UEFSoftObjectPath assetPath("/Effekseer/MaterialFunctions/EfkHsvToRgb.EfkHsvToRgb");
+		UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
+		expression_->SetMaterialFunction(func);
+	}
+
+	UMaterialExpression* GetExpression() const override
+	{
+		return expression_;
+	}
+
+	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) override
+	{
+		if (targetInd == effekseerNode_->GetInputPinIndex("HSV"))
+		{
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(*expression_->GetInput(0));
+		}
+	}
+};

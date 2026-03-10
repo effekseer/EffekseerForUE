@@ -23,3 +23,16 @@ Please read the help below.
 请阅读下面的帮助。
 
 [Help](https://effekseer.github.io/Help_UE4/)
+
+UE4.27
+=========
+
+A sln cannot be generated without this script.
+
+下記のスクリプトでないとslnを生成できません。
+
+```
+set ENGINE_PATH=C:\Path\To\Epic Games\UE_4.27
+
+"%ENGINE_PATH%\Engine\Binaries\DotNET\UnrealBuildTool.exe" -projectfiles -project=C:\Path\To\EffekseerForUE\EffekseerForUE.uproject -game -engine -progress -2019
+```
