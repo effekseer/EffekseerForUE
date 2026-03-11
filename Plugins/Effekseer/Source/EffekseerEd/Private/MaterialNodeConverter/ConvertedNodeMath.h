@@ -561,7 +561,7 @@ public:
 		expression_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
 		ConvertedNodeHelper::AddExpression(material, expression_);
 
-		EffekseerUE::UEFSoftObjectPath assetPath("/Engine/Functions/Engine_MaterialFunctions02/Math/RGBtoHSV.RGBtoHSV");
+		EffekseerUE::UEFSoftObjectPath assetPath("/Effekseer/MaterialFunctions/EfkRgbToHsv.EfkRgbToHsv");
 		UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
 		expression_->SetMaterialFunction(func);
 	}

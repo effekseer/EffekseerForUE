@@ -975,7 +975,9 @@ UMaterial* CreateUE4MaterialFromEffekseerMaterial(const std::shared_ptr<NativeEf
 	nodeFactories["CastFloat2ToFloat4"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeCastFloat2ToFloat4>>();
 	nodeFactories["CastFloat3ToFloat4"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeCastFloat3ToFloat4>>();
 
+	nodeFactories["WhiteNoise"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeWhiteNoise>>();
 	nodeFactories["SimpleNoise"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeSimpleNoise>>();
+	nodeFactories["CellularNoise"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeCellularNoise>>();
 
 	nodeFactories["SampleGradient"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeSampleGradient>>();
 
