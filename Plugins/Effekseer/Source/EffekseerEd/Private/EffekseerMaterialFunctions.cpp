@@ -18,6 +18,7 @@
 #include "MaterialNodeConverter/ConvertedNodeConstant.h"
 #include "MaterialNodeConverter/ConvertedNodeGradient.h"
 #include "MaterialNodeConverter/ConvertedNodeInternal.h"
+#include "MaterialNodeConverter/ConvertedNodeLogical.h"
 #include "MaterialNodeConverter/ConvertedNodeMath.h"
 #include "MaterialNodeConverter/ConvertedNodeModel.h"
 #include "MaterialNodeConverter/ConvertedNodeNoise.h"
