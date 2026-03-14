@@ -986,6 +986,13 @@ UMaterial* CreateUE4MaterialFromEffekseerMaterial(const std::shared_ptr<NativeEf
 
 	nodeFactories["LocalTime"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeLocalTime>>();
 
+	nodeFactories["Branch"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeBranch>>();
+	nodeFactories["Compare"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeCompare>>();
+	nodeFactories["BoolAnd"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeBoolAnd>>();
+	nodeFactories["BoolOr"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeBoolOr>>();
+	nodeFactories["BoolNot"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeBoolNot>>();
+	nodeFactories["IsFrontFace"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeIsFrontFace>>();
+
 	std::map<uint64_t, std::shared_ptr<ConvertedNode>> convertedNodes;
 
 	for (auto node : context->material->GetNodes())

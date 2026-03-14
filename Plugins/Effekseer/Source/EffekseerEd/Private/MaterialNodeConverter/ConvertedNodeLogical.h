@@ -77,7 +77,6 @@ public:
 	}
 };
 
-// TODO
 class ConvertedNodeCompare : public ConvertedNode
 {
 private:
@@ -185,143 +184,134 @@ public:
 			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(*expression_->GetInput(1));
 		}
 	}
-	/*
-	* const char* op[6] = {"<", "<=", ">", ">=", "==", "!="};
-			Type = NodeType::Compare;
-		TypeName = "Compare";
-		Group = std::vector<std::string>{"Logical"};
-
-		auto aPin = std::make_shared<PinParameter>();
-		aPin->Name = "A";
-		aPin->Type = ValueType::Float1;
-		InputPins.push_back(aPin);
-
-		auto bPin = std::make_shared<PinParameter>();
-		bPin->Name = "B";
-		bPin->Type = ValueType::Float1;
-		InputPins.push_back(bPin);
-
-		auto output = std::make_shared<PinParameter>();
-		output->Name = "Output";
-		output->Type = ValueType::Bool;
-		OutputPins.push_back(output);
-
-		auto aProp = std::make_shared<NodePropertyParameter>();
-		aProp->Name = "A";
-		aProp->Type = ValueType::Float1;
-		aProp->DefaultValues[0] = 0.0f;
-		Properties.push_back(aProp);
-
-		auto bProp = std::make_shared<NodePropertyParameter>();
-		bProp->Name = "B";
-		bProp->Type = ValueType::Float1;
-		bProp->DefaultValues[0] = 0.0f;
-		Properties.push_back(bProp);
-
-		auto condProp = std::make_shared<NodePropertyParameter>();
-		condProp->Name = "Condition";
-		condProp->Type = ValueType::Enum;
-		condProp->DefaultValues[0] = 0;
-		Properties.push_back(condProp);
-
-		BehaviorComponents = {std::make_shared<NodeParameterBehaviorComponentTwoInputMath>()};
-	*/
 };
 
-// BoolAnd
-// BoolOr
-// BoolNot
-// IsFrontFace
-
-/*
-
-class NodeBoolAnd : public NodeParameter
+class ConvertedNodeBoolAnd : public ConvertedNode
 {
+private:
+	std::shared_ptr<EffekseerMaterial::Node> effekseerNode_;
+	UMaterialExpressionMaterialFunctionCall* expression_ = nullptr;
+
 public:
-	NodeBoolAnd()
+	ConvertedNodeBoolAnd(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
+		: effekseerNode_(effekseerNode)
 	{
-		Type = NodeType::BoolAnd;
-		TypeName = "BoolAnd";
-		Group = std::vector<std::string>{"Logical"};
+		expression_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
+		ConvertedNodeHelper::AddExpression(material, expression_);
 
-		auto input1 = std::make_shared<PinParameter>();
-		input1->Name = "V1";
-		input1->Type = ValueType::Bool;
-		InputPins.push_back(input1);
+		EffekseerUE::UEFSoftObjectPath assetPath("/Effekseer/MaterialFunctions/EfkBoolAnd.EfkBoolAnd");
+		UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
+		expression_->SetMaterialFunction(func);
+	}
 
-		auto input2 = std::make_shared<PinParameter>();
-		input2->Name = "V2";
-		input2->Type = ValueType::Bool;
-		InputPins.push_back(input2);
+	UMaterialExpression* GetExpression() const override
+	{
+		return expression_;
+	}
 
-		auto output = std::make_shared<PinParameter>();
-		output->Name = "Output";
-		output->Type = ValueType::Bool;
-		OutputPins.push_back(output);
+	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) override
+	{
+		if (targetInd == effekseerNode_->GetInputPinIndex("V1"))
+		{
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(*expression_->GetInput(0));
+		}
+
+		if (targetInd == effekseerNode_->GetInputPinIndex("V2"))
+		{
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(*expression_->GetInput(1));
+		}
 	}
 };
 
-class NodeBoolOr : public NodeParameter
+class ConvertedNodeBoolOr : public ConvertedNode
 {
+private:
+	std::shared_ptr<EffekseerMaterial::Node> effekseerNode_;
+	UMaterialExpressionMaterialFunctionCall* expression_ = nullptr;
+
 public:
-	NodeBoolOr()
+	ConvertedNodeBoolOr(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
+		: effekseerNode_(effekseerNode)
 	{
-		Type = NodeType::BoolOr;
-		TypeName = "BoolOr";
-		Group = std::vector<std::string>{"Logical"};
+		expression_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
+		ConvertedNodeHelper::AddExpression(material, expression_);
 
-		auto input1 = std::make_shared<PinParameter>();
-		input1->Name = "V1";
-		input1->Type = ValueType::Bool;
-		InputPins.push_back(input1);
+		EffekseerUE::UEFSoftObjectPath assetPath("/Effekseer/MaterialFunctions/EfkBoolOr.EfkBoolOr");
+		UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
+		expression_->SetMaterialFunction(func);
+	}
 
-		auto input2 = std::make_shared<PinParameter>();
-		input2->Name = "V2";
-		input2->Type = ValueType::Bool;
-		InputPins.push_back(input2);
+	UMaterialExpression* GetExpression() const override
+	{
+		return expression_;
+	}
 
-		auto output = std::make_shared<PinParameter>();
-		output->Name = "Output";
-		output->Type = ValueType::Bool;
-		OutputPins.push_back(output);
+	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) override
+	{
+		if (targetInd == effekseerNode_->GetInputPinIndex("V1"))
+		{
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(*expression_->GetInput(0));
+		}
+
+		if (targetInd == effekseerNode_->GetInputPinIndex("V2"))
+		{
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(*expression_->GetInput(1));
+		}
 	}
 };
 
-class NodeBoolNot : public NodeParameter
+class ConvertedNodeBoolNot : public ConvertedNode
 {
+private:
+	std::shared_ptr<EffekseerMaterial::Node> effekseerNode_;
+	UMaterialExpressionMaterialFunctionCall* expression_ = nullptr;
+
 public:
-	NodeBoolNot()
+	ConvertedNodeBoolNot(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
+		: effekseerNode_(effekseerNode)
 	{
-		Type = NodeType::BoolNot;
-		TypeName = "BoolNot";
-		Group = std::vector<std::string>{"Logical"};
+		expression_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
+		ConvertedNodeHelper::AddExpression(material, expression_);
 
-		auto input = std::make_shared<PinParameter>();
-		input->Name = "V";
-		input->Type = ValueType::Bool;
-		InputPins.push_back(input);
+		EffekseerUE::UEFSoftObjectPath assetPath("/Effekseer/MaterialFunctions/EfkBoolNot.EfkBoolNot");
+		UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
+		expression_->SetMaterialFunction(func);
+	}
 
-		auto output = std::make_shared<PinParameter>();
-		output->Name = "Output";
-		output->Type = ValueType::Bool;
-		OutputPins.push_back(output);
+	UMaterialExpression* GetExpression() const override
+	{
+		return expression_;
+	}
+
+	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) override
+	{
+		if (targetInd == effekseerNode_->GetInputPinIndex("V"))
+		{
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(*expression_->GetInput(0));
+		}
 	}
 };
 
-class NodeIsFrontFace : public NodeParameter
+class ConvertedNodeIsFrontFace : public ConvertedNode
 {
-public:
-	NodeIsFrontFace()
-	{
-		Type = NodeType::IsFrontFace;
-		TypeName = "IsFrontFace";
-		Group = std::vector<std::string>{"Logical"};
+private:
+	std::shared_ptr<EffekseerMaterial::Node> effekseerNode_;
+	UMaterialExpressionMaterialFunctionCall* expression_ = nullptr;
 
-		auto output = std::make_shared<PinParameter>();
-		output->Name = "Output";
-		output->Type = ValueType::Bool;
-		OutputPins.push_back(output);
+public:
+	ConvertedNodeIsFrontFace(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
+		: effekseerNode_(effekseerNode)
+	{
+		expression_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
+		ConvertedNodeHelper::AddExpression(material, expression_);
+
+		EffekseerUE::UEFSoftObjectPath assetPath("/Effekseer/MaterialFunctions/EfkIsFrontFace.EfkIsFrontFace");
+		UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
+		expression_->SetMaterialFunction(func);
+	}
+
+	UMaterialExpression* GetExpression() const override
+	{
+		return expression_;
 	}
 };
-
-*/
