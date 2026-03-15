@@ -150,6 +150,7 @@ public:
 	FLinearColor ModelColor;
 	FLinearColor CustomData1;
 	FLinearColor CustomData2;
+	FLinearColor ParticleTimes;
 	FLinearColor LightDirection;
 	FLinearColor LightColor;
 	FLinearColor LightAmbientColor;
@@ -210,6 +211,12 @@ bool FFileMaterialRenderProxy::GetParentVectorValue(const MaterialParameterInfo&
 		if (ParameterInfo.Name == FName(TEXT("CustomData2")))
 		{
 			*OutValue = CustomData2;
+			return true;
+		}
+
+		if (ParameterInfo.Name == FName(TEXT("ParticleTimes")))
+		{
+			*OutValue = ParticleTimes;
 			return true;
 		}
 
@@ -669,6 +676,7 @@ void ModelRenderer::EndRendering(const efkModelNodeParam& parameter, void* userD
 		alphaThreshold_,
 		colors_,
 		times_,
+		particleTimes_,
 		customData1_,
 		customData2_);
 
@@ -937,6 +945,9 @@ void RendererImplemented::DrawSprites(int32_t spriteCount, int32_t vertexOffset)
 				meshVert.TextureCoordinate[5].X = customData2[2];
 				meshVert.TextureCoordinate[5].Y = customData2[3];
 			}
+
+			meshVert.TextureCoordinate[6].X = v.ParticleTimes[0];
+			meshVert.TextureCoordinate[6].Y = v.ParticleTimes[1];
 
 			auto normal = UnpackVector3DF(v.Normal);
 			auto tangent = UnpackVector3DF(v.Tangent);
@@ -1273,6 +1284,7 @@ void RendererImplemented::DrawModel(void* model,
 									std::vector<float>& alphaThresholds,
 									std::vector<Effekseer::Color>& colors,
 									std::vector<int32_t>& times,
+									std::vector<std::array<float, 2>>& particleTimes,
 									std::vector<std::array<float, 4>>& customData1,
 									std::vector<std::array<float, 4>>& customData2)
 {
@@ -1401,6 +1413,8 @@ void RendererImplemented::DrawModel(void* model,
 					auto cd = customData2[objectIndex];
 					newProxy->CustomData2 = FLinearColor(cd[0], cd[1], cd[2], cd[3]);
 				}
+
+				newProxy->ParticleTimes = FLinearColor(particleTimes[objectIndex][0], particleTimes[objectIndex][1], 0, 1);
 
 				proxy = newProxy;
 				m_meshElementCollector->RegisterOneFrameMaterialProxy(proxy);

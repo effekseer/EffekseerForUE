@@ -276,6 +276,7 @@ public:
 				   std::vector<float>& alphaThresholds,
 				   std::vector<Effekseer::Color>& colors,
 				   std::vector<int32_t>& times,
+				   std::vector<std::array<float, 2>>& particleTimes,
 				   std::vector<std::array<float, 4>>& customData1,
 				   std::vector<std::array<float, 4>>& customData2);
 
