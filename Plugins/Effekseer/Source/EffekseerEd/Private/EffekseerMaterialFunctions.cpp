@@ -955,6 +955,7 @@ UMaterial* CreateUE4MaterialFromEffekseerMaterial(const std::shared_ptr<NativeEf
 
 	nodeFactories["Time"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeTime>>();
 	nodeFactories["CameraPositionWS"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeCameraPositionWS>>();
+	nodeFactories["ParticleTime"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeParticleTime>>();
 
 	nodeFactories["WorldPosition"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeWorldPosition>>();
 	nodeFactories["VertexNormalWS"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeVertexNormalWS>>();

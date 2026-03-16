@@ -175,3 +175,25 @@ public:
 		return expression_;
 	}
 };
+
+class ConvertedNodeParticleTime : public ConvertedNode
+{
+private:
+	UMaterialExpressionMaterialFunctionCall* expression_ = nullptr;
+
+public:
+	ConvertedNodeParticleTime(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
+	{
+		expression_ = NewObject<UMaterialExpressionMaterialFunctionCall>(material);
+		ConvertedNodeHelper::AddExpression(material, expression_);
+
+		EffekseerUE::UEFSoftObjectPath assetPath("/Effekseer/MaterialFunctions/EfkParticleTime.EfkParticleTime");
+		UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
+		expression_->SetMaterialFunction(func);
+	}
+
+	UMaterialExpression* GetExpression() const override
+	{
+		return expression_;
+	}
+};
