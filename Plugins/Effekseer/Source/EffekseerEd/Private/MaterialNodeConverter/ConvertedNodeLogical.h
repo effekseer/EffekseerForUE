@@ -93,44 +93,51 @@ public:
 		ConvertedNodeHelper::AddExpression(material, expression_);
 
 		// const char* op[6] = {"<", "<=", ">", ">=", "==", "!="};
-		if (effekseerNode->Properties[1]->Floats[0] == 0)
+		auto compareType = static_cast<int>(effekseerNode->Properties[2]->Floats[0]);
+		if (compareType == 0)
 		{
 			EffekseerUE::UEFSoftObjectPath assetPath("/Effekseer/MaterialFunctions/EfkCondition_Less.EfkCondition_Less");
 			UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
+			verify(func != nullptr);
 			expression_->SetMaterialFunction(func);
 		}
-		else if (effekseerNode->Properties[1]->Floats[0] == 1)
+		else if (compareType == 1)
 		{
-			EffekseerUE::UEFSoftObjectPath assetPath("/Effekseer/MaterialFunctions/EfkCondition_Less.EfkCondition_LessEqual");
+			EffekseerUE::UEFSoftObjectPath assetPath("/Effekseer/MaterialFunctions/EfkCondition_LessEqual.EfkCondition_LessEqual");
 			UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
+			verify(func != nullptr);
 			expression_->SetMaterialFunction(func);
 		}
-		else if (effekseerNode->Properties[1]->Floats[0] == 2)
+		else if (compareType == 2)
 		{
-			EffekseerUE::UEFSoftObjectPath assetPath("/Effekseer/MaterialFunctions/EfkCondition_Less.EfkCondition_Greater");
+			EffekseerUE::UEFSoftObjectPath assetPath("/Effekseer/MaterialFunctions/EfkCondition_Greater.EfkCondition_Greater");
 			UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
+			verify(func != nullptr);
 			expression_->SetMaterialFunction(func);
 		}
-		else if (effekseerNode->Properties[1]->Floats[0] == 3)
+		else if (compareType == 3)
 		{
-			EffekseerUE::UEFSoftObjectPath assetPath("/Effekseer/MaterialFunctions/EfkCondition_Less.EfkCondition_GreaterEqual");
+			EffekseerUE::UEFSoftObjectPath assetPath("/Effekseer/MaterialFunctions/EfkCondition_GreaterEqual.EfkCondition_GreaterEqual");
 			UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
+			verify(func != nullptr);
 			expression_->SetMaterialFunction(func);
 		}
-		else if (effekseerNode->Properties[1]->Floats[0] == 4)
+		else if (compareType == 4)
 		{
-			EffekseerUE::UEFSoftObjectPath assetPath("/Effekseer/MaterialFunctions/EfkCondition_Less.EfkCondition_Equal");
+			EffekseerUE::UEFSoftObjectPath assetPath("/Effekseer/MaterialFunctions/EfkCondition_Equal.EfkCondition_Equal");
 			UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
+			verify(func != nullptr);
 			expression_->SetMaterialFunction(func);
 		}
-		else if (effekseerNode->Properties[1]->Floats[0] == 5)
+		else if (compareType == 5)
 		{
-			EffekseerUE::UEFSoftObjectPath assetPath("/Effekseer/MaterialFunctions/EfkCondition_Less.EfkCondition_NotEqual");
+			EffekseerUE::UEFSoftObjectPath assetPath("/Effekseer/MaterialFunctions/EfkCondition_NotEqual.EfkCondition_NotEqual");
 			UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
+			verify(func != nullptr);
 			expression_->SetMaterialFunction(func);
 		}
 
-		if (effekseerMaterial->material->GetConnectedPins(effekseerNode->InputPins[1]).size() == 0)
+		if (effekseerMaterial->material->GetConnectedPins(effekseerNode->InputPins[0]).size() == 0)
 		{
 			expression1_ = NewObject<UMaterialExpressionConstant>(material);
 			ConvertedNodeHelper::AddExpression(material, expression1_);
@@ -140,7 +147,7 @@ public:
 			connecter.Apply(*expression_->GetInput(0));
 		}
 
-		if (effekseerMaterial->material->GetConnectedPins(effekseerNode->InputPins[2]).size() == 0)
+		if (effekseerMaterial->material->GetConnectedPins(effekseerNode->InputPins[1]).size() == 0)
 		{
 			expression2_ = NewObject<UMaterialExpressionConstant>(material);
 			ConvertedNodeHelper::AddExpression(material, expression2_);
