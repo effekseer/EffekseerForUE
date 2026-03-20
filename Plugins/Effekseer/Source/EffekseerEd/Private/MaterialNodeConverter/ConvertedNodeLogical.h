@@ -23,14 +23,14 @@ public:
 		expression_ = NewObject<UMaterialExpressionIf>(material);
 		ConvertedNodeHelper::AddExpression(material, expression_);
 		expression_->ConstB = 0.5f;
-		expression_->EqualsThreshold = 0.0f;
+		expression_->EqualsThreshold = 0.01f;
 
 		if (effekseerMaterial->material->GetConnectedPins(effekseerNode->InputPins[1]).size() == 0)
 		{
 			expression1_ = NewObject<UMaterialExpressionConstant>(material);
 			ConvertedNodeHelper::AddExpression(material, expression1_);
 			expression1_->R = effekseerNode->Properties[0]->Floats[0];
-			expression_->A.Expression = expression1_;
+			expression_->AGreaterThanB.Expression = expression1_;
 		}
 
 		if (effekseerMaterial->material->GetConnectedPins(effekseerNode->InputPins[2]).size() == 0)
@@ -38,7 +38,7 @@ public:
 			expression2_ = NewObject<UMaterialExpressionConstant>(material);
 			ConvertedNodeHelper::AddExpression(material, expression2_);
 			expression2_->R = effekseerNode->Properties[1]->Floats[0];
-			expression_->A.Expression = expression2_;
+			expression_->ALessThanB.Expression = expression2_;
 		}
 	}
 
@@ -65,6 +65,11 @@ public:
 
 	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) override
 	{
+		if (targetInd == effekseerNode_->GetInputPinIndex("Condition"))
+		{
+			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(*expression_->GetInput(0));
+		}
+
 		if (targetInd == effekseerNode_->GetInputPinIndex("True"))
 		{
 			outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(*expression_->GetInput(2));

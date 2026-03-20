@@ -1,4 +1,7 @@
 
+#if !defined(__EFFEKSEER__SHADER__)
+#define __EFFEKSEER__SHADER__
+
 #define MOD fmod
 #define FRAC frac
 #define LERP lerp
@@ -122,3 +125,5 @@ float3 HSVToRGB(float3 hsv)
     float3 P = abs(FRAC(hsv.xxx + K.xyz) * 6.0 - K.www);
     return hsv.z * LERP(K.xxx, clamp(P - K.xxx, 0.0, 1.0), hsv.y);
 }
+
+#endif
