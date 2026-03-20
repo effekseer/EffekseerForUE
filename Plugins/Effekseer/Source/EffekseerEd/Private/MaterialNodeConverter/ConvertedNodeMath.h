@@ -563,6 +563,7 @@ public:
 
 		EffekseerUE::UEFSoftObjectPath assetPath("/Effekseer/MaterialFunctions/EfkRgbToHsv.EfkRgbToHsv");
 		UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
+		verify(func != nullptr);
 		expression_->SetMaterialFunction(func);
 	}
 
@@ -595,6 +596,7 @@ public:
 
 		EffekseerUE::UEFSoftObjectPath assetPath("/Effekseer/MaterialFunctions/EfkHsvToRgb.EfkHsvToRgb");
 		UMaterialFunction* func = Cast<UMaterialFunction>(assetPath.TryLoad());
+		verify(func != nullptr);
 		expression_->SetMaterialFunction(func);
 	}
 
