@@ -916,6 +916,9 @@ void RendererImplemented::DrawSprites(int32_t spriteCount, int32_t vertexOffset)
 		if (nativeMaterial->GetCustomData2Count() > 0)
 			customDataCount = 4;
 
+		// for particle time
+		customDataCount = 5;
+
 		FDynamicMeshBuilder meshBuilder(m_meshElementCollector->GetFeatureLevel(), 2 + customDataCount);
 
 		for (int32_t vi = vertexOffset; vi < vertexOffset + spriteCount * 4; vi++)
