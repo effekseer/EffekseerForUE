@@ -26,9 +26,9 @@
 #include "Materials/MaterialExpressionOneMinus.h"
 #include "Materials/MaterialExpressionPower.h"
 #include "Materials/MaterialExpressionSine.h"
+#include "Materials/MaterialExpressionSmoothStep.h"
 #include "Materials/MaterialExpressionSquareRoot.h"
 #include "Materials/MaterialExpressionSubtract.h"
-#include "Materials/MaterialExpressionSmoothStep.h"
 
 template <class T>
 class ConvertedNodeOneInput : public ConvertedNode
@@ -51,30 +51,6 @@ public:
 	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) override
 	{
 		outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(expression_->Input);
-	}
-};
-
-template <class T>
-class ConvertedNodeNInput : public ConvertedNode
-{
-private:
-	T* expression_ = nullptr;
-
-public:
-	ConvertedNodeNInput(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
-	{
-		expression_ = NewObject<T>(material);
-		ConvertedNodeHelper::AddExpression(material, expression_);
-	}
-
-	UMaterialExpression* GetExpression() const override
-	{
-		return expression_;
-	}
-
-	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) override
-	{
-		outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(*expression_->GetInput(targetInd));
 	}
 };
 
@@ -384,7 +360,41 @@ public:
 	}
 };
 
-using ConvertedNodeSmoothStep = ConvertedNodeNInput<UMaterialExpressionSmoothStep>;
+class ConvertedNodeSmoothStep : public ConvertedNode
+{
+private:
+	std::shared_ptr<EffekseerMaterial::Node> effekseerNode_;
+	UMaterialExpressionSmoothStep* expression_ = nullptr;
+
+public:
+	ConvertedNodeSmoothStep(UMaterial* material, std::shared_ptr<NativeEffekseerMaterialContext> effekseerMaterial, std::shared_ptr<EffekseerMaterial::Node> effekseerNode)
+		: effekseerNode_(effekseerNode)
+	{
+		expression_ = NewObject<UMaterialExpressionSmoothStep>(material);
+		ConvertedNodeHelper::AddExpression(material, expression_);
+
+		if (effekseerMaterial->material->GetConnectedPins(effekseerNode->InputPins[0]).size() == 0)
+		{
+			expression_->ConstMin = effekseerNode->Properties[0]->Floats[0];
+		}
+
+		if (effekseerMaterial->material->GetConnectedPins(effekseerNode->InputPins[1]).size() == 0)
+		{
+			expression_->ConstMin = effekseerNode->Properties[1]->Floats[0];
+		}
+	}
+
+	UMaterialExpression* GetExpression() const override
+	{
+		return expression_;
+	}
+
+	void Connect(int targetInd, std::shared_ptr<ConvertedNode> outputNode, int32_t outputNodePinIndex) override
+	{
+		outputNode->GetNodeOutputConnector(outputNodePinIndex).Apply(*expression_->GetInput(targetInd));
+	}
+};
+
 using ConvertedNodeCeil = ConvertedNodeOneInput<UMaterialExpressionCeil>;
 using ConvertedNodeFloor = ConvertedNodeOneInput<UMaterialExpressionFloor>;
 using ConvertedNodeFrac = ConvertedNodeOneInput<UMaterialExpressionFrac>;
