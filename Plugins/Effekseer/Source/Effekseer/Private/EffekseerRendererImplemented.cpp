@@ -214,7 +214,7 @@ bool FFileMaterialRenderProxy::GetParentVectorValue(const MaterialParameterInfo&
 			return true;
 		}
 
-		if (ParameterInfo.Name == FName(TEXT("ParticleTimes")))
+		if (ParameterInfo.Name == FName(TEXT("ParticleTime")))
 		{
 			*OutValue = ParticleTimes;
 			return true;
