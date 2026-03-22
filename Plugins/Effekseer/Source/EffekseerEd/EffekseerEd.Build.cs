@@ -8,7 +8,9 @@ namespace UnrealBuildTool.Rules
 			: base(Target)
 		{
 			PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
-
+#if !UE_5_0_OR_LATER
+            CppStandard = CppStandardVersion.Cpp17;
+#endif
 			PublicIncludePaths.AddRange(
 				new string[] {
 					// ... add public include paths required here ...

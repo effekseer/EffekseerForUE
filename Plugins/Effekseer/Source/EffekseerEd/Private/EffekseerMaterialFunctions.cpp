@@ -18,6 +18,7 @@
 #include "MaterialNodeConverter/ConvertedNodeConstant.h"
 #include "MaterialNodeConverter/ConvertedNodeGradient.h"
 #include "MaterialNodeConverter/ConvertedNodeInternal.h"
+#include "MaterialNodeConverter/ConvertedNodeLogical.h"
 #include "MaterialNodeConverter/ConvertedNodeMath.h"
 #include "MaterialNodeConverter/ConvertedNodeModel.h"
 #include "MaterialNodeConverter/ConvertedNodeNoise.h"
@@ -923,6 +924,10 @@ UMaterial* CreateUE4MaterialFromEffekseerMaterial(const std::shared_ptr<NativeEf
 	nodeFactories["Divide"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeDivide>>();
 	nodeFactories["Fmod"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeFmod>>();
 	nodeFactories["Step"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeStep>>();
+	nodeFactories["SmoothStep"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeSmoothStep>>();
+
+	nodeFactories["RgbToHsv"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeRgbToHsv>>();
+	nodeFactories["HsvToRgb"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeHsvToRgb>>();
 
 	nodeFactories["Ceil"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeCeil>>();
 	nodeFactories["Floor"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeFloor>>();
@@ -950,6 +955,7 @@ UMaterial* CreateUE4MaterialFromEffekseerMaterial(const std::shared_ptr<NativeEf
 
 	nodeFactories["Time"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeTime>>();
 	nodeFactories["CameraPositionWS"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeCameraPositionWS>>();
+	nodeFactories["ParticleTime"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeParticleTime>>();
 
 	nodeFactories["WorldPosition"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeWorldPosition>>();
 	nodeFactories["VertexNormalWS"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeVertexNormalWS>>();
@@ -971,13 +977,22 @@ UMaterial* CreateUE4MaterialFromEffekseerMaterial(const std::shared_ptr<NativeEf
 	nodeFactories["CastFloat2ToFloat4"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeCastFloat2ToFloat4>>();
 	nodeFactories["CastFloat3ToFloat4"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeCastFloat3ToFloat4>>();
 
+	nodeFactories["WhiteNoise"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeWhiteNoise>>();
 	nodeFactories["SimpleNoise"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeSimpleNoise>>();
+	nodeFactories["CellularNoise"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeCellularNoise>>();
 
 	nodeFactories["SampleGradient"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeSampleGradient>>();
 
 	nodeFactories["Light"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeLight>>();
 
 	nodeFactories["LocalTime"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeLocalTime>>();
+
+	nodeFactories["Branch"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeBranch>>();
+	nodeFactories["Compare"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeCompare>>();
+	nodeFactories["BoolAnd"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeBoolAnd>>();
+	nodeFactories["BoolOr"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeBoolOr>>();
+	nodeFactories["BoolNot"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeBoolNot>>();
+	nodeFactories["IsFrontFace"] = std::make_shared<ConvertedNodeFactoryNormalNode<ConvertedNodeIsFrontFace>>();
 
 	std::map<uint64_t, std::shared_ptr<ConvertedNode>> convertedNodes;
 

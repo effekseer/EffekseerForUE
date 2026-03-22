@@ -63,6 +63,7 @@ void EffekseerSystem::Init(int32_t maxSprite, int32_t threadCount, EEffekseerCol
 	Manager->SetRibbonRenderer(Renderer->CreateRibbonRenderer());
 	Manager->SetRingRenderer(Renderer->CreateRingRenderer());
 	Manager->SetTrackRenderer(Renderer->CreateTrackRenderer());
+	Manager->SetModelRenderer(Renderer->CreateModelRenderer());
 }
 
 void EffekseerSystem::Render(const FMatrix& localToWorld, const FMatrix& viewMatrix, int viewIndex, FMeshElementCollector& collector)

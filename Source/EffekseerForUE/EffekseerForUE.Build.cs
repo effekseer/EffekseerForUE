@@ -8,8 +8,11 @@ public class EffekseerForUE : ModuleRules
 		: base(Target)
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
+#if !UE_5_0_OR_LATER
+            CppStandard = CppStandardVersion.Cpp17;
+#endif
 
-		PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore" });
+        PublicDependencyModuleNames.AddRange(new string[] { "Core", "CoreUObject", "Engine", "InputCore" });
 		PrivateDependencyModuleNames.AddRange(new string[] {  });
 	}
 }
