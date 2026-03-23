@@ -31,7 +31,6 @@ const int32_t MaterialVersion17Alpha4 = 1703;
 const int32_t MaterialVersion17 = 1710;
 const int32_t MaterialVersion18 = 1800;
 
-
 enum class TextureValueType
 {
 	Color,
@@ -102,12 +101,12 @@ enum class NodeType
 	Parameter3,
 	Parameter4,
 
-	Branch,
-	Compare,
-	BoolAnd,
-	BoolOr,
-	BoolNot,
-	IsFrontFace,
+	Branch,		 //! 18xx
+	Compare, //! 18xx
+	BoolAnd,	 //! 18xx
+	BoolOr,		 //! 18xx
+	BoolNot,	 //! 18xx
+	IsFrontFace, //! 18xx
 
 	Abs,
 	Sine,
@@ -119,7 +118,7 @@ enum class NodeType
 	FMod,
 
 	Step,
-	SmoothStep,
+	SmoothStep, //! 18xx
 	Ceil,
 	Floor,
 	Frac,
@@ -163,20 +162,20 @@ enum class NodeType
 
 	DepthFade,
 
-	RgbToHsv,
-	HsvToRgb,
+	RgbToHsv, //! 18xx
+	HsvToRgb, //! 18xx
 
 	Gradient,		   //! 1703
 	GradientParameter, //! 1703
 	SampleGradient,	   //! 1703
 
-	WhiteNoise, //! 1710
-	SimpleNoise, //! 1703
-	CellularNoise, //! 1710
+	WhiteNoise,	   //! 1710 1.8
+	SimpleNoise,   //! 1703
+	CellularNoise, //! 1710 1.8
 
 	Light, //! 1703
 
-	LocalTime, //! 1703
+	LocalTime,	  //! 1703
 	ParticleTime, //! 1810
 
 	Comment,

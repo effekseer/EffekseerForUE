@@ -8,6 +8,7 @@
 #include <array>
 #include <assert.h>
 #include <atomic>
+#include <cmath>
 #include <cfloat>
 #include <climits>
 #include <functional>
@@ -344,6 +345,21 @@ T Clamp(T t, U max_, V min_)
 	return t;
 }
 
+inline float AvoidZero(float value)
+{
+	float eps = 0.000001f;
+	if (std::fabs(value) < eps)
+	{
+		if (value > 0)
+		{
+			return eps;
+		}
+		return -eps;
+	}
+
+	return value;
+}
+
 /**
 	@brief    Convert UTF16 into UTF8
 	@param    dst    a pointer to destination buffer
@@ -377,14 +393,14 @@ inline int32_t ConvertUtf16ToUtf8(char* dst, int32_t dst_size, const char16_t* s
 		else if ((wc & ~0x7ff) == 0)
 		{
 			*cp++ = ((wc >> 6) & 0x1f) | 0xc0;
-			*cp++ = ((wc)&0x3f) | 0x80;
+			*cp++ = ((wc) & 0x3f) | 0x80;
 			cnt += 2;
 		}
 		else
 		{
 			*cp++ = ((wc >> 12) & 0xf) | 0xe0;
 			*cp++ = ((wc >> 6) & 0x3f) | 0x80;
-			*cp++ = ((wc)&0x3f) | 0x80;
+			*cp++ = ((wc) & 0x3f) | 0x80;
 			cnt += 3;
 		}
 	}

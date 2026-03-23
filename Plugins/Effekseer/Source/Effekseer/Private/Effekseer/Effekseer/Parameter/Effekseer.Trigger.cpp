@@ -26,7 +26,8 @@ void TriggerParameter::Load(uint8_t*& pos, int32_t version)
 	memcpy(&flags, pos, sizeof(uint8_t));
 	pos += sizeof(uint8_t);
 
-	auto loadValue = [&pos](TriggerValues& dst) {
+	auto loadValue = [&pos](TriggerValues& dst)
+	{
 		memcpy(&dst, pos, sizeof(TriggerValues));
 		pos += sizeof(TriggerValues);
 	};
@@ -61,6 +62,23 @@ bool IsTriggerActivated(const TriggerValues& trigger, InstanceGlobal* global, In
 		return parent != nullptr && parent->HasCollidedThisFrame();
 	default:
 		return false;
+	}
+}
+
+uint32_t GetTriggerCount(const TriggerValues& trigger, InstanceGlobal* global, Instance* parent)
+{
+	switch (trigger.type)
+	{
+	case TriggerType::None:
+		return 0;
+	case TriggerType::ExternalTrigger:
+		return global != nullptr ? global->GetInputTriggerCount(trigger.index) : 0;
+	case TriggerType::ParentRemoved:
+		return (parent != nullptr && parent->GetState() != eInstanceState::INSTANCE_STATE_ACTIVE) ? 1 : 0;
+	case TriggerType::ParentCollided:
+		return (parent != nullptr && parent->HasCollidedThisFrame()) ? 1 : 0;
+	default:
+		return 0;
 	}
 }
 
