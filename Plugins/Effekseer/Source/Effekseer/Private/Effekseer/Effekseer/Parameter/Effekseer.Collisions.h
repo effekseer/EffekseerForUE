@@ -50,11 +50,18 @@ struct CollisionsParameter
 
 struct CollisionsFunctions
 {
-	using ExternalCollisionCallback = std::function<bool(const Vector3D& startPosition, const Vector3D& endPosition, Vector3D& collisionPosition)>;
+	struct Result
+	{
+		SIMD::Vec3f VelocityChange;
+		SIMD::Vec3f PositionChange;
+	};
+
+	using ExternalCollisionCallback =
+		std::function<bool(const Vector3D& startPosition, const Vector3D& endPosition, Vector3D& collisionPosition, Vector3D& collisionNormal)>;
 
 	static void Initialize(CollisionsState& state, const CollisionsParameter& parameter, RandObject& rand);
 
-	static std::tuple<SIMD::Vec3f, SIMD::Vec3f> Update(
+	static Result Update(
 		CollisionsState& state,
 		const CollisionsParameter& parameter,
 		const SIMD::Vec3f& nextPositionGlobal,

@@ -72,7 +72,7 @@ void CollisionsFunctions::Initialize(CollisionsState& state, const CollisionsPar
 	}
 }
 
-std::tuple<SIMD::Vec3f, SIMD::Vec3f> CollisionsFunctions::Update(
+CollisionsFunctions::Result CollisionsFunctions::Update(
 	CollisionsState& state,
 	const CollisionsParameter& parameter,
 	const SIMD::Vec3f& nextPositionGlobal,
@@ -102,10 +102,10 @@ std::tuple<SIMD::Vec3f, SIMD::Vec3f> CollisionsFunctions::Update(
 		currentPosition -= positionCenterLocal;
 	}
 
-	const auto height = parameter.Height * magnificationScale;
+	const auto groundHeight = parameter.Height * magnificationScale;
 	const auto diffGlobal = nextPositionGlobalValue - currentPositionGlobal;
 
-	const auto resolveCollision = [&](const SIMD::Vec3f& collisionPosition)
+	const auto resolveCollision = [&](const SIMD::Vec3f& collisionPosition, SIMD::Vec3f collisionNormal)
 	{
 		float friction = state.Friction;
 		if (friction < 0.0f)
@@ -117,14 +117,22 @@ std::tuple<SIMD::Vec3f, SIMD::Vec3f> CollisionsFunctions::Update(
 			friction = 1.0f;
 		}
 
-		SIMD::Vec3f velocityChange(
-			-velocityGlobal.GetX() * friction,
-			-velocityGlobal.GetY() * (1.0f + state.Bounce),
-			-velocityGlobal.GetZ() * friction);
+		if (collisionNormal.IsZero())
+		{
+			collisionNormal = SIMD::Vec3f(0.0f, 1.0f, 0.0f);
+		}
+		else
+		{
+			collisionNormal = collisionNormal.GetNormal();
+		}
+
+		const auto normalVelocity = collisionNormal * SIMD::Vec3f::Dot(velocityGlobal, collisionNormal);
+		const auto tangentVelocity = velocityGlobal - normalVelocity;
+		const auto acceleration = tangentVelocity * -friction + normalVelocity * -(1.0f + state.Bounce);
 
 		state.CollidedThisFrame = true;
 
-		return std::make_tuple(velocityChange, currentPositionGlobal - collisionPosition);
+		return Result{acceleration, collisionPosition - currentPositionGlobal};
 	};
 
 	if (parameter.IsSceneCollisionWithExternal)
@@ -134,20 +142,30 @@ std::tuple<SIMD::Vec3f, SIMD::Vec3f> CollisionsFunctions::Update(
 			Vector3D start(currentPositionGlobal.GetX(), currentPositionGlobal.GetY(), currentPositionGlobal.GetZ());
 			Vector3D end(nextPositionGlobalValue.GetX(), nextPositionGlobalValue.GetY(), nextPositionGlobalValue.GetZ());
 			Vector3D hit;
-			if (externalCollision(start, end, hit))
+			Vector3D normal;
+			if (externalCollision(start, end, hit, normal))
 			{
 				SIMD::Vec3f collisionPosition(hit.X, hit.Y, hit.Z);
-				return resolveCollision(collisionPosition);
+				SIMD::Vec3f collisionNormal(normal.X, normal.Y, normal.Z);
+				return resolveCollision(collisionPosition, collisionNormal);
 			}
 		}
 	}
 
-	if (parameter.IsGroundCollisionEnabled && nextPosition.GetY() < height && currentPosition.GetY() >= height && diffGlobal.GetY() != 0.0f)
+	if (parameter.IsGroundCollisionEnabled && nextPosition.GetY() <= groundHeight && currentPosition.GetY() >= groundHeight)
 	{
-		const auto positionDiffRate = (currentPosition.GetY() - height) / diffGlobal.GetY();
-		const auto collisionPosition = currentPositionGlobal - diffGlobal * positionDiffRate;
+		Effekseer::SIMD::Vec3f collisionPosition;
+		if (diffGlobal.GetY() == 0)
+		{
+			collisionPosition = currentPositionGlobal;
+		}
+		else
+		{
+			const auto positionDiffRate = (currentPosition.GetY() - groundHeight) / diffGlobal.GetY();
+			collisionPosition = currentPositionGlobal - diffGlobal * positionDiffRate;
+		}
 
-		return resolveCollision(collisionPosition);
+		return resolveCollision(collisionPosition, SIMD::Vec3f(0.0f, 1.0f, 0.0f));
 	}
 	else
 	{

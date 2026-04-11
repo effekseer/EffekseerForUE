@@ -24,7 +24,7 @@ jobs:
         python CreatePackage.py
     - uses: actions/upload-artifact@v4
       with:
-        name: EffekseerForUE_1.8.0.0-beta3
+        name: EffekseerForUE_1.80.0
         path: EffekseerForUE
   
 
