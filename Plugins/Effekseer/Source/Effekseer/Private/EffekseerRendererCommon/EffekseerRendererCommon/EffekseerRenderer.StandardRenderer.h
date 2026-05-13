@@ -185,7 +185,7 @@ struct StandardRendererState
 				return true;
 		}
 
-		if (CustomData1Count != state.CustomData1Count)
+		if (CustomData2Count != state.CustomData2Count)
 			return true;
 
 		if (CustomData1Count != state.CustomData1Count)
@@ -800,7 +800,7 @@ public:
 
 			if (distortion)
 			{
-				PixelConstantBufferDistortion pcb;
+				PixelConstantBufferDistortion pcb{};
 				pcb.DistortionIntencity[0] = renderState.DistortionIntensity;
 				pcb.UVInversedBack[0] = uvInversedBack[0];
 				pcb.UVInversedBack[1] = uvInversedBack[1];
@@ -831,7 +831,7 @@ public:
 			}
 			else
 			{
-				PixelConstantBuffer pcb;
+				PixelConstantBuffer pcb{};
 				pcb.MiscFlags.fill(0.0f);
 				pcb.MiscFlags[0] = renderer_->GetImpl()->MaintainGammaColorInLinearColorSpace ? 1.0f : 0.0f;
 

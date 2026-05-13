@@ -321,6 +321,10 @@ struct ParameterRendererCommon
 
 			memcpy(&UVDistortionIntensity, pos, sizeof(float));
 			pos += sizeof(float);
+			if (TextureIndexes[static_cast<size_t>(RendererTextureType::UVDistortion)] < 0)
+			{
+				UVDistortionIntensity = 0.0f;
+			}
 
 			UVs[3].Load(pos, version, 3);
 
@@ -335,6 +339,10 @@ struct ParameterRendererCommon
 			// blend uv distortion intensity
 			memcpy(&BlendUVDistortionIntensity, pos, sizeof(float));
 			pos += sizeof(float);
+			if (TextureIndexes[static_cast<size_t>(RendererTextureType::BlendUVDistortion)] < 0)
+			{
+				BlendUVDistortionIntensity = 0.0f;
+			}
 		}
 
 		if (version >= Version18Alpha2)

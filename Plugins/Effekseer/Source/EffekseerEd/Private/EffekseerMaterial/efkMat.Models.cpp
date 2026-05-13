@@ -77,6 +77,8 @@ static const char* tag_changeNumberCommand = "ChangeNumberCommand";
 
 static const char* tag_changeStringCommand = "ChangeStringCommand";
 
+static const char* tag_changeGradientCommand = "ChangeGradientCommand";
+
 static const char* tag_changeNodePosCommand = "ChangeNodePosCommand";
 
 static const char* tag_changeMultiNodePosCommand = "ChangeMultiNodePosCommand";
@@ -223,6 +225,75 @@ public:
 	virtual const char* GetTag()
 	{
 		return tag_changeStringCommand;
+	}
+};
+
+class ChangeGradientCommand : public ICommand
+{
+private:
+	std::shared_ptr<NodeProperty> prop_;
+	Gradient newValue_;
+	Gradient oldValue_;
+
+	void Apply(const Gradient& value)
+	{
+		if (prop_->GradientData == nullptr)
+		{
+			prop_->GradientData = std::make_unique<Gradient>();
+		}
+
+		*prop_->GradientData = value;
+
+		auto parent = prop_->Parent.lock();
+
+		if (parent != nullptr)
+		{
+			auto parentMaterial = parent->Parent.lock();
+
+			if (parentMaterial != nullptr)
+			{
+				parentMaterial->MakeDirty(parent);
+			}
+		}
+	}
+
+public:
+	ChangeGradientCommand(std::shared_ptr<NodeProperty> prop, const Gradient& newValue, const Gradient& oldValue)
+		: prop_(prop)
+		, newValue_(newValue)
+		, oldValue_(oldValue)
+	{
+	}
+
+	virtual ~ChangeGradientCommand() = default;
+
+	void Execute() override
+	{
+		Apply(newValue_);
+	}
+
+	void Unexecute() override
+	{
+		Apply(oldValue_);
+	}
+
+	bool Merge(ICommand* command) override
+	{
+		if (command->GetTag() != this->GetTag())
+			return false;
+
+		auto command_ = static_cast<ChangeGradientCommand*>(command);
+		if (command_->prop_ != this->prop_)
+			return false;
+
+		this->oldValue_ = command_->oldValue_;
+
+		return true;
+	}
+
+	virtual const char* GetTag()
+	{
+		return tag_changeGradientCommand;
 	}
 };
 
@@ -1683,6 +1754,17 @@ void Material::ChangeValue(std::shared_ptr<NodeProperty> prop, std::string value
 	auto value_new = value;
 
 	auto command = std::make_shared<ChangeStringCommand>(prop, value_new, value_old);
+	commandManager_->Execute(command);
+}
+
+void Material::ChangeValue(std::shared_ptr<NodeProperty> prop, const Gradient& value)
+{
+	assert(prop->GradientData != nullptr);
+
+	auto value_old = *prop->GradientData;
+	auto value_new = value;
+
+	auto command = std::make_shared<ChangeGradientCommand>(prop, value_new, value_old);
 	commandManager_->Execute(command);
 }
 

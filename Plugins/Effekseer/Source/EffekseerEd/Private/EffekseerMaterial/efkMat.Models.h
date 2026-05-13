@@ -316,6 +316,8 @@ public:
 
 	void ChangeValue(std::shared_ptr<NodeProperty> prop, std::string value);
 
+	void ChangeValue(std::shared_ptr<NodeProperty> prop, const Gradient& value);
+
 	void ChangeValueTextureType(std::shared_ptr<TextureInfo> prop, TextureValueType type);
 
 	void MakeDirty(std::shared_ptr<Node> node, bool doesUpdateWarnings = true);
