@@ -10,22 +10,28 @@
 namespace Effekseer
 {
 
+const int Gradient::KeyMax;
+
 void LoadGradient(Gradient& gradient, uint8_t*& pos, int32_t version)
 {
 	BinaryReader<true> reader(pos, std::numeric_limits<int>::max());
-	reader.Read(gradient.ColorCount);
-	for (int i = 0; i < gradient.ColorCount; i++)
-	{
-		reader.Read(gradient.Colors[i]);
-	}
-
-	reader.Read(gradient.AlphaCount);
-	for (int i = 0; i < gradient.AlphaCount; i++)
-	{
-		reader.Read(gradient.Alphas[i]);
-	}
-
+	LoadGradient(gradient, reader, version);
 	pos += reader.GetOffset();
+}
+
+bool LoadGradient(Gradient& gradient, BinaryReader<true>& reader, int32_t version)
+{
+	(void)version;
+	if (!reader.Read(gradient.ColorCount, 0, Gradient::KeyMax) ||
+		!reader.Read(gradient.Colors.data(), gradient.ColorCount) ||
+		!reader.Read(gradient.AlphaCount, 0, Gradient::KeyMax) ||
+		!reader.Read(gradient.Alphas.data(), gradient.AlphaCount))
+	{
+		gradient.ColorCount = 0;
+		gradient.AlphaCount = 0;
+		return false;
+	}
+	return true;
 }
 
 void NodeRendererTextureUVTypeParameter::Load(uint8_t*& pos, int32_t version)

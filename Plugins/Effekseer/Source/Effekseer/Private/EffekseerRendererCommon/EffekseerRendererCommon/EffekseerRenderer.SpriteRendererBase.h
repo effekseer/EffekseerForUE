@@ -47,6 +47,9 @@ protected:
 	int32_t instanceMaxCount_ = 0;
 	int32_t customData1Count_ = 0;
 	int32_t customData2Count_ = 0;
+	::Effekseer::SIMD::Mat44f cameraMatrix_;
+	efkVector3D cameraFrontDirection_;
+	efkVector3D cameraPosition_;
 
 public:
 	SpriteRendererBase(RENDERER* renderer)
@@ -101,6 +104,16 @@ protected:
 
 	void BeginRendering_(RENDERER* renderer, int32_t count, const efkSpriteNodeParam& param, void* userData)
 	{
+		cameraMatrix_ = TransformCameraMatrixToEffectSpace(
+			::Effekseer::SIMD::Mat44f(renderer->GetCameraMatrix()),
+			param.RenderingCoordinateTransform);
+		cameraFrontDirection_ = TransformCameraFrontToEffectSpace(
+			efkVector3D(renderer->GetCameraFrontDirection()),
+			param.RenderingCoordinateTransform);
+		cameraPosition_ = TransformCameraPositionToEffectSpace(
+			efkVector3D(renderer->GetCameraPosition()),
+			param.RenderingCoordinateTransform);
+
 		EffekseerRenderer::StandardRendererState state;
 		state.CullingType = ::Effekseer::CullingType::Double;
 		state.DepthTest = param.ZTest;
@@ -158,10 +171,9 @@ protected:
 	{
 		if (parameter.ZSort == Effekseer::ZSortType::None)
 		{
-			auto cameraMat = renderer_->GetCameraMatrix();
 			const auto& state = renderer_->GetStandardRenderer()->GetState();
 
-			RenderingInstance(instanceParameter, parameter, state, cameraMat);
+			RenderingInstance(instanceParameter, parameter, state, cameraMatrix_);
 		}
 		else
 		{
@@ -293,11 +305,11 @@ protected:
 
 				ApplyViewOffset(instMat, camera, instanceParameter.ViewOffsetDistance);
 
-				CalcBillboard(parameter.Billboard, mat_rot, s, R, F, instMat, renderer_->GetCameraFrontDirection(), instanceParameter.Direction);
+				CalcBillboard(parameter.Billboard, mat_rot, s, R, F, instMat, cameraFrontDirection_, instanceParameter.Direction);
 			}
 			else
 			{
-				CalcBillboard(parameter.Billboard, mat_rot, s, R, F, instanceParameter.SRTMatrix43, renderer_->GetCameraFrontDirection(), instanceParameter.Direction);
+				CalcBillboard(parameter.Billboard, mat_rot, s, R, F, instanceParameter.SRTMatrix43, cameraFrontDirection_, instanceParameter.Direction);
 			}
 
 			for (int i = 0; i < 4; i++)
@@ -307,8 +319,8 @@ protected:
 			}
 
 			ApplyDepthParameters(mat_rot,
-								 renderer_->GetCameraFrontDirection(),
-								 renderer_->GetCameraPosition(),
+								 cameraFrontDirection_,
+								 cameraPosition_,
 								 s,
 								 parameter.DepthParameterPtr,
 								 parameter.IsRightHand);
@@ -324,11 +336,17 @@ protected:
 					R = -R;
 				}
 
+				if (parameter.RenderingTransform.IsEnabled)
+				{
+					F = SafeNormalize(TransformDirection(F, parameter.RenderingTransform.Transform));
+					R = SafeNormalize(TransformDirection(R, parameter.RenderingTransform.Transform));
+				}
+
 				StrideView<VERTEX> vs(verteies.pointerOrigin_, stride_, 4);
 				for (auto i = 0; i < 4; i++)
 				{
 					vs[i].SetPackedNormal(PackVector3DF(F), FLIP_RGB);
-					vs[i].SetPackedTangent(PackVector3DF(R), FLIP_RGB);
+					vs[i].SetPackedTangent(PackTangent(R, parameter.RenderingTransform.ReversesWinding), FLIP_RGB);
 				}
 			}
 		}
@@ -342,8 +360,8 @@ protected:
 			}
 
 			ApplyDepthParameters(mat,
-								 renderer_->GetCameraFrontDirection(),
-								 renderer_->GetCameraPosition(),
+								 cameraFrontDirection_,
+								 cameraPosition_,
 								 parameter.DepthParameterPtr,
 								 parameter.IsRightHand);
 
@@ -358,6 +376,11 @@ protected:
 					StrideView<VERTEX> vs(verteies.pointerOrigin_, stride_, 4);
 					auto tangentX = efkVector3D(mat.X.GetX(), mat.Y.GetX(), mat.Z.GetX());
 					auto tangentZ = efkVector3D(mat.X.GetZ(), mat.Y.GetZ(), mat.Z.GetZ());
+					if (parameter.RenderingTransform.IsEnabled)
+					{
+						tangentX = TransformDirection(tangentX, parameter.RenderingTransform.Transform);
+						tangentZ = TransformDirection(tangentZ, parameter.RenderingTransform.Transform);
+					}
 					tangentX = tangentX.GetNormal();
 					tangentZ = tangentZ.GetNormal();
 
@@ -369,9 +392,14 @@ protected:
 					}
 
 					vs[i].SetPackedNormal(PackVector3DF(tangentZ), FLIP_RGB);
-					vs[i].SetPackedTangent(PackVector3DF(tangentX), FLIP_RGB);
+					vs[i].SetPackedTangent(PackTangent(tangentX, parameter.RenderingTransform.ReversesWinding), FLIP_RGB);
 				}
 			}
+		}
+
+		if (parameter.RenderingTransform.IsEnabled)
+		{
+			TransformVertexes(verteies, 4, parameter.RenderingTransform.Transform);
 		}
 
 		// custom parameter
@@ -403,14 +431,17 @@ protected:
 	{
 		if (param.ZSort != Effekseer::ZSortType::None)
 		{
+			const auto frontDirection = NormalizeCameraFrontForRenderingSpace(
+				efkVector3D(renderer->GetCameraFrontDirection()),
+				param.IsRightHand,
+				param.RenderingCoordinateTransform);
+
 			for (auto& kv : instances)
 			{
 				efkVector3D t = kv.Value.SRTMatrix43.GetTranslation();
-
-				auto frontDirection = renderer_->GetCameraFrontDirection();
-				if (!param.IsRightHand)
+				if (param.RenderingTransform.IsEnabled)
 				{
-					frontDirection = -frontDirection;
+					t = Effekseer::SIMD::Vec3f::Transform(t, param.RenderingTransform.Transform);
 				}
 
 				kv.Key = Effekseer::SIMD::Vec3f::Dot(t, frontDirection);
@@ -427,12 +458,10 @@ protected:
 						  { return a.Key > b.Key; });
 			}
 
+			const auto& state = renderer->GetStandardRenderer()->GetState();
 			for (auto& kv : instances)
 			{
-				auto camera = renderer_->GetCameraMatrix();
-				const auto& state = renderer->GetStandardRenderer()->GetState();
-
-				RenderingInstance(kv.Value, param, state, camera);
+				RenderingInstance(kv.Value, param, state, cameraMatrix_);
 			}
 		}
 
@@ -451,7 +480,7 @@ public:
 			return;
 		if (spriteCount_ == renderer_->GetSquareMaxCount())
 			return;
-		Rendering_(parameter, instanceParameter, renderer_->GetCameraMatrix());
+		Rendering_(parameter, instanceParameter, cameraMatrix_);
 	}
 
 	void EndRendering(const efkSpriteNodeParam& parameter, void* userData) override

@@ -122,6 +122,9 @@ struct ScalingParameter
 		{
 			memcpy(&size, pos, sizeof(int));
 			pos += sizeof(int);
+			const auto expectedSize = version >= 14 ? sizeof(ParameterScalingFixed) : sizeof(ScalingFixed.Position);
+			if (size != expectedSize)
+				return;
 
 			if (version >= 14)
 			{
@@ -147,6 +150,12 @@ struct ScalingParameter
 		{
 			memcpy(&size, pos, sizeof(int));
 			pos += sizeof(int);
+			// Versions before 14 store three consecutive random_vector3d values without dynamic equation references.
+			const auto expectedSize = version >= 14
+								  ? sizeof(ParameterScalingPVA)
+								  : sizeof(ScalingPVA.Position) + sizeof(ScalingPVA.Velocity) + sizeof(ScalingPVA.Acceleration);
+			if (size != expectedSize)
+				return;
 			if (version >= 14)
 			{
 				assert(size == sizeof(ParameterScalingPVA));
@@ -162,6 +171,8 @@ struct ScalingParameter
 		{
 			memcpy(&size, pos, sizeof(int));
 			pos += sizeof(int);
+			if (size < 0 || size > 64 * 1024)
+				return;
 			ScalingEasing.Load(pos, size, version);
 			pos += size;
 		}
@@ -169,7 +180,8 @@ struct ScalingParameter
 		{
 			memcpy(&size, pos, sizeof(int));
 			pos += sizeof(int);
-			assert(size == sizeof(ParameterScalingSinglePVA));
+			if (size != sizeof(ParameterScalingSinglePVA))
+				return;
 			memcpy(&ScalingSinglePVA, pos, size);
 			pos += size;
 		}
@@ -177,6 +189,8 @@ struct ScalingParameter
 		{
 			memcpy(&size, pos, sizeof(int));
 			pos += sizeof(int);
+			if (size < 0 || size > 64 * 1024)
+				return;
 
 			ScalingSingleEasing.Load(pos, size, version);
 			pos += size;
@@ -185,6 +199,8 @@ struct ScalingParameter
 		{
 			memcpy(&size, pos, sizeof(int));
 			pos += sizeof(int);
+			if (size < 0 || size > 1024 * 1024)
+				return;
 
 			ScalingFCurve = std::make_unique<FCurveVector3D>();
 			pos += ScalingFCurve->Load(pos, version);
@@ -196,6 +212,8 @@ struct ScalingParameter
 		{
 			memcpy(&size, pos, sizeof(int));
 			pos += sizeof(int);
+			if (size < 0 || size > 1024 * 1024)
+				return;
 
 			ScalingSingleFCurve = std::make_unique<FCurveScalar>();
 			pos += ScalingSingleFCurve->Load(pos, version);

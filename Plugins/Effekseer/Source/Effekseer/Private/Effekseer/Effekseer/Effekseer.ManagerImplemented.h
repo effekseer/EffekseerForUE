@@ -44,6 +44,7 @@ public:
 
 		Matrix43 Rotation;
 		Vector3D Scaling = {1.f, 1.f, 1.f};
+		EffectFlipParameter EffectFlip;
 
 		SIMD::Mat43f BaseMatrix;
 
@@ -164,6 +165,11 @@ private:
 	bool isLockedWithRenderingMutex_ = false;
 
 	SettingRef setting_;
+	CoordinateSystemMode coordinateSystemMode_ = CoordinateSystemMode::LegacySimulation;
+	CoordinateSystem externalCoordinateSystem_ = CoordinateSystem::RH;
+	CoordinateSystemTransform coordinateSystemTransform_;
+	CoordinateSystemConverter coordinateSystemConverter_;
+	bool hasCustomCoordinateSystemTransform_ = false;
 
 	int updateTime_;
 	int computeTime_;
@@ -190,8 +196,10 @@ private:
 
 	RandFunc randFunc_;
 	CollisionCallback collisionCallback_;
+	CollisionCallback internalCollisionCallback_;
 
 	std::array<LayerParameter, LayerCount> layerParameters_;
+	std::array<LayerParameter, LayerCount> externalLayerParameters_;
 
 	std::queue<std::pair<SoundTag, SoundPlayer::InstanceParameter>> requestedSounds_;
 	std::mutex soundMutex_;
@@ -209,9 +217,37 @@ private:
 
 	void ExecuteSounds();
 
-	void StoreSortingDrawSets(const Manager::DrawParameter& drawParameter);
+	void StoreSortingDrawSets(
+		const Manager::DrawParameter& drawParameter,
+		const EffectRenderingTransformParameter& renderingCoordinateTransform);
 
-	static bool CanDraw(const DrawSet& drawSet, const Manager::DrawParameter& drawParameter, const std::array<Plane, 6>& planes);
+	static bool CanDraw(
+		const DrawSet& drawSet,
+		const Manager::DrawParameter& drawParameter,
+		const std::array<Plane, 6>& planes,
+		const EffectRenderingTransformParameter& renderingCoordinateTransform);
+
+	static void ApplyRenderingCoordinateTransform(
+		DrawSet& drawSet,
+		const EffectRenderingTransformParameter& renderingCoordinateTransform);
+
+	void RefreshCoordinateSystemBoundaryState();
+
+	EffectRenderingTransformParameter CalculateDrawRenderingCoordinateTransform(const Matrix44& drawCoordinateMatrix) const;
+
+	void SetMatrixInternal(Handle handle, const Matrix43& mat);
+
+	void SetLocationInternal(Handle handle, const Vector3D& location);
+
+	void AddLocationInternal(Handle handle, const Vector3D& location);
+
+	void SetRotationInternal(Handle handle, const Matrix43& rotation);
+
+	void SetScaleInternal(Handle handle, const Vector3D& scale);
+
+	void SetTargetLocationInternal(Handle handle, const Vector3D& location);
+
+	Handle PlayInternal(const EffectRef& effect, const Vector3D& position, int32_t startFrame);
 
 public:
 	ManagerImplemented(int instance_max, bool autoFlip);
@@ -241,9 +277,19 @@ public:
 
 	void SetCoordinateSystem(CoordinateSystem coordinateSystem) override;
 
+	CoordinateSystemMode GetCoordinateSystemMode() const override;
+
+	void SetCoordinateSystemMode(CoordinateSystemMode mode) override;
+
+	CoordinateSystemTransform GetCoordinateSystemTransform() const override;
+
+	bool SetCoordinateSystemTransform(const CoordinateSystemTransform& transform) override;
+
 	void SetCollisionCallback(CollisionCallback callback) override;
 
 	CollisionCallback GetCollisionCallback() const override;
+
+	CollisionCallback GetInternalCollisionCallback() const;
 
 	SpriteRendererRef GetSpriteRenderer() override;
 
@@ -329,6 +375,8 @@ public:
 
 	const LayerParameter& GetLayerParameter(int32_t layer) const override;
 
+	const LayerParameter& GetInternalLayerParameter(int32_t layer) const;
+
 	void SetLayerParameter(int32_t layer, const LayerParameter& layerParameter) override;
 
 	Matrix43 GetMatrix(Handle handle) override;
@@ -345,6 +393,10 @@ public:
 	void SetRotation(Handle handle, const Vector3D& axis, float angle) override;
 
 	void SetScale(Handle handle, float x, float y, float z) override;
+
+	EffectFlipParameter GetEffectFlip(Handle handle) const override;
+
+	void SetEffectFlip(Handle handle, const EffectFlipParameter& flip) override;
 
 	void SetAllColor(Handle handle, Color color) override;
 
@@ -426,7 +478,11 @@ private:
 	void Preupdate(DrawSet& drawSet);
 
 	//! whether container is disabled while rendering because of a distance between the effect and a camera
-	bool IsClippedWithDepth(DrawSet& drawSet, InstanceContainer* container, const Manager::DrawParameter& drawParameter);
+	bool IsClippedWithDepth(
+		DrawSet& drawSet,
+		InstanceContainer* container,
+		const Manager::DrawParameter& drawParameter,
+		const EffectRenderingTransformParameter& renderingCoordinateTransform);
 
 	void StopWithoutRemoveDrawSet(DrawSet& drawSet);
 

@@ -191,6 +191,8 @@ struct ParameterRendererCommon
 
 				memcpy(&textures, pos, sizeof(int));
 				pos += sizeof(int);
+				if (textures < 0 || textures > 1024)
+					return;
 
 				MaterialData.MaterialTextures.resize(textures);
 				if (MaterialData.MaterialTextures.size() > 0)
@@ -201,6 +203,8 @@ struct ParameterRendererCommon
 
 				memcpy(&uniforms, pos, sizeof(int));
 				pos += sizeof(int);
+				if (uniforms < 0 || uniforms > 1024)
+					return;
 
 				MaterialData.MaterialUniforms.resize(uniforms);
 				if (MaterialData.MaterialUniforms.size() > 0)
@@ -214,6 +218,8 @@ struct ParameterRendererCommon
 					int gradients = 0;
 					memcpy(&gradients, pos, sizeof(int));
 					pos += sizeof(int);
+					if (gradients < 0 || gradients > 1024)
+						return;
 
 					MaterialData.MaterialGradients.resize(gradients);
 					for (size_t i = 0; i < MaterialData.MaterialGradients.size(); i++)
@@ -470,6 +476,7 @@ protected:
 
 	// 子ノード
 	std::vector<EffectNodeImplemented*> m_Nodes;
+	bool isLoadingValid_ = true;
 
 	RefPtr<RenderingUserData> renderingUserData_;
 

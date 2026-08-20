@@ -59,6 +59,11 @@ public:
 
 /**
 	@brief	a loader to load properties from efc format
+	@note
+	\~English	Files saved by Effekseer 1.7 or later store normal and distortion textures with a single linear flag,
+				so both are returned by GetNormalImages and GetDistortionImages stays empty for such files.
+	\~Japanese	Effekseer 1.7以降で保存されたファイルは法線と歪みテクスチャを単一のリニアフラグで保持するため、
+				両者はGetNormalImagesからまとめて返され、GetDistortionImagesは空になる。
 */
 class EfkEfcProperty
 {
@@ -69,6 +74,7 @@ private:
 	std::vector<std::u16string> sounds_;
 	std::vector<std::u16string> models_;
 	std::vector<std::u16string> materials_;
+	std::vector<std::u16string> curves_;
 
 public:
 	bool Load(const void* data, int32_t size);
@@ -79,6 +85,7 @@ public:
 	const std::vector<std::u16string>& GetSounds() const;
 	const std::vector<std::u16string>& GetModels() const;
 	const std::vector<std::u16string>& GetMaterials() const;
+	const std::vector<std::u16string>& GetCurves() const;
 };
 
 } // namespace Effekseer

@@ -100,6 +100,7 @@ public:
 	{
 		GpuParticles::EmitterData Data;
 		GpuParticles::UniformBufferRef Buffer;
+		GpuParticles::UniformBufferRef RenderConstantsBuffer;
 		Effekseer::RefPtr<GpuParticles::Resource> Resource;
 		Effekseer::InstanceGlobal* InstanceGlobal;
 
@@ -154,7 +155,7 @@ public:
 
 	virtual bool InitSystem(const Settings& settings) override;
 
-	virtual void SetShaders(const Shaders& shaders);
+	virtual bool SetShaders(const Shaders& shaders);
 
 	virtual void ComputeFrame(const Context& context) override;
 
@@ -183,11 +184,11 @@ private:
 
 	void FreeEmitter(EmitterID emitterID);
 
-	GpuParticles::PipelineStateRef GetOrCreatePipelineState(GpuParticles::PipelineStateKey key);
-
 protected:
 	static constexpr uint32_t EmitterUnitSize = 16;
 	static constexpr uint32_t ParticleUnitSize = 256;
+
+	GpuParticles::PipelineStateRef GetOrCreatePipelineState(GpuParticles::PipelineStateKey key);
 
 	Renderer* renderer_ = nullptr;
 	Effekseer::Backend::GraphicsDeviceRef graphicsDevice_;
@@ -200,7 +201,6 @@ protected:
 	BlockAllocator trailAllocator_;
 
 	GpuParticles::UniformBufferRef computeConstantsUniformBuffer_;
-	GpuParticles::UniformBufferRef renderConstantsUniformBuffer_;
 
 	GpuParticles::StorageBufferRef particlesStorageBuffer_;
 	GpuParticles::StorageBufferRef trailsStorageBuffer_;

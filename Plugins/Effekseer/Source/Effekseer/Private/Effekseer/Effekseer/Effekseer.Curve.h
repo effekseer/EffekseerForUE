@@ -44,18 +44,20 @@ public:
 	static const int32_t Version = 1;
 
 private:
-	int controlPointCount_;
+	int controlPointCount_ = -1;
 	std::vector<dVector4> controlPoints_;
 
-	int knotCount_;
+	int knotCount_ = 0;
 	std::vector<double> knotValues_;
 
-	int order_;
-	int step_;
-	int type_;
-	int dimension_;
+	int order_ = 0;
+	int step_ = 0;
+	int type_ = 0;
+	int dimension_ = 0;
 
-	float length_;
+	float length_ = 0.0f;
+
+	bool Load(const void* data, int32_t size);
 
 private:
 	/**
@@ -98,77 +100,11 @@ private:
 	}
 
 public:
-	Curve()
-	{
-	}
+	Curve() = default;
 
 	Curve(const void* data, int32_t size)
 	{
-		uint8_t* pData = new uint8_t[size];
-		memcpy(pData, data, size);
-
-		uint8_t* p = (uint8_t*)pData;
-
-		// load converter version
-		int converter_version = 0;
-		memcpy(&converter_version, p, sizeof(int32_t));
-		p += sizeof(int32_t);
-
-		// load controll point count
-		memcpy(&controlPointCount_, p, sizeof(int32_t));
-		p += sizeof(int32_t);
-
-		// load controll points
-		for (int i = 0; i < controlPointCount_; i++)
-		{
-			dVector4 value;
-			memcpy(&value, p, sizeof(dVector4));
-			p += sizeof(dVector4);
-			controlPoints_.push_back(value);
-		}
-
-		// load knot count
-		memcpy(&knotCount_, p, sizeof(int32_t));
-		p += sizeof(int32_t);
-
-		// load knot values
-		for (int i = 0; i < knotCount_; i++)
-		{
-			double value;
-			memcpy(&value, p, sizeof(double));
-			p += sizeof(double);
-			knotValues_.push_back(value);
-		}
-
-		// load order
-		memcpy(&order_, p, sizeof(int32_t));
-		p += sizeof(int32_t);
-
-		// load step
-		memcpy(&step_, p, sizeof(int32_t));
-		p += sizeof(int32_t);
-
-		// load type
-		memcpy(&type_, p, sizeof(int32_t));
-		p += sizeof(int32_t);
-
-		// load dimension
-		memcpy(&dimension_, p, sizeof(int32_t));
-		p += sizeof(int32_t);
-
-		// calc curve length
-		length_ = 0;
-
-		for (int i = 1; i < controlPointCount_; i++)
-		{
-			dVector4 p0 = controlPoints_[i - 1];
-			dVector4 p1 = controlPoints_[i];
-
-			float len = Vector3D::Length(Vector3D((float)p1.X, (float)p1.Y, (float)p1.Z) - Vector3D((float)p0.X, (float)p0.Y, (float)p0.Z));
-			length_ += len;
-		}
-
-		ES_SAFE_DELETE_ARRAY(pData);
+		Load(data, size);
 	}
 
 	~Curve()
@@ -177,6 +113,11 @@ public:
 
 	Vector3D CalcuratePoint(float t, float magnification)
 	{
+		if (!GetIsValid() || controlPoints_.empty() || knotValues_.empty())
+		{
+			return {};
+		}
+
 		if (t == 0.0f && controlPoints_.size() > 0)
 		{
 			return {
@@ -206,6 +147,11 @@ public:
 			}
 		}
 
+		if (!std::isfinite(wSum) || wSum == 0.0)
+		{
+			return {};
+		}
+
 		Vector3D ans(0, 0, 0); // 計算結果
 		for (int j = 0; j < controlPointCount_; ++j)
 		{
@@ -213,7 +159,7 @@ public:
 			d.X = (float)controlPoints_[j].X * magnification * (float)bs[j] / (float)wSum;
 			d.Y = (float)controlPoints_[j].Y * magnification * (float)bs[j] / (float)wSum;
 			d.Z = (float)controlPoints_[j].Z * magnification * (float)bs[j] / (float)wSum;
-			if (!std::isnan(d.X) && !std::isnan(d.Y) && !std::isnan(d.Z))
+			if (std::isfinite(d.X) && std::isfinite(d.Y) && std::isfinite(d.Z))
 			{
 				ans += d;
 			}
@@ -225,6 +171,11 @@ public:
 	//
 	//  Getter
 	//
+	bool GetIsValid() const
+	{
+		return controlPointCount_ >= 0;
+	}
+
 	int GetControllPointCount()
 	{
 		return controlPointCount_;

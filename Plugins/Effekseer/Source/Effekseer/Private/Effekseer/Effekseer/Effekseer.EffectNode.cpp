@@ -322,11 +322,22 @@ void EffectNodeImplemented::LoadParameter(unsigned char*& pos, EffectNode* paren
 	int nodeCount = 0;
 	memcpy(&nodeCount, pos, sizeof(int));
 	pos += sizeof(int);
+	if (nodeCount < 0 || nodeCount > 1024)
+	{
+		isLoadingValid_ = false;
+		return;
+	}
 	EffekseerPrintDebug("ChildrenCount : %d\n", nodeCount);
 	m_Nodes.resize(nodeCount);
 	for (size_t i = 0; i < m_Nodes.size(); i++)
 	{
 		m_Nodes[i] = EffectNodeImplemented::Create(m_effect, this, pos);
+		if (m_Nodes[i] == nullptr)
+		{
+			m_Nodes.resize(i);
+			isLoadingValid_ = false;
+			return;
+		}
 	}
 }
 
@@ -865,10 +876,17 @@ EffectNodeImplemented* EffectNodeImplemented::Create(Effect* effect, EffectNode*
 	}
 	else
 	{
-		assert(0);
+		return nullptr;
 	}
 
+	if (effectnode == nullptr)
+		return nullptr;
 	effectnode->LoadParameter(pos, parent, effect->GetSetting());
+	if (!effectnode->isLoadingValid_)
+	{
+		delete effectnode;
+		return nullptr;
+	}
 
 	return effectnode;
 }

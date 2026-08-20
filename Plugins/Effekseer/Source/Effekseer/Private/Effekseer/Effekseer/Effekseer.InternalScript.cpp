@@ -83,16 +83,13 @@ bool InternalScript::Load(uint8_t* data, int size)
 
 	int32_t registerCount = 0;
 
-	reader.Read(version_);
-	reader.Read(runningPhase_);
-	reader.Read(registerCount);
-	reader.Read(operatorCount_);
+	if (!reader.Read(version_) || !reader.Read(runningPhase_) ||
+		!reader.Read(registerCount, 0, 65536) || !reader.Read(operatorCount_, 0, 65536))
+		return false;
 
 	for (size_t i = 0; i < 4; i++)
-		reader.Read(outputRegisters_[i]);
-
-	if (registerCount < 0)
-		return false;
+		if (!reader.Read(outputRegisters_[i]))
+			return false;
 
 	registers_.resize(registerCount);
 
@@ -104,7 +101,9 @@ bool InternalScript::Load(uint8_t* data, int size)
 		}
 	}
 
-	reader.Read(operators_, static_cast<int32_t>(size - reader.GetOffset()));
+	if (reader.GetOffset() > static_cast<size_t>(size) ||
+		!reader.Read(operators_, static_cast<int32_t>(static_cast<size_t>(size) - reader.GetOffset())))
+		return false;
 
 	if (reader.GetStatus() == BinaryReaderStatus::Failed)
 		return false;
@@ -116,28 +115,30 @@ bool InternalScript::Load(uint8_t* data, int size)
 	{
 		// type
 		OperatorType type;
-		operatorReader.Read(type);
-
-		if (reader.GetStatus() == BinaryReaderStatus::Failed)
+		if (!operatorReader.Read(type))
 			return false;
 
 		if (!IsValidOperator((int)type))
 			return false;
 
 		int32_t inputCount = 0;
-		operatorReader.Read(inputCount);
+		if (!operatorReader.Read(inputCount, 0, 65536))
+			return false;
 
 		int32_t outputCount = 0;
-		operatorReader.Read(outputCount);
+		if (!operatorReader.Read(outputCount, 0, 65536))
+			return false;
 
 		int32_t attributeCount = 0;
-		operatorReader.Read(attributeCount);
+		if (!operatorReader.Read(attributeCount, 0, 65536))
+			return false;
 
 		// input
 		for (int j = 0; j < inputCount; j++)
 		{
 			int index = 0;
-			operatorReader.Read(index);
+			if (!operatorReader.Read(index))
+				return false;
 			if (!IsValidRegister(index))
 			{
 				return false;
@@ -148,7 +149,8 @@ bool InternalScript::Load(uint8_t* data, int size)
 		for (int j = 0; j < outputCount; j++)
 		{
 			int index = 0;
-			operatorReader.Read(index);
+			if (!operatorReader.Read(index))
+				return false;
 			if ((index < 0 || index >= static_cast<int32_t>(registers_.size())))
 			{
 				return false;
@@ -159,7 +161,8 @@ bool InternalScript::Load(uint8_t* data, int size)
 		for (int j = 0; j < attributeCount; j++)
 		{
 			int index = 0;
-			operatorReader.Read(index);
+			if (!operatorReader.Read(index))
+				return false;
 		}
 	}
 

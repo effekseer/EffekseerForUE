@@ -257,6 +257,10 @@ bool LocalForceFieldParameter::Load(uint8_t*& pos, int32_t version)
 		int32_t count = 0;
 		memcpy(&count, pos, sizeof(int));
 		pos += sizeof(int);
+		if (count < 0 || count > static_cast<int32_t>(LocalForceFields.size()))
+		{
+			return false;
+		}
 
 		for (int32_t i = 0; i < count; i++)
 		{
@@ -294,7 +298,8 @@ bool LocalForceFieldParameter::Load(uint8_t*& pos, int32_t version)
 		{
 			memcpy(&size, pos, sizeof(int));
 			pos += sizeof(int);
-			assert(size == 0);
+			if (size != 0)
+				return false;
 			memcpy(&LocationAbs.none, pos, size);
 			pos += size;
 		}
@@ -302,7 +307,8 @@ bool LocalForceFieldParameter::Load(uint8_t*& pos, int32_t version)
 		{
 			memcpy(&size, pos, sizeof(int));
 			pos += sizeof(int);
-			assert(size == sizeof(vector3d));
+			if (size != sizeof(vector3d))
+				return false;
 			memcpy(&LocationAbs.gravity, pos, size);
 			pos += size;
 		}
@@ -310,7 +316,8 @@ bool LocalForceFieldParameter::Load(uint8_t*& pos, int32_t version)
 		{
 			memcpy(&size, pos, sizeof(int));
 			pos += sizeof(int);
-			assert(size == sizeof(LocationAbs.attractiveForce));
+			if (size != sizeof(LocationAbs.attractiveForce))
+				return false;
 			memcpy(&LocationAbs.attractiveForce, pos, size);
 			pos += size;
 		}

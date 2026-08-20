@@ -6,8 +6,10 @@
 // Include
 //----------------------------------------------------------------------------------
 #include "Effekseer.Base.Pre.h"
+#include "Effekseer.CoordinateSystem.h"
 #include "Effekseer.ExternalModel.h"
 #include "Effekseer.Matrix44.h"
+#include "Effekseer.RenderingTransform.h"
 #include "Effekseer.Vector3D.h"
 
 //----------------------------------------------------------------------------------
@@ -103,6 +105,14 @@ public:
 	struct DrawParameter
 	{
 		Matrix44 ViewProjectionMatrix;
+
+		/**
+			@brief
+			\~English An orthogonal coordinate transform applied only to this draw call
+			\~Japanese この描画呼び出しだけに適用する直交座標系変換
+		*/
+		Matrix44 RenderingCoordinateMatrix;
+
 		float ZNear = 0.0f;
 		float ZFar = 0.0f;
 
@@ -187,6 +197,7 @@ public:
 		Vector3D Scale = {1.0f, 1.0f, 1.0f};
 		int32_t StartFrame = 0;
 		std::vector<ExternalModel> ExternalModels;
+		EffectFlipParameter Flip;
 	};
 
 protected:
@@ -258,6 +269,32 @@ public:
 		エフェクトファイルを読み込む前に設定する必要がある。
 	*/
 	virtual void SetCoordinateSystem(CoordinateSystem coordinateSystem) = 0;
+
+	/**
+		@brief Gets how the coordinate-system setting is applied.
+	*/
+	virtual CoordinateSystemMode GetCoordinateSystemMode() const = 0;
+
+	/**
+		@brief Selects legacy simulation conversion or boundary conversion.
+		@note Set this before loading effects. ExternalConversion keeps effect loading and simulation in RH space.
+		To do so it forces the CoordinateSystem of the attached Setting to RH (switching back to LegacySimulation restores
+		the previous coordinate system). Because a Setting can be shared, do not share one Setting between managers
+		that use different CoordinateSystemModes or coordinate systems.
+	*/
+	virtual void SetCoordinateSystemMode(CoordinateSystemMode mode) = 0;
+
+	/**
+		@brief Gets the internal-RH to external coordinate transform.
+	*/
+	virtual CoordinateSystemTransform GetCoordinateSystemTransform() const = 0;
+
+	/**
+		@brief Sets the internal-RH to external coordinate transform.
+		@return false when the matrix is not a signed axis permutation.
+		@note Set this before loading effects. It takes effect at the Manager boundary only in ExternalConversion mode.
+	*/
+	virtual bool SetCoordinateSystemTransform(const CoordinateSystemTransform& transform) = 0;
 
 	/**
 		@brief	スプライト描画機能を取得する。
@@ -606,6 +643,17 @@ public:
 		@param	z		[in]	Z方向拡大率
 	*/
 	virtual void SetScale(Handle handle, float x, float y, float z) = 0;
+
+	/**
+		@brief Gets the rendering-only root-local flip of a playing effect.
+	*/
+	virtual EffectFlipParameter GetEffectFlip(Handle handle) const = 0;
+
+	/**
+		@brief Sets a rendering-only root-local flip of a playing effect.
+		@note This does not change simulation matrices or particle state.
+	*/
+	virtual void SetEffectFlip(Handle handle, const EffectFlipParameter& flip) = 0;
 
 	/**
 	@brief

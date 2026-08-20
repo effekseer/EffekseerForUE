@@ -4,6 +4,8 @@
 
 #include "../Effekseer.Base.h"
 
+#include <limits>
+
 namespace Effekseer
 {
 
@@ -21,34 +23,61 @@ template <bool IsValidationEnabled>
 class BinaryReader
 {
 private:
-	uint8_t* data_ = nullptr;
+	const uint8_t* data_ = nullptr;
 	size_t size_ = 0;
 	size_t offset = 0;
 	BinaryReaderStatus status_ = BinaryReaderStatus::Reading;
 
+	bool Fail()
+	{
+		status_ = BinaryReaderStatus::Failed;
+		return false;
+	}
+
 public:
-	BinaryReader(uint8_t* data, size_t size)
+	BinaryReader(const uint8_t* data, size_t size)
 	{
 		data_ = data;
 		size_ = size;
 	}
 
+	bool CanRead(size_t length) const
+	{
+		return status_ != BinaryReaderStatus::Failed && offset <= size_ && length <= size_ - offset;
+	}
+
+	bool CanReadElements(int32_t count, size_t elementSize) const
+	{
+		if (count < 0 || (elementSize > 0 && static_cast<size_t>(count) > std::numeric_limits<size_t>::max() / elementSize))
+		{
+			return false;
+		}
+
+		return CanRead(static_cast<size_t>(count) * elementSize);
+	}
+
+	bool ReadBytes(void* value, size_t length)
+	{
+		if (status_ == BinaryReaderStatus::Failed ||
+			length > std::numeric_limits<size_t>::max() - offset ||
+			(length > 0 && (data_ == nullptr || value == nullptr)) ||
+			(IsValidationEnabled && !CanRead(length)))
+		{
+			return Fail();
+		}
+
+		if (length > 0)
+		{
+			memcpy(value, data_ + offset, length);
+		}
+		offset += length;
+		return true;
+	}
+
 	template <typename T>
 	bool Read(T& value)
 	{
-		if (IsValidationEnabled)
-		{
-
-			if (offset + sizeof(T) > size_ || status_ == BinaryReaderStatus::Failed)
-			{
-				status_ = BinaryReaderStatus::Failed;
-				return false;
-			}
-		}
-
-		memcpy(&value, data_ + offset, sizeof(T));
-		offset += sizeof(T);
-		return true;
+		return ReadBytes(&value, sizeof(T));
 	}
 
 	/**
@@ -57,24 +86,16 @@ public:
 	template <typename T>
 	bool Read(T& value, const T& min_, const T& max_)
 	{
-		if (IsValidationEnabled)
+		if (!Read(value))
 		{
-			if (offset + sizeof(T) > size_ || status_ == BinaryReaderStatus::Failed)
-			{
-				status_ = BinaryReaderStatus::Failed;
-				return false;
-			}
+			return false;
 		}
-
-		memcpy(&value, data_ + offset, sizeof(T));
-		offset += sizeof(T);
 
 		if (IsValidationEnabled)
 		{
 			if (value < min_ || value > max_)
 			{
-				status_ = BinaryReaderStatus::Failed;
-				return false;
+				return Fail();
 			}
 		}
 
@@ -87,24 +108,16 @@ public:
 	template <typename T, typename U>
 	bool Read(T& value, const U& min_, const U& max_)
 	{
-		if (IsValidationEnabled)
+		if (!Read(value))
 		{
-			if (offset + sizeof(T) > size_ || status_ == BinaryReaderStatus::Failed)
-			{
-				status_ = BinaryReaderStatus::Failed;
-				return false;
-			}
+			return false;
 		}
-
-		memcpy(&value, data_ + offset, sizeof(T));
-		offset += sizeof(T);
 
 		if (IsValidationEnabled)
 		{
 			if (static_cast<U>(value) < min_ || static_cast<U>(value) > max_)
 			{
-				status_ = BinaryReaderStatus::Failed;
-				return false;
+				return Fail();
 			}
 		}
 
@@ -114,41 +127,30 @@ public:
 	template <typename T>
 	bool Read(T* value, int32_t count)
 	{
-		if (IsValidationEnabled)
+		if (count < 0 || (sizeof(T) > 0 && static_cast<size_t>(count) > std::numeric_limits<size_t>::max() / sizeof(T)))
 		{
-			if (count < 0 || offset + sizeof(T) * count > size_ || status_ == BinaryReaderStatus::Failed)
-			{
-				status_ = BinaryReaderStatus::Failed;
-				return false;
-			}
+			return Fail();
 		}
 
-		memcpy(value, data_ + offset, sizeof(T) * count);
-		offset += sizeof(T) * count;
-		return true;
+		return ReadBytes(value, sizeof(T) * static_cast<size_t>(count));
 	}
 
 	template <typename T, typename _Alloc>
 	bool Read(std::vector<T, _Alloc>& value, int32_t count)
 	{
-		if (IsValidationEnabled)
+		if (count < 0 || (sizeof(T) > 0 && static_cast<size_t>(count) > std::numeric_limits<size_t>::max() / sizeof(T)))
 		{
-			if (count < 0 || offset + sizeof(T) * count > size_ || status_ == BinaryReaderStatus::Failed)
-			{
-				status_ = BinaryReaderStatus::Failed;
-				return false;
-			}
+			return Fail();
+		}
+
+		const auto length = sizeof(T) * static_cast<size_t>(count);
+		if (IsValidationEnabled && !CanRead(length))
+		{
+			return Fail();
 		}
 
 		value.resize(count);
-
-		if (value.size() > 0)
-		{
-			memcpy(value.data(), data_ + offset, sizeof(T) * count);
-		}
-
-		offset += sizeof(T) * count;
-		return true;
+		return ReadBytes(value.data(), length);
 	}
 
 	BinaryReaderStatus GetStatus() const
@@ -159,14 +161,49 @@ public:
 		return offset == size_ ? BinaryReaderStatus::Complete : BinaryReaderStatus::Reading;
 	}
 
+	bool Skip(size_t length)
+	{
+		if (IsValidationEnabled && !CanRead(length))
+		{
+			return Fail();
+		}
+		if (length > std::numeric_limits<size_t>::max() - offset)
+		{
+			return Fail();
+		}
+
+		offset += length;
+		return true;
+	}
+
+	bool SetOffset(size_t newOffset)
+	{
+		if (IsValidationEnabled && newOffset > size_)
+		{
+			return Fail();
+		}
+		offset = newOffset;
+		return true;
+	}
+
 	void AddOffset(size_t length)
 	{
-		offset += length;
+		Skip(length);
 	}
 
 	size_t GetOffset() const
 	{
 		return offset;
+	}
+
+	size_t GetRemainingSize() const
+	{
+		return CanRead(0) ? size_ - offset : 0;
+	}
+
+	const uint8_t* GetCurrentData() const
+	{
+		return CanRead(0) && data_ != nullptr ? data_ + offset : nullptr;
 	}
 };
 

@@ -178,6 +178,9 @@ public:
 			int32_t translationSize = 0;
 			memcpy(&translationSize, pos, sizeof(int));
 			pos += sizeof(int);
+			const auto expectedSize = version >= 14 ? sizeof(ParameterTranslationFixed) : sizeof(float) * 3;
+			if (translationSize != expectedSize)
+				return;
 
 			if (version >= 14)
 			{
@@ -203,7 +206,8 @@ public:
 			{
 				memcpy(&size, pos, sizeof(int));
 				pos += sizeof(int);
-				assert(size == sizeof(ParameterTranslationPVA));
+				if (size != sizeof(ParameterTranslationPVA))
+					return;
 				memcpy(&TranslationPVA, pos, size);
 				pos += size;
 			}
@@ -211,6 +215,11 @@ public:
 			{
 				memcpy(&size, pos, sizeof(int));
 				pos += sizeof(int);
+				// Versions before 14 store three consecutive random_vector3d values without dynamic equation references.
+				const auto expectedSize =
+					sizeof(TranslationPVA.location) + sizeof(TranslationPVA.velocity) + sizeof(TranslationPVA.acceleration);
+				if (size != expectedSize)
+					return;
 				memcpy(&TranslationPVA.location, pos, size);
 				pos += size;
 			}
@@ -219,6 +228,8 @@ public:
 		{
 			memcpy(&size, pos, sizeof(int));
 			pos += sizeof(int);
+			if (size < 0 || size > 64 * 1024)
+				return;
 			TranslationEasing.Load(pos, size, version);
 			pos += size;
 		}
@@ -226,6 +237,8 @@ public:
 		{
 			memcpy(&size, pos, sizeof(int));
 			pos += sizeof(int);
+			if (size < 0 || size > 1024 * 1024)
+				return;
 
 			TranslationFCurve = std::make_unique<FCurveVector3D>();
 			pos += TranslationFCurve->Load(pos, version);

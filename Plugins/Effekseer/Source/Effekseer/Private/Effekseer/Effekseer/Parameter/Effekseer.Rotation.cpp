@@ -17,6 +17,9 @@ void RotationParameter::Load(unsigned char*& pos, int version)
 	{
 		memcpy(&size, pos, sizeof(int));
 		pos += sizeof(int);
+		const auto expectedSize = version >= 14 ? sizeof(ParameterRotationFixed) : sizeof(RotationFixed.Position);
+		if (size != expectedSize)
+			return;
 
 		if (version >= 14)
 		{
@@ -41,6 +44,12 @@ void RotationParameter::Load(unsigned char*& pos, int version)
 	{
 		memcpy(&size, pos, sizeof(int));
 		pos += sizeof(int);
+		// Versions before 14 store three consecutive random_vector3d values without dynamic equation references.
+		const auto expectedSize = version >= 14
+								  ? sizeof(ParameterRotationPVA)
+								  : sizeof(RotationPVA.rotation) + sizeof(RotationPVA.velocity) + sizeof(RotationPVA.acceleration);
+		if (size != expectedSize)
+			return;
 		if (version >= 14)
 		{
 			assert(size == sizeof(ParameterRotationPVA));
@@ -56,6 +65,8 @@ void RotationParameter::Load(unsigned char*& pos, int version)
 	{
 		memcpy(&size, pos, sizeof(int));
 		pos += sizeof(int);
+		if (size < 0 || size > 64 * 1024)
+			return;
 		RotationEasing.Load(pos, size, version);
 		pos += size;
 	}
@@ -63,7 +74,8 @@ void RotationParameter::Load(unsigned char*& pos, int version)
 	{
 		memcpy(&size, pos, sizeof(int));
 		pos += sizeof(int);
-		assert(size == sizeof(ParameterRotationAxisPVA));
+		if (size != sizeof(ParameterRotationAxisPVA))
+			return;
 		memcpy(&RotationAxisPVA, pos, size);
 		pos += size;
 	}
@@ -71,6 +83,8 @@ void RotationParameter::Load(unsigned char*& pos, int version)
 	{
 		memcpy(&size, pos, sizeof(int));
 		pos += sizeof(int);
+		if (size < 0 || size > 1024 * 1024)
+			return;
 
 		memcpy(&RotationAxisEasing.axis, pos, sizeof(RotationAxisEasing.axis));
 		pos += sizeof(RotationAxisEasing.axis);
@@ -81,6 +95,8 @@ void RotationParameter::Load(unsigned char*& pos, int version)
 	{
 		memcpy(&size, pos, sizeof(int));
 		pos += sizeof(int);
+		if (size < 0 || size > 1024 * 1024)
+			return;
 
 		RotationFCurve = std::make_unique<FCurveVector3D>();
 		pos += RotationFCurve->Load(pos, version);
@@ -89,11 +105,15 @@ void RotationParameter::Load(unsigned char*& pos, int version)
 	{
 		memcpy(&size, pos, sizeof(int));
 		pos += sizeof(int);
+		if (size < 0 || size > 64 * 1024)
+			return;
 	}
 	else if (RotationType == ParameterRotationType::ParameterRotationType_Velocity)
 	{
 		memcpy(&size, pos, sizeof(int));
 		pos += sizeof(int);
+		if (size < static_cast<int32_t>(sizeof(DirectionalAxisType)) || size > 64 * 1024)
+			return;
 
 		memcpy(&RotationVelocity.axis, pos, sizeof(DirectionalAxisType));
 		pos += sizeof(int);

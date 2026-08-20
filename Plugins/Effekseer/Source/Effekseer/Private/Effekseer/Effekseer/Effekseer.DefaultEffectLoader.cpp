@@ -1,6 +1,7 @@
 ﻿
 #include "Effekseer.DefaultEffectLoader.h"
 #include "../Effekseer.h"
+#include <limits>
 #include <memory>
 
 namespace Effekseer
@@ -30,9 +31,18 @@ bool DefaultEffectLoader::Load(const char16_t* path, void*& data, int32_t& size)
 	if (reader == nullptr)
 		return false;
 
-	size = (int32_t)reader->GetLength();
+	const auto length = reader->GetLength();
+	if (length == 0 || length > static_cast<size_t>(std::numeric_limits<int32_t>::max()))
+		return false;
+	size = static_cast<int32_t>(length);
 	data = new uint8_t[size];
-	reader->Read(data, size);
+	if (reader->Read(data, static_cast<size_t>(size)) != static_cast<size_t>(size))
+	{
+		delete[] static_cast<uint8_t*>(data);
+		data = nullptr;
+		size = 0;
+		return false;
+	}
 
 	return true;
 }

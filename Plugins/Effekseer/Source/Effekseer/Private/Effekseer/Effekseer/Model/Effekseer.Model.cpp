@@ -1,8 +1,17 @@
 ﻿#include "Effekseer.Model.h"
 #include "../Backend/Effekseer.GraphicsDevice.h"
 
+#include "../Utils/Effekseer.BinaryReader.h"
+
 namespace Effekseer
 {
+
+namespace
+{
+
+constexpr int32_t ModelFrameCountMax = 65536;
+
+} // namespace
 
 Model::Model(const CustomVector<Vertex>& vertecies, const CustomVector<Face>& faces)
 {
@@ -13,41 +22,54 @@ Model::Model(const CustomVector<Vertex>& vertecies, const CustomVector<Face>& fa
 
 Model::Model(const void* data, int32_t size)
 {
-	if (data == nullptr)
+	auto invalidate = [this]()
 	{
+		version_ = -1;
+		models_.clear();
 		models_.resize(1);
+	};
+
+	if (data == nullptr || size <= 0)
+	{
+		invalidate();
 		return;
 	}
 
-	const uint8_t* p = (const uint8_t*)data;
-
-	memcpy(&version_, p, sizeof(int32_t));
-	p += sizeof(int32_t);
-
-	// load scale except version 3(for compatibility)
-	if (version_ == 2 || version_ >= 5)
+	BinaryReader<true> reader(static_cast<const uint8_t*>(data), static_cast<size_t>(size));
+	if (!reader.Read(version_) || version_ < 0 || version_ > LatestVersion)
 	{
-		// Scale
-		p += sizeof(int32_t);
-	}
-
-	if (version_ > LatestVersion)
-	{
-		models_.resize(1);
+		invalidate();
 		return;
 	}
 
-	// For compatibility
+	// Load scale except version 3 (for compatibility).
+	if ((version_ == 2 || version_ >= 5) && !reader.Skip(sizeof(int32_t)))
+	{
+		invalidate();
+		return;
+	}
+
+	// Kept for compatibility with the file format.
 	int32_t modelCount = 0;
-	memcpy(&modelCount, p, sizeof(int32_t));
-	p += sizeof(int32_t);
+	if (!reader.Read(modelCount))
+	{
+		invalidate();
+		return;
+	}
 
 	int32_t frameCount = 1;
-
-	if (version_ >= 5)
+	if (version_ >= 5 && !reader.Read(frameCount))
 	{
-		memcpy(&frameCount, p, sizeof(int32_t));
-		p += sizeof(int32_t);
+		invalidate();
+		return;
+	}
+
+	// Each frame contains at least a vertex count and a face count. Validate
+	// this before allocating to prevent a crafted count from amplifying memory.
+	if (frameCount <= 0 || frameCount > ModelFrameCountMax || !reader.CanReadElements(frameCount, sizeof(int32_t) * 2))
+	{
+		invalidate();
+		return;
 	}
 
 	models_.resize(frameCount);
@@ -55,39 +77,59 @@ Model::Model(const void* data, int32_t size)
 	for (int32_t f = 0; f < frameCount; f++)
 	{
 		int32_t vertexCount = 0;
-		memcpy(&vertexCount, p, sizeof(int32_t));
-		p += sizeof(int32_t);
+		if (!reader.Read(vertexCount))
+		{
+			invalidate();
+			return;
+		}
+
+		size_t vertexSize = sizeof(Vertex);
+		if (version_ < 6)
+		{
+			vertexSize = sizeof(Vector3D) * 4 + sizeof(Vector2D) + (version_ >= 1 ? sizeof(Color) : 0);
+		}
+
+		if (!reader.CanReadElements(vertexCount, vertexSize))
+		{
+			invalidate();
+			return;
+		}
 
 		models_[f].vertexes.resize(vertexCount);
 
 		if (version_ >= 6)
 		{
-			memcpy(models_[f].vertexes.data(), p, sizeof(Vertex) * vertexCount);
-			p += sizeof(Vertex) * vertexCount;
+			if (!reader.ReadBytes(models_[f].vertexes.data(), sizeof(Vertex) * static_cast<size_t>(vertexCount)))
+			{
+				invalidate();
+				return;
+			}
 		}
 		else
 		{
 			Vertex* vertexes = models_[f].vertexes.data();
-
 			const Color defaultColor(255, 255, 255, 255);
+
 			for (int32_t i = 0; i < vertexCount; i++)
 			{
-				memcpy(&vertexes[i].Position, p, sizeof(Vector3D));
-				p += sizeof(Vector3D);
-				memcpy(&vertexes[i].Normal, p, sizeof(Vector3D));
-				p += sizeof(Vector3D);
-				memcpy(&vertexes[i].Binormal, p, sizeof(Vector3D));
-				p += sizeof(Vector3D);
-				memcpy(&vertexes[i].Tangent, p, sizeof(Vector3D));
-				p += sizeof(Vector3D);
-				memcpy(&vertexes[i].UV1, p, sizeof(Vector2D));
-				p += sizeof(Vector2D);
-				vertexes[i].UV2 = vertexes[i].UV1;
+				if (!reader.Read(vertexes[i].Position) ||
+					!reader.Read(vertexes[i].Normal) ||
+					!reader.Read(vertexes[i].Binormal) ||
+					!reader.Read(vertexes[i].Tangent) ||
+					!reader.Read(vertexes[i].UV1))
+				{
+					invalidate();
+					return;
+				}
 
+				vertexes[i].UV2 = vertexes[i].UV1;
 				if (version_ >= 1)
 				{
-					memcpy(&vertexes[i].VColor, p, sizeof(Color));
-					p += sizeof(Color);
+					if (!reader.Read(vertexes[i].VColor))
+					{
+						invalidate();
+						return;
+					}
 				}
 				else
 				{
@@ -97,13 +139,31 @@ Model::Model(const void* data, int32_t size)
 		}
 
 		int32_t faceCount = 0;
-		memcpy(&faceCount, p, sizeof(int32_t));
-		p += sizeof(int32_t);
+		if (!reader.Read(faceCount) || !reader.CanReadElements(faceCount, sizeof(Face)))
+		{
+			invalidate();
+			return;
+		}
 
 		models_[f].faces.resize(faceCount);
-		memcpy(models_[f].faces.data(), p, sizeof(Face) * faceCount);
-		p += sizeof(Face) * faceCount;
+		if (!reader.ReadBytes(models_[f].faces.data(), sizeof(Face) * static_cast<size_t>(faceCount)))
+		{
+			invalidate();
+			return;
+		}
+
+		for (const auto& face : models_[f].faces)
+		{
+			if (face.Indexes[0] < 0 || face.Indexes[0] >= vertexCount ||
+				face.Indexes[1] < 0 || face.Indexes[1] >= vertexCount ||
+				face.Indexes[2] < 0 || face.Indexes[2] >= vertexCount)
+			{
+				invalidate();
+				return;
+			}
+		}
 	}
+
 }
 
 Model ::~Model()
@@ -148,6 +208,11 @@ int32_t Model::GetFaceCount(int32_t index) const
 int32_t Model::GetFrameCount() const
 {
 	return static_cast<int32_t>(models_.size());
+}
+
+bool Model::GetIsValid() const
+{
+	return version_ >= 0;
 }
 
 Model::Emitter Model::GetEmitter(IRandObject* g, int32_t time, CoordinateSystem coordinate, float magnification)
@@ -305,7 +370,7 @@ Model::Emitter Model::GetEmitterFromFace(int32_t index, int32_t time, Coordinate
 		return Model::Emitter{};
 	}
 
-	int32_t faceInd = index % (GetFaceCount(time) - 1);
+	int32_t faceInd = index % faceCount;
 	const Face& face = GetFaces(time)[faceInd];
 	const Vertex& v0 = GetVertexes(time)[face.Indexes[0]];
 	const Vertex& v1 = GetVertexes(time)[face.Indexes[1]];

@@ -1,254 +1,133 @@
 ﻿#include "Effekseer.MaterialFile.h"
 
+#include "../Utils/Effekseer.BinaryReader.h"
+
 namespace Effekseer
 {
 
+const int32_t MaterialFile::LatestSupportVersion;
+const int32_t MaterialFile::OldestSupportVersion;
+
 bool MaterialFile::Load(const uint8_t* data, int32_t size)
 {
-	int offset = 0;
-
-	// header
-	char prefix[5];
-
-	memcpy(prefix, data + offset, 4);
-	offset += sizeof(int);
-
-	prefix[4] = 0;
-
-	if (std::string("EFKM") != std::string(prefix))
+	if (data == nullptr || size < 0)
 		return false;
-
+	constexpr int32_t CountMax = 1024;
+	BinaryReader<true> reader(data, static_cast<size_t>(size));
+	std::array<char, 4> prefix{};
 	int version = 0;
-	memcpy(&version, data + offset, 4);
-	offset += sizeof(int);
-
-	if (version < OldestSupportVersion)
-	{
+	uint64_t guid = 0;
+	if (!reader.Read(prefix.data(), 4) || memcmp(prefix.data(), "EFKM", 4) != 0 ||
+		!reader.Read(version, OldestSupportVersion, LatestSupportVersion) || !reader.Read(guid))
 		return false;
-	}
 
-	// Too new
-	if (version > LatestSupportVersion)
+	auto readString = [](BinaryReader<true>& source, std::string& value) -> bool
 	{
-		return false;
-	}
+		int32_t length = 0;
+		std::vector<char> bytes;
+		if (!source.Read(length, 1, 1024 * 1024) || !source.Read(bytes, length) || bytes.back() != '\0')
+			return false;
+		value.assign(bytes.data(), static_cast<size_t>(length - 1));
+		return true;
+	};
 
-	memcpy(&guid_, data + offset, 8);
-	offset += sizeof(uint64_t);
-
-	while (0 <= offset && offset < size)
+	textures_.clear();
+	uniforms_.clear();
+	Gradients.clear();
+	FixedGradients.clear();
+	RequiredMethods.clear();
+	genericCode_.clear();
+	while (reader.GetRemainingSize() > 0)
 	{
-		char chunk[5];
-		memcpy(chunk, data + offset, 4);
-		offset += sizeof(int);
-		chunk[4] = 0;
+		std::array<char, 4> chunk{};
+		int32_t chunkSize = 0;
+		if (!reader.Read(chunk.data(), 4) || !reader.Read(chunkSize, 0, 256 * 1024 * 1024) || !reader.CanRead(chunkSize))
+			return false;
+		BinaryReader<true> body(reader.GetCurrentData(), static_cast<size_t>(chunkSize));
+		if (!reader.Skip(static_cast<size_t>(chunkSize)))
+			return false;
 
-		int chunk_size = 0;
-		memcpy(&chunk_size, data + offset, 4);
-		offset += sizeof(int);
-
-		if (std::string("PRM_") == std::string(chunk))
+		if (memcmp(chunk.data(), "PRM_", 4) == 0)
 		{
-			memcpy(&shadingModel_, data + offset, 4);
-			offset += sizeof(int);
-
-			int hasNormal = 0;
-			memcpy(&hasNormal, data + offset, 4);
-			offset += sizeof(int);
-
-			int hasRefraction = 0;
-			memcpy(&hasRefraction, data + offset, 4);
-			offset += sizeof(int);
-
+			int hasNormal = 0, hasRefraction = 0;
+			if (!body.Read(shadingModel_) || !body.Read(hasNormal) || !body.Read(hasRefraction) ||
+				!body.Read(customData1Count_, 0, 4) || !body.Read(customData2Count_, 0, 4))
+				return false;
 			hasRefraction_ = hasRefraction > 0;
-
-			memcpy(&customData1Count_, data + offset, 4);
-			offset += sizeof(int);
-
-			memcpy(&customData2Count_, data + offset, 4);
-			offset += sizeof(int);
-
 			if (version >= MaterialVersion17Alpha4)
 			{
-				int requiredTypeCount = 0;
-				memcpy(&requiredTypeCount, data + offset, 4);
-				offset += sizeof(int);
-
-				for (auto i = 0; i < requiredTypeCount; i++)
+				int32_t count = 0;
+				if (!body.Read(count, 0, CountMax))
+					return false;
+				for (int32_t i = 0; i < count; i++)
 				{
-					RequiredPredefinedMethodType type = {};
-					memcpy(&type, data + offset, 4);
-					offset += sizeof(int);
-
-					RequiredMethods.emplace_back(type);
+					RequiredPredefinedMethodType type{};
+					if (!body.Read(type))
+						return false;
+					RequiredMethods.push_back(type);
 				}
 			}
 
-			int textureCount = 0;
-			memcpy(&textureCount, data + offset, 4);
-			offset += sizeof(int);
-
-			for (auto i = 0; i < textureCount; i++)
+			int32_t textureCount = 0;
+			if (!body.Read(textureCount, 0, CountMax))
+				return false;
+			for (int32_t i = 0; i < textureCount; i++)
 			{
-				int strNameLength = 0;
-				memcpy(&strNameLength, data + offset, 4);
-				offset += sizeof(int);
-
-				auto name = std::string((const char*)(data + offset));
-				offset += strNameLength;
-
-				// name is for human, uniformName is a variable name after 3
-				if (version >= 3)
-				{
-					int strUniformNameLength = 0;
-					memcpy(&strUniformNameLength, data + offset, 4);
-					offset += sizeof(int);
-
-					name = std::string((const char*)(data + offset));
-					offset += strUniformNameLength;
-				}
-
-				int strDefaultPathLength = 0;
-				memcpy(&strDefaultPathLength, data + offset, 4);
-				offset += sizeof(int);
-
-				// defaultpath
-				offset += strDefaultPathLength;
-
-				int index = 0;
-				memcpy(&index, data + offset, 4);
-				offset += sizeof(int);
-
-				// priority
-				offset += sizeof(int);
-
-				// param
-				offset += sizeof(int);
-
-				// valuetexture
-				int colorType = 0;
-				memcpy(&colorType, data + offset, 4);
-				offset += sizeof(int);
-
-				// sampler
-				int sampler = 0;
-				memcpy(&sampler, data + offset, 4);
-				offset += sizeof(int);
-
+				std::string name, ignoredPath;
+				if (!readString(body, name) || (version >= 3 && !readString(body, name)) || !readString(body, ignoredPath))
+					return false;
+				int index = 0, priority = 0, param = 0, colorType = 0, sampler = 0;
+				if (!body.Read(index) || !body.Read(priority) || !body.Read(param) || !body.Read(colorType) || !body.Read(sampler))
+					return false;
 				Texture texture;
 				texture.Name = name;
 				texture.Index = index;
 				texture.Wrap = static_cast<TextureWrapType>(sampler);
 				texture.ColorType = static_cast<TextureColorType>(colorType);
-				textures_.push_back(texture);
+				textures_.push_back(std::move(texture));
 			}
 
-			int uniformCount = 0;
-			memcpy(&uniformCount, data + offset, 4);
-			offset += sizeof(int);
-
-			for (auto i = 0; i < uniformCount; i++)
+			int32_t uniformCount = 0;
+			if (!body.Read(uniformCount, 0, CountMax))
+				return false;
+			for (int32_t i = 0; i < uniformCount; i++)
 			{
-				int strLength = 0;
-				memcpy(&strLength, data + offset, 4);
-				offset += sizeof(int);
-
-				auto name = std::string((const char*)(data + offset));
-				offset += strLength;
-
-				// name is for human, uniformName is a variable name after 3
-				if (version >= 3)
-				{
-					int strUniformNameLength = 0;
-					memcpy(&strUniformNameLength, data + offset, 4);
-					offset += sizeof(int);
-
-					name = std::string((const char*)(data + offset));
-					offset += strUniformNameLength;
-				}
-
-				// offset
-				offset += sizeof(int);
-
-				// priority
-				offset += sizeof(int);
-
-				int type = 0;
-				memcpy(&type, data + offset, 4);
-				offset += sizeof(int);
-
-				// default values
-				offset += sizeof(int) * 4;
-
+				std::string name;
+				if (!readString(body, name) || (version >= 3 && !readString(body, name)))
+					return false;
+				int offsetValue = 0, priority = 0, type = 0;
+				std::array<int, 4> defaults{};
+				if (!body.Read(offsetValue) || !body.Read(priority) || !body.Read(type) || !body.Read(defaults.data(), 4))
+					return false;
 				Uniform uniform;
 				uniform.Name = name;
 				uniform.Index = type;
-				uniforms_.push_back(uniform);
+				uniforms_.push_back(std::move(uniform));
 			}
 
 			if (version >= MaterialVersion17Alpha4)
 			{
-				const auto loadGradient = [&](std::vector<GradientParameter>& gradients)
+				auto loadGradients = [&](std::vector<GradientParameter>& destination) -> bool
 				{
-					int gradientCount = 0;
-					memcpy(&gradientCount, data + offset, 4);
-					offset += sizeof(int);
-
-					for (auto i = 0; i < gradientCount; i++)
-					{
-						GradientParameter gradient;
-
-						int strNameLength = 0;
-						memcpy(&strNameLength, data + offset, 4);
-						offset += sizeof(int);
-
-						auto name = std::string((const char*)(data + offset));
-						offset += strNameLength;
-
-						int strUniformNameLength = 0;
-						memcpy(&strUniformNameLength, data + offset, 4);
-						offset += sizeof(int);
-
-						auto uniformName = std::string((const char*)(data + offset));
-						offset += strUniformNameLength;
-
-						gradient.Name = uniformName;
-
-						// offset
-						offset += sizeof(int);
-
-						// priority
-						offset += sizeof(int);
-
-						uint8_t* pos = const_cast<uint8_t*>(data + offset);
-						LoadGradient(gradient.Data, pos, 0);
-
-						offset += (pos - (data + offset));
-
-						gradients.emplace_back(gradient);
-					}
-				};
-
-				loadGradient(Gradients);
-				loadGradient(FixedGradients);
+					int32_t count = 0; if (!body.Read(count, 0, CountMax)) return false;
+					for (int32_t i = 0; i < count; i++) { GradientParameter gradient; std::string ignored;
+						if (!readString(body, ignored) || !readString(body, gradient.Name)) return false;
+						int offsetValue = 0, priority = 0; if (!body.Read(offsetValue) || !body.Read(priority) || !LoadGradient(gradient.Data, body, 0)) return false;
+						destination.push_back(std::move(gradient)); }
+					return true; };
+				if (!loadGradients(Gradients) || !loadGradients(FixedGradients))
+					return false;
 			}
+			if (body.GetStatus() != BinaryReaderStatus::Complete)
+				return false;
 		}
-		else if (std::string("GENE") == std::string(chunk))
+		else if (memcmp(chunk.data(), "GENE", 4) == 0)
 		{
-			int codeLength = 0;
-			memcpy(&codeLength, data + offset, 4);
-			offset += sizeof(int);
-
-			auto str = std::string((const char*)(data + offset));
-			genericCode_ = str;
-			offset += codeLength;
-		}
-		else
-		{
-			offset += chunk_size;
+			if (!readString(body, genericCode_) || body.GetStatus() != BinaryReaderStatus::Complete)
+				return false;
 		}
 	}
-
+	guid_ = guid;
 	return true;
 }
 

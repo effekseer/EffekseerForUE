@@ -1,5 +1,7 @@
 ﻿#include "ModelLoader.h"
 
+#include <limits>
+
 namespace EffekseerRenderer
 {
 
@@ -27,10 +29,18 @@ ModelLoader::~ModelLoader()
 	}
 
 	size_t size = reader->GetLength();
+	if (size == 0 || size > static_cast<size_t>(std::numeric_limits<int32_t>::max()))
+	{
+		return nullptr;
+	}
+
 	Effekseer::CustomAlignedVector<uint8_t> data;
 	data.resize(size);
 
-	reader->Read(data.data(), size);
+	if (reader->Read(data.data(), size) != size)
+	{
+		return nullptr;
+	}
 
 	auto model = Load(data.data(), (int32_t)size);
 
@@ -40,6 +50,10 @@ ModelLoader::~ModelLoader()
 ::Effekseer::ModelRef ModelLoader::Load(const void* data, int32_t size)
 {
 	auto model = ::Effekseer::MakeRefPtr<::Effekseer::Model>((const uint8_t*)data, size);
+	if (!model->GetIsValid())
+	{
+		return nullptr;
+	}
 
 	return model;
 }

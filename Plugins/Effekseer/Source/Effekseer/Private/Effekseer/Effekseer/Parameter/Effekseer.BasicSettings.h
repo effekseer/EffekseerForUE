@@ -188,6 +188,8 @@ struct ParameterCommonValues
 
 		memcpy(&size, pos, sizeof(int));
 		pos += sizeof(int);
+		if (size < 0 || size > 64 * 1024)
+			return;
 
 		if (ef->GetVersion() >= Version18Alpha3)
 		{
@@ -230,7 +232,8 @@ struct ParameterCommonValues
 		}
 		else if (ef->GetVersion() >= 14)
 		{
-			assert(size == sizeof(ParameterCommonValues_BackCompatibility_17));
+			if (size != sizeof(ParameterCommonValues_BackCompatibility_17))
+				return;
 			ParameterCommonValues_BackCompatibility_17 param_17;
 			memcpy(&param_17, pos, size);
 			pos += size;
@@ -273,6 +276,8 @@ struct ParameterCommonValues
 		}
 		else if (ef->GetVersion() >= 9)
 		{
+			if (size != sizeof(ParameterCommonValues_BackCompatibility_9))
+				return;
 			ParameterCommonValues_BackCompatibility_9 param_9{};
 			memcpy(&param_9, pos, size);
 			pos += size;
@@ -318,7 +323,8 @@ struct ParameterCommonValues
 		}
 		else
 		{
-			assert(size == sizeof(ParameterCommonValues_BackCompatibility_8));
+			if (size != sizeof(ParameterCommonValues_BackCompatibility_8))
+				return;
 			ParameterCommonValues_BackCompatibility_8 param_8;
 			memcpy(&param_8, pos, size);
 			pos += size;

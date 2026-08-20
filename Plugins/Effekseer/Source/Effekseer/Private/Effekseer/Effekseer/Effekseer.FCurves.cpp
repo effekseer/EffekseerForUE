@@ -49,7 +49,14 @@ int32_t FCurve::Load(const void* data, int32_t version)
 	memcpy(&count, p, sizeof(int32_t));
 	p += sizeof(int32_t);
 	size += sizeof(int32_t);
+	if (count < 0 || count > 65536 || freq_ <= 0)
+	{
+		keys_.clear();
+		return size;
+	}
 
+	keys_.clear();
+	keys_.reserve(static_cast<size_t>(count));
 	for (int32_t i = 0; i < count; i++)
 	{
 		float value = 0;

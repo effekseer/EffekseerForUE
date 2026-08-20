@@ -4,11 +4,13 @@
 
 #include "../Effekseer.Base.Pre.h"
 #include "../Effekseer.Color.h"
+#include "../Utils/Effekseer.BinaryReader.h"
 
 namespace Effekseer
 {
 
 void LoadGradient(Gradient& gradient, uint8_t*& pos, int32_t version);
+bool LoadGradient(Gradient& gradient, BinaryReader<true>& reader, int32_t version);
 
 /**
 	@brief

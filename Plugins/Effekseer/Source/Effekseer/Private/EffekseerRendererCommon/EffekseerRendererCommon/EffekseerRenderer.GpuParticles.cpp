@@ -1,4 +1,5 @@
 #include "EffekseerRenderer.GpuParticles.h"
+#include "../Effekseer/Effekseer/Effekseer.InstanceGlobal.h"
 #include "../Effekseer/Effekseer/Model/Effekseer.PointCacheGenerator.h"
 #include "../Effekseer/Effekseer/Noise/Effekseer.CurlNoise.h"
 #include "EffekseerRenderer.CommonUtils.h"
@@ -271,6 +272,7 @@ bool GpuParticleSystem::InitSystem(const Settings& settings)
 	{
 		emitterFreeList_.push_back(index);
 		emitters_[index].Buffer = graphicsDevice_->CreateUniformBuffer(sizeof(GpuParticles::EmitterData), nullptr);
+		emitters_[index].RenderConstantsBuffer = graphicsDevice_->CreateUniformBuffer(sizeof(GpuParticles::RenderConstants), nullptr);
 	}
 	newEmitterIds_.reserve(settings.EmitterMaxCount);
 
@@ -279,9 +281,6 @@ bool GpuParticleSystem::InitSystem(const Settings& settings)
 
 	GpuParticles::ComputeConstants computeConstants{};
 	computeConstantsUniformBuffer_ = graphicsDevice_->CreateUniformBuffer(sizeof(GpuParticles::ComputeConstants), &computeConstants);
-
-	GpuParticles::RenderConstants renderConstants{};
-	renderConstantsUniformBuffer_ = graphicsDevice_->CreateUniformBuffer(sizeof(GpuParticles::RenderConstants), &renderConstants);
 
 	particlesStorageBuffer_ = graphicsDevice_->CreateStorageBuffer(
 		(int32_t)settings.ParticleMaxCount, (int32_t)sizeof(Particle), nullptr, Effekseer::Backend::StorageBufferUsage::ReadWrite);
@@ -327,10 +326,20 @@ bool GpuParticleSystem::InitSystem(const Settings& settings)
 		dummyEmitPoints_ = graphicsDevice_->CreateStorageBuffer(1, sizeof(dummyData), &dummyData, Effekseer::Backend::StorageBufferUsage::ReadOnly);
 	}
 
-	return true;
+	for (const auto& emitter : emitters_)
+	{
+		if (!emitter.Buffer || !emitter.RenderConstantsBuffer)
+		{
+			return false;
+		}
+	}
+
+	return computeConstantsUniformBuffer_ && particlesStorageBuffer_ && trailsStorageBuffer_ &&
+		   vertexLayout_ && modelSprite_ && modelTrail_ && dummyEmitPoints_ && dummyVectorTexture_ && dummyColorTexture_ &&
+		   dummyNormalTexture_;
 }
 
-void GpuParticleSystem::SetShaders(const Shaders& shaders)
+bool GpuParticleSystem::SetShaders(const Shaders& shaders)
 {
 	shaders_ = shaders;
 
@@ -349,6 +358,8 @@ void GpuParticleSystem::SetShaders(const Shaders& shaders)
 		params.ShaderPtr = shaders_.CsParticleUpdate;
 		pipelineParticleUpdate_ = graphicsDevice_->CreatePipelineState(params);
 	}
+
+	return pipelineParticleClear_ && pipelineParticleSpawn_ && pipelineParticleUpdate_;
 }
 
 void GpuParticleSystem::ComputeFrame(const Context& context)
@@ -527,9 +538,9 @@ void GpuParticleSystem::RenderFrame(const Context& context)
 
 	auto renderer = renderer_;
 
-	// Update constant buffer
+	GpuParticles::RenderConstants baseRenderConstants{};
 	{
-		GpuParticles::RenderConstants cdata{};
+		auto& cdata = baseRenderConstants;
 		cdata.CoordinateReversed = context.CoordinateReversed;
 		cdata.ProjMat = renderer->GetProjectionMatrix();
 		cdata.CameraMat = renderer->GetCameraMatrix();
@@ -554,7 +565,6 @@ void GpuParticleSystem::RenderFrame(const Context& context)
 		cdata.LightDir = normalize(renderer->GetLightDirection());
 		cdata.LightColor = renderer->GetLightColor().ToFloat4();
 		cdata.LightAmbient = renderer->GetLightAmbientColor().ToFloat4();
-		graphicsDevice_->UpdateUniformBuffer(renderConstantsUniformBuffer_, sizeof(GpuParticles::RenderConstants), 0, &cdata);
 	}
 
 	auto toSamplingType = [](uint8_t filterType)
@@ -580,13 +590,59 @@ void GpuParticleSystem::RenderFrame(const Context& context)
 		auto& emitter = emitters_[emitterID];
 		if (emitter.IsAlive())
 		{
+			auto renderConstants = baseRenderConstants;
+			if (emitter.InstanceGlobal != nullptr && emitter.InstanceGlobal->RenderingCoordinateTransform.IsEnabled)
+			{
+				const auto& coordinateTransform = emitter.InstanceGlobal->RenderingCoordinateTransform;
+				const auto cameraForRendering = TransformCameraMatrixToEffectSpace(
+					Effekseer::SIMD::Mat44f(baseRenderConstants.CameraMat), coordinateTransform);
+				const auto cameraPosition = TransformCameraPositionToEffectSpace(
+					Effekseer::SIMD::Vec3f(
+						baseRenderConstants.CameraPos.x, baseRenderConstants.CameraPos.y, baseRenderConstants.CameraPos.z),
+					coordinateTransform);
+				const auto cameraFront = TransformCameraFrontToEffectSpace(
+					Effekseer::SIMD::Vec3f(
+						baseRenderConstants.CameraFront.x, baseRenderConstants.CameraFront.y, baseRenderConstants.CameraFront.z),
+					coordinateTransform);
+				renderConstants.CameraPos = Effekseer::GpuParticles::float3(
+					cameraPosition.GetX(), cameraPosition.GetY(), cameraPosition.GetZ());
+				renderConstants.CameraFront = Effekseer::GpuParticles::float3(
+					cameraFront.GetX(), cameraFront.GetY(), cameraFront.GetZ());
+
+				Effekseer::Matrix44 inverseCamera{};
+				Effekseer::Matrix44::Inverse(inverseCamera, Effekseer::SIMD::ToStruct(cameraForRendering));
+				renderConstants.BillboardMat = {
+					float4{inverseCamera.Values[0][0], inverseCamera.Values[1][0], inverseCamera.Values[2][0], 0.0f},
+					float4{inverseCamera.Values[0][1], inverseCamera.Values[1][1], inverseCamera.Values[2][1], 0.0f},
+					float4{inverseCamera.Values[0][2], inverseCamera.Values[1][2], inverseCamera.Values[2][2], 0.0f}};
+				renderConstants.YAxisFixedMat = {
+					float4{inverseCamera.Values[0][0], 0.0f, inverseCamera.Values[2][0], 0.0f},
+					float4{inverseCamera.Values[0][1], 1.0f, inverseCamera.Values[2][1], 0.0f},
+					float4{inverseCamera.Values[0][2], 0.0f, inverseCamera.Values[2][2], 0.0f}};
+			}
+			if (emitter.InstanceGlobal != nullptr && emitter.InstanceGlobal->RenderingTransform.IsEnabled)
+			{
+				const auto& renderingTransform = emitter.InstanceGlobal->RenderingTransform.Transform;
+				renderConstants.CameraMat = Effekseer::SIMD::ToStruct(
+					Effekseer::SIMD::Mat44f(renderingTransform) * Effekseer::SIMD::Mat44f(renderConstants.CameraMat));
+				auto lightDirection = InverseTransformDirection(
+					Effekseer::SIMD::Vec3f(
+						renderConstants.LightDir.x, renderConstants.LightDir.y, renderConstants.LightDir.z),
+					renderingTransform);
+				lightDirection = lightDirection.GetNormal();
+				renderConstants.LightDir = Effekseer::GpuParticles::float3(
+					lightDirection.GetX(), lightDirection.GetY(), lightDirection.GetZ());
+			}
+			graphicsDevice_->UpdateUniformBuffer(
+				emitter.RenderConstantsBuffer, sizeof(GpuParticles::RenderConstants), 0, &renderConstants);
+
 			auto effect = emitter.Resource->Effect;
 			auto& paramSet = emitter.Resource->ParamSet;
 
 			Effekseer::Backend::DrawParameter drawParams;
 			drawParams.PipelineStatePtr = GetOrCreatePipelineState(emitter.Resource->GPUPipelineStateKey);
 
-			drawParams.VertexUniformBufferPtrs[0] = drawParams.PixelUniformBufferPtrs[0] = renderConstantsUniformBuffer_;
+			drawParams.VertexUniformBufferPtrs[0] = drawParams.PixelUniformBufferPtrs[0] = emitter.RenderConstantsBuffer;
 			drawParams.VertexUniformBufferPtrs[1] = drawParams.PixelUniformBufferPtrs[1] = emitter.Resource->ParamBuffer;
 			drawParams.VertexUniformBufferPtrs[2] = emitter.Buffer;
 

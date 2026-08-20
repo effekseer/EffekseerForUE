@@ -91,6 +91,8 @@ public:
 
 	int32_t GetFrameCount() const;
 
+	bool GetIsValid() const;
+
 	Emitter GetEmitter(IRandObject* g, int32_t time, CoordinateSystem coordinate, float magnification);
 
 	Emitter GetEmitterFromVertex(IRandObject* g, int32_t time, CoordinateSystem coordinate, float magnification);

@@ -63,18 +63,28 @@ struct ParameterAlphaCutoff
 		switch (Type)
 		{
 		case Effekseer::ParameterAlphaCutoff::EType::FIXED:
+			if (BufferSize != sizeof(Fixed))
+				return;
 			memcpy(&Fixed, pos, BufferSize);
 			break;
 		case Effekseer::ParameterAlphaCutoff::EType::FPI:
+			if (BufferSize != sizeof(FourPointInterpolation))
+				return;
 			memcpy(&FourPointInterpolation, pos, BufferSize);
 			break;
 		case Effekseer::ParameterAlphaCutoff::EType::EASING:
+			if (BufferSize < 0 || BufferSize > 64 * 1024)
+				return;
 			Easing.Load(pos, BufferSize, version);
 			break;
 		case Effekseer::ParameterAlphaCutoff::EType::F_CURVE:
+			if (BufferSize < 0 || BufferSize > 1024 * 1024)
+				return;
 			FCurve.Threshold = std::make_unique<FCurveScalar>();
 			FCurve.Threshold->Load(pos, version);
 			break;
+		default:
+			return;
 		}
 
 		pos += BufferSize;

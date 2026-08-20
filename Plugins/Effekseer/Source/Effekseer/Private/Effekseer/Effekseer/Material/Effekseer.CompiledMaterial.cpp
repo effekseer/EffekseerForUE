@@ -1,4 +1,5 @@
 #include "Effekseer.CompiledMaterial.h"
+#include "../Utils/Effekseer.BinaryReader.h"
 
 namespace Effekseer
 {
@@ -72,23 +73,17 @@ const std::vector<uint8_t>& CompiledMaterial::GetOriginalData() const
 
 bool CompiledMaterial::Load(const uint8_t* data, int32_t size)
 {
-
-	int offset = 0;
-
-	// header
-	char prefix[5];
-
-	memcpy(prefix, data + offset, 4);
-	offset += sizeof(int);
-
-	prefix[4] = 0;
-
-	if (std::string("eMCB") != std::string(prefix))
+	if (data == nullptr || size < 0)
 		return false;
 
+	constexpr int32_t PlatformCountMax = 256;
+	constexpr int32_t BinarySizeMax = 256 * 1024 * 1024;
+	BinaryReader<true> reader(data, static_cast<size_t>(size));
+	std::array<char, 4> prefix{};
 	int version = 0;
-	memcpy(&version, data + offset, 4);
-	offset += sizeof(int);
+	if (!reader.Read(prefix.data(), static_cast<int32_t>(prefix.size())) ||
+		memcmp(prefix.data(), "eMCB", prefix.size()) != 0 || !reader.Read(version))
+		return false;
 
 	// bacause of camera position node, structure of uniform is changed, etc
 	if (version < OldestSupportVersion)
@@ -103,47 +98,37 @@ bool CompiledMaterial::Load(const uint8_t* data, int32_t size)
 	}
 
 	uint64_t guid = 0;
-	memcpy(&guid, data + offset, 8);
-	offset += sizeof(uint64_t);
+	if (!reader.Read(guid))
+		return false;
 
 	// info
 	int32_t platformCount = 0;
-	memcpy(&platformCount, data + offset, 4);
-	offset += sizeof(uint32_t);
-
-	offset += sizeof(uint32_t) * platformCount;
+	if (!reader.Read(platformCount, 0, PlatformCountMax) ||
+		!reader.Skip(sizeof(uint32_t) * static_cast<size_t>(platformCount)))
+		return false;
 
 	// data
-	uint32_t originalDataSize = 0;
-	memcpy(&originalDataSize, data + offset, 4);
-	offset += sizeof(uint32_t);
+	int32_t originalDataSize = 0;
+	std::vector<uint8_t> originalData;
+	if (!reader.Read(originalDataSize, 0, BinarySizeMax) || !reader.Read(originalData, originalDataSize))
+		return false;
 
-	originalData_.resize(originalDataSize);
-	memcpy(originalData_.data(), data + offset, originalDataSize);
-
-	offset += originalDataSize;
-
-	while (0 <= offset && offset < size)
+	decltype(platforms) loadedPlatforms;
+	while (reader.GetRemainingSize() > 0)
 	{
-		int chunk;
-		memcpy(&chunk, data + offset, 4);
-		offset += sizeof(int);
-
+		int chunk = 0;
 		int chunk_size = 0;
-		memcpy(&chunk_size, data + offset, 4);
-		offset += sizeof(int);
+		if (!reader.Read(chunk) || !reader.Read(chunk_size, 0, BinarySizeMax) ||
+			!reader.CanRead(static_cast<size_t>(chunk_size)))
+			return false;
+		BinaryReader<true> chunkReader(reader.GetCurrentData(), static_cast<size_t>(chunk_size));
+		if (!reader.Skip(static_cast<size_t>(chunk_size)))
+			return false;
 
-		auto binary = new CompiledMaterialBinaryInternal();
-
-		auto loadFunc = [](const uint8_t* data, std::vector<uint8_t>& buffer, int32_t& offset)
+		auto loadFunc = [BinarySizeMax](BinaryReader<true>& source, std::vector<uint8_t>& buffer)
 		{
-			int size = 0;
-			memcpy(&size, data + offset, 4);
-			offset += sizeof(int);
-
-			buffer.resize(size);
-			memcpy(buffer.data(), data + offset, size);
-			offset += size;
+			int32_t binarySize = 0;
+			return source.Read(binarySize, 0, BinarySizeMax) && source.Read(buffer, binarySize);
 		};
 
 		std::vector<uint8_t> standardVS;
@@ -155,14 +140,14 @@ bool CompiledMaterial::Load(const uint8_t* data, int32_t size)
 		std::vector<uint8_t> modelRefractionVS;
 		std::vector<uint8_t> modelRefractionPS;
 
-		loadFunc(data, standardVS, offset);
-		loadFunc(data, standardPS, offset);
-		loadFunc(data, modelVS, offset);
-		loadFunc(data, modelPS, offset);
-		loadFunc(data, standardRefractionVS, offset);
-		loadFunc(data, standardRefractionPS, offset);
-		loadFunc(data, modelRefractionVS, offset);
-		loadFunc(data, modelRefractionPS, offset);
+		if (!loadFunc(chunkReader, standardVS) || !loadFunc(chunkReader, standardPS) ||
+			!loadFunc(chunkReader, modelVS) || !loadFunc(chunkReader, modelPS) ||
+			!loadFunc(chunkReader, standardRefractionVS) || !loadFunc(chunkReader, standardRefractionPS) ||
+			!loadFunc(chunkReader, modelRefractionVS) || !loadFunc(chunkReader, modelRefractionPS) ||
+			chunkReader.GetStatus() != BinaryReaderStatus::Complete)
+			return false;
+
+		auto binary = new CompiledMaterialBinaryInternal();
 
 		binary->SetVertexShaderData(MaterialShaderType::Standard, standardVS);
 		binary->SetPixelShaderData(MaterialShaderType::Standard, standardPS);
@@ -173,9 +158,10 @@ bool CompiledMaterial::Load(const uint8_t* data, int32_t size)
 		binary->SetVertexShaderData(MaterialShaderType::RefractionModel, modelRefractionVS);
 		binary->SetPixelShaderData(MaterialShaderType::RefractionModel, modelRefractionPS);
 
-		platforms[static_cast<CompiledMaterialPlatformType>(chunk)] = CreateUniqueReference(static_cast<CompiledMaterialBinary*>(binary));
+		loadedPlatforms[static_cast<CompiledMaterialPlatformType>(chunk)] = CreateUniqueReference(static_cast<CompiledMaterialBinary*>(binary));
 	}
-
+	originalData_ = std::move(originalData);
+	platforms = std::move(loadedPlatforms);
 	return true;
 }
 
