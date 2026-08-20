@@ -3,6 +3,7 @@
 
 #include "CoreMinimal.h"
 #include "EditorFramework/AssetImportData.h"
+#include "EffekseerUECompatibility.h"
 #include "EffekseerAlphaBlendType.h"
 #include "EffekseerColorSpaceType.h"
 #include "Materials/Material.h"
@@ -115,7 +116,11 @@ public:
 	UPROPERTY(Category = ImportSettings, VisibleAnywhere)
 	UAssetImportData* AssetImportData = nullptr;
 #endif
+#if EFFEKSEER_UE_HAS_ASSET_REGISTRY_TAGS_CONTEXT
+	void GetAssetRegistryTags(FAssetRegistryTagsContext Context) const override;
+#else
 	void GetAssetRegistryTags(TArray<FAssetRegistryTag>& OutTags) const override;
+#endif
 
 #if WITH_EDITOR
 	//! Reupdate elements to apply parent shaders (UE4 requires to update after a parent material finishes to be compiled)

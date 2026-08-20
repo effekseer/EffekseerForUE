@@ -124,12 +124,21 @@ UObject* UEffekseerModelFactory::FactoryCreateBinary(
 		assetSM->Build();
 		assetSM->CreateBodySetup();
 
+#if EFFEKSEER_UE_HAS_STATIC_MESH_IMPORT_DATA_ACCESSORS
+		if (!assetSM->GetAssetImportData())
+		{
+			assetSM->SetAssetImportData(NewObject<UAssetImportData>(assetSM, UAssetImportData::StaticClass()));
+		}
+
+		assetSM->GetAssetImportData()->Update(CurrentFilename);
+#else
 		if (!assetSM->AssetImportData)
 		{
 			assetSM->AssetImportData = NewObject<UAssetImportData>(assetSM, UAssetImportData::StaticClass());
 		}
 
 		assetSM->AssetImportData->Update(CurrentFilename);
+#endif
 	}
 
 	assetEfkMdl->Mesh = assetSM;

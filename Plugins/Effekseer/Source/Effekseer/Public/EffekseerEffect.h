@@ -4,6 +4,7 @@
 #include "CoreMinimal.h"
 #include "EffekseerAlphaBlendType.h"
 #include "EffekseerCurve.h"
+#include "EffekseerUECompatibility.h"
 #include "EffekseerMaterial.h"
 #include "EffekseerModel.h"
 #include "UObject/Object.h"
@@ -569,7 +570,11 @@ public:
 	UPROPERTY(Category = ImportSettings, VisibleAnywhere)
 	class UAssetImportData* AssetImportData;
 #endif
+#if EFFEKSEER_UE_HAS_ASSET_REGISTRY_TAGS_CONTEXT
+	void GetAssetRegistryTags(FAssetRegistryTagsContext Context) const override;
+#else
 	void GetAssetRegistryTags(TArray<FAssetRegistryTag>& OutTags) const override;
+#endif
 
 	void GenerateRenderingDataIfRequired();
 	void ReloadIfRequired();

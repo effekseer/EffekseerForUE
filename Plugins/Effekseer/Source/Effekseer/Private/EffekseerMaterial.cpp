@@ -1,6 +1,9 @@
 #include "EffekseerMaterial.h"
 
 #include "EffekseerCustomVersion.h"
+#if EFFEKSEER_UE_HAS_ASSET_REGISTRY_TAGS_CONTEXT
+#include "UObject/AssetRegistryTagsContext.h"
+#endif
 #include <Effekseer/Material/Effekseer.MaterialFile.h>
 
 void UEffekseerMaterial::LoadMaterial(const uint8_t* data, int32_t size, const TCHAR* path)
@@ -15,16 +18,28 @@ void UEffekseerMaterial::ReleaseMaterial()
 	internal_ = nullptr;
 }
 
+#if EFFEKSEER_UE_HAS_ASSET_REGISTRY_TAGS_CONTEXT
+void UEffekseerMaterial::GetAssetRegistryTags(FAssetRegistryTagsContext Context) const
+#else
 void UEffekseerMaterial::GetAssetRegistryTags(TArray<FAssetRegistryTag>& OutTags) const
+#endif
 {
 #if WITH_EDITORONLY_DATA
 	if (AssetImportData)
 	{
+#if EFFEKSEER_UE_HAS_ASSET_REGISTRY_TAGS_CONTEXT
+		Context.AddTag(FAssetRegistryTag(SourceFileTagName(), AssetImportData->GetSourceData().ToJson(), FAssetRegistryTag::TT_Hidden));
+#else
 		OutTags.Add(FAssetRegistryTag(SourceFileTagName(), AssetImportData->GetSourceData().ToJson(), FAssetRegistryTag::TT_Hidden));
+#endif
 	}
 #endif
 
+#if EFFEKSEER_UE_HAS_ASSET_REGISTRY_TAGS_CONTEXT
+	Super::GetAssetRegistryTags(Context);
+#else
 	Super::GetAssetRegistryTags(OutTags);
+#endif
 }
 
 #if WITH_EDITOR

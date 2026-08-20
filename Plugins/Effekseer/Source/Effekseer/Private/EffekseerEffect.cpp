@@ -7,6 +7,9 @@
 #include "EffekseerProceduralModel.h"
 #include "EffekseerRendererShader.h"
 #include "EffekseerRenderingUserData.h"
+#if EFFEKSEER_UE_HAS_ASSET_REGISTRY_TAGS_CONTEXT
+#include "UObject/AssetRegistryTagsContext.h"
+#endif
 #include <Effekseer.h>
 #include <Effekseer/Effekseer/Material/Effekseer.MaterialFile.h>
 #include <Effekseer/Effekseer/Model/Effekseer.ProceduralModelGenerator.h>
@@ -940,16 +943,28 @@ void UEffekseerEffect::BeginDestroy()
 	Super::BeginDestroy();
 }
 
+#if EFFEKSEER_UE_HAS_ASSET_REGISTRY_TAGS_CONTEXT
+void UEffekseerEffect::GetAssetRegistryTags(FAssetRegistryTagsContext Context) const
+#else
 void UEffekseerEffect::GetAssetRegistryTags(TArray<FAssetRegistryTag>& OutTags) const
+#endif
 {
 #if WITH_EDITORONLY_DATA
 	if (AssetImportData)
 	{
+#if EFFEKSEER_UE_HAS_ASSET_REGISTRY_TAGS_CONTEXT
+		Context.AddTag(FAssetRegistryTag(SourceFileTagName(), AssetImportData->GetSourceData().ToJson(), FAssetRegistryTag::TT_Hidden));
+#else
 		OutTags.Add(FAssetRegistryTag(SourceFileTagName(), AssetImportData->GetSourceData().ToJson(), FAssetRegistryTag::TT_Hidden));
+#endif
 	}
 #endif
 
+#if EFFEKSEER_UE_HAS_ASSET_REGISTRY_TAGS_CONTEXT
+	Super::GetAssetRegistryTags(Context);
+#else
 	Super::GetAssetRegistryTags(OutTags);
+#endif
 }
 
 void UEffekseerEffect::GenerateRenderingDataIfRequired()

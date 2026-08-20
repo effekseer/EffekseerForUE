@@ -77,7 +77,11 @@ public:
 						internalHandlesTemp_.push_back(h.ID);
 					}
 					systemComponentSceneProxy->ConvertInternalHandleToEffekseerHandles(internalHandlesTemp_, efkHandlesTemp_);
+#if EFFEKSEER_UE_HAS_WORLD_TO_VIEW_MATRIX
+					system->Render(efkHandlesTemp_, systemComponentSceneProxy->GetLocalToWorld(), view->ViewMatrices.GetWorldToView(), ViewIndex, Collector);
+#else
 					system->Render(efkHandlesTemp_, systemComponentSceneProxy->GetLocalToWorld(), view->ViewMatrices.GetViewMatrix(), ViewIndex, Collector);
+#endif
 				}
 			}
 		}

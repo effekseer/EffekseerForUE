@@ -3,6 +3,7 @@
 
 #include "CoreMinimal.h"
 #include "EditorFramework/AssetImportData.h"
+#include "EffekseerUECompatibility.h"
 #include "Engine/StaticMesh.h"
 #include "UObject/Object.h"
 
@@ -49,7 +50,11 @@ public:
 	UPROPERTY(Category = ImportSettings, VisibleAnywhere)
 	UAssetImportData* AssetImportData = nullptr;
 #endif
+#if EFFEKSEER_UE_HAS_ASSET_REGISTRY_TAGS_CONTEXT
+	void GetAssetRegistryTags(FAssetRegistryTagsContext Context) const override;
+#else
 	void GetAssetRegistryTags(TArray<FAssetRegistryTag>& OutTags) const override;
+#endif
 
 	void AssignInternalPtr();
 

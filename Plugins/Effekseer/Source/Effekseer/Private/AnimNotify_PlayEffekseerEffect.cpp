@@ -96,7 +96,11 @@ UAnimNotify_PlayEffekseerEffect::UAnimNotify_PlayEffekseerEffect()
 #endif
 }
 
+#if EFFEKSEER_UE_HAS_ANIM_NOTIFY_EVENT_REFERENCE
+void UAnimNotify_PlayEffekseerEffect::Notify(class USkeletalMeshComponent* smc, class UAnimSequenceBase* animSequence, const FAnimNotifyEventReference&)
+#else
 void UAnimNotify_PlayEffekseerEffect::Notify(class USkeletalMeshComponent* smc, class UAnimSequenceBase* animSequence)
+#endif
 {
 	if (smc == nullptr)
 		return;

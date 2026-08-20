@@ -3,6 +3,7 @@
 
 #include "Animation/AnimNotifies/AnimNotify.h"
 #include "CoreMinimal.h"
+#include "EffekseerUECompatibility.h"
 
 #include "AnimNotify_PlayEffekseerEffect.generated.h"
 
@@ -25,7 +26,11 @@ public:
 
 	virtual FString GetNotifyName_Implementation() const override;
 
+#if EFFEKSEER_UE_HAS_ANIM_NOTIFY_EVENT_REFERENCE
+	virtual void Notify(USkeletalMeshComponent* smc, UAnimSequenceBase* animSequence, const FAnimNotifyEventReference&) override;
+#else
 	virtual void Notify(USkeletalMeshComponent* smc, UAnimSequenceBase* animSequence) override;
+#endif
 
 	UPROPERTY(EditAnywhere, Category = "AnimNotify", meta = (DisplayName = "Effekseer Effect"))
 	UEffekseerEffect* EffekseerEffect;
