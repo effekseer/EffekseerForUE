@@ -178,9 +178,8 @@ int32 UEffekseerSystemComponent::GetNumMaterials() const
 FBoxSphereBounds UEffekseerSystemComponent::CalcBounds(const FTransform& LocalToWorld) const
 {
 	// TODO Optimize a size of bounding box.
-	float infinity = FLT_MAX / 100.0f;
-
-	return FBoxSphereBounds(LocalToWorld.GetLocation(), FVector(infinity, infinity, infinity), infinity);
+	constexpr float boundsExtent = EffekseerUE::FloatSafeBoundsExtent;
+	return FBoxSphereBounds(LocalToWorld.GetLocation(), FVector(boundsExtent, boundsExtent, boundsExtent), boundsExtent);
 }
 
 void UEffekseerSystemComponent::AssignMaterials(UEffekseerEffect* effect, TArray<UMaterialInterface*>* currentMaterials)

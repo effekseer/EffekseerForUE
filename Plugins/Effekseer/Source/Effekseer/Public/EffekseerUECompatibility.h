@@ -14,6 +14,10 @@
 
 namespace EffekseerUE
 {
+// Maximum distance where a float retains at least 1/16 cm precision. This is
+// UE4's HALF_WORLD_MAX and UE5's UE_FLOAT_HUGE_DISTANCE.
+constexpr float FloatSafeBoundsExtent = 1048576.0f;
+
 #if ENGINE_MAJOR_VERSION == 5
 using UEFVector2f = FVector2f;
 using UEFVector3f = FVector3f;

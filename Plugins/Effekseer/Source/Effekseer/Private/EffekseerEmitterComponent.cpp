@@ -349,9 +349,11 @@ int32 UEffekseerEmitterComponent::GetNumMaterials() const
 FBoxSphereBounds UEffekseerEmitterComponent::CalcBounds(const FTransform& LocalToWorld) const
 {
 	// TODO Optimize a size of bounding box.
-	float infinity = FLT_MAX / 100.0f;
-
-	return FBoxSphereBounds(LocalToWorld.GetLocation(), FVector(infinity, infinity, infinity), infinity);
+	// FLT_MAX-sized bounds are unsafe in every supported UE version. In UE5.8,
+	// the GPU matrix precision check exposes this latent issue when the component
+	// is selected; older versions could still overflow in bounds-related paths.
+	constexpr float boundsExtent = EffekseerUE::FloatSafeBoundsExtent;
+	return FBoxSphereBounds(LocalToWorld.GetLocation(), FVector(boundsExtent, boundsExtent, boundsExtent), boundsExtent);
 }
 
 #if WITH_EDITOR
