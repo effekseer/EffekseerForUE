@@ -1,4 +1,5 @@
 #include "EffekseerEffect.h"
+#include "Engine/Texture2D.h"
 
 #include "EffekseerCustomVersion.h"
 #include "EffekseerInternalModel.h"

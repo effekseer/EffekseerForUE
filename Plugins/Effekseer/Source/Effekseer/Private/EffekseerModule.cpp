@@ -1,4 +1,6 @@
 #include "EffekseerModule.h"
+#include "Misc/Paths.h"
+#include "ShaderCore.h"
 
 #include "Interfaces/IPluginManager.h"
 

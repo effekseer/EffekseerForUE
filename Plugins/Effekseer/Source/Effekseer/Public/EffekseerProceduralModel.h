@@ -2,6 +2,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "RHI.h"
 #include "UObject/Object.h"
 #include <Effekseer.h>
 
@@ -9,7 +10,7 @@
 
 class FProceduralModelMeshRenderData;
 class FMeshElementCollector;
-class materialRenderProxy;
+class FMaterialRenderProxy;
 
 UCLASS()
 class UEFfekseerProceduralModel

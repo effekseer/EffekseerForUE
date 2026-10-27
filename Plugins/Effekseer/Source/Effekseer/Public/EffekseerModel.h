@@ -44,13 +44,13 @@ public:
 
 	void Load(const uint8_t* data, int32_t size, const TCHAR* path);
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(Category = "Effekseer", EditAnywhere)
 	UStaticMesh* Mesh = nullptr;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(Category = "Effekseer", EditAnywhere)
 	TArray<int> AnimationFaceOffsets;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(Category = "Effekseer", EditAnywhere)
 	TArray<int> AnimationFaceCounts;
 
 #if WITH_EDITORONLY_DATA

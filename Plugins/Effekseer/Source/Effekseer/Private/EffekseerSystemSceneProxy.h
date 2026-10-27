@@ -2,6 +2,7 @@
 #pragma once
 
 #include "Components/PrimitiveComponent.h"
+#include "PrimitiveSceneProxy.h"
 #include "CoreMinimal.h"
 #include "EffekseerSystem.h"
 

@@ -1,4 +1,7 @@
 #include "EffekseerSystemSceneProxy.h"
+#include "PrimitiveViewRelevance.h"
+#include "SceneManagement.h"
+#include "SceneView.h"
 
 #include "EffekseerSystemComponent.h"
 

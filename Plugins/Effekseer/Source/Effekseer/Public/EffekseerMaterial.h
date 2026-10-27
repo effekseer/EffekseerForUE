@@ -25,7 +25,7 @@ struct FEffekseerTextureProperty
 {
 	GENERATED_USTRUCT_BODY();
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Category = "Effekseer", VisibleAnywhere)
 	FString Name;
 };
 
@@ -34,10 +34,10 @@ struct FEffekseerUniformProperty
 {
 	GENERATED_USTRUCT_BODY();
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Category = "Effekseer", VisibleAnywhere)
 	FString Name;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Category = "Effekseer", VisibleAnywhere)
 	int Count;
 };
 
@@ -46,7 +46,7 @@ struct FEffekseerGradientProperty
 {
 	GENERATED_USTRUCT_BODY();
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Category = "Effekseer", VisibleAnywhere)
 	FString Name;
 };
 
@@ -56,10 +56,10 @@ struct EFFEKSEER_API FEffekseerMaterialElement
 	GENERATED_BODY()
 
 public:
-	UPROPERTY(EditInstanceOnly)
+	UPROPERTY(Category = "Effekseer", EditInstanceOnly)
 	UMaterialInterface* Material = nullptr;
 
-	UPROPERTY(EditInstanceOnly)
+	UPROPERTY(Category = "Effekseer", EditInstanceOnly)
 	EEffekseerAlphaBlendType AlphaBlend = EEffekseerAlphaBlendType::Blend;
 };
 
@@ -81,16 +81,16 @@ private:
 	UMaterial* materialPrevious_ = nullptr;
 
 public:
-	UPROPERTY(EditInstanceOnly)
+	UPROPERTY(Category = "Effekseer", EditInstanceOnly)
 	UMaterial* Material = nullptr;
 
-	UPROPERTY(EditInstanceOnly)
+	UPROPERTY(Category = "Effekseer", EditInstanceOnly)
 	TArray<FEffekseerMaterialElement> MaterialElements;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Category = "Effekseer", VisibleAnywhere)
 	TArray<FEffekseerUniformProperty> Uniforms;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Category = "Effekseer", VisibleAnywhere)
 	TArray<FEffekseerGradientProperty> Gradients;
 
 	TMap<FHashedName, int> UniformHashedNameToIndex;
@@ -98,7 +98,7 @@ public:
 	UPROPERTY(Transient)
 	TMap<FString, int> UniformNameToIndex;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Category = "Effekseer", VisibleAnywhere)
 	TArray<FEffekseerTextureProperty> Textures;
 
 	TMap<FHashedName, int> TextureHashedNameToIndex;

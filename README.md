@@ -36,3 +36,63 @@ set ENGINE_PATH=C:\Path\To\Epic Games\UE_4.27
 
 "%ENGINE_PATH%\Engine\Binaries\DotNET\UnrealBuildTool.exe" -projectfiles -project=C:\Path\To\EffekseerForUE\EffekseerForUE.uproject -game -engine -progress -2019
 ```
+
+Local build verification (Windows)
+==================================
+
+Python 3.9+ and the C++ toolchain/Windows SDK required by each installed UE
+version are needed. No additional Python packages are required.
+
+```powershell
+# Discover engines without compiling.
+python scripts/test_ue_builds.py --list
+
+# Also scan a custom installation directory.
+python scripts/test_ue_builds.py --list --search-root "E:\Program Files\Epic Games"
+
+# Print and save the build commands without executing them.
+python scripts/test_ue_builds.py --dry-run
+
+# Build against every detected engine, sequentially.
+python scripts/test_ue_builds.py
+
+# Select versions (repeat the option to select several).
+python scripts/test_ue_builds.py --engine-version 4.27 --engine-version 5.8
+
+# Use only an explicitly specified installation, including a source build.
+python scripts/test_ue_builds.py --engine-root "E:\Program Files\Epic Games\UE_5.8"
+```
+
+The script reads Epic Games Launcher installation metadata, Windows registry
+entries (including per-user source builds), and standard installation directories.
+It verifies `Engine/Build/Build.version` and `RunUAT.bat`, removes duplicate paths,
+and ignores stale registrations. Custom unregistered locations can be added with
+`--search-root` or `--engine-root`. The latter disables automatic discovery.
+
+`RunUAT BuildPlugin -TargetPlatforms=Win64` checks the editor host and supported
+Win64 game configurations. This is a compilation/package check, not a rendering,
+playback, or sample-game cooking test. Toolchain failures are reported as failures;
+the script does not install or modify Visual Studio or Unreal Engine.
+
+UAT receives a working copy of the plugin, so its generated configuration does
+not modify the source plugin. UE4 tool paths are supplied to the child process
+without changing the system PATH or executable-search security policy.
+
+Each invocation uses a fresh directory under `Saved/BuildPluginTests/` (already
+ignored by Git). Each engine gets a `build.log` and `Package/`; the run directory
+contains `summary.json` with engine paths, versions, command arguments, repository
+commit, exit codes, and elapsed times. Build output is written to the log while
+running. Use `Get-Content <build.log> -Wait` in another terminal to follow it.
+UAT may also write its normal caches and logs outside this directory.
+
+A failed build does not prevent subsequent engines from being tested. Exit status
+is 0 when all builds pass, 1 on failure/missing requested engines, or 130 when
+interrupted. `--list` and `--dry-run` do not establish build success. Output can be
+relocated with `--output-root`; previous results are never overwritten. Paths with
+Windows batch metacharacters are rejected.
+
+Tests for the discovery and execution logic:
+
+```powershell
+python -B -m unittest discover -s scripts -p test_ue_builds_tests.py -v
+```

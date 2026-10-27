@@ -531,25 +531,25 @@ public:
 	UPROPERTY(Transient)
 	int32 Version = -1;
 
-	UPROPERTY(EditAnywhere)
+	UPROPERTY(Category = "Effekseer", EditAnywhere)
 	float Scale = 20.0f;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Category = "Effekseer", VisibleAnywhere)
 	FString Name = TEXT("Effect");
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Category = "Effekseer", VisibleAnywhere)
 	TArray<UTexture2D*> ColorTextures;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Category = "Effekseer", VisibleAnywhere)
 	TArray<UTexture2D*> DistortionTextures;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Category = "Effekseer", VisibleAnywhere)
 	TArray<UEffekseerModel*> Models;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Category = "Effekseer", VisibleAnywhere)
 	TArray<UEffekseerMaterial*> Materials;
 
-	UPROPERTY(VisibleAnywhere)
+	UPROPERTY(Category = "Effekseer", VisibleAnywhere)
 	TArray<UEffekseerCurve*> Curves;
 
 	UPROPERTY(Transient)

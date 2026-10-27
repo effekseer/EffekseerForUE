@@ -1,4 +1,5 @@
 #include "EffekseerSystemComponent.h"
+#include "Engine/Texture2D.h"
 
 #include "DynamicMeshBuilder.h"
 #include "EffekseerRendererImplemented.h"

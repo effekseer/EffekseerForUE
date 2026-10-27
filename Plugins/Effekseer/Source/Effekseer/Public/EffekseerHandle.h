@@ -17,7 +17,7 @@ struct EFFEKSEER_API FEffekseerHandle
 	UPROPERTY()
 	UEffekseerEffect* Effect = nullptr;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	UPROPERTY(Category = "Effekseer", EditAnywhere, BlueprintReadWrite)
 	UEffekseerSystemComponent* System = nullptr;
 
 	UPROPERTY()
