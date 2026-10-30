@@ -38,7 +38,7 @@ struct FEffekseerUniformProperty
 	FString Name;
 
 	UPROPERTY(Category = "Effekseer", VisibleAnywhere)
-	int Count;
+	int Count = 0;
 };
 
 USTRUCT(BlueprintType)
